@@ -13,7 +13,7 @@ const IDS = [
   "tron"
 ];
 
-export async function GET() {
+export default async function handler(req, res) {
   try {
     const headers = {
       accept: "application/json"
@@ -29,31 +29,17 @@ export async function GET() {
 
     if (!response.ok) {
       const text = await response.text();
-      return new Response(
-        JSON.stringify({ error: `CoinGecko error: ${response.status} ${text}` }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      return res.status(500).json({
+        error: `CoinGecko error: ${response.status} ${text}`
+      });
     }
 
     const coins = await response.json();
 
-    return new Response(JSON.stringify({ coins }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-
+    return res.status(200).json({ coins });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message || "Unknown error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    return res.status(500).json({
+      error: error.message || "Unknown error"
+    });
   }
 }
