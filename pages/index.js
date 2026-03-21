@@ -7,9 +7,11 @@ export default function Home() {
 
     async function start() {
       try {
-        const mod = await import("../public/script.js");
+        const mod = await import("/script.js?v=" + Date.now());
         if (isMounted && mod && typeof mod.boot === "function") {
           await mod.boot();
+        } else {
+          console.error("boot() no fue encontrado en /public/script.js");
         }
       } catch (error) {
         console.error("Error loading WojakMeter script:", error);
@@ -57,7 +59,7 @@ export default function Home() {
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
-        <link rel="stylesheet" href="/style.css?v=2" />
+        <link rel="stylesheet" href="/style.css?v=3" />
       </Head>
 
       <div className="style-classic">
@@ -438,34 +440,13 @@ export default function Home() {
                 </div>
 
                 <div className="market-intervals">
-                  <div className="interval-box">
-                    <span>1m</span>
-                    <strong id="perf1m">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>5m</span>
-                    <strong id="perf5m">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>15m</span>
-                    <strong id="perf15m">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>1h</span>
-                    <strong id="perf1h">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>4h</span>
-                    <strong id="perf4h">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>24h</span>
-                    <strong id="perf24h">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>7d</span>
-                    <strong id="perf7d">--</strong>
-                  </div>
+                  <div className="interval-box"><span>1m</span><strong id="perf1m">--</strong></div>
+                  <div className="interval-box"><span>5m</span><strong id="perf5m">--</strong></div>
+                  <div className="interval-box"><span>15m</span><strong id="perf15m">--</strong></div>
+                  <div className="interval-box"><span>1h</span><strong id="perf1h">--</strong></div>
+                  <div className="interval-box"><span>4h</span><strong id="perf4h">--</strong></div>
+                  <div className="interval-box"><span>24h</span><strong id="perf24h">--</strong></div>
+                  <div className="interval-box"><span>7d</span><strong id="perf7d">--</strong></div>
                 </div>
               </section>
             </section>
@@ -477,18 +458,10 @@ export default function Home() {
               </div>
 
               <div className="tabs-row" id="studioTabs">
-                <button className="tab-btn active" data-studio-tab="meme">
-                  Meme Generator
-                </button>
-                <button className="tab-btn" data-studio-tab="daily">
-                  Daily Market Meme
-                </button>
-                <button className="tab-btn" data-studio-tab="xpost">
-                  X Post Generator
-                </button>
-                <button className="tab-btn" data-studio-tab="story">
-                  Story Mode
-                </button>
+                <button className="tab-btn active" data-studio-tab="meme">Meme Generator</button>
+                <button className="tab-btn" data-studio-tab="daily">Daily Market Meme</button>
+                <button className="tab-btn" data-studio-tab="xpost">X Post Generator</button>
+                <button className="tab-btn" data-studio-tab="story">Story Mode</button>
               </div>
 
               <div className="studio-panel active" id="studio-meme">
@@ -496,25 +469,17 @@ export default function Home() {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Meme Prompt</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">Copy</button>
                     </div>
-                    <pre className="studio-output" id="memePromptOutput">
-                      Loading...
-                    </pre>
+                    <pre className="studio-output" id="memePromptOutput">Loading...</pre>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Scene Summary</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="memeSceneOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="memeSceneOutput">Loading...</div>
                   </div>
                 </div>
               </div>
@@ -524,13 +489,9 @@ export default function Home() {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Daily Market Meme</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="dailyMemeOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="dailyMemeOutput">Loading...</div>
                   </div>
                 </div>
               </div>
@@ -540,37 +501,25 @@ export default function Home() {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>X Caption</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostCaptionOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="xPostCaptionOutput">Loading...</div>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Alt Text</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostAltOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="xPostAltOutput">Loading...</div>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Hashtags</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostTagsOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="xPostTagsOutput">Loading...</div>
                   </div>
                 </div>
               </div>
@@ -580,13 +529,9 @@ export default function Home() {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Market Story</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">
-                        Copy
-                      </button>
+                      <button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">Copy</button>
                     </div>
-                    <div className="studio-output prose-output" id="storyModeOutput">
-                      Loading...
-                    </div>
+                    <div className="studio-output prose-output" id="storyModeOutput">Loading...</div>
                   </div>
                 </div>
               </div>
@@ -601,21 +546,15 @@ export default function Home() {
               <h2>About WojakMeter</h2>
               <p>
                 WojakMeter is a crypto market sentiment index designed to measure the emotional
-                state of the cryptocurrency market in real time. The platform analyzes price
-                momentum, social sentiment and macroeconomic drivers to identify the prevailing
-                mood across the crypto ecosystem.
+                state of the cryptocurrency market in real time.
               </p>
               <p>
                 Financial markets are strongly influenced by psychology. Fear, uncertainty,
                 optimism and euphoria often drive market cycles more than fundamentals.
-                WojakMeter translates these complex behavioral patterns into a simple visual
-                indicator that helps traders quickly understand the emotional dynamics of the
-                market.
               </p>
               <p>
                 The index represents market emotions through seven emotional stages ranging from
-                Frustration to Euphoria, helping traders interpret the emotional behavior that
-                often drives crypto market cycles.
+                Frustration to Euphoria.
               </p>
             </section>
           </main>
