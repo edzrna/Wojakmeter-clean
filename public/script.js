@@ -1221,20 +1221,8 @@ function startAutoRefresh() {
   }, MEMES_REFRESH_MS);
 }
 
-export async function boot() {
-  try {
-    initStyle();
-
-    const savedCoin = loadSavedActiveCoin();
-    if (savedCoin) {
-      activeCoinSymbol = savedCoin;
-    }
-
-    renderScale();
-    setupButtons();
-    await loadAll();
-    startAutoRefresh();
-  } catch (error) {
-    debugMessage(`Boot failed: ${error.message}`);
-  }
+async function boot() {
+  console.log("BOOT OK");
 }
+
+window.addEventListener("DOMContentLoaded", boot);
