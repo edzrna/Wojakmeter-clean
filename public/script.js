@@ -1234,8 +1234,6 @@ export async function boot() {
     setupButtons();
     await loadAll();
     startAutoRefresh();
-
-    debugMessage("App started ✅");
   } catch (error) {
     debugMessage(`Boot failed: ${error.message}`);
   }
