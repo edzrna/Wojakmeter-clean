@@ -16,12 +16,10 @@ function getDaysFromTimeframe(timeframe) {
   }
 }
 
-export async function GET(request) {
+export default async function handler(req, res) {
   try {
-    const { searchParams } = new URL(request.url);
-
-    const coin = searchParams.get("coin") || "bitcoin";
-    const timeframe = searchParams.get("timeframe") || "1h";
+    const coin = req.query.coin || "bitcoin";
+    const timeframe = req.query.timeframe || "1h";
 
     const days = getDaysFromTimeframe(timeframe);
 
@@ -37,51 +35,26 @@ export async function GET(request) {
 
     if (!response.ok) {
       const text = await response.text();
-      return new Response(
-        JSON.stringify({
-          error: `CoinGecko error: ${response.status} ${text}`
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      return res.status(500).json({
+        error: `CoinGecko error: ${response.status} ${text}`
+      });
     }
 
     const data = await response.json();
 
     if (!data || !Array.isArray(data.prices)) {
-      return new Response(
-        JSON.stringify({
-          error: "NO_PRICES",
-          received: data
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      return res.status(200).json({
+        error: "NO_PRICES",
+        received: data
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        prices: data.prices
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      }
-    );
-
+    return res.status(200).json({
+      prices: data.prices
+    });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: error.message || "Unknown error"
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    return res.status(500).json({
+      error: error.message || "Unknown error"
+    });
   }
 }
