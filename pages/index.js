@@ -57,7 +57,7 @@ export default function Home() {
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
-        <link rel="stylesheet" href="/style.css?v=1" />
+        <link rel="stylesheet" href="/style.css?v=2" />
       </Head>
 
       <div className="style-classic">
@@ -481,4 +481,184 @@ export default function Home() {
                   Meme Generator
                 </button>
                 <button className="tab-btn" data-studio-tab="daily">
-                  Dail
+                  Daily Market Meme
+                </button>
+                <button className="tab-btn" data-studio-tab="xpost">
+                  X Post Generator
+                </button>
+                <button className="tab-btn" data-studio-tab="story">
+                  Story Mode
+                </button>
+              </div>
+
+              <div className="studio-panel active" id="studio-meme">
+                <div className="studio-grid">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Meme Prompt</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="studio-output" id="memePromptOutput">
+                      Loading...
+                    </pre>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Scene Summary</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="memeSceneOutput">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="studio-panel" id="studio-daily">
+                <div className="studio-grid studio-grid-single">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Daily Market Meme</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="dailyMemeOutput">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="studio-panel" id="studio-xpost">
+                <div className="studio-grid">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>X Caption</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostCaptionOutput">
+                      Loading...
+                    </div>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Alt Text</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostAltOutput">
+                      Loading...
+                    </div>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Hashtags</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostTagsOutput">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="studio-panel" id="studio-story">
+                <div className="studio-grid studio-grid-single">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Market Story</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="storyModeOutput">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="scale-card card">
+              <h3>EMOTIONAL SCALE</h3>
+              <div className="scale-grid" id="scaleGrid"></div>
+            </section>
+
+            <section id="about" className="about-section">
+              <h2>About WojakMeter</h2>
+              <p>
+                WojakMeter is a crypto market sentiment index designed to measure the emotional
+                state of the cryptocurrency market in real time. The platform analyzes price
+                momentum, social sentiment and macroeconomic drivers to identify the prevailing
+                mood across the crypto ecosystem.
+              </p>
+              <p>
+                Financial markets are strongly influenced by psychology. Fear, uncertainty,
+                optimism and euphoria often drive market cycles more than fundamentals.
+                WojakMeter translates these complex behavioral patterns into a simple visual
+                indicator that helps traders quickly understand the emotional dynamics of the
+                market.
+              </p>
+              <p>
+                The index represents market emotions through seven emotional stages ranging from
+                Frustration to Euphoria, helping traders interpret the emotional behavior that
+                often drives crypto market cycles.
+              </p>
+            </section>
+          </main>
+
+          <footer className="footer">
+            <div className="footer-grid">
+              <div className="footer-brand">
+                <img
+                  src="/assets/logo/wojakmeter_logo.png"
+                  className="footer-logo"
+                  alt="WojakMeter Logo"
+                />
+                <p>
+                  WojakMeter is a crypto market sentiment index that visualizes the emotional
+                  state of the cryptocurrency market using price momentum, social sentiment and
+                  macro drivers.
+                </p>
+              </div>
+
+              <div className="footer-links">
+                <h4>Navigation</h4>
+                <a href="#about">About</a>
+                <a href="#top-coins">Top Coins</a>
+                <a href="#market">Market Mood</a>
+                <a href="#wojak-studio">Wojak Studio</a>
+                <a href="#">Terms</a>
+              </div>
+
+              <div className="footer-links">
+                <h4>Community</h4>
+                <a href="https://x.com/WojakMeter" target="_blank" rel="noopener noreferrer">
+                  X / Twitter
+                </a>
+                <a href="#">Telegram</a>
+              </div>
+            </div>
+
+            <div className="footer-bottom">
+              <p>© 2026 WojakMeter. All rights reserved.</p>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </>
+  );
+}
