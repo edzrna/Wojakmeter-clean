@@ -601,21 +601,43 @@ export default function Home({ ogImageUrl }) {
               <div className="scale-grid" id="scaleGrid"></div>
             </section>
 
-            <section className="about-section card" id="about">
-              <div className="about-container">
-                <span className="about-label">🧠 About</span>
-                <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
-                <p className="about-text">
-                  We transform price action, sentiment, and macro signals into a single emotional
-                  score — so you instantly understand what the market feels like.
-                </p>
-                <p className="about-text about-text-strong">
-                  No noise. No complexity.
-                  <br />
-                  Just the emotional state of the market.
-                </p>
-              </div>
-            </section>
+<section className="about-section card" id="about">
+  <div className="about-container">
+    <span className="about-label">🧠 About</span>
+
+    <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
+
+    <p className="about-text">
+      We transform price action, sentiment, and macro signals into a single emotional score —
+      so you instantly understand what the market feels like.
+    </p>
+
+    <p className="about-text about-text-strong">
+      No noise. No complexity.
+      <br />
+      Just the emotional state of the market.
+    </p>
+
+    <div className="about-divider"></div>
+
+    <p className="about-text">
+      Wojak — also known as the <strong>“Feel Guy”</strong> — represents raw human emotion:
+      fear, doubt, confidence, euphoria.
+    </p>
+
+    <p className="about-text">
+      Crypto markets move the same way.
+    </p>
+
+    <p className="about-text about-text-strong">
+      Wojak isn’t just a meme.
+      <br />
+      He is the market.
+    </p>
+  </div>
+</section>
+             
+              
           </main>
 
           <footer className="footer">
