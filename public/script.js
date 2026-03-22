@@ -1,3 +1,13 @@
+window.onerror = function (msg, url, line, col) {
+  document.body.innerHTML = `
+    <div style="background:#071018;color:#ff6c79;padding:20px;font-family:monospace;min-height:100vh">
+      <h2>WojakMeter Error</h2>
+      <p>${msg || "Unknown error"}</p>
+      <p>${url || ""}:${line || 0}:${col || 0}</p>
+    </div>
+  `;
+};
+
 const TOP_COINS_REFRESH_MS = 15000;
 const GLOBAL_REFRESH_MS = 30000;
 const COIN_DETAILS_REFRESH_MS = 20000;
@@ -85,6 +95,7 @@ let isLoadingGlobal = false;
 let isLoadingCoinDetails = false;
 let isLoadingTrending = false;
 let isLoadingMemes = false;
+let hasBooted = false;
 
 function byId(id) {
   return document.getElementById(id);
@@ -161,6 +172,10 @@ function setImage(el, path, fallback = "") {
 
 function debugMessage(msg) {
   console.log("[WojakMeter]", msg);
+  const ticker = byId("tickerBar");
+  if (ticker && String(msg).toLowerCase().includes("failed")) {
+    ticker.innerHTML = `<span style="color:#ff6c79;">${msg}</span>`;
+  }
 }
 
 function saveActiveCoin(symbol) {
@@ -248,18 +263,14 @@ function renderTicker(coins) {
 }
 
 async function fetchJson(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  const text = await res.text();
+  const res = await fetch(url);
 
   if (!res.ok) {
+    const text = await res.text();
     throw new Error(`${url} -> ${res.status} ${text}`);
   }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`${url} -> invalid JSON: ${text}`);
-  }
+  return res.json();
 }
 
 function normalizeCoinMarketItem(item) {
@@ -1139,12 +1150,14 @@ function setupButtons() {
 
 async function loadAll() {
   debugMessage("Loading live market data...");
-  await Promise.all([
+
+  await Promise.allSettled([
     loadTopCoins(),
     loadTrendingCoins(),
     loadTopMemes(),
     loadGlobalMarket()
   ]);
+
   await loadCoinDetails();
   renderStudio();
 }
@@ -1222,6 +1235,9 @@ function startAutoRefresh() {
 }
 
 async function boot() {
+  if (hasBooted) return;
+  hasBooted = true;
+
   try {
     initStyle();
 
