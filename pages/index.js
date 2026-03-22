@@ -421,13 +421,34 @@ export default function Home({ ogImageUrl }) {
                 </div>
 
                 <div className="market-intervals">
-                  <div className="interval-box"><span>1m</span><strong id="perf1m">--</strong></div>
-                  <div className="interval-box"><span>5m</span><strong id="perf5m">--</strong></div>
-                  <div className="interval-box"><span>15m</span><strong id="perf15m">--</strong></div>
-                  <div className="interval-box"><span>1h</span><strong id="perf1h">--</strong></div>
-                  <div className="interval-box"><span>4h</span><strong id="perf4h">--</strong></div>
-                  <div className="interval-box"><span>24h</span><strong id="perf24h">--</strong></div>
-                  <div className="interval-box"><span>7d</span><strong id="perf7d">--</strong></div>
+                  <div className="interval-box">
+                    <span>1m</span>
+                    <strong id="perf1m">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>5m</span>
+                    <strong id="perf5m">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>15m</span>
+                    <strong id="perf15m">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>1h</span>
+                    <strong id="perf1h">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>4h</span>
+                    <strong id="perf4h">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>24h</span>
+                    <strong id="perf24h">--</strong>
+                  </div>
+                  <div className="interval-box">
+                    <span>7d</span>
+                    <strong id="perf7d">--</strong>
+                  </div>
                 </div>
               </section>
             </section>
@@ -439,10 +460,18 @@ export default function Home({ ogImageUrl }) {
               </div>
 
               <div className="tabs-row" id="studioTabs">
-                <button className="tab-btn active" data-studio-tab="meme">Meme Generator</button>
-                <button className="tab-btn" data-studio-tab="daily">Daily Market Meme</button>
-                <button className="tab-btn" data-studio-tab="xpost">X Post Generator</button>
-                <button className="tab-btn" data-studio-tab="story">Story Mode</button>
+                <button className="tab-btn active" data-studio-tab="meme">
+                  Meme Generator
+                </button>
+                <button className="tab-btn" data-studio-tab="daily">
+                  Daily Market Meme
+                </button>
+                <button className="tab-btn" data-studio-tab="xpost">
+                  X Post Generator
+                </button>
+                <button className="tab-btn" data-studio-tab="story">
+                  Story Mode
+                </button>
               </div>
 
               <div className="studio-panel active" id="studio-meme">
@@ -450,17 +479,31 @@ export default function Home({ ogImageUrl }) {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Meme Prompt</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="memePromptOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <pre className="studio-output" id="memePromptOutput">Loading...</pre>
+                    <pre className="studio-output" id="memePromptOutput">
+                      Loading...
+                    </pre>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Scene Summary</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="memeSceneOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="memeSceneOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="memeSceneOutput">
+                      Loading...
+                    </div>
                   </div>
                 </div>
               </div>
@@ -470,9 +513,16 @@ export default function Home({ ogImageUrl }) {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Daily Market Meme</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="dailyMemeOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="dailyMemeOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="dailyMemeOutput">
+                      Loading...
+                    </div>
                   </div>
                 </div>
               </div>
@@ -482,25 +532,46 @@ export default function Home({ ogImageUrl }) {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>X Caption</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostCaptionOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostCaptionOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="xPostCaptionOutput">
+                      Loading...
+                    </div>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Alt Text</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostAltOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostAltOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="xPostAltOutput">
+                      Loading...
+                    </div>
                   </div>
 
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Hashtags</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostTagsOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="xPostTagsOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="xPostTagsOutput">
+                      Loading...
+                    </div>
                   </div>
                 </div>
               </div>
@@ -510,31 +581,41 @@ export default function Home({ ogImageUrl }) {
                   <div className="studio-box">
                     <div className="studio-box-head">
                       <h4>Market Story</h4>
-                      <button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">Copy</button>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="storyModeOutput"
+                      >
+                        Copy
+                      </button>
                     </div>
-                    <div className="studio-output prose-output" id="storyModeOutput">Loading...</div>
+                    <div className="studio-output prose-output" id="storyModeOutput">
+                      Loading...
+                    </div>
                   </div>
                 </div>
               </div>
-           
+            </section>
 
             <section className="scale-card card">
               <h3>EMOTIONAL SCALE</h3>
               <div className="scale-grid" id="scaleGrid"></div>
-            <section class="about-section">
-  <div class="about-container">
-    <span class="about-label">🧠 About</span>
-    <h2 class="about-title">WojakMeter is the Crypto Emotion Index.</h2>
-    <p class="about-text">
-      We transform price action, sentiment, and macro signals into a single emotional score —
-      so you instantly understand what the market feels like.
-    </p>
-    <p class="about-text about-text-strong">
-      No noise. No complexity.<br>
-      Just the emotional state of the market.
-    </p>
-  </div>
-</section>
+            </section>
+
+            <section className="about-section card" id="about">
+              <div className="about-container">
+                <span className="about-label">🧠 About</span>
+                <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
+                <p className="about-text">
+                  We transform price action, sentiment, and macro signals into a single emotional
+                  score — so you instantly understand what the market feels like.
+                </p>
+                <p className="about-text about-text-strong">
+                  No noise. No complexity.
+                  <br />
+                  Just the emotional state of the market.
+                </p>
+              </div>
+            </section>
           </main>
 
           <footer className="footer">
@@ -546,9 +627,9 @@ export default function Home({ ogImageUrl }) {
                   alt="WojakMeter Logo"
                 />
                 <p>
-                  WojakMeter is a crypto market sentiment index that visualizes the emotional
-                  state of the cryptocurrency market using price momentum, social sentiment and
-                  macro drivers.
+                  WojakMeter is a crypto market sentiment index that visualizes the emotional state
+                  of the cryptocurrency market using price momentum, social sentiment and macro
+                  drivers.
                 </p>
               </div>
 
