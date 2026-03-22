@@ -790,11 +790,10 @@ img{ display:block; max-width:100%; }
 }
 
 .coin-emoji{
-  .coin-emoji{
   position:absolute;
   right:18px;
-  top:22px;
-  bottom:auto;
+  top:50%;
+  transform:translateY(-50%);
   display:flex;
   align-items:center;
   justify-content:center;
