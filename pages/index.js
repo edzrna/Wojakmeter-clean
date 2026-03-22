@@ -516,34 +516,25 @@ export default function Home({ ogImageUrl }) {
                   </div>
                 </div>
               </div>
-            </section>
+           
 
             <section className="scale-card card">
               <h3>EMOTIONAL SCALE</h3>
               <div className="scale-grid" id="scaleGrid"></div>
-            </section>
-
-            <section id="about" className="about-section">
-              <h2>About WojakMeter</h2>
-              <p>
-                WojakMeter is a crypto market sentiment index designed to measure the emotional
-                state of the cryptocurrency market in real time. The platform analyzes price
-                momentum, social sentiment and macroeconomic drivers to identify the prevailing
-                mood across the crypto ecosystem.
-              </p>
-              <p>
-                Financial markets are strongly influenced by psychology. Fear, uncertainty,
-                optimism and euphoria often drive market cycles more than fundamentals.
-                WojakMeter translates these complex behavioral patterns into a simple visual
-                indicator that helps traders quickly understand the emotional dynamics of the
-                market.
-              </p>
-              <p>
-                The index represents market emotions through seven emotional stages ranging from
-                Frustration to Euphoria, helping traders interpret the emotional behavior that
-                often drives crypto market cycles.
-              </p>
-            </section>
+            <section class="about-section">
+  <div class="about-container">
+    <span class="about-label">🧠 About</span>
+    <h2 class="about-title">WojakMeter is the Crypto Emotion Index.</h2>
+    <p class="about-text">
+      We transform price action, sentiment, and macro signals into a single emotional score —
+      so you instantly understand what the market feels like.
+    </p>
+    <p class="about-text about-text-strong">
+      No noise. No complexity.<br>
+      Just the emotional state of the market.
+    </p>
+  </div>
+</section>
           </main>
 
           <footer className="footer">
