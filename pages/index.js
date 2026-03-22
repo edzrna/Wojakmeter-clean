@@ -639,39 +639,55 @@ export default function Home({ ogImageUrl }) {
               
           </main>
 
-          <footer className="footer">
-            <div className="footer-grid">
-              <div className="footer-brand">
-                <img
-                  src="/assets/logo/wojakmeter_logo.png"
-                  className="footer-logo"
-                  alt="WojakMeter Logo"
-                />
-                
-              </div>
+          <footer class="wm-footer">
+  <div class="wm-footer-inner">
 
-              <div className="footer-links">
-                <h4>Navigation</h4>
-                <a href="#about">About</a>
-                <a href="#top-coins">Top Coins</a>
-                <a href="#market">Market Mood</a>
-                <a href="#wojak-studio">Wojak Studio</a>
-                <a href="#">Terms</a>
-              </div>
+    <!-- Brand con logo -->
+    <div class="wm-footer-brand">
+      
+      <div class="wm-footer-logo">
+        <img src="/logo.png" alt="WojakMeter logo">
+        <span>WojakMeter</span>
+      </div>
 
-              <div className="footer-links">
-                <h4>Community</h4>
-                <a href="https://x.com/WojakMeter" target="_blank" rel="noopener noreferrer">
-                  X / Twitter
-                </a>
-                <a href="#">Telegram</a>
-              </div>
-            </div>
+      <p>The crypto emotion index.</p>
+      <p class="wm-footer-vibe">
+        Reading the market so you don’t have to.
+      </p>
 
-            <div className="footer-bottom">
-              <p>© 2026 WojakMeter. All rights reserved.</p>
-            </div>
-          </footer>
+    </div>
+
+    <!-- Links -->
+    <div class="wm-footer-links">
+
+      <div class="wm-footer-col">
+        <span class="wm-footer-title">Product</span>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </div>
+
+      <div class="wm-footer-col">
+        <span class="wm-footer-title">Legal</span>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/disclaimer.html">Disclaimer</a>
+      </div>
+
+      <div class="wm-footer-col">
+        <span class="wm-footer-title">Social</span>
+        <a href="https://x.com/WojakMeter" target="_blank">@WojakMeter</a>
+        <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="wm-footer-bottom">
+    <p>© 2026 WojakMeter. All rights reserved.</p>
+  </div>
+</footer>
+                 
         </div>
       </div>
     </>
