@@ -6,62 +6,25 @@ export const config = {
 
 function moodColor(mood) {
   const map = {
-    Frustration: "#ff3b4d",
-    Concern: "#ff6c79",
-    Doubt: "#ff9da6",
-    Neutral: "#ffffff",
-    Optimism: "#a6ffc4",
-    Content: "#7cffaa",
-    Euphoria: "#4dff88"
+    frustration: "#ff3b4d",
+    concern: "#ff6c79",
+    doubt: "#ff9da6",
+    neutral: "#ffffff",
+    optimism: "#a6ffc4",
+    content: "#7cffaa",
+    euphoria: "#4dff88"
   };
   return map[mood] || "#ffffff";
 }
 
-function styleLabel(style) {
-  if (style === "3d") return "3D";
-  if (style === "anime") return "Anime";
-  if (style === "minimal") return "Minimal";
-  return "Classic";
-}
-
-function normalizeMood(value) {
-  const raw = String(value || "Neutral").trim().toLowerCase();
-  const map = {
-    frustration: "Frustration",
-    concern: "Concern",
-    doubt: "Doubt",
-    neutral: "Neutral",
-    optimism: "Optimism",
-    content: "Content",
-    euphoria: "Euphoria"
-  };
-  return map[raw] || "Neutral";
-}
-
-function normalizeStyle(value) {
-  const raw = String(value || "classic").trim().toLowerCase();
-  const allowed = ["classic", "3d", "anime", "minimal"];
-  return allowed.includes(raw) ? raw : "classic";
-}
-
-export default async function handler(req) {
+export default function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const mood = normalizeMood(searchParams.get("mood"));
+    const mood = String(searchParams.get("mood") || "neutral").toLowerCase();
     const score = searchParams.get("score") || "50";
-    const tf = searchParams.get("tf") || "1h";
-
-    const rawChange = Number(searchParams.get("change") || "0");
-    const change = Number.isFinite(rawChange) ? rawChange : 0;
-
-    const volume = searchParams.get("volume") || "--";
-    const driver = searchParams.get("driver") || "Market flow / price action";
     const coin = searchParams.get("coin") || "BTC";
-    const style = normalizeStyle(searchParams.get("style"));
-
-    const baseUrl = "https://wojakmeter.com";
-    const heroSrc = `${baseUrl}/assets/hero/${style}/${mood.toLowerCase()}.png`;
+    const tf = searchParams.get("tf") || "1h";
     const accent = moodColor(mood);
 
     return new ImageResponse(
@@ -71,168 +34,78 @@ export default async function handler(req) {
             width: "1200px",
             height: "630px",
             display: "flex",
-            position: "relative",
-            overflow: "hidden",
-            background:
-              "radial-gradient(circle at top center, rgba(102,184,255,.10), transparent 24%), radial-gradient(circle at 20% 20%, rgba(77,255,136,.06), transparent 18%), linear-gradient(180deg, #071018 0%, #0b1622 100%)",
+            background: "linear-gradient(180deg, #071018 0%, #0b1622 100%)",
             color: "#f5f7fb",
-            fontFamily: "Arial, sans-serif"
+            fontFamily: "Arial, sans-serif",
+            padding: "40px",
+            alignItems: "center",
+            justifyContent: "space-between"
           }}
         >
           <div
             style={{
-              position: "absolute",
-              inset: 24,
-              borderRadius: 30,
-              border: "1px solid rgba(255,255,255,.10)",
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), linear-gradient(180deg, #132235 0%, #101c2b 100%)",
               display: "flex",
-              padding: 34
+              flexDirection: "column",
+              width: "55%"
             }}
           >
             <div
               style={{
-                width: "42%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                paddingRight: 24
+                fontSize: 18,
+                letterSpacing: "0.18em",
+                color: "#9eacbf",
+                marginBottom: 18
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column"
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 18,
-                    letterSpacing: "0.18em",
-                    color: "#9eacbf",
-                    marginBottom: 18
-                  }}
-                >
-                  WOJAKMETER
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 70,
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    color: accent,
-                    marginBottom: 12
-                  }}
-                >
-                  {mood}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 28,
-                    color: "#ffffff",
-                    marginBottom: 26
-                  }}
-                >
-                  {coin} · Score {score}/100
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 12
-                  }}
-                >
-                  <div style={pillStyle}>
-                    <span style={pillLabel}>Timeframe</span>
-                    <span style={pillValue}>{tf}</span>
-                  </div>
-
-                  <div style={pillStyle}>
-                    <span style={pillLabel}>Move</span>
-                    <span style={pillValue}>
-                      {change >= 0 ? "+" : ""}
-                      {change.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  <div style={pillStyle}>
-                    <span style={pillLabel}>Volume</span>
-                    <span style={pillValue}>{volume}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 16,
-                    color: "#9eacbf"
-                  }}
-                >
-                  Driver
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 26,
-                    color: "#ffffff",
-                    lineHeight: 1.2
-                  }}
-                >
-                  {driver}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: 18,
-                    color: "#9eacbf"
-                  }}
-                >
-                  Style: {styleLabel(style)} · wojakmeter.com
-                </div>
-              </div>
+              WOJAKMETER
             </div>
 
             <div
               style={{
-                width: "58%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative"
+                fontSize: 76,
+                fontWeight: 800,
+                color: accent,
+                marginBottom: 12,
+                textTransform: "capitalize"
               }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  width: 440,
-                  height: 440,
-                  borderRadius: "50%",
-                  background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`
-                }}
-              />
-
-              <img
-                src={heroSrc}
-                alt={`${mood} hero`}
-                width="430"
-                height="430"
-                style={{
-                  objectFit: "contain"
-                }}
-              />
+              {mood}
             </div>
+
+            <div
+              style={{
+                fontSize: 30,
+                color: "#ffffff",
+                marginBottom: 24
+              }}
+            >
+              {coin} · Score {score}/100 · {tf}
+            </div>
+
+            <div
+              style={{
+                fontSize: 22,
+                color: "#9eacbf"
+              }}
+            >
+              wojakmeter.com
+            </div>
+          </div>
+
+          <div
+            style={{
+              width: "320px",
+              height: "320px",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 160,
+              background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
+              border: "1px solid rgba(255,255,255,.10)"
+            }}
+          >
+            📈
           </div>
         </div>
       ),
@@ -255,23 +128,3 @@ export default async function handler(req) {
     );
   }
 }
-
-const pillStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  padding: "12px 14px",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#101c2b"
-};
-
-const pillLabel = {
-  fontSize: 12,
-  color: "#9eacbf"
-};
-
-const pillValue = {
-  fontSize: 22,
-  color: "#ffffff"
-};
