@@ -4,40 +4,54 @@ import Script from "next/script";
 export default function Home() {
   return (
     <>
-      <Head>
-        <title>WojakMeter | Crypto Market Sentiment & Emotion Index</title>
-        <meta
-          name="description"
-          content="WojakMeter tracks the emotional state of the crypto market using price momentum, social sentiment and macro events."
-        />
-        <meta
-          name="keywords"
-          content="crypto sentiment, bitcoin sentiment, crypto emotion index, crypto market mood, fear and greed crypto, wojakmeter"
-        />
+      
+<Head>
+  <title>WojakMeter | Crypto Market Sentiment & Emotion Index</title>
 
-        <meta property="og:title" content="WojakMeter | The Crypto Emotion Index" />
-        <meta
-          property="og:description"
-          content="Track the emotional state of the crypto market using price momentum, social sentiment and macro events."
-        />
-        <meta property="og:image" content="https://wojakmeter.com/assets/preview.jpg" />
-        <meta property="og:url" content="https://wojakmeter.com" />
-        <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content="WojakMeter tracks the emotional state of the crypto market using price momentum, social sentiment and macro events."
+  />
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="WojakMeter | Crypto Emotion Index" />
-        <meta
-          name="twitter:description"
-          content="Track the emotional state of the crypto market with WojakMeter."
-        />
-        <meta name="twitter:image" content="https://wojakmeter.com/assets/preview.jpg" />
+  <meta
+    name="keywords"
+    content="crypto sentiment, bitcoin sentiment, crypto emotion index, crypto market mood, fear and greed crypto, wojakmeter"
+  />
 
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <link rel="stylesheet" href="/style.css?v=3" />
-      </Head>
+  {/* OPEN GRAPH */}
+  <meta property="og:title" content="WojakMeter | The Crypto Emotion Index" />
+  <meta
+    property="og:description"
+    content="Track the emotional state of the crypto market using price momentum, social sentiment and macro events."
+  />
+  <meta
+    property="og:image"
+    content="https://wojakmeter.com/api/og?mood=neutral&score=50&coin=BTC&tf=1h"
+  />
+  <meta property="og:url" content="https://wojakmeter.com" />
+  <meta property="og:type" content="website" />
+
+  {/* TWITTER */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="WojakMeter | Crypto Emotion Index" />
+  <meta
+    name="twitter:description"
+    content="Track the emotional state of the crypto market with WojakMeter."
+  />
+  <meta
+    name="twitter:image"
+    content="https://wojakmeter.com/api/og?mood=neutral&score=50&coin=BTC&tf=1h"
+  />
+
+  {/* FONTS */}
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  {/* CSS */}
+  <link rel="stylesheet" href="/style.css?v=6" />
+</Head>      
 
       <Script src="/script.js?v=3" strategy="afterInteractive" />
 
