@@ -557,9 +557,30 @@ https://wojakmeter.com
 }
 
 function shareMoodOnX() {
-  const text = buildShareMoodText();
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url, "_blank", "noopener,noreferrer");
+  const mood = currentGlobalMood?.name || byId("heroMood")?.textContent || "Neutral";
+  const score = byId("heroScore")?.textContent || "50";
+  const change = byId("globalMarketChange")?.textContent || formatPercent(currentGlobalChange);
+  const timeframe = globalTimeframe || "1h";
+  const volume = byId("globalMarketVolume")?.textContent || "--";
+  const macroLabel = byId("driverMacro")?.textContent || "Market flow";
+
+  const text =
+`Crypto market mood: ${mood} (${score}/100)
+
+Timeframe: ${timeframe}
+Move: ${change}
+Volume: ${volume}
+Driver: ${macroLabel}
+
+Track it live 👇`;
+
+  // 🔥 AQUÍ ESTÁ LA MAGIA (OG dinámico)
+  const ogUrl = `https://wojakmeter.com/api/og?mood=${encodeURIComponent(mood)}&score=${score}&tf=${timeframe}&change=${encodeURIComponent(currentGlobalChange)}&volume=${encodeURIComponent(volume)}&driver=${encodeURIComponent(macroLabel)}&coin=${activeCoinSymbol}&style=${getCurrentStyle()}&ts=${Date.now()}`;
+
+  const tweetUrl =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(ogUrl)}`;
+
+  window.open(tweetUrl, "_blank", "noopener,noreferrer");
 }
 
 function setStudioOutput(id, value) {
