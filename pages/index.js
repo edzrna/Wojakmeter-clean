@@ -1,59 +1,47 @@
 import Head from "next/head";
 import Script from "next/script";
 
-export default function Home() {
+export default function Home({ ogImageUrl }) {
   return (
     <>
-      
-<Head>
-  <title>WojakMeter | Crypto Market Sentiment & Emotion Index</title>
+      <Head>
+        <title>WojakMeter | Crypto Market Sentiment & Emotion Index</title>
 
-  <meta
-    name="description"
-    content="WojakMeter tracks the emotional state of the crypto market using price momentum, social sentiment and macro events."
-  />
+        <meta
+          name="description"
+          content="WojakMeter tracks the emotional state of the crypto market using price momentum, social sentiment and macro events."
+        />
 
-  <meta
-    name="keywords"
-    content="crypto sentiment, bitcoin sentiment, crypto emotion index, crypto market mood, fear and greed crypto, wojakmeter"
-  />
+        <meta
+          name="keywords"
+          content="crypto sentiment, bitcoin sentiment, crypto emotion index, crypto market mood, fear and greed crypto, wojakmeter"
+        />
 
-  {/* OPEN GRAPH */}
-  <meta property="og:title" content="WojakMeter | The Crypto Emotion Index" />
-  <meta
-    property="og:description"
-    content="Track the emotional state of the crypto market using price momentum, social sentiment and macro events."
-  />
-  <meta
-    property="og:image"
-    content="https://wojakmeter.com/api/og?mood=neutral&score=50&coin=BTC&tf=1h"
-  />
-  <meta property="og:url" content="https://wojakmeter.com" />
-  <meta property="og:type" content="website" />
+        <meta property="og:title" content="WojakMeter | The Crypto Emotion Index" />
+        <meta
+          property="og:description"
+          content="Track the emotional state of the crypto market using price momentum, social sentiment and macro events."
+        />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:url" content="https://wojakmeter.com" />
+        <meta property="og:type" content="website" />
 
-  {/* TWITTER */}
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="WojakMeter | Crypto Emotion Index" />
-  <meta
-    name="twitter:description"
-    content="Track the emotional state of the crypto market with WojakMeter."
-  />
-  <meta
-    name="twitter:image"
-    content="https://wojakmeter.com/api/og?mood=neutral&score=50&coin=BTC&tf=1h"
-  />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="WojakMeter | Crypto Emotion Index" />
+        <meta
+          name="twitter:description"
+          content="Track the emotional state of the crypto market with WojakMeter."
+        />
+        <meta name="twitter:image" content={ogImageUrl} />
 
-  {/* FONTS */}
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/style.css?v=6" />
+      </Head>
 
-  {/* CSS */}
-  <link rel="stylesheet" href="/style.css?v=6" />
-</Head>      
-
-      <Script src="/script.js?v=3" strategy="afterInteractive" />
+      <Script src="/script.js?v=6" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -599,4 +587,64 @@ export default function Home() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps() {
+  try {
+    const headers = { accept: "application/json" };
+
+    if (process.env.CG_API_KEY) {
+      headers["x-cg-demo-api-key"] = process.env.CG_API_KEY;
+    }
+
+    const response = await fetch("https://api.coingecko.com/api/v3/global", { headers });
+    const json = await response.json();
+    const data = json?.data;
+
+    const change = Number(data?.market_cap_change_percentage_24h_usd ?? 0);
+    const volumeUsd = Number(data?.total_volume?.usd ?? 0);
+
+    let score = Math.round(Math.max(0, Math.min(100, 50 + change * 10)));
+    let mood = "neutral";
+
+    if (score >= 85) mood = "euphoria";
+    else if (score >= 70) mood = "content";
+    else if (score >= 60) mood = "optimism";
+    else if (score >= 45) mood = "neutral";
+    else if (score >= 35) mood = "doubt";
+    else if (score >= 20) mood = "concern";
+    else mood = "frustration";
+
+    const volumeCompact =
+      volumeUsd >= 1e12
+        ? `$${(volumeUsd / 1e12).toFixed(2)}T`
+        : volumeUsd >= 1e9
+          ? `$${(volumeUsd / 1e9).toFixed(2)}B`
+          : volumeUsd >= 1e6
+            ? `$${(volumeUsd / 1e6).toFixed(2)}M`
+            : `$${volumeUsd.toFixed(0)}`;
+
+    const ogImageUrl =
+      `https://wojakmeter.com/api/og` +
+      `?mood=${encodeURIComponent(mood)}` +
+      `&score=${encodeURIComponent(score)}` +
+      `&tf=1h` +
+      `&change=${encodeURIComponent(change.toFixed(2))}` +
+      `&volume=${encodeURIComponent(volumeCompact)}` +
+      `&coin=BTC` +
+      `&style=classic`;
+
+    return {
+      props: {
+        ogImageUrl
+      }
+    };
+  } catch {
+    return {
+      props: {
+        ogImageUrl:
+          "https://wojakmeter.com/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=BTC&style=classic"
+      }
+    };
+  }
 }
