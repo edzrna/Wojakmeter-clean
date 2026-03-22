@@ -626,11 +626,7 @@ export default function Home({ ogImageUrl }) {
                   className="footer-logo"
                   alt="WojakMeter Logo"
                 />
-                <p>
-                  WojakMeter is a crypto market sentiment index that visualizes the emotional state
-                  of the cryptocurrency market using price momentum, social sentiment and macro
-                  drivers.
-                </p>
+                
               </div>
 
               <div className="footer-links">
