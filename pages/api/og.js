@@ -24,24 +24,44 @@ function styleLabel(style) {
   return "Classic";
 }
 
+function normalizeMood(value) {
+  const raw = String(value || "Neutral").trim().toLowerCase();
+  const map = {
+    frustration: "Frustration",
+    concern: "Concern",
+    doubt: "Doubt",
+    neutral: "Neutral",
+    optimism: "Optimism",
+    content: "Content",
+    euphoria: "Euphoria"
+  };
+  return map[raw] || "Neutral";
+}
+
+function normalizeStyle(value) {
+  const raw = String(value || "classic").trim().toLowerCase();
+  const allowed = ["classic", "3d", "anime", "minimal"];
+  return allowed.includes(raw) ? raw : "classic";
+}
+
 export default async function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const mood = searchParams.get("mood") || "Neutral";
+    const mood = normalizeMood(searchParams.get("mood"));
     const score = searchParams.get("score") || "50";
     const tf = searchParams.get("tf") || "1h";
+
     const rawChange = Number(searchParams.get("change") || "0");
     const change = Number.isFinite(rawChange) ? rawChange : 0;
+
     const volume = searchParams.get("volume") || "--";
     const driver = searchParams.get("driver") || "Market flow / price action";
     const coin = searchParams.get("coin") || "BTC";
-    const style = searchParams.get("style") || "classic";
+    const style = normalizeStyle(searchParams.get("style"));
 
-    const host = req.headers.get("host");
-    const proto = req.headers.get("x-forwarded-proto") || "https";
-    const baseUrl = `${proto}://${host}`;
-    const heroSrc = `${baseUrl}/assets/hero/${style}/${String(mood).toLowerCase()}.png`;
+    const baseUrl = "https://wojakmeter.com";
+    const heroSrc = `${baseUrl}/assets/hero/${style}/${mood.toLowerCase()}.png`;
     const accent = moodColor(mood);
 
     return new ImageResponse(
@@ -56,7 +76,7 @@ export default async function handler(req) {
             background:
               "radial-gradient(circle at top center, rgba(102,184,255,.10), transparent 24%), radial-gradient(circle at 20% 20%, rgba(77,255,136,.06), transparent 18%), linear-gradient(180deg, #071018 0%, #0b1622 100%)",
             color: "#f5f7fb",
-            fontFamily: "Arial"
+            fontFamily: "Arial, sans-serif"
           }}
         >
           <div
@@ -202,6 +222,7 @@ export default async function handler(req) {
                   background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`
                 }}
               />
+
               <img
                 src={heroSrc}
                 alt={`${mood} hero`}
