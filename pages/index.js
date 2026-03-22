@@ -608,8 +608,7 @@ export default function Home({ ogImageUrl }) {
     <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
 
     <p className="about-text">
-      We transform price action, sentiment, and macro signals into a single emotional score —
-      so you instantly understand what the market feels like.
+      We transform price action, sentiment, and macro signals into a single emotional score so you instantly understand what the market feels like.
     </p>
 
     <p className="about-text about-text-strong">
@@ -621,7 +620,7 @@ export default function Home({ ogImageUrl }) {
     <div className="about-divider"></div>
 
     <p className="about-text">
-      Wojak — also known as the <strong>“Feel Guy”</strong> — represents raw human emotion:
+      Wojak, also known as the <strong>“Feel Guy”</strong> represents raw human emotion:
       fear, doubt, confidence, euphoria.
     </p>
 
