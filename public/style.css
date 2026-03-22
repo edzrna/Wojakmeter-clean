@@ -800,8 +800,8 @@ img{ display:block; max-width:100%; }
 }
 
 .coin-emoji img{
-  width:68px;
-  height:68px;
+  width:35px;
+  height:35px;
   object-fit:contain;
 }
 
