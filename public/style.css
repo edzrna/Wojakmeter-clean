@@ -1569,3 +1569,48 @@ body.style-minimal .logo-img{
 }
 
 }
+
+.about-section{
+  margin-top:24px;
+  padding:28px;
+  border-radius:20px;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 16px 40px rgba(0,0,0,.22);
+}
+
+.about-container{
+  max-width:760px;
+}
+
+.about-label{
+  display:inline-block;
+  margin-bottom:10px;
+  font-family:var(--font-ui);
+  font-size:.95rem;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.about-title{
+  margin:0 0 14px;
+  font-family:var(--font-display);
+  font-size:clamp(1.8rem, 3vw, 2.7rem);
+  line-height:1.05;
+  color:var(--title);
+}
+
+.about-text{
+  margin:0 0 14px;
+  font-size:1rem;
+  line-height:1.75;
+  color:var(--text);
+  max-width:720px;
+}
+
+.about-text-strong{
+  font-weight:600;
+  color:#ffffff;
+}
