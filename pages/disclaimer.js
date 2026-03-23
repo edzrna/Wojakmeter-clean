@@ -7,11 +7,11 @@ export default function DisclaimerPage() {
 
         <div className="legal-topbar">
           <Link href="/" className="legal-brand">
-            <img src="/logo.png" className="legal-logo" />
-            <div className="legal-brand-copy">
-              <strong>WojakMeter</strong>
-              <span>The Crypto Emotion Index</span>
-            </div>
+            <img
+              src="/assets/logo/wojakmeter_logo.png"
+              className="legal-logo"
+              alt="WojakMeter Logo"
+            />
           </Link>
 
           <Link href="/" className="legal-back">
@@ -55,15 +55,4 @@ export default function DisclaimerPage() {
           </section>
 
           <section className="legal-card">
-            <h2>User Responsibility</h2>
-            <p>
-              You are responsible for your own decisions.
-            </p>
-          </section>
-
-        </div>
-
-      </div>
-    </main>
-  );
-}
+            <h2
