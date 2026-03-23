@@ -639,51 +639,69 @@ export default function Home({ ogImageUrl }) {
               
           </main>
 
-          <footer class="wm-footer">
-  <div class="wm-footer-inner">
+         <footer className="wm-footer">
+  <div className="wm-footer-inner">
 
-    <!-- Brand con logo -->
-    <div class="wm-footer-brand">
-      
-      <div class="wm-footer-logo">
-        <img src="/logo.png" alt="WojakMeter logo">
+    {/* Brand con logo */}
+    <div className="wm-footer-brand">
+      <div className="wm-footer-logo">
+        <img
+          src="/assets/logo/wojakmeter_logo.png"
+          alt="WojakMeter logo"
+        />
         <span>WojakMeter</span>
       </div>
 
       <p>The crypto emotion index.</p>
-      <p class="wm-footer-vibe">
+      <p className="wm-footer-vibe">
         Reading the market so you don’t have to.
       </p>
-
     </div>
 
-    <!-- Links -->
-    <div class="wm-footer-links">
+    {/* Links */}
+    <div className="wm-footer-links">
 
-      <div class="wm-footer-col">
-        <span class="wm-footer-title">Product</span>
+      <div className="wm-footer-col">
+        <span className="wm-footer-title">Product</span>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </div>
 
-      <div class="wm-footer-col">
-        <span class="wm-footer-title">Legal</span>
+      <div className="wm-footer-col">
+        <span className="wm-footer-title">Legal</span>
         <a href="/privacy.html">Privacy Policy</a>
         <a href="/terms.html">Terms</a>
         <a href="/disclaimer.html">Disclaimer</a>
       </div>
 
-      <div class="wm-footer-col">
-        <span class="wm-footer-title">Social</span>
-        <a href="https://x.com/WojakMeter" target="_blank">@WojakMeter</a>
-        <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
+      <div className="wm-footer-col">
+        <span className="wm-footer-title">Social</span>
+
+        <a
+          href="https://x.com/WojakMeter"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span className="x-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
+              />
+            </svg>
+          </span>
+          @WojakMeter
+        </a>
+
+        <a href="mailto:contact@wojakmeter.com">
+          contact@wojakmeter.com
+        </a>
       </div>
 
     </div>
-
   </div>
 
-  <div class="wm-footer-bottom">
+  <div className="wm-footer-bottom">
     <p>© 2026 WojakMeter. All rights reserved.</p>
   </div>
 </footer>
