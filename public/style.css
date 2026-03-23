@@ -1614,7 +1614,73 @@ body.style-minimal .logo-img{
   font-weight:600;
   color:#ffffff;
 }
+.wm-footer{
+  background:#050d16;
+  border-top:1px solid var(--line);
+  padding:60px 20px 30px;
+}
 
+.wm-footer-inner{
+  max-width:1100px;
+  margin:0 auto;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:40px;
+}
+
+.wm-footer-brand p{
+  color:var(--muted);
+  font-size:14px;
+}
+
+.wm-footer-links{
+  display:flex;
+  gap:60px;
+  flex-wrap:wrap;
+}
+
+.wm-footer-col{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.wm-footer-title{
+  font-size:13px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:10px;
+}
+
+.wm-footer-col a{
+  text-decoration:none;
+  color:var(--text);
+  font-size:14px;
+  transition:.2s;
+  display:flex;
+  align-items:center;
+}
+
+.wm-footer-col a:hover{
+  color:#ffffff;
+  opacity:.85;
+}
+
+.wm-footer-bottom{
+  text-align:center;
+  margin-top:40px;
+  padding-top:20px;
+  border-top:1px solid var(--line-soft);
+}
+
+.wm-footer-bottom p{
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* Logo */
 .wm-footer-logo{
   display:flex;
   align-items:center;
@@ -1632,4 +1698,25 @@ body.style-minimal .logo-img{
   font-family:var(--font-display);
   font-size:20px;
   letter-spacing:-0.5px;
+  color:#fff;
+}
+
+/* Tagline */
+.wm-footer-vibe{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:6px;
+}
+
+/* X icon */
+.x-icon{
+  display:inline-flex;
+  align-items:center;
+  margin-right:8px;
+}
+
+.x-icon svg{
+  width:16px;
+  height:16px;
+  opacity:.9;
 }
