@@ -659,7 +659,7 @@ export default function Home({ ogImageUrl }) {
       </div>
 
       <div className="wm-footer-col">
-        <h4 className="wm-footer-title">Legal</h4>
+        <h4 className="wm-footer-title"><a href="/terms">Terms</a></h4>
         <a href="/terms.html">Terms</a>
         <a href="/privacy.html">Privacy Policy</a>
         <a href="/disclaimer.html">Disclaimer</a>
