@@ -639,51 +639,50 @@ export default function Home({ ogImageUrl }) {
               
           </main>
 
-         <footer className="wm-footer">
+          
+    <footer className="wm-footer">
   <div className="wm-footer-inner">
-
-    {/* Brand con logo */}
     <div className="wm-footer-brand">
       <div className="wm-footer-logo">
         <img
           src="/assets/logo/wojakmeter_logo.png"
-          alt="WojakMeter logo"
+          alt="WojakMeter Logo"
+          className="wm-footer-logo-img"
         />
         <span>WojakMeter</span>
       </div>
 
-      <p>The crypto emotion index.</p>
+      <p className="wm-footer-tagline">The crypto emotion index.</p>
       <p className="wm-footer-vibe">
         Reading the market so you don’t have to.
       </p>
     </div>
 
-    {/* Links */}
-    <div className="wm-footer-links">
-
+    <div className="wm-footer-links-wrap">
       <div className="wm-footer-col">
-        <span className="wm-footer-title">Product</span>
+        <h4 className="wm-footer-title">Navigation</h4>
         <a href="#about">About</a>
-        <a href="#contact">Contact</a>
+        <a href="#top-coins">Top Coins</a>
+        <a href="#market">Market Mood</a>
+        <a href="#wojak-studio">Wojak Studio</a>
       </div>
 
       <div className="wm-footer-col">
-        <span className="wm-footer-title">Legal</span>
-        <a href="/privacy.html">Privacy Policy</a>
+        <h4 className="wm-footer-title">Legal</h4>
         <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy Policy</a>
         <a href="/disclaimer.html">Disclaimer</a>
       </div>
 
       <div className="wm-footer-col">
-        <span className="wm-footer-title">Social</span>
-
+        <h4 className="wm-footer-title">Community</h4>
         <a
           href="https://x.com/WojakMeter"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
-          <span className="x-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
+          <span className="x-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
               <path
                 fill="currentColor"
                 d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
@@ -692,12 +691,9 @@ export default function Home({ ogImageUrl }) {
           </span>
           @WojakMeter
         </a>
-
-        <a href="mailto:contact@wojakmeter.com">
-          contact@wojakmeter.com
-        </a>
+        <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
+        <a href="#">Telegram</a>
       </div>
-
     </div>
   </div>
 
