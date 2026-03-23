@@ -1,5 +1,6 @@
-requireimport Head from "next/head";
+import Head from "next/head";
 import Script from "next/script";
+import Link from "next/link";
 
 export default function Home({ ogImageUrl }) {
   return (
@@ -38,7 +39,6 @@ export default function Home({ ogImageUrl }) {
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
-        <link rel="stylesheet" href="/style.css?v=6" />
       </Head>
 
       <Script src="/script.js?v=6" strategy="afterInteractive" />
@@ -601,101 +601,96 @@ export default function Home({ ogImageUrl }) {
               <div className="scale-grid" id="scaleGrid"></div>
             </section>
 
-<section className="about-section card" id="about">
-  <div className="about-container">
-    <span className="about-label">🧠 About</span>
+            <section className="about-section card" id="about">
+              <div className="about-container">
+                <span className="about-label">🧠 About</span>
 
-    <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
+                <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
 
-    <p className="about-text">
-      We transform price action, sentiment, and macro signals into a single emotional score so you instantly understand what the market feels like.
-    </p>
+                <p className="about-text">
+                  We transform price action, sentiment, and macro signals into a single emotional
+                  score so you instantly understand what the market feels like.
+                </p>
 
-    <p className="about-text about-text-strong">
-      No noise. No complexity.
-      <br />
-      Just the emotional state of the market.
-    </p>
+                <p className="about-text about-text-strong">
+                  No noise. No complexity.
+                  <br />
+                  Just the emotional state of the market.
+                </p>
 
-    <div className="about-divider"></div>
+                <div className="about-divider"></div>
 
-    <p className="about-text">
-      Wojak, also known as the <strong>“Feel Guy”</strong> represents raw human emotion:
-      fear, doubt, confidence, euphoria.
-    </p>
+                <p className="about-text">
+                  Wojak, also known as the <strong>“Feel Guy”</strong> represents raw human
+                  emotion: fear, doubt, confidence, euphoria.
+                </p>
 
-    <p className="about-text">
-      Crypto markets move the same way.
-    </p>
+                <p className="about-text">Crypto markets move the same way.</p>
 
-    <p className="about-text about-text-strong">
-      Wojak isn’t just a meme.
-      <br />
-      He is the market.
-    </p>
-  </div>
-</section>
-             
-              
+                <p className="about-text about-text-strong">
+                  Wojak isn’t just a meme.
+                  <br />
+                  He is the market.
+                </p>
+              </div>
+            </section>
           </main>
 
-        <footer className="wm-footer">
-  <div className="wm-footer-inner">
-    <div className="wm-footer-brand">
-      <img
-        src="/assets/logo/wojakmeter_logo.png"
-        alt="WojakMeter Logo"
-        className="wm-footer-logo-img"
-      />
-    </div>
+          <footer className="wm-footer">
+            <div className="wm-footer-inner">
+              <div className="wm-footer-brand">
+                <img
+                  src="/assets/logo/wojakmeter_logo.png"
+                  alt="WojakMeter Logo"
+                  className="wm-footer-logo-img"
+                />
+              </div>
 
-    <div className="wm-footer-links-wrap">
-      <div className="wm-footer-col">
-        <h4 className="wm-footer-title">Navigation</h4>
-        <a href="#about">About</a>
-        <a href="#top-coins">Top Coins</a>
-        <a href="#market">Market Mood</a>
-        <a href="#wojak-studio">Wojak Studio</a>
-      </div>
+              <div className="wm-footer-links-wrap">
+                <div className="wm-footer-col">
+                  <h4 className="wm-footer-title">Navigation</h4>
+                  <a href="#about">About</a>
+                  <a href="#top-coins">Top Coins</a>
+                  <a href="#market">Market Mood</a>
+                  <a href="#wojak-studio">Wojak Studio</a>
+                </div>
 
-      <div className="wm-footer-col">
-        <h4 className="wm-footer-title">Legal</h4>
-        <Link href="/terms">Terms</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/disclaimer">Disclaimer</Link>
-      </div>
+                <div className="wm-footer-col">
+                  <h4 className="wm-footer-title">Legal</h4>
+                  <Link href="/terms">Terms</Link>
+                  <Link href="/privacy">Privacy</Link>
+                  <Link href="/disclaimer">Disclaimer</Link>
+                </div>
 
-      <div className="wm-footer-col">
-        <h4 className="wm-footer-title">Community</h4>
+                <div className="wm-footer-col">
+                  <h4 className="wm-footer-title">Community</h4>
 
-        <a
-          href="https://x.com/WojakMeter"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className="x-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
-              />
-            </svg>
-          </span>
-          @WojakMeter
-        </a>
+                  <a
+                    href="https://x.com/WojakMeter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="x-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          fill="currentColor"
+                          d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
+                        />
+                      </svg>
+                    </span>
+                    @WojakMeter
+                  </a>
 
-        <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
-        <a href="#">Telegram</a>
-      </div>
-    </div>
-  </div>
+                  <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
+                  <a href="#">Telegram</a>
+                </div>
+              </div>
+            </div>
 
-  <div className="wm-footer-bottom">
-    <p>© 2026 WojakMeter. All rights reserved.</p>
-  </div>
-</footer>
-  
-                 
+            <div className="wm-footer-bottom">
+              <p>© 2026 WojakMeter. All rights reserved.</p>
+            </div>
+          </footer>
         </div>
       </div>
     </>
