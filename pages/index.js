@@ -1,4 +1,4 @@
-import Head from "next/head";
+8requireimport Head from "next/head";
 import Script from "next/script";
 
 export default function Home({ ogImageUrl }) {
@@ -659,10 +659,10 @@ export default function Home({ ogImageUrl }) {
       </div>
 
       <div className="wm-footer-col">
-        <a href="/terms">Terms</a>
-      
-        <a href="/privacy">Privacy</a>
-        <a href="/disclaimer">Disclaimer</a>
+        <h4 className="wm-footer-title">Legal</h4>
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/disclaimer">Disclaimer</Link>
       </div>
 
       <div className="wm-footer-col">
@@ -694,6 +694,7 @@ export default function Home({ ogImageUrl }) {
     <p>© 2026 WojakMeter. All rights reserved.</p>
   </div>
 </footer>
+  
                  
         </div>
       </div>
