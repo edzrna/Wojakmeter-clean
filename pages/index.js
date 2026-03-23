@@ -639,23 +639,14 @@ export default function Home({ ogImageUrl }) {
               
           </main>
 
-          
-    <footer className="wm-footer">
+        <footer className="wm-footer">
   <div className="wm-footer-inner">
     <div className="wm-footer-brand">
-      <div className="wm-footer-logo">
-        <img
-          src="/assets/logo/wojakmeter_logo.png"
-          alt="WojakMeter Logo"
-          className="wm-footer-logo-img"
-        />
-        <span>WojakMeter</span>
-      </div>
-
-      <p className="wm-footer-tagline">The crypto emotion index.</p>
-      <p className="wm-footer-vibe">
-        Reading the market so you don’t have to.
-      </p>
+      <img
+        src="/assets/logo/wojakmeter_logo.png"
+        alt="WojakMeter Logo"
+        className="wm-footer-logo-img"
+      />
     </div>
 
     <div className="wm-footer-links-wrap">
@@ -676,6 +667,7 @@ export default function Home({ ogImageUrl }) {
 
       <div className="wm-footer-col">
         <h4 className="wm-footer-title">Community</h4>
+
         <a
           href="https://x.com/WojakMeter"
           target="_blank"
@@ -691,6 +683,7 @@ export default function Home({ ogImageUrl }) {
           </span>
           @WojakMeter
         </a>
+
         <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
         <a href="#">Telegram</a>
       </div>
