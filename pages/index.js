@@ -3,43 +3,79 @@ import Script from "next/script";
 import Link from "next/link";
 
 export default function Home({ ogImageUrl }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "WojakMeter",
+    url: "https://wojakmeter.com",
+    description:
+      "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
+    publisher: {
+      "@type": "Organization",
+      name: "WojakMeter",
+      url: "https://wojakmeter.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png"
+      }
+    },
+    sameAs: ["https://x.com/WojakMeter"]
+  };
+
   return (
     <>
       <Head>
-        <title>WojakMeter | Crypto Market Sentiment & Emotion Index</title>
+        <title>WojakMeter – Crypto Emotion Index | Market Sentiment Tracker</title>
 
         <meta
           name="description"
-          content="WojakMeter tracks the emotional state of the crypto market using price momentum, social sentiment and macro events."
+          content="Track real-time crypto market emotion with WojakMeter. A sentiment index powered by price action, social signals and macro trends."
         />
 
         <meta
           name="keywords"
-          content="crypto sentiment, bitcoin sentiment, crypto emotion index, crypto market mood, fear and greed crypto, wojakmeter"
+          content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology"
         />
 
-        <meta property="og:title" content="WojakMeter | The Crypto Emotion Index" />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="WojakMeter" />
+        <meta name="theme-color" content="#071018" />
+
+        <link rel="canonical" href="https://wojakmeter.com" />
+        <link rel="icon" href="/favicon.ico" />
+
+        <meta property="og:title" content="WojakMeter – The Crypto Emotion Index" />
         <meta
           property="og:description"
-          content="Track the emotional state of the crypto market using price momentum, social sentiment and macro events."
+          content="Understand what the crypto market feels like in real-time using WojakMeter."
         />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:url" content="https://wojakmeter.com" />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="WojakMeter" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="WojakMeter | Crypto Emotion Index" />
+        <meta name="twitter:title" content="WojakMeter – Crypto Emotion Index" />
         <meta
           name="twitter:description"
-          content="Track the emotional state of the crypto market with WojakMeter."
+          content="Real-time crypto market emotion powered by price action and sentiment."
         />
         <meta name="twitter:image" content={ogImageUrl} />
+        <meta name="twitter:site" content="@WojakMeter" />
+        <meta name="twitter:creator" content="@WojakMeter" />
 
         <link
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </Head>
+
+      <Script
+        id="wm-structured-data"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
 
       <Script src="/script.js?v=6" strategy="afterInteractive" />
 
@@ -621,7 +657,7 @@ export default function Home({ ogImageUrl }) {
                 <div className="about-divider"></div>
 
                 <p className="about-text">
-                  Wojak, also known as the <strong>“Feel Guy”</strong> represents raw human
+                  Wojak, also known as the <strong>“Feel Guy”</strong>, represents raw human
                   emotion: fear, doubt, confidence, euphoria.
                 </p>
 
@@ -631,6 +667,32 @@ export default function Home({ ogImageUrl }) {
                   Wojak isn’t just a meme.
                   <br />
                   He is the market.
+                </p>
+              </div>
+            </section>
+
+            <section className="seo-section card" id="what-is-wojakmeter">
+              <div className="about-container">
+                <span className="about-label">🔍 SEO</span>
+                <h2 className="about-title">What is WojakMeter?</h2>
+
+                <p className="about-text">
+                  WojakMeter is a crypto sentiment tool that converts market data into a real-time
+                  emotional index. By analyzing price momentum, social sentiment, and macro trends,
+                  it provides a clear view of how the crypto market feels.
+                </p>
+
+                <h3 className="seo-subtitle">How does it work?</h3>
+                <p className="about-text">
+                  The platform aggregates multiple signals and translates them into a 0–100 score,
+                  mapped across 7 emotional states ranging from Frustration to Euphoria.
+                </p>
+
+                <h3 className="seo-subtitle">Why use WojakMeter?</h3>
+                <p className="about-text">
+                  Traditional tools focus on raw data. WojakMeter focuses on interpretation,
+                  helping traders quickly understand market psychology through a visual emotional
+                  framework.
                 </p>
               </div>
             </section>
