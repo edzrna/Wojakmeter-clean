@@ -744,7 +744,7 @@ export default function Home({ ogImageUrl }) {
                   </a>
 
                   <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
-                  <a href="#">Telegram</a>
+                  <a href=Track the emotional state of crypto markets"https://t.me/WojakMeter_bot"   >Telegram</a>
                 </div>
               </div>
             </div>
