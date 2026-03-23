@@ -1,4 +1,4 @@
-8requireimport Head from "next/head";
+requireimport Head from "next/head";
 import Script from "next/script";
 
 export default function Home({ ogImageUrl }) {
