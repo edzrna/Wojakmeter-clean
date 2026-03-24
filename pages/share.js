@@ -1,5 +1,21 @@
 import Head from "next/head";
 
+function safeText(value, fallback = "--") {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
+
+function safeScore(value) {
+  const num = Number(value || 50);
+  if (!Number.isFinite(num)) return 50;
+  return Math.max(0, Math.min(100, Math.round(num)));
+}
+
+function safeChange(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num : 0;
+}
+
 export async function getServerSideProps({ query, req }) {
   const {
     mood = "Neutral",
@@ -8,6 +24,8 @@ export async function getServerSideProps({ query, req }) {
     change = "0",
     volume = "--",
     driver = "Market flow / price action",
+    risk = "Balanced",
+    coin = "MARKET",
     style = "classic"
   } = query;
 
@@ -18,28 +36,26 @@ export async function getServerSideProps({ query, req }) {
   const host = req.headers.host;
   const baseUrl = `${protocol}://${host}`;
 
-  const params = new URLSearchParams({
-    mood: String(mood),
-    score: String(score),
-    tf: String(tf),
-    change: String(change),
-    volume: String(volume),
-    driver: String(driver),
-    style: String(style)
-  });
+  const safePayload = {
+    mood: safeText(mood, "Neutral"),
+    score: String(safeScore(score)),
+    tf: safeText(tf, "1h"),
+    change: String(safeChange(change)),
+    volume: safeText(volume, "--"),
+    driver: safeText(driver, "Market flow / price action"),
+    risk: safeText(risk, "Balanced"),
+    coin: safeText(coin, "MARKET"),
+    style: safeText(style, "classic")
+  };
+
+  const params = new URLSearchParams(safePayload);
 
   const ogUrl = `${baseUrl}/api/og?${params.toString()}`;
   const shareUrl = `${baseUrl}/share?${params.toString()}`;
 
   return {
     props: {
-      mood: String(mood),
-      score: String(score),
-      tf: String(tf),
-      change: String(change),
-      volume: String(volume),
-      driver: String(driver),
-      style: String(style),
+      ...safePayload,
       baseUrl,
       ogUrl,
       shareUrl
@@ -54,15 +70,26 @@ export default function SharePage({
   change,
   volume,
   driver,
+  risk,
+  coin,
   ogUrl,
   shareUrl
 }) {
-  const numericChange = Number(change || 0);
-  const safeChange = Number.isFinite(numericChange) ? numericChange : 0;
-  const formattedChange = `${safeChange >= 0 ? "+" : ""}${safeChange.toFixed(2)}%`;
+  const numericScore = safeScore(score);
+  const numericChange = safeChange(change);
+  const formattedChange = `${numericChange >= 0 ? "+" : ""}${numericChange.toFixed(2)}%`;
 
-  const title = `WojakMeter | Crypto Market Mood: ${mood}`;
-  const description = `Score ${score}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver}`;
+  const headline =
+    coin === "MARKET" || coin === "GLOBAL"
+      ? "Crypto Market Mood"
+      : `${coin} Mood`;
+
+  const title =
+    coin === "MARKET" || coin === "GLOBAL"
+      ? `WojakMeter | Crypto Market Mood: ${mood}`
+      : `WojakMeter | ${coin} Mood: ${mood}`;
+
+  const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
 
   return (
     <>
@@ -137,12 +164,12 @@ export default function SharePage({
                 marginBottom: 22
               }}
             >
-              Crypto Market Mood · {tf} · Score {score}/100
+              {headline} · {tf} · Score {numericScore}/100
             </div>
 
             <img
               src={ogUrl}
-              alt={`Crypto market mood ${mood} share card`}
+              alt={`${headline} ${mood} share card`}
               style={{
                 width: "100%",
                 borderRadius: 20,
@@ -166,7 +193,7 @@ export default function SharePage({
 
               <div style={boxStyle}>
                 <span style={labelStyle}>Score</span>
-                <strong style={valueStyle}>{score}/100</strong>
+                <strong style={valueStyle}>{numericScore}/100</strong>
               </div>
 
               <div style={boxStyle}>
@@ -187,6 +214,16 @@ export default function SharePage({
               <div style={boxStyle}>
                 <span style={labelStyle}>Driver</span>
                 <strong style={valueStyle}>{driver}</strong>
+              </div>
+
+              <div style={boxStyle}>
+                <span style={labelStyle}>Risk Tone</span>
+                <strong style={valueStyle}>{risk}</strong>
+              </div>
+
+              <div style={boxStyle}>
+                <span style={labelStyle}>Scope</span>
+                <strong style={valueStyle}>{headline}</strong>
               </div>
             </div>
           </div>
