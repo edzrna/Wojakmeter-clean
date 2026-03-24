@@ -2,6 +2,31 @@ import Head from "next/head";
 import Script from "next/script";
 import Link from "next/link";
 
+function clamp(num, min, max) {
+  return Math.max(min, Math.min(max, num));
+}
+
+function scoreToMood(score) {
+  if (score >= 85) return "euphoria";
+  if (score >= 70) return "content";
+  if (score >= 60) return "optimism";
+  if (score >= 45) return "neutral";
+  if (score >= 35) return "doubt";
+  if (score >= 20) return "concern";
+  return "frustration";
+}
+
+function formatCompactVolume(volumeUsd) {
+  const value = Number(volumeUsd || 0);
+
+  if (!Number.isFinite(value) || value <= 0) return "$--";
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+
+  return `$${value.toFixed(0)}`;
+}
+
 export default function Home({ ogImageUrl }) {
   const structuredData = {
     "@context": "https://schema.org",
@@ -768,50 +793,46 @@ export default function Home({ ogImageUrl }) {
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req }) {
+  const protocol =
+    req.headers["x-forwarded-proto"] ||
+    (req.headers.host?.includes("localhost") ? "http" : "https");
+
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+
   try {
-    const headers = { accept: "application/json" };
+    const [globalRes, sentimentRes] = await Promise.all([
+      fetch(`${baseUrl}/api/global`),
+      fetch(`${baseUrl}/api/sentiment`)
+    ]);
 
-    if (process.env.CG_API_KEY) {
-      headers["x-cg-demo-api-key"] = process.env.CG_API_KEY;
-    }
+    const globalJson = await globalRes.json().catch(() => null);
+    const sentimentJson = await sentimentRes.json().catch(() => null);
 
-    const response = await fetch("https://api.coingecko.com/api/v3/global", { headers });
-    const json = await response.json();
-    const data = json?.data;
+    const rawGlobal = globalJson?.raw || {};
+    const change = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
 
-    const change = Number(data?.market_cap_change_percentage_24h_usd ?? 0);
-    const volumeUsd = Number(data?.total_volume?.usd ?? 0);
+    const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
+    const mood = scoreToMood(score);
 
-    let score = Math.round(Math.max(0, Math.min(100, 50 + change * 10)));
-    let mood = "neutral";
+    const volumeCompact = formatCompactVolume(volumeUsd);
 
-    if (score >= 85) mood = "euphoria";
-    else if (score >= 70) mood = "content";
-    else if (score >= 60) mood = "optimism";
-    else if (score >= 45) mood = "neutral";
-    else if (score >= 35) mood = "doubt";
-    else if (score >= 20) mood = "concern";
-    else mood = "frustration";
-
-    const volumeCompact =
-      volumeUsd >= 1e12
-        ? `$${(volumeUsd / 1e12).toFixed(2)}T`
-        : volumeUsd >= 1e9
-          ? `$${(volumeUsd / 1e9).toFixed(2)}B`
-          : volumeUsd >= 1e6
-            ? `$${(volumeUsd / 1e6).toFixed(2)}M`
-            : `$${volumeUsd.toFixed(0)}`;
+    const driver = sentimentJson?.driver || "Market flow / price action";
+    const risk = sentimentJson?.risk || "Balanced";
 
     const ogImageUrl =
-      `https://wojakmeter.com/api/og` +
+      `${baseUrl}/api/og` +
       `?mood=${encodeURIComponent(mood)}` +
       `&score=${encodeURIComponent(score)}` +
       `&tf=1h` +
       `&change=${encodeURIComponent(change.toFixed(2))}` +
       `&volume=${encodeURIComponent(volumeCompact)}` +
-      `&coin=BTC` +
-      `&style=classic`;
+      `&coin=${encodeURIComponent("MARKET")}` +
+      `&driver=${encodeURIComponent(driver)}` +
+      `&risk=${encodeURIComponent(risk)}` +
+      `&style=${encodeURIComponent("classic")}`;
 
     return {
       props: {
@@ -822,7 +843,7 @@ export async function getServerSideProps() {
     return {
       props: {
         ogImageUrl:
-          "https://wojakmeter.com/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=BTC&style=classic"
+          `${baseUrl}/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=classic`
       }
     };
   }
