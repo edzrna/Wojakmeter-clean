@@ -726,15 +726,27 @@ function buildStoryMode(ctx) {
 function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
 
-  const text =
-`Crypto market mood: ${ctx.globalMood} (${ctx.globalScore}/100)
+  const moodIconMap = {
+  Euphoria: "🤩",
+  Content: "😌",
+  Optimism: "🙂",
+  Neutral: "😐",
+  Doubt: "🤨",
+  Concern: "😟",
+  Frustration: "😤"
+};
 
-Driver: ${ctx.macroLabel}
-Timeframe: ${ctx.globalTimeframe}
-Market move: ${formatPercent(ctx.globalChange)}
-Volume: ${ctx.globalVolume}
+const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
 
-${ctx.macroNarrative}
+const text =
+`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+
+📊 Driver: ${ctx.macroLabel}
+⏱️ Timeframe: ${ctx.globalTimeframe}
+📉 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
+
+${moodIcon} ${ctx.macroNarrative}
 
 Track the market mood live 👇`;
 
@@ -1524,3 +1536,4 @@ if (document.readyState === "loading") {
 } else {
   boot();
 }
+
