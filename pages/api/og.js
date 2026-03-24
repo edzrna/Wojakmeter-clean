@@ -14,6 +14,7 @@ function moodColor(mood) {
     Content: "#7cffaa",
     Euphoria: "#4dff88"
   };
+
   return map[mood] || "#ffffff";
 }
 
@@ -26,6 +27,7 @@ function styleLabel(style) {
 
 function normalizeMood(value) {
   const raw = String(value || "Neutral").trim().toLowerCase();
+
   const map = {
     frustration: "Frustration",
     concern: "Concern",
@@ -35,6 +37,7 @@ function normalizeMood(value) {
     content: "Content",
     euphoria: "Euphoria"
   };
+
   return map[raw] || "Neutral";
 }
 
@@ -46,22 +49,21 @@ function normalizeStyle(value) {
 
 export default async function handler(req) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams, origin } = new URL(req.url);
 
     const mood = normalizeMood(searchParams.get("mood"));
     const score = searchParams.get("score") || "50";
     const tf = searchParams.get("tf") || "1h";
-
-    const rawChange = Number(searchParams.get("change") || "0");
-    const change = Number.isFinite(rawChange) ? rawChange : 0;
-
+    const coin = searchParams.get("coin") || "BTC";
     const volume = searchParams.get("volume") || "--";
     const driver = searchParams.get("driver") || "Market flow / price action";
     const style = normalizeStyle(searchParams.get("style"));
 
-    const baseUrl = "https://wojakmeter.com";
-    const heroSrc = `${baseUrl}/assets/hero/${style}/${mood.toLowerCase()}.png`;
+    const rawChange = Number(searchParams.get("change") || "0");
+    const change = Number.isFinite(rawChange) ? rawChange : 0;
+
     const accent = moodColor(mood);
+    const heroSrc = `${origin}/assets/hero/${style}/${mood.toLowerCase()}.png`;
 
     return new ImageResponse(
       (
@@ -81,13 +83,13 @@ export default async function handler(req) {
           <div
             style={{
               position: "absolute",
-              inset: 24,
-              borderRadius: 30,
+              inset: "24px",
+              borderRadius: "30px",
               border: "1px solid rgba(255,255,255,.10)",
               background:
                 "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), linear-gradient(180deg, #132235 0%, #101c2b 100%)",
               display: "flex",
-              padding: 34
+              padding: "34px"
             }}
           >
             <div
@@ -96,7 +98,7 @@ export default async function handler(req) {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                paddingRight: 24
+                paddingRight: "24px"
               }}
             >
               <div
@@ -108,10 +110,10 @@ export default async function handler(req) {
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 18,
+                    fontSize: "18px",
                     letterSpacing: "0.18em",
                     color: "#9eacbf",
-                    marginBottom: 18
+                    marginBottom: "18px"
                   }}
                 >
                   WOJAKMETER
@@ -120,11 +122,11 @@ export default async function handler(req) {
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 70,
+                    fontSize: "70px",
                     fontWeight: 800,
                     lineHeight: 1,
                     color: accent,
-                    marginBottom: 12
+                    marginBottom: "12px"
                   }}
                 >
                   {mood}
@@ -133,19 +135,19 @@ export default async function handler(req) {
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 28,
+                    fontSize: "28px",
                     color: "#ffffff",
-                    marginBottom: 26
+                    marginBottom: "26px"
                   }}
                 >
-                  Crypto Market Mood · Score {score}/100
+                  {coin} · Score {score}/100
                 </div>
 
                 <div
                   style={{
                     display: "flex",
                     flexWrap: "wrap",
-                    gap: 12
+                    gap: "12px"
                   }}
                 >
                   <div style={pillStyle}>
@@ -172,13 +174,13 @@ export default async function handler(req) {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10
+                  gap: "10px"
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 16,
+                    fontSize: "16px",
                     color: "#9eacbf"
                   }}
                 >
@@ -188,7 +190,7 @@ export default async function handler(req) {
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 26,
+                    fontSize: "26px",
                     color: "#ffffff",
                     lineHeight: 1.2
                   }}
@@ -199,8 +201,8 @@ export default async function handler(req) {
                 <div
                   style={{
                     display: "flex",
-                    marginTop: 14,
-                    fontSize: 18,
+                    marginTop: "14px",
+                    fontSize: "18px",
                     color: "#9eacbf"
                   }}
                 >
@@ -221,8 +223,8 @@ export default async function handler(req) {
               <div
                 style={{
                   position: "absolute",
-                  width: 440,
-                  height: 440,
+                  width: "440px",
+                  height: "440px",
                   borderRadius: "50%",
                   display: "flex",
                   background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`
@@ -250,7 +252,7 @@ export default async function handler(req) {
   } catch (error) {
     return new Response(
       JSON.stringify({
-        error: error.message || "Unknown error"
+        error: error?.message || "Unknown error"
       }),
       {
         status: 500,
@@ -265,21 +267,21 @@ export default async function handler(req) {
 const pillStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 4,
+  gap: "4px",
   padding: "12px 14px",
-  borderRadius: 16,
+  borderRadius: "16px",
   border: "1px solid rgba(255,255,255,.08)",
   background: "#101c2b"
 };
 
 const pillLabel = {
   display: "flex",
-  fontSize: 12,
+  fontSize: "12px",
   color: "#9eacbf"
 };
 
 const pillValue = {
   display: "flex",
-  fontSize: 22,
+  fontSize: "22px",
   color: "#ffffff"
 };
