@@ -1,43 +1,44 @@
+import { cachedJson, cgHeaders, cgUrl, fetchJsonWithRetry } from "../../lib/data-proxy";
+
 export default async function handler(req, res) {
   try {
-    const trendingRes = await fetch("https://api.coingecko.com/api/v3/search/trending");
+    const result = await cachedJson(
+      "trending",
+      async () => {
+        const json = await fetchJsonWithRetry(cgUrl("/search/trending"), {
+          headers: cgHeaders(),
+          timeoutMs: 6500,
+          retries: 2
+        });
 
-    if (!trendingRes.ok) {
-      const text = await trendingRes.text();
-      return res.status(500).json({
-        error: `CoinGecko trending error: ${trendingRes.status} ${text}`
-      });
-    }
-
-    const trendingData = await trendingRes.json();
-
-    const ids = (trendingData.coins || [])
-      .map((c) => c?.item?.id)
-      .filter(Boolean)
-      .slice(0, 10)
-      .join(",");
-
-    if (!ids) {
-      return res.status(200).json({ coins: [] });
-    }
-
-    const marketsRes = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=1h,24h,7d`
+        return (json?.coins || []).map((entry) => {
+          const coin = entry?.item || entry;
+          return {
+            id: coin.id || coin.coin_id || "",
+            name: coin.name || "Unknown",
+            symbol: coin.symbol || "--",
+            image: coin.large || coin.thumb || coin.small || "",
+            price: coin.data?.price ?? null,
+            change: Number(coin.data?.price_change_percentage_24h?.usd ?? 0),
+            current_price: coin.data?.price ?? null,
+            market_cap: null,
+            total_volume: null,
+            price_change_percentage_1h_in_currency: 0,
+            price_change_percentage_24h_in_currency: Number(
+              coin.data?.price_change_percentage_24h?.usd ?? 0
+            ),
+            price_change_percentage_7d_in_currency: 0
+          };
+        });
+      },
+      {
+        ttlMs: 45000,
+        staleMs: 600000
+      }
     );
 
-    if (!marketsRes.ok) {
-      const text = await marketsRes.text();
-      return res.status(500).json({
-        error: `CoinGecko markets error: ${marketsRes.status} ${text}`
-      });
-    }
-
-    const coins = await marketsRes.json();
-
-    return res.status(200).json({ coins });
-  } catch (error) {
-    return res.status(500).json({
-      error: error.message || "Unknown error"
-    });
+    res.status(200).json(result.data || []);
+  } catch {
+    res.status(200).json([]);
   }
 }
