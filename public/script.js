@@ -151,9 +151,11 @@ function normalizeChangeToScore(changePct, sensitivity = 10) {
 }
 
 function getCurrentStyle() {
+  const bodyClasses = document.body.className || "";
   const root = getAppRoot();
-  const className = root?.className || document.body.className || "style-classic";
-  const match = className.match(/style-(classic|3d|anime|minimal)/);
+  const rootClasses = root?.className || "";
+  const classes = `${bodyClasses} ${rootClasses}`;
+  const match = classes.match(/style-(classic|3d|anime|minimal)/);
   return match ? match[1] : "classic";
 }
 
@@ -213,13 +215,17 @@ function getPriceScore({ change1h = 0, change24h = 0, volumeRatio = 1, volatilit
 
 function getTrendingHeat(trendingCoins = []) {
   if (!Array.isArray(trendingCoins) || !trendingCoins.length) return 50;
-  const avg24h = average(trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
+  const avg24h = average(
+    trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
+  );
   return Math.round(clamp(50 + avg24h * 6, 0, 100));
 }
 
 function getMemeHeat(memeCoins = []) {
   if (!Array.isArray(memeCoins) || !memeCoins.length) return 50;
-  const avg24h = average(memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
+  const avg24h = average(
+    memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
+  );
   return Math.round(clamp(50 + avg24h * 7, 0, 100));
 }
 
@@ -380,6 +386,50 @@ function getReactionLabel(timeframe) {
   }
 }
 
+function getTimeframeAdjustedChange(baseChange24h, timeframe) {
+  const change = Number(baseChange24h || 0);
+
+  switch (timeframe) {
+    case "1m":
+      return change / 1440;
+    case "5m":
+      return change / 288;
+    case "15m":
+      return change / 96;
+    case "1h":
+      return change / 24;
+    case "4h":
+      return change / 6;
+    case "24h":
+      return change;
+    case "7d":
+      return change * 2.2;
+    default:
+      return change / 24;
+  }
+}
+
+function applyStyle(style) {
+  const safeStyle = ["classic", "3d", "anime", "minimal"].includes(style)
+    ? style
+    : "classic";
+
+  const root = getAppRoot();
+  if (root) root.className = `style-${safeStyle}`;
+
+  document.body.classList.remove(
+    "style-classic",
+    "style-3d",
+    "style-anime",
+    "style-minimal"
+  );
+  document.body.classList.add(`style-${safeStyle}`);
+
+  if (byId("styleSelector")) {
+    byId("styleSelector").value = safeStyle;
+  }
+}
+
 function updateHeroTitle() {
   const heroDriverLabel = byId("heroDriverLabel");
   if (!heroDriverLabel) return;
@@ -410,7 +460,7 @@ function renderTicker(coins) {
   const items = coins.slice(0, 8).map((coin) => {
     const symbol = coin.symbol?.toUpperCase?.() || "--";
     const price = formatCurrency(coin.current_price);
-    const change = coin.price_change_percentage_24h_in_currency ?? 0;
+    const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
     const cls = change > 0 ? "pos" : change < 0 ? "neg" : "neu";
     const sign = change > 0 ? "+" : "";
     const logo = coin.image || "";
@@ -436,7 +486,8 @@ async function fetchJson(url, fallback = null) {
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const json = await res.json();
+    return json;
   } catch (error) {
     debugMessage(`Fetch failed for ${url}: ${error.message}`);
     return fallback;
@@ -459,21 +510,12 @@ function normalizeCoinMarketItem(item) {
     price_change_percentage_24h_in_currency:
       item.price_change_percentage_24h_in_currency ??
       item.data?.price_change_percentage_24h?.usd ??
+      item.change ??
       item.change_24h ??
       0,
     price_change_percentage_7d_in_currency:
       item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
   };
-}
-
-function getSafeArray(response, keys = []) {
-  if (Array.isArray(response)) return response;
-
-  for (const key of keys) {
-    if (Array.isArray(response?.[key])) return response[key];
-  }
-
-  return [];
 }
 
 function applyMoodColors(mood) {
@@ -508,7 +550,11 @@ function updateHero(score, mood) {
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
-    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath("classic", mood.key));
+    setImage(
+      heroFaceImg,
+      getHeroImagePath(style, mood.key),
+      getHeroImagePath("classic", mood.key)
+    );
   }
 
   if (emotionBarMood) emotionBarMood.textContent = mood.name;
@@ -518,7 +564,11 @@ function updateHero(score, mood) {
   if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (emotionPointerImg) {
-    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath("classic", mood.key));
+    setImage(
+      emotionPointerImg,
+      getIconImagePath(style, mood.key),
+      getIconImagePath("classic", mood.key)
+    );
   }
 
   if (heartbeatWrap && heartbeatPath) {
@@ -550,7 +600,11 @@ function updateSocial(socialScore) {
   const socialIconImg = byId("socialIconImg");
   if (socialIconImg) {
     socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath("classic", socialMood.key));
+    setImage(
+      socialIconImg,
+      getIconImagePath(style, socialMood.key),
+      getIconImagePath("classic", socialMood.key)
+    );
   }
 
   return { socialScore, socialMood };
@@ -763,7 +817,11 @@ async function loadGlobalMarket() {
   isLoadingGlobal = true;
 
   try {
-    const response = await fetchJson(`/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
+    const response = await fetchJson(
+      `/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`,
+      null
+    );
+
     if (!response || typeof response !== "object") {
       debugMessage("Global API missing data, keeping current state");
       return;
@@ -800,13 +858,14 @@ async function loadGlobalMarket() {
 
     currentTotalVolume = totalVolume;
     currentBtcDominance = Number(globalData.market_cap_percentage?.btc || 0);
-    currentGlobalChange = Number(response.change ?? globalData.market_cap_change_percentage_24h_usd ?? 0);
 
-    const change1hApprox = currentGlobalChange / 24;
-    const change24h = currentGlobalChange;
+    const base24hChange = Number(response.change ?? 0);
+    currentGlobalChange = getTimeframeAdjustedChange(base24hChange, globalTimeframe);
+
+    const change1hApprox = getTimeframeAdjustedChange(base24hChange, "1h");
+    const change24h = base24hChange;
     const volumeRatio = getVolumeStrength(totalVolume, totalMarketCap);
     const volatility = clamp(Math.abs(change1hApprox) / 1.2 + 1, 1, 2);
-
     const selectedMacroKey = byId("macroDriver")?.value || "market_flow";
 
     currentTrendingHeat = getTrendingHeat(trendingCoinsData);
@@ -881,7 +940,7 @@ async function loadGlobalMarket() {
 function createCoinCard(coin, isActive = false) {
   const style = getCurrentStyle();
   const symbol = coin.symbol?.toUpperCase?.() || "--";
-  const change = coin.price_change_percentage_24h_in_currency ?? 0;
+  const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
 
   const mood = getMoodByScore(
     getPriceScore({
@@ -970,8 +1029,10 @@ async function loadTopCoins() {
   isLoadingTopCoins = true;
 
   try {
-    const response = await fetchJson("/api/top-coins", null);
-    const coins = getSafeArray(response, ["coins", "data"]).map(normalizeCoinMarketItem).filter(Boolean);
+    const response = await fetchJson("/api/top-coins", []);
+    const coins = (Array.isArray(response) ? response : [])
+      .map(normalizeCoinMarketItem)
+      .filter(Boolean);
 
     if (coins.length) {
       topCoinsData = coins;
@@ -1005,8 +1066,10 @@ async function loadTrendingCoins() {
   isLoadingTrending = true;
 
   try {
-    const response = await fetchJson("/api/trending", null);
-    const coins = getSafeArray(response, ["coins", "data"]).map(normalizeCoinMarketItem).filter(Boolean);
+    const response = await fetchJson("/api/trending", []);
+    const coins = (Array.isArray(response) ? response : [])
+      .map(normalizeCoinMarketItem)
+      .filter(Boolean);
 
     if (coins.length) {
       trendingCoinsData = coins.slice(0, 10);
@@ -1025,8 +1088,10 @@ async function loadTopMemes() {
   isLoadingMemes = true;
 
   try {
-    const response = await fetchJson("/api/top-memes", null);
-    const coins = getSafeArray(response, ["coins", "data"]).map(normalizeCoinMarketItem).filter(Boolean);
+    const response = await fetchJson("/api/top-memes", []);
+    const coins = (Array.isArray(response) ? response : [])
+      .map(normalizeCoinMarketItem)
+      .filter(Boolean);
 
     if (coins.length) {
       topMemesData = coins.slice(0, 10);
@@ -1052,9 +1117,9 @@ function getCoinBySymbol(symbol) {
 }
 
 function getCoinChangeForTimeframe(coin, timeframe) {
-  const h1 = coin.price_change_percentage_1h_in_currency ?? 0;
-  const h24 = coin.price_change_percentage_24h_in_currency ?? 0;
-  const d7 = coin.price_change_percentage_7d_in_currency ?? 0;
+  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
+  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
 
   switch (timeframe) {
     case "1m": return h1 / 60;
@@ -1074,7 +1139,6 @@ function drawLineChart(prices) {
   const candleGroup = byId("coinChartCandles");
 
   if (!path || !area || !prices || prices.length < 2) return;
-
   if (candleGroup) candleGroup.innerHTML = "";
 
   const w = 900;
@@ -1189,7 +1253,6 @@ async function loadCoinDetails() {
     });
 
     const mood = getMoodByScore(technicalScore);
-
     const coinSocialScore = Math.round(clamp(technicalScore * 0.7 + currentSocialScore * 0.3, 0, 100));
     const socialMood = getMoodByScore(coinSocialScore);
     const style = getCurrentStyle();
@@ -1218,13 +1281,21 @@ async function loadCoinDetails() {
     const coinMoodIcon = byId("coinMoodIconImg");
     if (coinMoodIcon) {
       coinMoodIcon.className = `chart-mood-chip-icon mood-icon-img ${mood.anim}`;
-      setImage(coinMoodIcon, getIconImagePath(style, mood.key), getIconImagePath("classic", mood.key));
+      setImage(
+        coinMoodIcon,
+        getIconImagePath(style, mood.key),
+        getIconImagePath("classic", mood.key)
+      );
     }
 
     const socialIcon = byId("detailSocialIconImg");
     if (socialIcon) {
       socialIcon.className = `chart-mood-chip-icon mood-icon-img ${socialMood.anim}`;
-      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath("classic", socialMood.key));
+      setImage(
+        socialIcon,
+        getIconImagePath(style, socialMood.key),
+        getIconImagePath("classic", socialMood.key)
+      );
     }
 
     const intervalIds = {
@@ -1341,8 +1412,8 @@ function setupButtons() {
 
   byId("styleSelector")?.addEventListener("change", async () => {
     const value = byId("styleSelector").value;
-    const root = getAppRoot();
-    if (root) root.className = `style-${value}`;
+
+    applyStyle(value);
 
     try {
       localStorage.setItem("wojakStyle", value);
@@ -1417,9 +1488,7 @@ function initStyle() {
     savedStyle = localStorage.getItem("wojakStyle") || "classic";
   } catch {}
 
-  const root = getAppRoot();
-  if (root) root.className = `style-${savedStyle}`;
-  if (byId("styleSelector")) byId("styleSelector").value = savedStyle;
+  applyStyle(savedStyle);
 }
 
 function startAutoRefresh() {
