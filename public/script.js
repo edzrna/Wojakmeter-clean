@@ -22,33 +22,15 @@ const SENTIMENT_REFRESH_MS = 60000;
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
 
 const macroDrivers = {
-  market_flow: {
-    label: "Market flow / price action"
-  },
-  social_sentiment: {
-    label: "Social sentiment"
-  },
-  etf_adoption: {
-    label: "ETF / institutional adoption"
-  },
-  rate_hike: {
-    label: "Rate hike fears"
-  },
-  rate_cut: {
-    label: "Rate cut hopes"
-  },
-  regulation_crackdown: {
-    label: "Regulation crackdown"
-  },
-  crypto_hack: {
-    label: "Crypto hack / insolvency"
-  },
-  war_escalation: {
-    label: "War escalation"
-  },
-  neutral_macro: {
-    label: "Neutral macro environment"
-  }
+  market_flow: { label: "Market flow / price action" },
+  social_sentiment: { label: "Social sentiment" },
+  etf_adoption: { label: "ETF / institutional adoption" },
+  rate_hike: { label: "Rate hike fears" },
+  rate_cut: { label: "Rate cut hopes" },
+  regulation_crackdown: { label: "Regulation crackdown" },
+  crypto_hack: { label: "Crypto hack / insolvency" },
+  war_escalation: { label: "War escalation" },
+  neutral_macro: { label: "Neutral macro environment" }
 };
 
 let activeCoinSymbol = "BTC";
@@ -214,45 +196,7 @@ function loadSavedActiveCoin() {
   }
 }
 
-function getTimeframeWeight(timeframe) {
-  switch (timeframe) {
-    case "1m": return 0.55;
-    case "5m": return 0.7;
-    case "15m": return 0.85;
-    case "1h": return 1;
-    case "4h": return 1.1;
-    case "24h": return 1.2;
-    case "7d": return 1.3;
-    default: return 1;
-  }
-}
-
-function getMacroDriverState() {
-  const key = byId("macroDriver")?.value || "market_flow";
-  return macroDrivers[key] || macroDrivers.market_flow;
-}
-
-function getMacroScore(driverKey = "market_flow") {
-  const map = {
-    market_flow: 50,
-    neutral_macro: 50,
-    etf_adoption: 72,
-    rate_cut: 68,
-    rate_hike: 36,
-    regulation_crackdown: 28,
-    crypto_hack: 22,
-    war_escalation: 24,
-    social_sentiment: 55
-  };
-  return map[driverKey] ?? 50;
-}
-
-function getPriceScore({
-  change1h = 0,
-  change24h = 0,
-  volumeRatio = 1,
-  volatility = 1
-}) {
+function getPriceScore({ change1h = 0, change24h = 0, volumeRatio = 1, volatility = 1 }) {
   const shortTerm = normalizeChangeToScore(change1h, 12);
   const daily = normalizeChangeToScore(change24h, 6);
 
@@ -269,21 +213,13 @@ function getPriceScore({
 
 function getTrendingHeat(trendingCoins = []) {
   if (!Array.isArray(trendingCoins) || !trendingCoins.length) return 50;
-
-  const avg24h = average(
-    trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
-  );
-
+  const avg24h = average(trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
   return Math.round(clamp(50 + avg24h * 6, 0, 100));
 }
 
 function getMemeHeat(memeCoins = []) {
   if (!Array.isArray(memeCoins) || !memeCoins.length) return 50;
-
-  const avg24h = average(
-    memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
-  );
-
+  const avg24h = average(memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
   return Math.round(clamp(50 + avg24h * 7, 0, 100));
 }
 
@@ -314,6 +250,7 @@ function getSocialScore({
   score += (newsScore - 50) * 0.08;
 
   if (macroKey === "etf_adoption" || macroKey === "rate_cut") score += 4;
+
   if (
     macroKey === "rate_hike" ||
     macroKey === "regulation_crackdown" ||
@@ -327,15 +264,22 @@ function getSocialScore({
 }
 
 function getGlobalMoodScore({ priceScore, socialScore, macroScore }) {
-  return Math.round(
-    clamp(
-      priceScore * 0.60 +
-      socialScore * 0.25 +
-      macroScore * 0.15,
-      0,
-      100
-    )
-  );
+  return Math.round(clamp(priceScore * 0.6 + socialScore * 0.25 + macroScore * 0.15, 0, 100));
+}
+
+function getMacroScore(driverKey = "market_flow") {
+  const map = {
+    market_flow: 50,
+    neutral_macro: 50,
+    social_sentiment: 55,
+    etf_adoption: 72,
+    rate_cut: 68,
+    rate_hike: 36,
+    regulation_crackdown: 28,
+    crypto_hack: 22,
+    war_escalation: 24
+  };
+  return map[driverKey] ?? 50;
 }
 
 function pickDominantDriver({
@@ -359,29 +303,16 @@ function pickDominantDriver({
     "war_escalation"
   ];
 
-  if (forcedMacroDrivers.includes(macroKey)) {
-    return macroKey;
-  }
-
+  if (forcedMacroDrivers.includes(macroKey)) return macroKey;
   if (newsScore < 35) return "crypto_hack";
   if (newsScore < 43 && fearGreed < 40) return "regulation_crackdown";
 
-  if (
-    newsScore > 62 &&
-    marketChange > 1.2 &&
-    btcDominance >= 54 &&
-    memeHeat < 62
-  ) {
+  if (newsScore > 62 && marketChange > 1.2 && btcDominance >= 54 && memeHeat < 62) {
     return "etf_adoption";
   }
 
-  if (fearGreed < 38 && marketChange < -1) {
-    return "rate_hike";
-  }
-
-  if (fearGreed > 60 && newsScore > 58 && marketChange > 0.8) {
-    return "rate_cut";
-  }
+  if (fearGreed < 38 && marketChange < -1) return "rate_hike";
+  if (fearGreed > 60 && newsScore > 58 && marketChange > 0.8) return "rate_cut";
 
   const priceDistance = Math.abs(priceScore - 50);
   const socialDistance = Math.abs(socialScore - 50);
@@ -523,9 +454,15 @@ function normalizeCoinMarketItem(item) {
     current_price: item.current_price ?? item.price ?? null,
     market_cap: item.market_cap ?? null,
     total_volume: item.total_volume ?? null,
-    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.data?.price_change_percentage_24h?.usd ?? item.change_24h ?? 0,
-    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
+    price_change_percentage_1h_in_currency:
+      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency:
+      item.price_change_percentage_24h_in_currency ??
+      item.data?.price_change_percentage_24h?.usd ??
+      item.change_24h ??
+      0,
+    price_change_percentage_7d_in_currency:
+      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
   };
 }
 
@@ -586,6 +523,7 @@ function updateHero(score, mood) {
 
   if (heartbeatWrap && heartbeatPath) {
     heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key}`;
+
     const paths = {
       frustration: "M0 28 L28 28 L40 10 L56 46 L72 8 L86 50 L104 16 L126 28 L150 28 L170 12 L188 44 L206 8 L224 48 L244 20 L268 28 L320 28",
       concern: "M0 28 L40 28 L56 18 L72 40 L88 14 L102 38 L124 28 L160 28 L176 18 L192 38 L208 16 L224 36 L248 28 L320 28",
@@ -595,6 +533,7 @@ function updateHero(score, mood) {
       content: "M0 28 L32 28 L46 20 L60 34 L74 12 L88 30 L104 18 L126 28 L150 28 L168 20 L184 34 L198 14 L214 28 L232 18 L254 28 L320 28",
       euphoria: "M0 28 L28 28 L40 16 L52 40 L66 8 L78 46 L94 6 L108 42 L126 18 L148 28 L166 12 L182 44 L198 8 L214 42 L232 14 L252 28 L320 28"
     };
+
     heartbeatPath.setAttribute("d", paths[mood.key] || paths.neutral);
   }
 
@@ -798,13 +737,21 @@ async function loadSentiment() {
   isLoadingSentiment = true;
 
   try {
-    const json = await fetchJson("/api/sentiment", null);
-    const data = json?.data;
+    const data = await fetchJson("/api/sentiment", null);
 
-    if (data) {
+    if (data && typeof data === "object") {
       currentFearGreed = Number(data.fearGreed ?? 50);
       currentNewsScore = Number(data.newsScore ?? 50);
       currentNewsSignal = String(data.newsSignal || "neutral");
+
+      if (typeof data.driver === "string" && data.driver) {
+        const foundKey = Object.keys(macroDrivers).find(
+          (key) => macroDrivers[key].label === data.driver
+        );
+        if (foundKey && byId("macroDriver")) {
+          byId("macroDriver").value = foundKey;
+        }
+      }
     }
   } finally {
     isLoadingSentiment = false;
@@ -817,23 +764,35 @@ async function loadGlobalMarket() {
 
   try {
     const response = await fetchJson(`/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
-    const globalData = response?.data;
-
-    if (!globalData) {
+    if (!response || typeof response !== "object") {
       debugMessage("Global API missing data, keeping current state");
       return;
     }
 
-    if (byId("btcDominance") && globalData.market_cap_percentage?.btc != null) {
-      byId("btcDominance").textContent = `${globalData.market_cap_percentage.btc.toFixed(1)}%`;
+    const globalData = response.raw || {};
+
+    if (byId("btcDominance")) {
+      if (response.btcDominance && response.btcDominance !== "--") {
+        byId("btcDominance").textContent = response.btcDominance;
+      } else if (globalData.market_cap_percentage?.btc != null) {
+        byId("btcDominance").textContent = `${Number(globalData.market_cap_percentage.btc).toFixed(1)}%`;
+      }
     }
 
     if (byId("headerMarketCap")) {
-      byId("headerMarketCap").textContent = formatCurrencyCompact(globalData.total_market_cap?.usd);
+      if (response.marketCap && response.marketCap !== "--") {
+        byId("headerMarketCap").textContent = response.marketCap;
+      } else {
+        byId("headerMarketCap").textContent = formatCurrencyCompact(globalData.total_market_cap?.usd);
+      }
     }
 
     if (byId("headerVolume")) {
-      byId("headerVolume").textContent = formatCurrencyCompact(globalData.total_volume?.usd);
+      if (response.volume && response.volume !== "--") {
+        byId("headerVolume").textContent = response.volume;
+      } else {
+        byId("headerVolume").textContent = formatCurrencyCompact(globalData.total_volume?.usd);
+      }
     }
 
     const totalVolume = Number(globalData.total_volume?.usd || 0);
@@ -841,7 +800,7 @@ async function loadGlobalMarket() {
 
     currentTotalVolume = totalVolume;
     currentBtcDominance = Number(globalData.market_cap_percentage?.btc || 0);
-    currentGlobalChange = Number(globalData.market_cap_change_percentage_24h_usd ?? 0);
+    currentGlobalChange = Number(response.change ?? globalData.market_cap_change_percentage_24h_usd ?? 0);
 
     const change1hApprox = currentGlobalChange / 24;
     const change24h = currentGlobalChange;
@@ -903,7 +862,10 @@ async function loadGlobalMarket() {
     }
 
     if (byId("globalMarketVolume")) {
-      byId("globalMarketVolume").textContent = formatCurrencyCompact(globalData.total_volume?.usd);
+      byId("globalMarketVolume").textContent =
+        response.volume && response.volume !== "--"
+          ? response.volume
+          : formatCurrencyCompact(globalData.total_volume?.usd);
     }
 
     if (byId("globalMarketTimeframe")) {
@@ -1220,7 +1182,7 @@ async function loadCoinDetails() {
     const value = getCoinChangeForTimeframe(coin, chartTimeframe);
 
     const technicalScore = getPriceScore({
-      change1h: coin.price_change_percentage_1h_in_currency ?? (value / 24),
+      change1h: coin.price_change_percentage_1h_in_currency ?? value / 24,
       change24h: coin.price_change_percentage_24h_in_currency ?? value,
       volumeRatio: 1,
       volatility: clamp(Math.abs(value) / 2 + 1, 1, 2)
@@ -1228,14 +1190,7 @@ async function loadCoinDetails() {
 
     const mood = getMoodByScore(technicalScore);
 
-    const coinSocialScore = Math.round(
-      clamp(
-        technicalScore * 0.7 + currentSocialScore * 0.3,
-        0,
-        100
-      )
-    );
-
+    const coinSocialScore = Math.round(clamp(technicalScore * 0.7 + currentSocialScore * 0.3, 0, 100));
     const socialMood = getMoodByScore(coinSocialScore);
     const style = getCurrentStyle();
 
@@ -1306,7 +1261,7 @@ async function loadCoinDetails() {
     const rawPrices = chartResponse?.prices;
     if (Array.isArray(rawPrices) && rawPrices.length >= 2) {
       const prices = rawPrices
-        .map((entry) => Array.isArray(entry) ? Number(entry[1]) : Number(entry))
+        .map((entry) => (Array.isArray(entry) ? Number(entry[1]) : Number(entry)))
         .filter((n) => Number.isFinite(n));
 
       if (prices.length >= 2) drawChart(prices);
