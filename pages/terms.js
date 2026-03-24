@@ -6,17 +6,10 @@ export default function TermsPage() {
     <>
       <Head>
         <title>Terms | WojakMeter</title>
-
         <meta
           name="description"
           content="WojakMeter terms of service."
         />
-
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <link rel="stylesheet" href="/style.css?v=6" />
       </Head>
 
       <main className="legal-page">
