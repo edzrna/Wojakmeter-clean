@@ -702,60 +702,84 @@ export default function Home({ ogImageUrl }) {
           </main>
 
           <footer className="wm-footer">
-            <div className="wm-footer-inner">
-              <div className="wm-footer-brand">
-                <img
-                  src="/assets/logo/wojakmeter_logo.png"
-                  alt="WojakMeter Logo"
-                  className="wm-footer-logo-img"
-                />
-              </div>
+  <div className="wm-footer-inner">
+    
+    {/* LOGO */}
+    <div className="wm-footer-brand">
+      <img
+        src="/assets/logo/wojakmeter_logo.png"
+        alt="WojakMeter Logo"
+        className="wm-footer-logo-img"
+      />
+    </div>
 
-              <div className="wm-footer-links-wrap">
-                <div className="wm-footer-col">
-                  <h4 className="wm-footer-title">Navigation</h4>
-                  <a href="#about">About</a>
-                  <a href="#top-coins">Top Coins</a>
-                  <a href="#market">Market Mood</a>
-                  <a href="#wojak-studio">Wojak Studio</a>
-                </div>
+    {/* LINKS */}
+    <div className="wm-footer-links-wrap">
+      
+      {/* NAV */}
+      <div className="wm-footer-col">
+        <h4 className="wm-footer-title">Navigation</h4>
+        <a href="#about">About</a>
+        <a href="#top-coins">Top Coins</a>
+        <a href="#market">Market Mood</a>
+        <a href="#wojak-studio">Wojak Studio</a>
+      </div>
 
-                <div className="wm-footer-col">
-                  <h4 className="wm-footer-title">Legal</h4>
-                  <Link href="/terms">Terms</Link>
-                  <Link href="/privacy">Privacy</Link>
-                  <Link href="/disclaimer">Disclaimer</Link>
-                </div>
+      {/* LEGAL */}
+      <div className="wm-footer-col">
+        <h4 className="wm-footer-title">Legal</h4>
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/disclaimer">Disclaimer</Link>
+      </div>
 
-                <div className="wm-footer-col">
-                  <h4 className="wm-footer-title">Community</h4>
+      {/* COMMUNITY */}
+      <div className="wm-footer-col">
+        <h4 className="wm-footer-title">Community</h4>
 
-                  <a
-                    href="https://x.com/WojakMeter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span className="x-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path
-                          fill="currentColor"
-                          d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
-                        />
-                      </svg>
-                    </span>
-                    @WojakMeter
-                  </a>
+        <a
+          href="https://x.com/WojakMeter"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-link"
+        >
+          <span className="x-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
+              />
+            </svg>
+          </span>
+          @WojakMeter
+        </a>
 
-                  <a href="mailto:contact@wojakmeter.com">contact@wojakmeter.com</a>
-                  <a href=Track the emotional state of crypto markets"https://t.me/WojakMeter_bot"   >Telegram</a>
-                </div>
-              </div>
-            </div>
+        <a
+          href="mailto:contact@wojakmeter.com"
+          className="footer-link"
+        >
+          contact@wojakmeter.com
+        </a>
 
-            <div className="wm-footer-bottom">
-              <p>© 2026 WojakMeter. All rights reserved.</p>
-            </div>
-          </footer>
+        <a
+          href="https://t.me/WojakMeter_bot"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-link"
+        >
+          Telegram
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  {/* BOTTOM */}
+  <div className="wm-footer-bottom">
+    <p>© 2026 WojakMeter. All rights reserved.</p>
+  </div>
+</footer>
+                 
         </div>
       </div>
     </>
