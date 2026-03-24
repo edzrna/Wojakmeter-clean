@@ -77,7 +77,6 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <link rel="stylesheet" href="/style.css?v=7" />
 <Script src="/script.js?v=7" strategy="afterInteractive" />
 
       <div className="style-classic">
