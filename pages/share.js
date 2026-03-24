@@ -8,7 +8,6 @@ export async function getServerSideProps({ query, req }) {
     change = "0",
     volume = "--",
     driver = "Market flow / price action",
-    coin = "BTC",
     style = "classic"
   } = query;
 
@@ -26,11 +25,11 @@ export async function getServerSideProps({ query, req }) {
     change: String(change),
     volume: String(volume),
     driver: String(driver),
-    coin: String(coin),
     style: String(style)
   });
 
   const ogUrl = `${baseUrl}/api/og?${params.toString()}`;
+  const shareUrl = `${baseUrl}/share?${params.toString()}`;
 
   return {
     props: {
@@ -40,10 +39,10 @@ export async function getServerSideProps({ query, req }) {
       change: String(change),
       volume: String(volume),
       driver: String(driver),
-      coin: String(coin),
       style: String(style),
       baseUrl,
-      ogUrl
+      ogUrl,
+      shareUrl
     }
   };
 }
@@ -55,14 +54,14 @@ export default function SharePage({
   change,
   volume,
   driver,
-  coin,
   ogUrl,
-  baseUrl
+  shareUrl
 }) {
   const numericChange = Number(change || 0);
-  const formattedChange = `${numericChange >= 0 ? "+" : ""}${numericChange.toFixed(2)}%`;
+  const safeChange = Number.isFinite(numericChange) ? numericChange : 0;
+  const formattedChange = `${safeChange >= 0 ? "+" : ""}${safeChange.toFixed(2)}%`;
 
-  const title = `WojakMeter | ${coin} Mood: ${mood}`;
+  const title = `WojakMeter | Crypto Market Mood: ${mood}`;
   const description = `Score ${score}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver}`;
 
   return (
@@ -70,17 +69,20 @@ export default function SharePage({
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
+        <link rel="canonical" href={shareUrl} />
 
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={ogUrl} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${baseUrl}/share`} />
+        <meta property="og:url" content={shareUrl} />
+        <meta property="og:site_name" content="WojakMeter" />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content={ogUrl} />
+        <meta name="twitter:site" content="@WojakMeter" />
       </Head>
 
       <main
@@ -135,12 +137,12 @@ export default function SharePage({
                 marginBottom: 22
               }}
             >
-              {coin} · {tf} · Score {score}/100
+              Crypto Market Mood · {tf} · Score {score}/100
             </div>
 
             <img
               src={ogUrl}
-              alt={`${coin} ${mood} share card`}
+              alt={`Crypto market mood ${mood} share card`}
               style={{
                 width: "100%",
                 borderRadius: 20,
@@ -161,22 +163,27 @@ export default function SharePage({
                 <span style={labelStyle}>Mood</span>
                 <strong style={valueStyle}>{mood}</strong>
               </div>
+
               <div style={boxStyle}>
                 <span style={labelStyle}>Score</span>
                 <strong style={valueStyle}>{score}/100</strong>
               </div>
+
               <div style={boxStyle}>
                 <span style={labelStyle}>Timeframe</span>
                 <strong style={valueStyle}>{tf}</strong>
               </div>
+
               <div style={boxStyle}>
                 <span style={labelStyle}>Move</span>
                 <strong style={valueStyle}>{formattedChange}</strong>
               </div>
+
               <div style={boxStyle}>
                 <span style={labelStyle}>Volume</span>
                 <strong style={valueStyle}>{volume}</strong>
               </div>
+
               <div style={boxStyle}>
                 <span style={labelStyle}>Driver</span>
                 <strong style={valueStyle}>{driver}</strong>
