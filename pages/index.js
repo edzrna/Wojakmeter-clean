@@ -12,7 +12,7 @@ export default function Home({ ogImageUrl }) {
       "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
     publisher: {
       "@type": "Organization",
-      name: "WojakMeter",
+      name: "WojakMeter", 
       url: "https://wojakmeter.com",
       logo: {
         "@type": "ImageObject",
