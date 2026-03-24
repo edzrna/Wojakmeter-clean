@@ -1,4 +1,6 @@
-function getDaysFromTimeframe(timeframe) {
+import { cachedJson, cgHeaders, cgUrl, fetchJsonWithRetry } from "../../lib/data-proxy";
+
+function timeframeToDays(timeframe) {
   switch (timeframe) {
     case "1m":
     case "5m":
@@ -17,44 +19,40 @@ function getDaysFromTimeframe(timeframe) {
 }
 
 export default async function handler(req, res) {
+  const coin = String(req.query.coin || "bitcoin");
+  const timeframe = String(req.query.timeframe || "1h");
+
   try {
-    const coin = req.query.coin || "bitcoin";
-    const timeframe = req.query.timeframe || "1h";
+    const days = timeframeToDays(timeframe);
 
-    const days = getDaysFromTimeframe(timeframe);
-
-    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(
-      coin
-    )}/market_chart?vs_currency=usd&days=${days}`;
-
-    const response = await fetch(url, {
-      headers: {
-        accept: "application/json"
+    const result = await cachedJson(
+      `coin-chart:${coin}:${timeframe}`,
+      async () => {
+        return await fetchJsonWithRetry(
+          cgUrl(`/coins/${encodeURIComponent(coin)}/market_chart`, {
+            vs_currency: "usd",
+            days,
+            interval: days <= 1 ? "hourly" : "daily"
+          }),
+          {
+            headers: cgHeaders(),
+            timeoutMs: 7000,
+            retries: 2
+          }
+        );
+      },
+      {
+        ttlMs: 30000,
+        staleMs: 900000
       }
+    );
+
+    res.status(200).json({
+      prices: result.data?.prices || []
     });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return res.status(500).json({
-        error: `CoinGecko error: ${response.status} ${text}`
-      });
-    }
-
-    const data = await response.json();
-
-    if (!data || !Array.isArray(data.prices)) {
-      return res.status(200).json({
-        error: "NO_PRICES",
-        received: data
-      });
-    }
-
-    return res.status(200).json({
-      prices: data.prices
-    });
-  } catch (error) {
-    return res.status(500).json({
-      error: error.message || "Unknown error"
+  } catch {
+    res.status(200).json({
+      prices: []
     });
   }
 }
