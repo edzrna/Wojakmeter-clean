@@ -12,7 +12,7 @@ export default function Home({ ogImageUrl }) {
       "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
     publisher: {
       "@type": "Organization",
-      name: "WojakMeter", 
+      name: "WojakMeter",
       url: "https://wojakmeter.com",
       logo: {
         "@type": "ImageObject",
@@ -63,11 +63,6 @@ export default function Home({ ogImageUrl }) {
         <meta name="twitter:image" content={ogImageUrl} />
         <meta name="twitter:site" content="@WojakMeter" />
         <meta name="twitter:creator" content="@WojakMeter" />
-
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
       </Head>
 
       <Script
@@ -77,7 +72,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-<Script src="/script.js" strategy="afterInteractive" />
+      <Script src="/script.js" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
