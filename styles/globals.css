@@ -2073,11 +2073,7 @@ pre.studio-output {
   }
 }
 
-@media (max-width:560px) {
-  .logo-img {
-    height: 60px;
-    max-width: 260px;
-  }
+
 
   .market-stat {
     font-size: 13px;
