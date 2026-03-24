@@ -57,7 +57,6 @@ export default async function handler(req) {
 
     const volume = searchParams.get("volume") || "--";
     const driver = searchParams.get("driver") || "Market flow / price action";
-    const coin = searchParams.get("coin") || "BTC";
     const style = normalizeStyle(searchParams.get("style"));
 
     const baseUrl = "https://wojakmeter.com";
@@ -139,7 +138,7 @@ export default async function handler(req) {
                     marginBottom: 26
                   }}
                 >
-                  {coin} · Score {score}/100
+                  Crypto Market Mood · Score {score}/100
                 </div>
 
                 <div
