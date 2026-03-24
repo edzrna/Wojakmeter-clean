@@ -2048,8 +2048,7 @@ pre.studio-output {
   }
 }
 
-
-@media (max-width:640px) {
+@media (max-width: 640px) {
   .emotion-meta {
     grid-template-columns: 1fr;
   }
@@ -2073,7 +2072,11 @@ pre.studio-output {
   }
 }
 
-
+@media (max-width: 560px) {
+  .logo-img {
+    height: 60px;
+    max-width: 260px;
+  }
 
   .market-stat {
     font-size: 13px;
@@ -2169,7 +2172,7 @@ pre.studio-output {
   }
 
   .emotion-segment {
-    font-size: .52rem;
+    font-size: 0.52rem;
     padding: 12px 2px;
   }
 
@@ -2226,5 +2229,3 @@ pre.studio-output {
     width: 135px;
   }
 }
-
-  
