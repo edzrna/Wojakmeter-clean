@@ -6,7 +6,7 @@ WojakMeter is a real-time crypto sentiment platform that transforms market data 
 
 👉 **emotion**
 
-Instead of just numbers and charts, WojakMeter answers:
+Instead of just numbers and charts,  WojakMeter answers:
 
 > *What does the market feel like right now?*
 
