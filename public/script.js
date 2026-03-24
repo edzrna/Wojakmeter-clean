@@ -1,11 +1,16 @@
 window.onerror = function (msg, url, line, col) {
-  document.body.innerHTML = `
-    <div style="background:#071018;color:#ff6c79;padding:20px;font-family:monospace;min-height:100vh">
-      <h2>WojakMeter Error</h2>
-      <p>${msg || "Unknown error"}</p>
-      <p>${url || ""}:${line || 0}:${col || 0}</p>
-    </div>
-  `;
+  console.error("WojakMeter Error:", msg, url, line, col);
+
+  const ticker = document.getElementById("tickerBar");
+  if (ticker) {
+    ticker.innerHTML = `
+      <span style="color:#ff6c79;">
+        Something went wrong. Please refresh the page.
+      </span>
+    `;
+  }
+
+  return false;
 };
 
 const TOP_COINS_REFRESH_MS = 15000;
@@ -121,16 +126,51 @@ function formatCurrencyCompact(value) {
 
 function formatCurrency(value) {
   if (value == null || Number.isNaN(value)) return "--";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value);
+
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "--";
+
+  if (num >= 1000) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    }).format(num);
+  }
+
+  if (num >= 1) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+
+  if (num >= 0.01) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4
+    }).format(num);
+  }
+
+  if (num >= 0.0001) {
+    return `$${num.toFixed(4)}`;
+  }
+
+  if (num > 0) {
+    return `$${num.toFixed(6)}`;
+  }
+
+  return "$0.00";
 }
 
 function formatPercent(value) {
-  if (value == null || Number.isNaN(value)) return "--";
-  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "--";
+  return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
 }
 
 function getMoodByScore(score) {
@@ -180,12 +220,21 @@ function debugMessage(msg) {
 
 function saveActiveCoin(symbol) {
   if (!symbol) return;
-  localStorage.setItem(ACTIVE_COIN_STORAGE_KEY, String(symbol).toUpperCase());
+  try {
+    localStorage.setItem(ACTIVE_COIN_STORAGE_KEY, String(symbol).toUpperCase());
+  } catch (e) {
+    console.warn("Could not save active coin:", e);
+  }
 }
 
 function loadSavedActiveCoin() {
-  const saved = localStorage.getItem(ACTIVE_COIN_STORAGE_KEY);
-  return saved ? saved.toUpperCase() : null;
+  try {
+    const saved = localStorage.getItem(ACTIVE_COIN_STORAGE_KEY);
+    return saved ? saved.toUpperCase() : null;
+  } catch (e) {
+    console.warn("Could not load saved coin:", e);
+    return null;
+  }
 }
 
 function getTimeframeWeight(timeframe) {
@@ -214,6 +263,13 @@ function getAdjustedGlobalScore() {
 
 function getMacroKeyLabel(key) {
   return macroDrivers[key]?.label || "Market flow / price action";
+}
+
+function updateHeroTitle() {
+  const heroDriverLabel = byId("heroDriverLabel");
+  if (!heroDriverLabel) return;
+  const macro = getMacroDriverState();
+  heroDriverLabel.textContent = ` (${macro.label})`;
 }
 
 function renderTicker(coins) {
@@ -436,32 +492,43 @@ function updateDriverPanel() {
 
   if (byId("driverMacro")) byId("driverMacro").textContent = macro.label;
   if (byId("driverNarrative")) byId("driverNarrative").textContent = macro.narrative;
-  if (byId("driverTimeframeReaction")) byId("driverTimeframeReaction").textContent = `${reaction} (${globalTimeframe})`;
+  if (byId("driverTimeframeReaction")) {
+    byId("driverTimeframeReaction").textContent = `${reaction} (${globalTimeframe})`;
+  }
   if (byId("driverRiskTone")) byId("driverRiskTone").textContent = macro.risk;
+
+  updateHeroTitle();
 }
 
-function getMarketContext() {
-  const style = byId("styleSelector")?.value || "classic";
+function getGlobalMarketContext() {
   const macroKey = byId("macroDriver")?.value || "market_flow";
-  const activeCoin = getCoinBySymbol(activeCoinSymbol);
+  const macro = macroDrivers[macroKey] || macroDrivers.market_flow;
 
   return {
-    style,
+    style: byId("styleSelector")?.value || "classic",
     globalMood: currentGlobalMood?.name || "Neutral",
     globalScore: Number(byId("heroScore")?.textContent || 50),
     globalTimeframe,
     globalChange: currentGlobalChange ?? 0,
     globalVolume: byId("globalMarketVolume")?.textContent || "--",
+    macroKey,
+    macroLabel: macro.label,
+    macroNarrative: macro.narrative,
+    macroRisk: macro.risk
+  };
+}
+
+function getCoinContext() {
+  const activeCoin = getCoinBySymbol(activeCoinSymbol);
+
+  return {
     activeCoin: activeCoinSymbol || "BTC",
     activeCoinName: activeCoin?.name || activeCoinSymbol || "Bitcoin",
     coinTimeframe: chartTimeframe,
     coinPrice: byId("chartCoinPrice")?.textContent || "--",
     coinPerformance: byId("selectedPerformance")?.textContent || "--",
     technicalMood: byId("coinMoodLabel")?.textContent || "Neutral",
-    socialMood: byId("detailSocialLabel")?.textContent || byId("socialMoodMini")?.textContent || "Neutral",
-    macroKey,
-    macroLabel: getMacroKeyLabel(macroKey),
-    macroNarrative: byId("driverNarrative")?.textContent || ""
+    socialMood: byId("detailSocialLabel")?.textContent || "Neutral"
   };
 }
 
@@ -535,50 +602,25 @@ function buildStoryMode(ctx) {
   `.trim();
 }
 
-function buildShareMoodText() {
-  const mood = currentGlobalMood?.name || byId("heroMood")?.textContent || "Neutral";
-  const score = byId("heroScore")?.textContent || "50";
-  const change = byId("globalMarketChange")?.textContent || formatPercent(currentGlobalChange);
-  const timeframe = globalTimeframe || byId("globalMarketTimeframe")?.textContent || "1h";
-  const macroLabel = byId("driverMacro")?.textContent || "Market flow / price action";
-  const volume = byId("globalMarketVolume")?.textContent || "--";
-
-  return `Current crypto market mood: ${mood} (${score}/100)
-
-Timeframe: ${timeframe}
-Market move: ${change}
-Volume: ${volume}
-Driver: ${macroLabel}
-
-Track the market mood on WojakMeter
-https://wojakmeter.com
-
-#Crypto #Bitcoin #WojakMeter`;
-}
-
 function shareMoodOnX() {
-  const mood = currentGlobalMood?.name || byId("heroMood")?.textContent || "Neutral";
-  const score = byId("heroScore")?.textContent || "50";
-  const change = byId("globalMarketChange")?.textContent || formatPercent(currentGlobalChange);
-  const timeframe = globalTimeframe || "1h";
-  const volume = byId("globalMarketVolume")?.textContent || "--";
-  const macroLabel = byId("driverMacro")?.textContent || "Market flow";
+  const ctx = getGlobalMarketContext();
 
   const text =
-`Crypto market mood: ${mood} (${score}/100)
+`Crypto market mood: ${ctx.globalMood} (${ctx.globalScore}/100)
 
-Timeframe: ${timeframe}
-Move: ${change}
-Volume: ${volume}
-Driver: ${macroLabel}
+Driver: ${ctx.macroLabel}
+Timeframe: ${ctx.globalTimeframe}
+Market move: ${formatPercent(ctx.globalChange)}
+Volume: ${ctx.globalVolume}
 
-Track it live 👇`;
+${ctx.macroNarrative}
 
-  // 🔥 AQUÍ ESTÁ LA MAGIA (OG dinámico)
-  const ogUrl = `https://wojakmeter.com/api/og?mood=${encodeURIComponent(mood)}&score=${score}&tf=${timeframe}&change=${encodeURIComponent(currentGlobalChange)}&volume=${encodeURIComponent(volume)}&driver=${encodeURIComponent(macroLabel)}&coin=${activeCoinSymbol}&style=${getCurrentStyle()}&ts=${Date.now()}`;
+Track the market mood live 👇`;
+
+  const shareUrl = "https://wojakmeter.com";
 
   const tweetUrl =
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(ogUrl)}`;
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
 
   window.open(tweetUrl, "_blank", "noopener,noreferrer");
 }
@@ -596,7 +638,9 @@ function setStudioText(id, value) {
 }
 
 function renderStudio() {
-  const ctx = getMarketContext();
+  const globalCtx = getGlobalMarketContext();
+  const coinCtx = getCoinContext();
+  const ctx = { ...globalCtx, ...coinCtx };
   const xPost = buildXPost(ctx);
 
   setStudioText("memePromptOutput", buildMemePrompt(ctx));
@@ -1156,7 +1200,13 @@ function setupButtons() {
     const value = byId("styleSelector").value;
     const root = getAppRoot();
     if (root) root.className = `style-${value}`;
-    localStorage.setItem("wojakStyle", value);
+
+    try {
+      localStorage.setItem("wojakStyle", value);
+    } catch (e) {
+      console.warn("Could not save style:", e);
+    }
+
     renderScale();
     renderCoinSections();
     await loadGlobalMarket();
@@ -1204,7 +1254,14 @@ function renderScale() {
 }
 
 function initStyle() {
-  const savedStyle = localStorage.getItem("wojakStyle") || "classic";
+  let savedStyle = "classic";
+
+  try {
+    savedStyle = localStorage.getItem("wojakStyle") || "classic";
+  } catch (e) {
+    console.warn("Could not load saved style:", e);
+  }
+
   const root = getAppRoot();
   if (root) root.className = `style-${savedStyle}`;
   if (byId("styleSelector")) {
