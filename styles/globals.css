@@ -2048,7 +2048,8 @@ pre.studio-output {
   }
 }
 
-@media (max-width: 640px) {
+
+@media (max-width:640px) {
   .emotion-meta {
     grid-template-columns: 1fr;
   }
@@ -2072,7 +2073,7 @@ pre.studio-output {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width:560px) {
   .logo-img {
     height: 60px;
     max-width: 260px;
@@ -2172,7 +2173,7 @@ pre.studio-output {
   }
 
   .emotion-segment {
-    font-size: 0.52rem;
+    font-size: .52rem;
     padding: 12px 2px;
   }
 
@@ -2228,4 +2229,6 @@ pre.studio-output {
   .wm-footer-logo-img {
     width: 135px;
   }
-} 
+}
+
+  
