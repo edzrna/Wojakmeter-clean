@@ -123,7 +123,10 @@ export default function Home({ ogImageUrl }) {
 
           <main className="dashboard">
             <section className="hero card">
-              <h2>CRYPTO MARKET MOOD</h2>
+              <h2 id="heroTitle">
+                CRYPTO MARKET MOOD
+                <span id="heroDriverLabel"> (Market flow / price action)</span>
+              </h2>
 
               <div className="hero-grid hero-grid-single">
                 <div className="hero-main">
