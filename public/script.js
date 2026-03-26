@@ -52,6 +52,12 @@ function clamp(num, min, max) {
   return Math.max(min, Math.min(max, num));
 }
 
+function roundScore(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.round(clamp(num, 0, 100));
+}
+
 function average(arr) {
   if (!Array.isArray(arr) || !arr.length) return 0;
   return arr.reduce((sum, n) => sum + Number(n || 0), 0) / arr.length;
@@ -306,6 +312,8 @@ function updateHero(score, mood) {
   const heartbeatWrap = byId("heartbeatWrap");
   const heartbeatPath = byId("heartbeatPath");
 
+  const rounded = roundScore(score);
+
   if (heroMood) {
     heroMood.textContent = mood.name;
     heroMood.className = `hero-mood mood-${mood.key}`;
@@ -314,7 +322,7 @@ function updateHero(score, mood) {
   if (heroScoreWrap) {
     heroScoreWrap.innerHTML = `
       <span class="score-label">Score</span><span class="score-colon">:</span>
-      <span id="heroScore" class="mood-${mood.key}">${score}</span>
+      <span id="heroScore" class="mood-${mood.key}">${rounded}</span>
       <span class="score-divider">/</span>
       <span class="score-max">100</span>
     `;
@@ -322,16 +330,24 @@ function updateHero(score, mood) {
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
-    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath(DEFAULT_STYLE, mood.key));
+    setImage(
+      heroFaceImg,
+      getHeroImagePath(style, mood.key),
+      getHeroImagePath(DEFAULT_STYLE, mood.key)
+    );
   }
 
   if (emotionBarMood) emotionBarMood.textContent = mood.name;
-  if (emotionBarScore) emotionBarScore.textContent = String(score);
+  if (emotionBarScore) emotionBarScore.textContent = String(rounded);
   if (emotionBarRange) emotionBarRange.textContent = mood.range;
-  if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
+  if (emotionPointer) emotionPointer.style.left = `${clamp(rounded, 0, 100)}%`;
 
   if (emotionPointerImg) {
-    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
+    setImage(
+      emotionPointerImg,
+      getIconImagePath(style, mood.key),
+      getIconImagePath(DEFAULT_STYLE, mood.key)
+    );
   }
 
   if (heartbeatWrap && heartbeatPath) {
@@ -353,7 +369,8 @@ function updateHero(score, mood) {
 
 function updateSocial(socialScore) {
   const style = getCurrentStyle();
-  const socialMood = getMoodByScore(socialScore);
+  const rounded = roundScore(socialScore);
+  const socialMood = getMoodByScore(rounded);
   const socialMoodMini = byId("socialMoodMini");
   const socialScoreMini = byId("socialScoreMini");
   const socialBadge = qs(".hero-social-badge");
@@ -365,7 +382,7 @@ function updateSocial(socialScore) {
   }
 
   if (socialScoreMini) {
-    socialScoreMini.textContent = socialScore;
+    socialScoreMini.textContent = rounded;
     socialScoreMini.className = `mood-${socialMood.key}`;
   }
 
@@ -384,7 +401,11 @@ function updateSocial(socialScore) {
 
   if (socialIconImg) {
     socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
+    setImage(
+      socialIconImg,
+      getIconImagePath(style, socialMood.key),
+      getIconImagePath(DEFAULT_STYLE, socialMood.key)
+    );
   }
 
   return socialMood;
@@ -407,7 +428,7 @@ function updateDriverPanel() {
 function getGlobalMarketContext() {
   return {
     globalMood: currentGlobalMood?.name || "Neutral",
-    globalScore: currentGlobalScore,
+    globalScore: roundScore(currentGlobalScore),
     globalTimeframe,
     globalChange: currentGlobalChange ?? 0,
     globalVolume: byId("globalMarketVolume")?.textContent || "--",
@@ -479,7 +500,7 @@ function buildDailyMeme(ctx) {
 
 function buildXPost(ctx) {
   const caption =
-`MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+`MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${roundScore(ctx.globalScore)}/100)
 
 Driver: ${ctx.macroLabel}
 Timeframe: ${ctx.globalTimeframe}
@@ -549,7 +570,7 @@ function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
 
   const text =
-`MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+`MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${roundScore(ctx.globalScore)}/100)
 
 Driver: ${ctx.macroLabel}
 Timeframe: ${ctx.globalTimeframe}
@@ -660,12 +681,14 @@ async function loadGlobalMarket() {
         break;
     }
 
-    currentGlobalScore = normalizeChangeToScore(currentGlobalChange, 12);
+    currentGlobalScore = roundScore(normalizeChangeToScore(currentGlobalChange, 12));
     currentGlobalMood = getMoodByScore(currentGlobalScore);
-    currentSocialScore = getSocialScoreFromMarket(
-      currentGlobalChange,
-      50 + average(trendingCoinsData.map(c => Number(c.price_change_percentage_24h_in_currency || 0))) * 4,
-      50 + average(topMemesData.map(c => Number(c.price_change_percentage_24h_in_currency || 0))) * 4
+    currentSocialScore = roundScore(
+      getSocialScoreFromMarket(
+        currentGlobalChange,
+        50 + average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 4,
+        50 + average(topMemesData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 4
+      )
     );
 
     updateHero(currentGlobalScore, currentGlobalMood);
@@ -702,7 +725,7 @@ function createCoinCard(coin, isActive = false) {
   const style = getCurrentStyle();
   const symbol = coin.symbol?.toUpperCase?.() || "--";
   const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-  const score = normalizeChangeToScore(change, 6);
+  const score = roundScore(normalizeChangeToScore(change, 6));
   const mood = getMoodByScore(score);
 
   const card = document.createElement("button");
@@ -988,8 +1011,8 @@ async function loadCoinDetails() {
     if (!coin || !coin.id) return;
 
     const value = getCoinChangeForTimeframe(coin, chartTimeframe);
-    const technicalMood = getMoodByScore(normalizeChangeToScore(value, 10));
-    const socialMood = getMoodByScore(currentSocialScore);
+    const technicalMood = getMoodByScore(roundScore(normalizeChangeToScore(value, 10)));
+    const socialMood = getMoodByScore(roundScore(currentSocialScore));
     const style = getCurrentStyle();
 
     if (byId("chartTitle")) byId("chartTitle").textContent = `${activeCoinSymbol} / ${coin.name}`;
@@ -1015,13 +1038,21 @@ async function loadCoinDetails() {
     const coinMoodIcon = byId("coinMoodIconImg");
     if (coinMoodIcon) {
       coinMoodIcon.className = `chart-mood-chip-icon mood-icon-img ${technicalMood.anim}`;
-      setImage(coinMoodIcon, getIconImagePath(style, technicalMood.key), getIconImagePath(DEFAULT_STYLE, technicalMood.key));
+      setImage(
+        coinMoodIcon,
+        getIconImagePath(style, technicalMood.key),
+        getIconImagePath(DEFAULT_STYLE, technicalMood.key)
+      );
     }
 
     const socialIcon = byId("detailSocialIconImg");
     if (socialIcon) {
       socialIcon.className = `chart-mood-chip-icon mood-icon-img ${socialMood.anim}`;
-      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
+      setImage(
+        socialIcon,
+        getIconImagePath(style, socialMood.key),
+        getIconImagePath(DEFAULT_STYLE, socialMood.key)
+      );
     }
 
     const intervalIds = {
