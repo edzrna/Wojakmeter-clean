@@ -545,7 +545,7 @@ function ensureMobileDock() {
 
       <div class="mobile-dock-driver-wrap">
         <label for="mobileDockDriverSelect">Market Driver</label>
-        <select id="mobileDockDriverSelect" defaultValue="market_flow">
+        <select id="mobileDockDriverSelect">
           <option value="market_flow">Market flow / price action</option>
           <option value="etf_adoption">ETF / institutional adoption</option>
           <option value="rate_hike">Rate hike fears</option>
