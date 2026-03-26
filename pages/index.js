@@ -155,7 +155,7 @@ export default function Home({ ogImageUrl }) {
                       💧
                     </div>
 
-                    <div className="hero-social-badge social-neutral" aria-label="Social sentiment">
+                    <div className="hero-social-badge" aria-label="Social sentiment">
                       <div className="hero-social-badge-label">𝕏</div>
                       <div className="hero-social-badge-icon">
                         <img
@@ -184,9 +184,7 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="hero-score" id="heroScoreWrap">
-                    <span id="heroScore">50</span>
-                    <span className="score-separator"> / </span>
-                    <span className="score-max">100</span>
+                    Score: <span id="heroScore">50</span> / 100
                   </div>
 
                   <div className="heartbeat-wrap" id="heartbeatWrap">
@@ -271,7 +269,7 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="hero-share-row">
                     <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
-                      Share Market Mood
+                      Share mood on X
                     </button>
                   </div>
 
@@ -475,6 +473,9 @@ export default function Home({ ogImageUrl }) {
                 <div className="chart-footer">
                   <div className="pill positive" id="chartChangePill">
                     --
+                  </div>
+                  <div className="muted">
+                    Selected timeframe: <span id="selectedTimeframe">1h</span>
                   </div>
                 </div>
 
