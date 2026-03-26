@@ -712,6 +712,21 @@ textarea{
 
 /* ===== SHARE BUTTON ===== */
 
+.action-btn{
+  border:1px solid var(--line);
+  background:#182a40;
+  color:var(--text);
+  padding:10px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.action-btn:hover{
+  filter:brightness(1.08);
+  transform:translateY(-1px);
+}
+
 .share-x-btn{
   display:flex;
   align-items:center;
@@ -766,8 +781,7 @@ textarea{
 
 .timeframes button,
 .chart-mode-btn,
-.tab-btn,
-.action-btn{
+.tab-btn{
   border:1px solid var(--line);
   background:#182a40;
   color:var(--text);
@@ -779,8 +793,7 @@ textarea{
 
 .timeframes button:hover,
 .chart-mode-btn:hover,
-.tab-btn:hover,
-.action-btn:hover{
+.tab-btn:hover{
   filter:brightness(1.08);
   transform:translateY(-1px);
 }
@@ -1155,6 +1168,10 @@ textarea{
   background:rgba(255,255,255,.03);
   font-size:13px;
   font-weight:700;
+}
+
+#chartFooterTimeframe{
+  color:var(--muted);
 }
 
 .market-intervals{
