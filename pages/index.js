@@ -99,7 +99,7 @@ export default function Home({ ogImageUrl }) {
 
       <Script src="/script.js" strategy="afterInteractive" />
 
-      <div className="style-3d">
+      <div className="style-classic">
         <div className="app-shell">
           <header className="topbar cardless" id="market">
             <div className="topbar-left">
@@ -127,7 +127,7 @@ export default function Home({ ogImageUrl }) {
                 <label className="style-label" htmlFor="styleSelector">
                   Wojak Style
                 </label>
-                <select id="styleSelector" defaultValue="3d">
+                <select id="styleSelector" defaultValue="classic">
                   <option value="classic">Classic</option>
                   <option value="3d">3D</option>
                   <option value="anime">Anime</option>
@@ -161,7 +161,7 @@ export default function Home({ ogImageUrl }) {
                         <img
                           id="socialIconImg"
                           className="mood-icon-img anim-float"
-                          src="/assets/icons/3d/neutral.png"
+                          src="/assets/icons/classic/neutral.png"
                           alt="Social mood icon"
                         />
                       </div>
@@ -174,7 +174,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="heroFaceImg"
                       className="hero-face-img anim-float"
-                      src="/assets/hero/3d/neutral.png"
+                      src="/assets/hero/classic/neutral.png"
                       alt="Global market mood"
                     />
                   </div>
@@ -222,7 +222,7 @@ export default function Home({ ogImageUrl }) {
                           <div className="emotion-pointer-face">
                             <img
                               id="emotionPointerImg"
-                              src="/assets/icons/3d/neutral.png"
+                              src="/assets/icons/classic/neutral.png"
                               alt="Current emotional state"
                             />
                           </div>
@@ -423,7 +423,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="coinMoodIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Technical mood icon"
                     />
                     <div>
@@ -436,7 +436,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="detailSocialIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Social mood icon"
                     />
                     <div>
@@ -832,7 +832,7 @@ export async function getServerSideProps({ req }) {
       `&coin=${encodeURIComponent("MARKET")}` +
       `&driver=${encodeURIComponent(driver)}` +
       `&risk=${encodeURIComponent(risk)}` +
-      `&style=${encodeURIComponent("3d")}`;
+      `&style=${encodeURIComponent("classic")}`;
 
     return {
       props: {
@@ -843,7 +843,7 @@ export async function getServerSideProps({ req }) {
     return {
       props: {
         ogImageUrl:
-          `${baseUrl}/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=3d`
+          `${baseUrl}/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=classic`
       }
     };
   }
