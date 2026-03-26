@@ -2,6 +2,31 @@ import Head from "next/head";
 import Script from "next/script";
 import Link from "next/link";
 
+function clamp(num, min, max) {
+  return Math.max(min, Math.min(max, num));
+}
+
+function scoreToMood(score) {
+  if (score >= 85) return "euphoria";
+  if (score >= 70) return "content";
+  if (score >= 60) return "optimism";
+  if (score >= 45) return "neutral";
+  if (score >= 35) return "doubt";
+  if (score >= 20) return "concern";
+  return "frustration";
+}
+
+function formatCompactVolume(volumeUsd) {
+  const value = Number(volumeUsd || 0);
+
+  if (!Number.isFinite(value) || value <= 0) return "$--";
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+
+  return `$${value.toFixed(0)}`;
+}
+
 export default function Home({ ogImageUrl }) {
   const structuredData = {
     "@context": "https://schema.org",
@@ -74,7 +99,7 @@ export default function Home({ ogImageUrl }) {
 
       <Script src="/script.js" strategy="afterInteractive" />
 
-      <div className="style-3d">
+      <div className="style-classic">
         <div className="app-shell">
           <header className="topbar cardless" id="market">
             <div className="topbar-left">
@@ -102,7 +127,7 @@ export default function Home({ ogImageUrl }) {
                 <label className="style-label" htmlFor="styleSelector">
                   Wojak Style
                 </label>
-                <select id="styleSelector" defaultValue="3d">
+                <select id="styleSelector" defaultValue="classic">
                   <option value="classic">Classic</option>
                   <option value="3d">3D</option>
                   <option value="anime">Anime</option>
@@ -130,13 +155,13 @@ export default function Home({ ogImageUrl }) {
                       💧
                     </div>
 
-                    <div className="hero-social-badge social-neutral" aria-label="Social sentiment">
+                    <div className="hero-social-badge" aria-label="Social sentiment">
                       <div className="hero-social-badge-label">𝕏</div>
                       <div className="hero-social-badge-icon">
                         <img
                           id="socialIconImg"
                           className="mood-icon-img anim-float"
-                          src="/assets/icons/3d/neutral.png"
+                          src="/assets/icons/classic/neutral.png"
                           alt="Social mood icon"
                         />
                       </div>
@@ -149,7 +174,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="heroFaceImg"
                       className="hero-face-img anim-float"
-                      src="/assets/hero/3d/neutral.png"
+                      src="/assets/hero/classic/neutral.png"
                       alt="Global market mood"
                     />
                   </div>
@@ -159,7 +184,7 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="hero-score" id="heroScoreWrap">
-                    <span id="heroScore"></span>
+                    Score: <span id="heroScore">50</span> / 100
                   </div>
 
                   <div className="heartbeat-wrap" id="heartbeatWrap">
@@ -197,7 +222,7 @@ export default function Home({ ogImageUrl }) {
                           <div className="emotion-pointer-face">
                             <img
                               id="emotionPointerImg"
-                              src="/assets/icons/3d/neutral.png"
+                              src="/assets/icons/classic/neutral.png"
                               alt="Current emotional state"
                             />
                           </div>
@@ -243,9 +268,8 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="hero-share-row">
-                    <button id="shareMoodBtn" className="share-x-btn" type="button">
-                      <span className="share-icon">𝕏</span>
-                      <span className="share-text">Share Market Mood</span>
+                    <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
+                      Share mood on X
                     </button>
                   </div>
 
@@ -399,7 +423,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="coinMoodIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Technical mood icon"
                     />
                     <div>
@@ -412,7 +436,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="detailSocialIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Social mood icon"
                     />
                     <div>
@@ -450,8 +474,8 @@ export default function Home({ ogImageUrl }) {
                   <div className="pill positive" id="chartChangePill">
                     --
                   </div>
-                  <div className="muted" id="chartFooterTimeframe">
-                    <span id="selectedTimeframe">1h</span>
+                  <div className="muted">
+                    Selected timeframe: <span id="selectedTimeframe">1h</span>
                   </div>
                 </div>
 
@@ -488,95 +512,214 @@ export default function Home({ ogImageUrl }) {
               </section>
             </section>
 
-            <section className="scale-card card">
-              <h3>EMOTIONAL SCALE</h3>
-              <div className="scale-grid" id="scaleGrid"></div>
-            </section>
-          </main>
-
-          <div id="mobileMoodDock" className="mobile-mood-dock hidden collapsed">
-            <button id="mobileMoodDockToggle" className="mobile-mood-dock-toggle" type="button">
-              <span className="mobile-mood-dock-handle"></span>
-              <span className="mobile-mood-dock-mini">
-                <img
-                  id="mobileDockMoodIcon"
-                  src="/assets/icons/3d/neutral.png"
-                  alt="Current mood"
-                />
-                <span id="mobileDockDriverMini">Market flow / price action</span>
-              </span>
-            </button>
-
-            <div id="mobileMoodDockBody" className="mobile-mood-dock-body">
-              <div className="mobile-mood-dock-header">
-                <div className="mobile-mood-dock-title">WOJAKMETER</div>
-                <div id="mobileDockMoodLabel" className="mobile-mood-dock-mood mood-neutral">
-                  Neutral
-                </div>
+            <section className="studio-card card" id="wojak-studio">
+              <div className="section-head">
+                <h3>WOJAK STUDIO</h3>
+                <span className="muted">Create content from live market sentiment</span>
               </div>
 
-              <div className="mobile-dock-track-wrap">
-                <div className="emotion-track mobile-dock-track">
-                  <div className="emotion-segment seg-frustration">Frustration</div>
-                  <div className="emotion-segment seg-concern">Concern</div>
-                  <div className="emotion-segment seg-doubt">Doubt</div>
-                  <div className="emotion-segment seg-neutral">Neutral</div>
-                  <div className="emotion-segment seg-optimism">Optimism</div>
-                  <div className="emotion-segment seg-content">Content</div>
-                  <div className="emotion-segment seg-euphoria">Euphoria</div>
+              <div className="tabs-row" id="studioTabs">
+                <button className="tab-btn active" data-studio-tab="meme">
+                  Meme Generator
+                </button>
+                <button className="tab-btn" data-studio-tab="daily">
+                  Daily Market Meme
+                </button>
+                <button className="tab-btn" data-studio-tab="xpost">
+                  X Post Generator
+                </button>
+                <button className="tab-btn" data-studio-tab="story">
+                  Story Mode
+                </button>
+              </div>
 
-                  <div className="emotion-pointer" id="mobileDockPointer" aria-label="Mobile dock indicator">
-                    <div className="emotion-pointer-arrow"></div>
-                    <div className="emotion-pointer-face">
-                      <img
-                        id="mobileDockPointerImg"
-                        src="/assets/icons/3d/neutral.png"
-                        alt="Current emotional state"
-                      />
+              <div className="studio-panel active" id="studio-meme">
+                <div className="studio-grid">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Meme Prompt</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="memePromptOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="studio-output" id="memePromptOutput">
+                      Loading...
+                    </pre>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Scene Summary</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="memeSceneOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="memeSceneOutput">
+                      Loading...
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mobile-dock-meta">
-                <div className="mobile-dock-meta-box">
-                  <span>Range</span>
-                  <strong id="mobileDockRange">45–59</strong>
+              <div className="studio-panel" id="studio-daily">
+                <div className="studio-grid studio-grid-single">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Daily Market Meme</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="dailyMemeOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="dailyMemeOutput">
+                      Loading...
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <div className="mobile-dock-meta-box">
-                  <span>Driver</span>
-                  <strong id="mobileDockDriver">Market flow / price action</strong>
+              <div className="studio-panel" id="studio-xpost">
+                <div className="studio-grid">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>X Caption</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostCaptionOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostCaptionOutput">
+                      Loading...
+                    </div>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Alt Text</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostAltOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostAltOutput">
+                      Loading...
+                    </div>
+                  </div>
+
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Hashtags</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="xPostTagsOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostTagsOutput">
+                      Loading...
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="timeframes hero-timeframes mobile-dock-timeframes" id="mobileDockTimeframes">
-                <button data-timeframe="1m">1m</button>
-                <button data-timeframe="5m">5m</button>
-                <button data-timeframe="15m">15m</button>
-                <button data-timeframe="1h" className="active">
-                  1h
-                </button>
-                <button data-timeframe="4h">4h</button>
-                <button data-timeframe="24h">24h</button>
-                <button data-timeframe="7d">7d</button>
+              <div className="studio-panel" id="studio-story">
+                <div className="studio-grid studio-grid-single">
+                  <div className="studio-box">
+                    <div className="studio-box-head">
+                      <h4>Market Story</h4>
+                      <button
+                        className="action-btn studio-copy-btn"
+                        data-copy-target="storyModeOutput"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="studio-output prose-output" id="storyModeOutput">
+                      Loading...
+                    </div>
+                  </div>
+                </div>
               </div>
+            </section>
 
-              <div className="mobile-dock-driver-wrap">
-                <label htmlFor="mobileDockDriverSelect">Market Driver</label>
-                <select id="mobileDockDriverSelect" defaultValue="market_flow">
-                  <option value="market_flow">Market flow / price action</option>
-                  <option value="etf_adoption">ETF / institutional adoption</option>
-                  <option value="rate_hike">Rate hike fears</option>
-                  <option value="rate_cut">Rate cut hopes</option>
-                  <option value="regulation_crackdown">Regulation crackdown</option>
-                  <option value="crypto_hack">Crypto hack / insolvency</option>
-                  <option value="war_escalation">War escalation</option>
-                  <option value="neutral_macro">Neutral macro environment</option>
-                </select>
+            <section className="scale-card card">
+              <h3>EMOTIONAL SCALE</h3>
+              <div className="scale-grid" id="scaleGrid"></div>
+            </section>
+
+            <section className="about-section card" id="about">
+              <div className="about-container">
+                <span className="about-label">🧠 About</span>
+
+                <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
+
+                <p className="about-text">
+                  We transform price action, sentiment, and macro signals into a single emotional
+                  score so you instantly understand what the market feels like.
+                </p>
+
+                <p className="about-text about-text-strong">
+                  No noise. No complexity.
+                  <br />
+                  Just the emotional state of the market.
+                </p>
+
+                <div className="about-divider"></div>
+
+                <p className="about-text">
+                  Wojak, also known as the <strong>“Feel Guy”</strong>, represents raw human
+                  emotion: fear, doubt, confidence, euphoria.
+                </p>
+
+                <p className="about-text">Crypto markets move the same way.</p>
+
+                <p className="about-text about-text-strong">
+                  Wojak isn’t just a meme.
+                  <br />
+                  He is the market.
+                </p>
               </div>
-            </div>
-          </div>
+            </section>
+
+            <section className="seo-section card" id="what-is-wojakmeter">
+              <div className="about-container">
+                <span className="about-label">🔍 SEO</span>
+                <h2 className="about-title">What is WojakMeter?</h2>
+
+                <p className="about-text">
+                  WojakMeter is a crypto sentiment tool that converts market data into a real-time
+                  emotional index. By analyzing price momentum, social sentiment, and macro trends,
+                  it provides a clear view of how the crypto market feels.
+                </p>
+
+                <h3 className="seo-subtitle">How does it work?</h3>
+                <p className="about-text">
+                  The platform aggregates multiple signals and translates them into a 0–100 score,
+                  mapped across 7 emotional states ranging from Frustration to Euphoria.
+                </p>
+
+                <h3 className="seo-subtitle">Why use WojakMeter?</h3>
+                <p className="about-text">
+                  Traditional tools focus on raw data. WojakMeter focuses on interpretation,
+                  helping traders quickly understand market psychology through a visual emotional
+                  framework.
+                </p>
+              </div>
+            </section>
+          </main>
 
           <footer className="wm-footer">
             <div className="wm-footer-inner">
@@ -594,6 +737,7 @@ export default function Home({ ogImageUrl }) {
                   <a href="#about">About</a>
                   <a href="#top-coins">Top Coins</a>
                   <a href="#market">Market Mood</a>
+                  <a href="#wojak-studio">Wojak Studio</a>
                 </div>
 
                 <div className="wm-footer-col">
@@ -605,17 +749,35 @@ export default function Home({ ogImageUrl }) {
 
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Community</h4>
+
                   <a
                     href="https://x.com/WojakMeter"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
                   >
+                    <span className="x-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          fill="currentColor"
+                          d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
+                        />
+                      </svg>
+                    </span>
                     @WojakMeter
                   </a>
 
                   <a href="mailto:contact@wojakmeter.com" className="footer-link">
                     contact@wojakmeter.com
+                  </a>
+
+                  <a
+                    href="https://t.me/WojakMeter_bot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
+                    Telegram
                   </a>
                 </div>
               </div>
@@ -631,19 +793,57 @@ export default function Home({ ogImageUrl }) {
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req }) {
+  const protocol =
+    req.headers["x-forwarded-proto"] ||
+    (req.headers.host?.includes("localhost") ? "http" : "https");
+
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+
   try {
+    const [globalRes, sentimentRes] = await Promise.all([
+      fetch(`${baseUrl}/api/global`),
+      fetch(`${baseUrl}/api/sentiment`)
+    ]);
+
+    const globalJson = await globalRes.json().catch(() => null);
+    const sentimentJson = await sentimentRes.json().catch(() => null);
+
+    const rawGlobal = globalJson?.raw || {};
+    const change = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
+
+    const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
+    const mood = scoreToMood(score);
+
+    const volumeCompact = formatCompactVolume(volumeUsd);
+
+    const driver = sentimentJson?.driver || "Market flow / price action";
+    const risk = sentimentJson?.risk || "Balanced";
+
+    const ogImageUrl =
+      `${baseUrl}/api/og` +
+      `?mood=${encodeURIComponent(mood)}` +
+      `&score=${encodeURIComponent(score)}` +
+      `&tf=1h` +
+      `&change=${encodeURIComponent(change.toFixed(2))}` +
+      `&volume=${encodeURIComponent(volumeCompact)}` +
+      `&coin=${encodeURIComponent("MARKET")}` +
+      `&driver=${encodeURIComponent(driver)}` +
+      `&risk=${encodeURIComponent(risk)}` +
+      `&style=${encodeURIComponent("classic")}`;
+
     return {
       props: {
-        ogImageUrl:
-          "https://wojakmeter.com/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=BTC&style=3d"
+        ogImageUrl
       }
     };
   } catch {
     return {
       props: {
         ogImageUrl:
-          "https://wojakmeter.com/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=BTC&style=3d"
+          `${baseUrl}/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=classic`
       }
     };
   }
