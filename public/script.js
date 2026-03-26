@@ -20,7 +20,6 @@ const TRENDING_REFRESH_MS = 60000;
 const MEMES_REFRESH_MS = 90000;
 const SENTIMENT_REFRESH_MS = 60000;
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
-const DEFAULT_STYLE = "3d";
 
 const macroDrivers = {
   market_flow: { label: "Market flow / price action" },
@@ -71,12 +70,8 @@ function byId(id) {
   return document.getElementById(id);
 }
 
-function qs(selector) {
-  return document.querySelector(selector);
-}
-
-function qsa(selector) {
-  return Array.from(document.querySelectorAll(selector));
+function getAppRoot() {
+  return document.querySelector(".style-classic, .style-3d, .style-anime, .style-minimal");
 }
 
 function clamp(num, min, max) {
@@ -156,7 +151,12 @@ function normalizeChangeToScore(changePct, sensitivity = 10) {
 }
 
 function getCurrentStyle() {
-  return DEFAULT_STYLE;
+  const bodyClasses = document.body.className || "";
+  const root = getAppRoot();
+  const rootClasses = root?.className || "";
+  const classes = `${bodyClasses} ${rootClasses}`;
+  const match = classes.match(/style-(classic|3d|anime|minimal)/);
+  return match ? match[1] : "classic";
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -215,13 +215,17 @@ function getPriceScore({ change1h = 0, change24h = 0, volumeRatio = 1, volatilit
 
 function getTrendingHeat(trendingCoins = []) {
   if (!Array.isArray(trendingCoins) || !trendingCoins.length) return 50;
-  const avg24h = average(trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
+  const avg24h = average(
+    trendingCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
+  );
   return Math.round(clamp(50 + avg24h * 6, 0, 100));
 }
 
 function getMemeHeat(memeCoins = []) {
   if (!Array.isArray(memeCoins) || !memeCoins.length) return 50;
-  const avg24h = average(memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0));
+  const avg24h = average(
+    memeCoins.slice(0, 8).map((coin) => coin.price_change_percentage_24h_in_currency ?? 0)
+  );
   return Math.round(clamp(50 + avg24h * 7, 0, 100));
 }
 
@@ -386,15 +390,50 @@ function getTimeframeAdjustedChange(baseChange24h, timeframe) {
   const change = Number(baseChange24h || 0);
 
   switch (timeframe) {
-    case "1m": return change / 1440;
-    case "5m": return change / 288;
-    case "15m": return change / 96;
-    case "1h": return change / 24;
-    case "4h": return change / 6;
-    case "24h": return change;
-    case "7d": return change * 2.2;
-    default: return change / 24;
+    case "1m":
+      return change / 1440;
+    case "5m":
+      return change / 288;
+    case "15m":
+      return change / 96;
+    case "1h":
+      return change / 24;
+    case "4h":
+      return change / 6;
+    case "24h":
+      return change;
+    case "7d":
+      return change * 2.2;
+    default:
+      return change / 24;
   }
+}
+
+function applyStyle(style) {
+  const safeStyle = ["classic", "3d", "anime", "minimal"].includes(style)
+    ? style
+    : "classic";
+
+  const root = getAppRoot();
+  if (root) root.className = `style-${safeStyle}`;
+
+  document.body.classList.remove(
+    "style-classic",
+    "style-3d",
+    "style-anime",
+    "style-minimal"
+  );
+  document.body.classList.add(`style-${safeStyle}`);
+
+  if (byId("styleSelector")) {
+    byId("styleSelector").value = safeStyle;
+  }
+}
+
+function updateHeroTitle() {
+  const heroDriverLabel = byId("heroDriverLabel");
+  if (!heroDriverLabel) return;
+  heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
 }
 
 function renderTicker(coins) {
@@ -447,7 +486,8 @@ async function fetchJson(url, fallback = null) {
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const json = await res.json();
+    return json;
   } catch (error) {
     debugMessage(`Fetch failed for ${url}: ${error.message}`);
     return fallback;
@@ -478,94 +518,14 @@ function normalizeCoinMarketItem(item) {
   };
 }
 
-function ensureMobileDock() {
-  if (byId("mobileMoodDock")) return;
+function applyMoodColors(mood) {
+  const heroScoreWrap = byId("heroScoreWrap");
+  const emotionBarMood = byId("emotionBarMood");
+  const emotionBarScore = byId("emotionBarScore");
 
-  const shell = qs(".app-shell");
-  if (!shell) return;
-
-  const dock = document.createElement("div");
-  dock.id = "mobileMoodDock";
-  dock.className = "mobile-mood-dock hidden collapsed";
-  dock.innerHTML = `
-    <button id="mobileMoodDockToggle" class="mobile-mood-dock-toggle" type="button">
-      <span class="mobile-mood-dock-handle"></span>
-      <span class="mobile-mood-dock-mini">
-        <img id="mobileDockMoodIcon" src="/assets/icons/${DEFAULT_STYLE}/neutral.png" alt="Current mood">
-        <span id="mobileDockDriverMini">Market flow / price action</span>
-      </span>
-    </button>
-
-    <div id="mobileMoodDockBody" class="mobile-mood-dock-body">
-      <div class="mobile-mood-dock-header">
-        <div class="mobile-mood-dock-title">WOJAKMETER</div>
-        <div id="mobileDockMoodLabel" class="mobile-mood-dock-mood mood-neutral">Neutral</div>
-      </div>
-
-      <div class="mobile-dock-track-wrap">
-        <div class="emotion-track mobile-dock-track">
-          <div class="emotion-segment seg-frustration">Frustration</div>
-          <div class="emotion-segment seg-concern">Concern</div>
-          <div class="emotion-segment seg-doubt">Doubt</div>
-          <div class="emotion-segment seg-neutral">Neutral</div>
-          <div class="emotion-segment seg-optimism">Optimism</div>
-          <div class="emotion-segment seg-content">Content</div>
-          <div class="emotion-segment seg-euphoria">Euphoria</div>
-
-          <div class="emotion-pointer" id="mobileDockPointer" aria-label="Mobile dock indicator">
-            <div class="emotion-pointer-arrow"></div>
-            <div class="emotion-pointer-face">
-              <img id="mobileDockPointerImg" src="/assets/icons/${DEFAULT_STYLE}/neutral.png" alt="Current emotional state">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mobile-dock-meta">
-        <div class="mobile-dock-meta-box">
-          <span>Range</span>
-          <strong id="mobileDockRange">45–59</strong>
-        </div>
-
-        <div class="mobile-dock-meta-box">
-          <span>Driver</span>
-          <strong id="mobileDockDriver">Market flow / price action</strong>
-        </div>
-      </div>
-
-      <div class="timeframes hero-timeframes mobile-dock-timeframes" id="mobileDockTimeframes">
-        <button data-timeframe="1m">1m</button>
-        <button data-timeframe="5m">5m</button>
-        <button data-timeframe="15m">15m</button>
-        <button data-timeframe="1h" class="active">1h</button>
-        <button data-timeframe="4h">4h</button>
-        <button data-timeframe="24h">24h</button>
-        <button data-timeframe="7d">7d</button>
-      </div>
-
-      <div class="mobile-dock-driver-wrap">
-        <label for="mobileDockDriverSelect">Market Driver</label>
-        <select id="mobileDockDriverSelect" defaultValue="market_flow">
-          <option value="market_flow">Market flow / price action</option>
-          <option value="etf_adoption">ETF / institutional adoption</option>
-          <option value="rate_hike">Rate hike fears</option>
-          <option value="rate_cut">Rate cut hopes</option>
-          <option value="regulation_crackdown">Regulation crackdown</option>
-          <option value="crypto_hack">Crypto hack / insolvency</option>
-          <option value="war_escalation">War escalation</option>
-          <option value="neutral_macro">Neutral macro environment</option>
-        </select>
-      </div>
-    </div>
-  `;
-
-  shell.appendChild(dock);
-}
-
-function updateHeroTitle() {
-  const heroDriverLabel = byId("heroDriverLabel");
-  if (!heroDriverLabel) return;
-  heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
+  if (heroScoreWrap) heroScoreWrap.className = `hero-score mood-${mood.key}`;
+  if (emotionBarMood) emotionBarMood.className = `mood-${mood.key}`;
+  if (emotionBarScore) emotionBarScore.className = `mood-${mood.key}`;
 }
 
 function updateHero(score, mood) {
@@ -573,9 +533,9 @@ function updateHero(score, mood) {
   const heroMood = byId("heroMood");
   const heroScore = byId("heroScore");
   const heroFaceImg = byId("heroFaceImg");
-  const emotionBarRange = byId("emotionBarRange");
   const emotionBarMood = byId("emotionBarMood");
   const emotionBarScore = byId("emotionBarScore");
+  const emotionBarRange = byId("emotionBarRange");
   const emotionPointer = byId("emotionPointer");
   const emotionPointerImg = byId("emotionPointerImg");
   const heartbeatWrap = byId("heartbeatWrap");
@@ -586,22 +546,29 @@ function updateHero(score, mood) {
     heroMood.className = `hero-mood mood-${mood.key}`;
   }
 
-  if (heroScore) {
-    heroScore.innerHTML = `<span class="score-value mood-${mood.key}">${score}</span>`;
-  }
+  if (heroScore) heroScore.textContent = score;
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
-    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath(DEFAULT_STYLE, mood.key));
+    setImage(
+      heroFaceImg,
+      getHeroImagePath(style, mood.key),
+      getHeroImagePath("classic", mood.key)
+    );
   }
 
   if (emotionBarMood) emotionBarMood.textContent = mood.name;
-  if (emotionBarScore) emotionBarScore.textContent = String(score);
+  if (emotionBarScore) emotionBarScore.textContent = score;
   if (emotionBarRange) emotionBarRange.textContent = mood.range;
+
   if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (emotionPointerImg) {
-    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
+    setImage(
+      emotionPointerImg,
+      getIconImagePath(style, mood.key),
+      getIconImagePath("classic", mood.key)
+    );
   }
 
   if (heartbeatWrap && heartbeatPath) {
@@ -620,43 +587,24 @@ function updateHero(score, mood) {
     heartbeatPath.setAttribute("d", paths[mood.key] || paths.neutral);
   }
 
-  updateMobileDock(score, mood);
+  applyMoodColors(mood);
 }
 
 function updateSocial(socialScore) {
   const style = getCurrentStyle();
   const socialMood = getMoodByScore(socialScore);
-  const socialMoodMini = byId("socialMoodMini");
-  const socialScoreMini = byId("socialScoreMini");
-  const socialBadge = qs(".hero-social-badge");
 
-  if (socialMoodMini) {
-    socialMoodMini.textContent = socialMood.name;
-    socialMoodMini.className = `mood-${socialMood.key}`;
-  }
-
-  if (socialScoreMini) {
-    socialScoreMini.textContent = socialScore;
-    socialScoreMini.className = `mood-${socialMood.key}`;
-  }
-
-  if (socialBadge) {
-    socialBadge.classList.remove(
-      "social-euphoria",
-      "social-content",
-      "social-optimism",
-      "social-neutral",
-      "social-doubt",
-      "social-concern",
-      "social-frustration"
-    );
-    socialBadge.classList.add(`social-${socialMood.key}`);
-  }
+  if (byId("socialMoodMini")) byId("socialMoodMini").textContent = socialMood.name;
+  if (byId("socialScoreMini")) byId("socialScoreMini").textContent = socialScore;
 
   const socialIconImg = byId("socialIconImg");
   if (socialIconImg) {
     socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
+    setImage(
+      socialIconImg,
+      getIconImagePath(style, socialMood.key),
+      getIconImagePath("classic", socialMood.key)
+    );
   }
 
   return { socialScore, socialMood };
@@ -674,19 +622,11 @@ function updateDriverPanel() {
   if (byId("driverRiskTone")) byId("driverRiskTone").textContent = getRiskToneFromMood(mood.key);
 
   updateHeroTitle();
-
-  const mobileDriver = byId("mobileDockDriver");
-  const mobileDriverMini = byId("mobileDockDriverMini");
-  const mobileDriverSelect = byId("mobileDockDriverSelect");
-
-  if (mobileDriver) mobileDriver.textContent = getDriverLabel(driverKey);
-  if (mobileDriverMini) mobileDriverMini.textContent = getDriverLabel(driverKey);
-  if (mobileDriverSelect) mobileDriverSelect.value = driverKey;
 }
 
 function getGlobalMarketContext() {
   return {
-    style: DEFAULT_STYLE,
+    style: byId("styleSelector")?.value || "classic",
     globalMood: currentGlobalMood?.name || "Neutral",
     globalScore: currentGlobalScore,
     globalTimeframe,
@@ -717,7 +657,7 @@ function buildMemePrompt(ctx) {
   return [
     "Create a high-quality crypto meme image based on the current market context.",
     "",
-    `Selected visual style: ${DEFAULT_STYLE}`,
+    `Selected visual style: ${ctx.style}`,
     `Global mood: ${ctx.globalMood}`,
     `Global timeframe: ${ctx.globalTimeframe}`,
     `Global market move: ${formatPercent(ctx.globalChange)}`,
@@ -747,7 +687,7 @@ function buildMemePrompt(ctx) {
 
 function buildMemeScene(ctx) {
   return `
-<strong>Scene:</strong> A ${DEFAULT_STYLE} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
+<strong>Scene:</strong> A ${ctx.style} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
 
 <strong>Visual tone:</strong> The image should feel premium, dramatic and native to crypto X, with clear emotional readability and a strong meme format.
   `.trim();
@@ -764,31 +704,8 @@ function buildDailyMeme(ctx) {
 }
 
 function buildXPost(ctx) {
-  const moodIconMap = {
-    Euphoria: "🤩",
-    Content: "😌",
-    Optimism: "🙂",
-    Neutral: "😐",
-    Doubt: "🤨",
-    Concern: "😟",
-    Frustration: "😤"
-  };
-
-  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
-
-  const caption =
-`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
-
-📊 Driver: ${ctx.macroLabel}
-⏱️ Timeframe: ${ctx.globalTimeframe}
-📉 Move: ${formatPercent(ctx.globalChange)}
-💰 Volume: ${ctx.globalVolume}
-
-${moodIcon} ${ctx.macroNarrative}
-
-Live ${DEFAULT_STYLE.toUpperCase()} sentiment by WojakMeter ⚡`;
-
-  const alt = `A ${DEFAULT_STYLE} Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
+  const caption = `${ctx.activeCoin} market mood: ${ctx.globalMood}. ${ctx.macroLabel} is shaping sentiment while the market prints ${formatPercent(ctx.globalChange)} on the ${ctx.globalTimeframe} view. ${ctx.coinPerformance} on the selected chart keeps the reaction focused on ${ctx.activeCoin}.`;
+  const alt = `A ${ctx.style} Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
   const hashtags = `#Crypto #Bitcoin #${ctx.activeCoin} #WojakMeter`;
 
   return { caption, alt, hashtags };
@@ -804,6 +721,28 @@ function buildStoryMode(ctx) {
 
 <div class="story-block"><strong>Final reaction</strong><br>The combined reaction is a <strong>${ctx.globalMood}</strong> market shaped by <strong>${ctx.macroLabel}</strong>, with traders reacting through the lens of ${ctx.activeCoin}.</div>
   `.trim();
+}
+
+function shareMoodOnX() {
+  const ctx = getGlobalMarketContext();
+
+  const text =
+`Crypto market mood: ${ctx.globalMood} (${ctx.globalScore}/100)
+
+Driver: ${ctx.macroLabel}
+Timeframe: ${ctx.globalTimeframe}
+Market move: ${formatPercent(ctx.globalChange)}
+Volume: ${ctx.globalVolume}
+
+${ctx.macroNarrative}
+
+Track the market mood live 👇`;
+
+  const shareUrl = "https://wojakmeter.com";
+  const tweetUrl =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+
+  window.open(tweetUrl, "_blank", "noopener,noreferrer");
 }
 
 function setStudioOutput(id, value) {
@@ -847,36 +786,6 @@ async function copyStudioTarget(targetId) {
   }
 }
 
-function shareMoodOnX() {
-  const ctx = getGlobalMarketContext();
-  const moodIconMap = {
-    Euphoria: "🤩",
-    Content: "😌",
-    Optimism: "🙂",
-    Neutral: "😐",
-    Doubt: "🤨",
-    Concern: "😟",
-    Frustration: "😤"
-  };
-
-  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
-
-  const text =
-`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
-
-📊 Driver: ${ctx.macroLabel}
-⏱️ Timeframe: ${ctx.globalTimeframe}
-📉 Move: ${formatPercent(ctx.globalChange)}
-💰 Volume: ${ctx.globalVolume}
-
-${moodIcon} ${ctx.macroNarrative}
-
-Track the market mood live 👇`;
-
-  const shareUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent("https://wojakmeter.com");
-  window.open(shareUrl, "_blank", "noopener,noreferrer");
-}
-
 async function loadSentiment() {
   if (isLoadingSentiment) return;
   isLoadingSentiment = true;
@@ -908,7 +817,10 @@ async function loadGlobalMarket() {
   isLoadingGlobal = true;
 
   try {
-    const response = await fetchJson(`/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
+    const response = await fetchJson(
+      `/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`,
+      null
+    );
 
     if (!response || typeof response !== "object") {
       debugMessage("Global API missing data, keeping current state");
@@ -1003,11 +915,9 @@ async function loadGlobalMarket() {
     updateSocial(currentSocialScore);
     updateDriverPanel();
 
-    const globalChangeEl = byId("globalMarketChange");
-    if (globalChangeEl) {
-      globalChangeEl.textContent = formatPercent(currentGlobalChange);
-      globalChangeEl.classList.remove("positive", "negative", "neutral");
-      globalChangeEl.classList.add(currentGlobalChange >= 0 ? "positive" : "negative");
+    if (byId("globalMarketChange")) {
+      byId("globalMarketChange").textContent = formatPercent(currentGlobalChange);
+      byId("globalMarketChange").className = currentGlobalChange >= 0 ? "positive" : "negative";
     }
 
     if (byId("globalMarketVolume")) {
@@ -1068,7 +978,7 @@ function createCoinCard(coin, isActive = false) {
     renderCoinSections();
     await loadCoinDetails();
     renderStudio();
-    qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   return card;
@@ -1361,10 +1271,8 @@ async function loadCoinDetails() {
     if (byId("selectedTimeframe")) byId("selectedTimeframe").textContent = chartTimeframe;
 
     if (byId("selectedPerformance")) {
-      const perf = byId("selectedPerformance");
-      perf.textContent = formatPercent(value);
-      perf.classList.remove("positive", "negative", "neutral");
-      perf.classList.add(value >= 0 ? "positive" : "negative");
+      byId("selectedPerformance").textContent = formatPercent(value);
+      byId("selectedPerformance").className = value >= 0 ? "positive" : "negative";
     }
 
     if (byId("coinMoodLabel")) byId("coinMoodLabel").textContent = mood.name;
@@ -1373,13 +1281,21 @@ async function loadCoinDetails() {
     const coinMoodIcon = byId("coinMoodIconImg");
     if (coinMoodIcon) {
       coinMoodIcon.className = `chart-mood-chip-icon mood-icon-img ${mood.anim}`;
-      setImage(coinMoodIcon, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
+      setImage(
+        coinMoodIcon,
+        getIconImagePath(style, mood.key),
+        getIconImagePath("classic", mood.key)
+      );
     }
 
     const socialIcon = byId("detailSocialIconImg");
     if (socialIcon) {
       socialIcon.className = `chart-mood-chip-icon mood-icon-img ${socialMood.anim}`;
-      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
+      setImage(
+        socialIcon,
+        getIconImagePath(style, socialMood.key),
+        getIconImagePath("classic", socialMood.key)
+      );
     }
 
     const intervalIds = {
@@ -1400,11 +1316,11 @@ async function loadCoinDetails() {
       el.className = v >= 0 ? "positive" : "negative";
     });
 
-    qsa("#chartTimeframes button").forEach((btn) => {
+    document.querySelectorAll("#chartTimeframes button").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.timeframe === chartTimeframe);
     });
 
-    qsa(".chart-mode-btn").forEach((btn) => {
+    document.querySelectorAll(".chart-mode-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mode === chartMode);
     });
 
@@ -1428,115 +1344,12 @@ async function loadCoinDetails() {
   }
 }
 
-function updateMobileDock(score, mood) {
-  const style = getCurrentStyle();
-  const moodLabel = byId("mobileDockMoodLabel");
-  const rangeEl = byId("mobileDockRange");
-  const pointer = byId("mobileDockPointer");
-  const pointerImg = byId("mobileDockPointerImg");
-  const miniIcon = byId("mobileDockMoodIcon");
-  const driverMini = byId("mobileDockDriverMini");
-  const driverFull = byId("mobileDockDriver");
-
-  if (moodLabel) {
-    moodLabel.textContent = mood.name;
-    moodLabel.className = `mobile-mood-dock-mood mood-${mood.key}`;
-  }
-
-  if (rangeEl) rangeEl.textContent = mood.range;
-  if (pointer) pointer.style.left = `${clamp(score, 0, 100)}%`;
-
-  if (pointerImg) {
-    setImage(pointerImg, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
-  }
-
-  if (miniIcon) {
-    setImage(miniIcon, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
-  }
-
-  if (driverMini) driverMini.textContent = getDriverLabel(currentDominantDriver);
-  if (driverFull) driverFull.textContent = getDriverLabel(currentDominantDriver);
-}
-
-function handleMobileMoodDockVisibility() {
-  const dock = byId("mobileMoodDock");
-  const hero = qs(".hero");
-  if (!dock || !hero) return;
-
-  if (window.innerWidth > 720) {
-    dock.classList.add("hidden");
-    return;
-  }
-
-  const rect = hero.getBoundingClientRect();
-  const heroOutOfView = rect.bottom < 120 || rect.top < -rect.height * 0.35;
-
-  dock.classList.toggle("hidden", !heroOutOfView);
-}
-
-function setupMobileMoodDock() {
-  const dock = byId("mobileMoodDock");
-  const toggle = byId("mobileMoodDockToggle");
-  const mobileDriverSelect = byId("mobileDockDriverSelect");
-
-  if (toggle && dock) {
-    toggle.addEventListener("click", () => {
-      dock.classList.toggle("collapsed");
-    });
-  }
-
-  qsa("#mobileDockTimeframes button").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      globalTimeframe = btn.dataset.timeframe;
-
-      qsa("#heroTimeframes button, #mobileDockTimeframes button").forEach((b) => {
-        b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
-      });
-
-      await loadGlobalMarket();
-    });
-  });
-
-  if (mobileDriverSelect) {
-    mobileDriverSelect.addEventListener("change", async () => {
-      const macroDriver = byId("macroDriver");
-      if (macroDriver) macroDriver.value = mobileDriverSelect.value;
-      await loadGlobalMarket();
-      renderStudio();
-    });
-  }
-
-  window.addEventListener("scroll", handleMobileMoodDockVisibility, { passive: true });
-  window.addEventListener("resize", handleMobileMoodDockVisibility);
-}
-
-function initStudioTabs() {
-  const buttons = qsa("[data-studio-tab]");
-  const panels = qsa(".studio-panel");
-
-  if (!buttons.length || !panels.length) return;
-
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tab = btn.dataset.studioTab;
-
-      buttons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      panels.forEach((panel) => panel.classList.remove("active"));
-
-      const target = byId(`studio-${tab}`);
-      if (target) target.classList.add("active");
-    });
-  });
-}
-
 function setupButtons() {
-  qsa("#heroTimeframes button").forEach((btn) => {
+  document.querySelectorAll("#heroTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
       globalTimeframe = btn.dataset.timeframe;
 
-      qsa("#heroTimeframes button, #mobileDockTimeframes button").forEach((b) => {
+      document.querySelectorAll("#heroTimeframes button").forEach((b) => {
         b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
       });
 
@@ -1544,60 +1357,73 @@ function setupButtons() {
     });
   });
 
-  qsa("#chartTimeframes button").forEach((btn) => {
+  document.querySelectorAll("#chartTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
       chartTimeframe = btn.dataset.timeframe;
       await loadCoinDetails();
     });
   });
 
-  qsa(".chart-mode-btn").forEach((btn) => {
+  document.querySelectorAll(".chart-mode-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       chartMode = btn.dataset.mode;
       await loadCoinDetails();
     });
   });
 
-  qsa(".tab-btn[data-tab]").forEach((btn) => {
+  document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       activeMarketTab = btn.dataset.tab;
 
-      qsa(".tab-btn[data-tab]").forEach((b) => {
+      document.querySelectorAll(".tab-btn[data-tab]").forEach((b) => {
         b.classList.toggle("active", b.dataset.tab === activeMarketTab);
       });
 
-      qsa(".tab-panel").forEach((panel) => {
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
         panel.classList.toggle("active", panel.id === `tab-${activeMarketTab}`);
       });
     });
   });
 
-  initStudioTabs();
+  document.querySelectorAll("[data-studio-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.studioTab;
 
-  qsa(".studio-copy-btn").forEach((btn) => {
+      document.querySelectorAll("[data-studio-tab]").forEach((b) => {
+        b.classList.toggle("active", b.dataset.studioTab === tab);
+      });
+
+      document.querySelectorAll(".studio-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `studio-${tab}`);
+      });
+    });
+  });
+
+  document.querySelectorAll(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const original = btn.textContent;
       await copyStudioTarget(btn.dataset.copyTarget);
-      btn.textContent = "Copied";
-      setTimeout(() => {
-        btn.textContent = original;
-      }, 1200);
     });
   });
 
   byId("macroDriver")?.addEventListener("change", async () => {
-    const mobileDriverSelect = byId("mobileDockDriverSelect");
-    if (mobileDriverSelect) {
-      mobileDriverSelect.value = byId("macroDriver").value;
-    }
     await loadGlobalMarket();
     renderStudio();
   });
 
-  byId("styleSelector")?.addEventListener("change", () => {
-    const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
-    if (styleRoot) styleRoot.className = `style-${DEFAULT_STYLE}`;
-    if (byId("styleSelector")) byId("styleSelector").value = DEFAULT_STYLE;
+  byId("styleSelector")?.addEventListener("change", async () => {
+    const value = byId("styleSelector").value;
+
+    applyStyle(value);
+
+    try {
+      localStorage.setItem("wojakStyle", value);
+    } catch {}
+
+    renderScale();
+    renderCoinSections();
+    await loadGlobalMarket();
+    await loadCoinDetails();
+    renderStudio();
   });
 
   byId("shareMoodBtn")?.addEventListener("click", () => {
@@ -1656,26 +1482,13 @@ function renderScale() {
 }
 
 function initStyle() {
-  const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
-  if (styleRoot) {
-    styleRoot.className = `style-${DEFAULT_STYLE}`;
-  }
+  let savedStyle = "classic";
 
-  if (byId("styleSelector")) {
-    byId("styleSelector").value = DEFAULT_STYLE;
-  }
+  try {
+    savedStyle = localStorage.getItem("wojakStyle") || "classic";
+  } catch {}
 
-  const heroFaceImg = byId("heroFaceImg");
-  const socialIconImg = byId("socialIconImg");
-  const pointerImg = byId("emotionPointerImg");
-  const detailSocialIconImg = byId("detailSocialIconImg");
-  const coinMoodIconImg = byId("coinMoodIconImg");
-
-  if (heroFaceImg) setImage(heroFaceImg, getHeroImagePath(DEFAULT_STYLE, "neutral"));
-  if (socialIconImg) setImage(socialIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (pointerImg) setImage(pointerImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (detailSocialIconImg) setImage(detailSocialIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (coinMoodIconImg) setImage(coinMoodIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  applyStyle(savedStyle);
 }
 
 function startAutoRefresh() {
@@ -1692,7 +1505,6 @@ async function boot() {
   hasBooted = true;
 
   try {
-    ensureMobileDock();
     initStyle();
 
     const savedCoin = loadSavedActiveCoin();
@@ -1700,9 +1512,6 @@ async function boot() {
 
     renderScale();
     setupButtons();
-    setupMobileMoodDock();
-    handleMobileMoodDockVisibility();
-
     await loadAll();
     startAutoRefresh();
   } catch (error) {
