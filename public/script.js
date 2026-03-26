@@ -20,6 +20,7 @@ const TRENDING_REFRESH_MS = 60000;
 const MEMES_REFRESH_MS = 90000;
 const SENTIMENT_REFRESH_MS = 60000;
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
+const DEFAULT_STYLE = "3d";
 
 const macroDrivers = {
   market_flow: { label: "Market flow / price action" },
@@ -155,7 +156,7 @@ function normalizeChangeToScore(changePct, sensitivity = 10) {
 }
 
 function getCurrentStyle() {
-  return "3d";
+  return DEFAULT_STYLE;
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -487,11 +488,6 @@ function updateHeroTitle() {
   heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
 }
 
-function applyMoodColors(mood) {
-  const heroScoreWrap = byId("heroScoreWrap");
-  if (heroScoreWrap) heroScoreWrap.className = "hero-score";
-}
-
 function updateHero(score, mood) {
   const style = getCurrentStyle();
   const heroMood = byId("heroMood");
@@ -502,6 +498,8 @@ function updateHero(score, mood) {
   const emotionPointerImg = byId("emotionPointerImg");
   const heartbeatWrap = byId("heartbeatWrap");
   const heartbeatPath = byId("heartbeatPath");
+  const emotionBarMood = byId("emotionBarMood");
+  const emotionBarScore = byId("emotionBarScore");
 
   if (heroMood) {
     heroMood.textContent = mood.name;
@@ -518,14 +516,16 @@ function updateHero(score, mood) {
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
-    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath("3d", mood.key));
+    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath(DEFAULT_STYLE, mood.key));
   }
 
   if (emotionBarRange) emotionBarRange.textContent = mood.range;
+  if (emotionBarMood) emotionBarMood.textContent = mood.name;
+  if (emotionBarScore) emotionBarScore.textContent = String(score);
   if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (emotionPointerImg) {
-    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
   }
 
   if (heartbeatWrap && heartbeatPath) {
@@ -544,7 +544,6 @@ function updateHero(score, mood) {
     heartbeatPath.setAttribute("d", paths[mood.key] || paths.neutral);
   }
 
-  applyMoodColors(mood);
   updateMobileDock(score, mood);
 }
 
@@ -581,7 +580,7 @@ function updateSocial(socialScore) {
   const socialIconImg = byId("socialIconImg");
   if (socialIconImg) {
     socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath("3d", socialMood.key));
+    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
   }
 
   return { socialScore, socialMood };
@@ -611,7 +610,7 @@ function updateDriverPanel() {
 
 function getGlobalMarketContext() {
   return {
-    style: "3d",
+    style: DEFAULT_STYLE,
     globalMood: currentGlobalMood?.name || "Neutral",
     globalScore: currentGlobalScore,
     globalTimeframe,
@@ -642,7 +641,7 @@ function buildMemePrompt(ctx) {
   return [
     "Create a high-quality crypto meme image based on the current market context.",
     "",
-    `Selected visual style: 3d`,
+    `Selected visual style: ${DEFAULT_STYLE}`,
     `Global mood: ${ctx.globalMood}`,
     `Global timeframe: ${ctx.globalTimeframe}`,
     `Global market move: ${formatPercent(ctx.globalChange)}`,
@@ -672,7 +671,7 @@ function buildMemePrompt(ctx) {
 
 function buildMemeScene(ctx) {
   return `
-<strong>Scene:</strong> A 3d Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
+<strong>Scene:</strong> A ${DEFAULT_STYLE} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
 
 <strong>Visual tone:</strong> The image should feel premium, dramatic and native to crypto X, with clear emotional readability and a strong meme format.
   `.trim();
@@ -711,9 +710,9 @@ function buildXPost(ctx) {
 
 ${moodIcon} ${ctx.macroNarrative}
 
-Track the market mood live 👇`;
+Live ${DEFAULT_STYLE.toUpperCase()} sentiment by WojakMeter ⚡`;
 
-  const alt = `A 3D Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
+  const alt = `A ${DEFAULT_STYLE} Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
   const hashtags = `#Crypto #Bitcoin #${ctx.activeCoin} #WojakMeter`;
 
   return { caption, alt, hashtags };
@@ -729,39 +728,6 @@ function buildStoryMode(ctx) {
 
 <div class="story-block"><strong>Final reaction</strong><br>The combined reaction is a <strong>${ctx.globalMood}</strong> market shaped by <strong>${ctx.macroLabel}</strong>, with traders reacting through the lens of ${ctx.activeCoin}.</div>
   `.trim();
-}
-
-function shareMoodOnX() {
-  const ctx = getGlobalMarketContext();
-  const moodIconMap = {
-    Euphoria: "🤩",
-    Content: "😌",
-    Optimism: "🙂",
-    Neutral: "😐",
-    Doubt: "🤨",
-    Concern: "😟",
-    Frustration: "😤"
-  };
-
-  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
-
-  const text =
-`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
-
-📊 Driver: ${ctx.macroLabel}
-⏱️ Timeframe: ${ctx.globalTimeframe}
-📉 Move: ${formatPercent(ctx.globalChange)}
-💰 Volume: ${ctx.globalVolume}
-
-${moodIcon} ${ctx.macroNarrative}
-
-Track the market mood live 👇`;
-
-  const shareUrl = "https://wojakmeter.com";
-  const tweetUrl =
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
-
-  window.open(tweetUrl, "_blank", "noopener,noreferrer");
 }
 
 function setStudioOutput(id, value) {
@@ -803,6 +769,39 @@ async function copyStudioTarget(targetId) {
   } catch (error) {
     debugMessage(`Copy failed: ${error.message}`);
   }
+}
+
+function shareMoodOnX() {
+  const ctx = getGlobalMarketContext();
+  const moodIconMap = {
+    Euphoria: "🤩",
+    Content: "😌",
+    Optimism: "🙂",
+    Neutral: "😐",
+    Doubt: "🤨",
+    Concern: "😟",
+    Frustration: "😤"
+  };
+
+  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
+
+  const text =
+`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+
+📊 Driver: ${ctx.macroLabel}
+⏱️ Timeframe: ${ctx.globalTimeframe}
+📉 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
+
+${moodIcon} ${ctx.macroNarrative}
+
+Track the market mood live 👇`;
+
+  const shareUrl = "https://wojakmeter.com";
+  const tweetUrl =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+
+  window.open(tweetUrl, "_blank", "noopener,noreferrer");
 }
 
 async function loadSentiment() {
@@ -1304,13 +1303,13 @@ async function loadCoinDetails() {
     const coinMoodIcon = byId("coinMoodIconImg");
     if (coinMoodIcon) {
       coinMoodIcon.className = `chart-mood-chip-icon mood-icon-img ${mood.anim}`;
-      setImage(coinMoodIcon, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+      setImage(coinMoodIcon, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
     }
 
     const socialIcon = byId("detailSocialIconImg");
     if (socialIcon) {
       socialIcon.className = `chart-mood-chip-icon mood-icon-img ${socialMood.anim}`;
-      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath("3d", socialMood.key));
+      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath(DEFAULT_STYLE, socialMood.key));
     }
 
     const intervalIds = {
@@ -1377,11 +1376,11 @@ function updateMobileDock(score, mood) {
   if (pointer) pointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (pointerImg) {
-    setImage(pointerImg, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+    setImage(pointerImg, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
   }
 
   if (miniIcon) {
-    setImage(miniIcon, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+    setImage(miniIcon, getIconImagePath(style, mood.key), getIconImagePath(DEFAULT_STYLE, mood.key));
   }
 
   if (driverMini) {
@@ -1441,6 +1440,27 @@ function setupMobileMoodDock() {
   window.addEventListener("resize", handleMobileMoodDockVisibility);
 }
 
+function initStudioTabs() {
+  const buttons = qsa("[data-studio-tab]");
+  const panels = qsa(".studio-panel");
+
+  if (!buttons.length || !panels.length) return;
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.studioTab;
+
+      buttons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      panels.forEach((panel) => panel.classList.remove("active"));
+
+      const target = byId(`studio-${tab}`);
+      if (target) target.classList.add("active");
+    });
+  });
+}
+
 function setupButtons() {
   qsa("#heroTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1482,23 +1502,16 @@ function setupButtons() {
     });
   });
 
-  qsa("[data-studio-tab]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tab = btn.dataset.studioTab;
-
-      qsa("[data-studio-tab]").forEach((b) => {
-        b.classList.toggle("active", b.dataset.studioTab === tab);
-      });
-
-      qsa(".studio-panel").forEach((panel) => {
-        panel.classList.toggle("active", panel.id === `studio-${tab}`);
-      });
-    });
-  });
+  initStudioTabs();
 
   qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      const original = btn.textContent;
       await copyStudioTarget(btn.dataset.copyTarget);
+      btn.textContent = "Copied";
+      setTimeout(() => {
+        btn.textContent = original;
+      }, 1200);
     });
   });
 
@@ -1513,7 +1526,7 @@ function setupButtons() {
 
   byId("styleSelector")?.addEventListener("change", () => {
     if (byId("styleSelector")) {
-      byId("styleSelector").value = "3d";
+      byId("styleSelector").value = DEFAULT_STYLE;
     }
   });
 
@@ -1573,9 +1586,30 @@ function renderScale() {
 }
 
 function initStyle() {
-  if (byId("styleSelector")) {
-    byId("styleSelector").value = "3d";
+  const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
+  if (styleRoot) {
+    styleRoot.className = `style-${DEFAULT_STYLE}`;
   }
+
+  if (byId("styleSelector")) {
+    byId("styleSelector").value = DEFAULT_STYLE;
+  }
+
+  const heroFaceImg = byId("heroFaceImg");
+  const socialIconImg = byId("socialIconImg");
+  const pointerImg = byId("emotionPointerImg");
+  const detailSocialIconImg = byId("detailSocialIconImg");
+  const coinMoodIconImg = byId("coinMoodIconImg");
+  const mobileDockMoodIcon = byId("mobileDockMoodIcon");
+  const mobileDockPointerImg = byId("mobileDockPointerImg");
+
+  if (heroFaceImg) setImage(heroFaceImg, getHeroImagePath(DEFAULT_STYLE, "neutral"));
+  if (socialIconImg) setImage(socialIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (pointerImg) setImage(pointerImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (detailSocialIconImg) setImage(detailSocialIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (coinMoodIconImg) setImage(coinMoodIconImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (mobileDockMoodIcon) setImage(mobileDockMoodIcon, getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (mobileDockPointerImg) setImage(mobileDockPointerImg, getIconImagePath(DEFAULT_STYLE, "neutral"));
 }
 
 function startAutoRefresh() {
