@@ -147,17 +147,60 @@ a {
 
 .style-label {
   font-size: 13px;
-  opacity: 0.75;
+  opacity: 0.85;
   color: var(--muted);
   white-space: nowrap;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 #styleSelector {
-  background: #11172b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-width: 140px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+    linear-gradient(180deg, #162235 0%, #0f1728 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 10px 38px 10px 14px;
+  border-radius: 12px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 8px 20px rgba(0,0,0,0.18);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease, filter 0.22s ease;
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+    linear-gradient(180deg, #162235 0%, #0f1728 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position: center, center, right 12px center;
+  background-size: auto, auto, 14px;
+}
+
+#styleSelector:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  filter: brightness(1.04);
+}
+
+#styleSelector:focus {
+  border-color: rgba(77, 255, 136, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(77, 255, 136, 0.12),
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 8px 20px rgba(0,0,0,0.18);
+}
+
+#styleSelector:active {
+  transform: translateY(1px);
 }
 
 /* ===== TICKER ===== */
@@ -493,11 +536,73 @@ a {
 .hero-share-row {
   display: flex;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 4px auto 18px;
 }
 
 .share-x-btn {
-  min-width: 190px;
+  min-width: 210px;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+    linear-gradient(180deg, #182538 0%, #0d1522 100%);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.26),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    filter 0.22s ease,
+    background 0.22s ease;
+}
+
+.share-x-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(77,255,136,0.34);
+  box-shadow:
+    0 16px 34px rgba(0,0,0,0.32),
+    0 0 0 1px rgba(77,255,136,0.08) inset;
+  filter: brightness(1.05);
+}
+
+.share-x-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 8px 18px rgba(0,0,0,0.22),
+    inset 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.share-x-btn:focus {
+  outline: none;
+  border-color: rgba(77,255,136,0.42);
+  box-shadow:
+    0 0 0 3px rgba(77,255,136,0.12),
+    0 12px 28px rgba(0,0,0,0.26);
+}
+
+.share-x-btn .x-icon,
+.share-x-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.share-x-btn span {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* ===== HEARTBEAT ===== */
@@ -2087,8 +2192,9 @@ pre.studio-output {
   }
 
   #styleSelector {
-    padding: 6px 8px;
+    min-width: 124px;
     font-size: 13px;
+    padding: 9px 34px 9px 12px;
   }
 
   .hero,
@@ -2208,6 +2314,14 @@ pre.studio-output {
 
   .chart-mood-chip-performance {
     margin-left: 0;
+  }
+
+  .share-x-btn {
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
+    min-height: 48px;
+    padding: 11px 16px;
   }
 
   .wm-footer-links-wrap {
