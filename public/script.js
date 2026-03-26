@@ -70,8 +70,12 @@ function byId(id) {
   return document.getElementById(id);
 }
 
-function getAppRoot() {
-  return document.querySelector(".style-classic, .style-3d, .style-anime, .style-minimal");
+function qs(selector) {
+  return document.querySelector(selector);
+}
+
+function qsa(selector) {
+  return Array.from(document.querySelectorAll(selector));
 }
 
 function clamp(num, min, max) {
@@ -151,12 +155,7 @@ function normalizeChangeToScore(changePct, sensitivity = 10) {
 }
 
 function getCurrentStyle() {
-  const bodyClasses = document.body.className || "";
-  const root = getAppRoot();
-  const rootClasses = root?.className || "";
-  const classes = `${bodyClasses} ${rootClasses}`;
-  const match = classes.match(/style-(classic|3d|anime|minimal)/);
-  return match ? match[1] : "3d";
+  return "3d";
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -401,26 +400,6 @@ function getTimeframeAdjustedChange(baseChange24h, timeframe) {
   }
 }
 
-function applyStyle(style) {
-  const safeStyle = ["classic", "3d", "anime", "minimal"].includes(style) ? style : "3d";
-
-  const root = getAppRoot();
-  if (root) root.className = `style-${safeStyle}`;
-
-  document.body.classList.remove("style-classic", "style-3d", "style-anime", "style-minimal");
-  document.body.classList.add(`style-${safeStyle}`);
-
-  if (byId("styleSelector")) {
-    byId("styleSelector").value = safeStyle;
-  }
-}
-
-function updateHeroTitle() {
-  const heroDriverLabel = byId("heroDriverLabel");
-  if (!heroDriverLabel) return;
-  heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
-}
-
 function renderTicker(coins) {
   const ticker = byId("tickerBar");
   if (!ticker) return;
@@ -502,14 +481,15 @@ function normalizeCoinMarketItem(item) {
   };
 }
 
+function updateHeroTitle() {
+  const heroDriverLabel = byId("heroDriverLabel");
+  if (!heroDriverLabel) return;
+  heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
+}
+
 function applyMoodColors(mood) {
   const heroScoreWrap = byId("heroScoreWrap");
-  const emotionBarMood = byId("emotionBarMood");
-  const emotionBarScore = byId("emotionBarScore");
-
-  if (heroScoreWrap) heroScoreWrap.className = `hero-score mood-${mood.key}`;
-  if (emotionBarMood) emotionBarMood.className = `mood-${mood.key}`;
-  if (emotionBarScore) emotionBarScore.className = `mood-${mood.key}`;
+  if (heroScoreWrap) heroScoreWrap.className = "hero-score";
 }
 
 function updateHero(score, mood) {
@@ -517,8 +497,6 @@ function updateHero(score, mood) {
   const heroMood = byId("heroMood");
   const heroScore = byId("heroScore");
   const heroFaceImg = byId("heroFaceImg");
-  const emotionBarMood = byId("emotionBarMood");
-  const emotionBarScore = byId("emotionBarScore");
   const emotionBarRange = byId("emotionBarRange");
   const emotionPointer = byId("emotionPointer");
   const emotionPointerImg = byId("emotionPointerImg");
@@ -530,17 +508,20 @@ function updateHero(score, mood) {
     heroMood.className = `hero-mood mood-${mood.key}`;
   }
 
-  if (heroScore) heroScore.textContent = score;
+  if (heroScore) {
+    heroScore.innerHTML = `
+      <span class="score-value mood-${mood.key}">${score}</span>
+      <span class="score-separator">/</span>
+      <span class="score-max">100</span>
+    `;
+  }
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
     setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath("3d", mood.key));
   }
 
-  if (emotionBarMood) emotionBarMood.textContent = mood.name;
-  if (emotionBarScore) emotionBarScore.textContent = score;
   if (emotionBarRange) emotionBarRange.textContent = mood.range;
-
   if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (emotionPointerImg) {
@@ -564,14 +545,38 @@ function updateHero(score, mood) {
   }
 
   applyMoodColors(mood);
+  updateMobileDock(score, mood);
 }
 
 function updateSocial(socialScore) {
   const style = getCurrentStyle();
   const socialMood = getMoodByScore(socialScore);
+  const socialMoodMini = byId("socialMoodMini");
+  const socialScoreMini = byId("socialScoreMini");
+  const socialBadge = qs(".hero-social-badge");
 
-  if (byId("socialMoodMini")) byId("socialMoodMini").textContent = socialMood.name;
-  if (byId("socialScoreMini")) byId("socialScoreMini").textContent = socialScore;
+  if (socialMoodMini) {
+    socialMoodMini.textContent = socialMood.name;
+    socialMoodMini.className = `mood-${socialMood.key}`;
+  }
+
+  if (socialScoreMini) {
+    socialScoreMini.textContent = socialScore;
+    socialScoreMini.className = `mood-${socialMood.key}`;
+  }
+
+  if (socialBadge) {
+    socialBadge.classList.remove(
+      "social-euphoria",
+      "social-content",
+      "social-optimism",
+      "social-neutral",
+      "social-doubt",
+      "social-concern",
+      "social-frustration"
+    );
+    socialBadge.classList.add(`social-${socialMood.key}`);
+  }
 
   const socialIconImg = byId("socialIconImg");
   if (socialIconImg) {
@@ -594,6 +599,14 @@ function updateDriverPanel() {
   if (byId("driverRiskTone")) byId("driverRiskTone").textContent = getRiskToneFromMood(mood.key);
 
   updateHeroTitle();
+
+  const mobileDriver = byId("mobileDockDriver");
+  const mobileDriverMini = byId("mobileDockDriverMini");
+  const mobileDriverSelect = byId("mobileDockDriverSelect");
+
+  if (mobileDriver) mobileDriver.textContent = getDriverLabel(driverKey);
+  if (mobileDriverMini) mobileDriverMini.textContent = getDriverLabel(driverKey);
+  if (mobileDriverSelect) mobileDriverSelect.value = driverKey;
 }
 
 function getGlobalMarketContext() {
@@ -698,7 +711,7 @@ function buildXPost(ctx) {
 
 ${moodIcon} ${ctx.macroNarrative}
 
-Live 3D sentiment by WojakMeter ⚡`;
+Track the market mood live 👇`;
 
   const alt = `A 3D Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
   const hashtags = `#Crypto #Bitcoin #${ctx.activeCoin} #WojakMeter`;
@@ -921,9 +934,11 @@ async function loadGlobalMarket() {
     updateSocial(currentSocialScore);
     updateDriverPanel();
 
-    if (byId("globalMarketChange")) {
-      byId("globalMarketChange").textContent = formatPercent(currentGlobalChange);
-      byId("globalMarketChange").className = currentGlobalChange >= 0 ? "positive" : "negative";
+    const globalChangeEl = byId("globalMarketChange");
+    if (globalChangeEl) {
+      globalChangeEl.textContent = formatPercent(currentGlobalChange);
+      globalChangeEl.classList.remove("positive", "negative", "neutral");
+      globalChangeEl.classList.add(currentGlobalChange >= 0 ? "positive" : "negative");
     }
 
     if (byId("globalMarketVolume")) {
@@ -984,7 +999,7 @@ function createCoinCard(coin, isActive = false) {
     renderCoinSections();
     await loadCoinDetails();
     renderStudio();
-    document.querySelector(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   return card;
@@ -1277,8 +1292,10 @@ async function loadCoinDetails() {
     if (byId("selectedTimeframe")) byId("selectedTimeframe").textContent = chartTimeframe;
 
     if (byId("selectedPerformance")) {
-      byId("selectedPerformance").textContent = formatPercent(value);
-      byId("selectedPerformance").className = value >= 0 ? "positive" : "negative";
+      const perf = byId("selectedPerformance");
+      perf.textContent = formatPercent(value);
+      perf.classList.remove("positive", "negative", "neutral");
+      perf.classList.add(value >= 0 ? "positive" : "negative");
     }
 
     if (byId("coinMoodLabel")) byId("coinMoodLabel").textContent = mood.name;
@@ -1314,11 +1331,11 @@ async function loadCoinDetails() {
       el.className = v >= 0 ? "positive" : "negative";
     });
 
-    document.querySelectorAll("#chartTimeframes button").forEach((btn) => {
+    qsa("#chartTimeframes button").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.timeframe === chartTimeframe);
     });
 
-    document.querySelectorAll(".chart-mode-btn").forEach((btn) => {
+    qsa(".chart-mode-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mode === chartMode);
     });
 
@@ -1342,12 +1359,68 @@ async function loadCoinDetails() {
   }
 }
 
-function setupButtons() {
-  document.querySelectorAll("#heroTimeframes button").forEach((btn) => {
+function updateMobileDock(score, mood) {
+  const style = getCurrentStyle();
+  const moodLabel = byId("mobileDockMoodLabel");
+  const rangeEl = byId("mobileDockRange");
+  const pointer = byId("mobileDockPointer");
+  const pointerImg = byId("mobileDockPointerImg");
+  const miniIcon = byId("mobileDockMoodIcon");
+  const driverMini = byId("mobileDockDriverMini");
+
+  if (moodLabel) {
+    moodLabel.textContent = mood.name;
+    moodLabel.className = `mobile-mood-dock-mood mood-${mood.key}`;
+  }
+
+  if (rangeEl) rangeEl.textContent = mood.range;
+  if (pointer) pointer.style.left = `${clamp(score, 0, 100)}%`;
+
+  if (pointerImg) {
+    setImage(pointerImg, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+  }
+
+  if (miniIcon) {
+    setImage(miniIcon, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
+  }
+
+  if (driverMini) {
+    driverMini.textContent = getDriverLabel(currentDominantDriver);
+  }
+}
+
+function handleMobileMoodDockVisibility() {
+  const dock = byId("mobileMoodDock");
+  const hero = qs(".hero");
+  if (!dock || !hero) return;
+
+  if (window.innerWidth > 720) {
+    dock.classList.add("hidden");
+    return;
+  }
+
+  const rect = hero.getBoundingClientRect();
+  const heroOutOfView = rect.bottom < 120 || rect.top < -rect.height * 0.35;
+
+  dock.classList.toggle("hidden", !heroOutOfView);
+}
+
+function setupMobileMoodDock() {
+  const dock = byId("mobileMoodDock");
+  const toggle = byId("mobileMoodDockToggle");
+  const mobileDriverSelect = byId("mobileDockDriverSelect");
+
+  if (toggle && dock) {
+    toggle.addEventListener("click", () => {
+      dock.classList.toggle("collapsed");
+    });
+  }
+
+  qsa("#mobileDockTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
       globalTimeframe = btn.dataset.timeframe;
 
-      document.querySelectorAll("#heroTimeframes button").forEach((b) => {
+      qsa("#heroTimeframes button, #mobileDockTimeframes button").forEach((b) => {
         b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
       });
 
@@ -1355,71 +1428,93 @@ function setupButtons() {
     });
   });
 
-  document.querySelectorAll("#chartTimeframes button").forEach((btn) => {
+  if (mobileDriverSelect) {
+    mobileDriverSelect.addEventListener("change", async () => {
+      const macroDriver = byId("macroDriver");
+      if (macroDriver) macroDriver.value = mobileDriverSelect.value;
+      await loadGlobalMarket();
+      renderStudio();
+    });
+  }
+
+  window.addEventListener("scroll", handleMobileMoodDockVisibility, { passive: true });
+  window.addEventListener("resize", handleMobileMoodDockVisibility);
+}
+
+function setupButtons() {
+  qsa("#heroTimeframes button").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      globalTimeframe = btn.dataset.timeframe;
+
+      qsa("#heroTimeframes button, #mobileDockTimeframes button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
+      });
+
+      await loadGlobalMarket();
+    });
+  });
+
+  qsa("#chartTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
       chartTimeframe = btn.dataset.timeframe;
       await loadCoinDetails();
     });
   });
 
-  document.querySelectorAll(".chart-mode-btn").forEach((btn) => {
+  qsa(".chart-mode-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       chartMode = btn.dataset.mode;
       await loadCoinDetails();
     });
   });
 
-  document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
+  qsa(".tab-btn[data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       activeMarketTab = btn.dataset.tab;
 
-      document.querySelectorAll(".tab-btn[data-tab]").forEach((b) => {
+      qsa(".tab-btn[data-tab]").forEach((b) => {
         b.classList.toggle("active", b.dataset.tab === activeMarketTab);
       });
 
-      document.querySelectorAll(".tab-panel").forEach((panel) => {
+      qsa(".tab-panel").forEach((panel) => {
         panel.classList.toggle("active", panel.id === `tab-${activeMarketTab}`);
       });
     });
   });
 
-  document.querySelectorAll("[data-studio-tab]").forEach((btn) => {
+  qsa("[data-studio-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.studioTab;
 
-      document.querySelectorAll("[data-studio-tab]").forEach((b) => {
+      qsa("[data-studio-tab]").forEach((b) => {
         b.classList.toggle("active", b.dataset.studioTab === tab);
       });
 
-      document.querySelectorAll(".studio-panel").forEach((panel) => {
+      qsa(".studio-panel").forEach((panel) => {
         panel.classList.toggle("active", panel.id === `studio-${tab}`);
       });
     });
   });
 
-  document.querySelectorAll(".studio-copy-btn").forEach((btn) => {
+  qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       await copyStudioTarget(btn.dataset.copyTarget);
     });
   });
 
   byId("macroDriver")?.addEventListener("change", async () => {
+    const mobileDriverSelect = byId("mobileDockDriverSelect");
+    if (mobileDriverSelect) {
+      mobileDriverSelect.value = byId("macroDriver").value;
+    }
     await loadGlobalMarket();
     renderStudio();
   });
 
-  byId("styleSelector")?.addEventListener("change", async () => {
-    applyStyle("3d");
-
-    try {
-      localStorage.setItem("wojakStyle", "3d");
-    } catch {}
-
-    renderScale();
-    renderCoinSections();
-    await loadGlobalMarket();
-    await loadCoinDetails();
-    renderStudio();
+  byId("styleSelector")?.addEventListener("change", () => {
+    if (byId("styleSelector")) {
+      byId("styleSelector").value = "3d";
+    }
   });
 
   byId("shareMoodBtn")?.addEventListener("click", () => {
@@ -1478,11 +1573,9 @@ function renderScale() {
 }
 
 function initStyle() {
-  applyStyle("3d");
-
-  try {
-    localStorage.setItem("wojakStyle", "3d");
-  } catch {}
+  if (byId("styleSelector")) {
+    byId("styleSelector").value = "3d";
+  }
 }
 
 function startAutoRefresh() {
@@ -1506,6 +1599,9 @@ async function boot() {
 
     renderScale();
     setupButtons();
+    setupMobileMoodDock();
+    handleMobileMoodDockVisibility();
+
     await loadAll();
     startAutoRefresh();
   } catch (error) {
