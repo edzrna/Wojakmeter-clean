@@ -263,7 +263,8 @@ a {
   color: var(--red);
 }
 
-.neu {
+.neu,
+.neutral {
   color: #aab4c5;
 }
 
@@ -398,6 +399,7 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(7, 16, 24, 0.82);
   backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .hero-social-badge-label {
@@ -433,6 +435,75 @@ a {
 .hero-social-badge-text strong {
   font-size: 12px;
   color: var(--muted);
+}
+
+.hero-social-badge.social-euphoria {
+  border-color: rgba(77, 255, 136, 0.45);
+  box-shadow: 0 0 0 1px rgba(77, 255, 136, 0.12) inset;
+}
+
+.hero-social-badge.social-content {
+  border-color: rgba(124, 255, 170, 0.4);
+  box-shadow: 0 0 0 1px rgba(124, 255, 170, 0.1) inset;
+}
+
+.hero-social-badge.social-optimism {
+  border-color: rgba(166, 255, 196, 0.35);
+  box-shadow: 0 0 0 1px rgba(166, 255, 196, 0.08) inset;
+}
+
+.hero-social-badge.social-neutral {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.hero-social-badge.social-doubt {
+  border-color: rgba(255, 157, 166, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 157, 166, 0.08) inset;
+}
+
+.hero-social-badge.social-concern {
+  border-color: rgba(255, 108, 121, 0.4);
+  box-shadow: 0 0 0 1px rgba(255, 108, 121, 0.1) inset;
+}
+
+.hero-social-badge.social-frustration {
+  border-color: rgba(255, 59, 77, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 59, 77, 0.12) inset;
+}
+
+.hero-social-badge-text span.mood-euphoria,
+.hero-social-badge-text strong.mood-euphoria {
+  color: #4dff88;
+}
+
+.hero-social-badge-text span.mood-content,
+.hero-social-badge-text strong.mood-content {
+  color: #7cffaa;
+}
+
+.hero-social-badge-text span.mood-optimism,
+.hero-social-badge-text strong.mood-optimism {
+  color: #a6ffc4;
+}
+
+.hero-social-badge-text span.mood-neutral,
+.hero-social-badge-text strong.mood-neutral {
+  color: #ffffff;
+}
+
+.hero-social-badge-text span.mood-doubt,
+.hero-social-badge-text strong.mood-doubt {
+  color: #ff9da6;
+}
+
+.hero-social-badge-text span.mood-concern,
+.hero-social-badge-text strong.mood-concern {
+  color: #ff6c79;
+}
+
+.hero-social-badge-text span.mood-frustration,
+.hero-social-badge-text strong.mood-frustration {
+  color: #ff3b4d;
 }
 
 .sweat {
@@ -490,6 +561,20 @@ a {
   font-weight: 700;
 }
 
+.hero-score .score-label,
+.hero-score .score-divider,
+.hero-score .score-colon {
+  color: var(--muted);
+}
+
+.hero-score .score-max {
+  color: var(--green);
+}
+
+.hero-score #heroScore {
+  color: inherit;
+}
+
 .hero-share-row {
   display: flex;
   justify-content: center;
@@ -498,6 +583,12 @@ a {
 
 .share-x-btn {
   min-width: 190px;
+  border: 1px solid transparent !important;
+  background-image:
+    linear-gradient(var(--panel-3), var(--panel-3)),
+    linear-gradient(90deg, #ff3b4d 0%, #4dff88 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
 
 /* ===== HEARTBEAT ===== */
@@ -752,9 +843,9 @@ a {
 
 .emotion-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
-  max-width: 620px;
+  max-width: 260px;
   margin: 14px auto 0;
 }
 
@@ -777,6 +868,11 @@ a {
   display: block;
   font-family: var(--font-ui);
   font-size: 1rem;
+}
+
+.emotion-meta-box:nth-child(1),
+.emotion-meta-box:nth-child(2) {
+  display: none;
 }
 
 /* ===== HERO INFO ===== */
@@ -811,6 +907,18 @@ a {
 .hero-line-item strong {
   font-size: 1rem;
   color: var(--text);
+}
+
+#globalMarketChange.positive {
+  color: var(--green);
+}
+
+#globalMarketChange.negative {
+  color: var(--red);
+}
+
+#globalMarketChange.neutral {
+  color: var(--gray);
 }
 
 .header-accent {
@@ -1155,6 +1263,18 @@ a {
   border-radius: 50%;
   overflow: hidden;
   flex: 0 0 auto;
+}
+
+#selectedPerformance.positive {
+  color: var(--green);
+}
+
+#selectedPerformance.negative {
+  color: var(--red);
+}
+
+#selectedPerformance.neutral {
+  color: var(--gray);
 }
 
 .chart-placeholder {
