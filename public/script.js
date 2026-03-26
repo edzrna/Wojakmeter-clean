@@ -156,7 +156,7 @@ function getCurrentStyle() {
   const rootClasses = root?.className || "";
   const classes = `${bodyClasses} ${rootClasses}`;
   const match = classes.match(/style-(classic|3d|anime|minimal)/);
-  return match ? match[1] : "classic";
+  return match ? match[1] : "3d";
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -390,39 +390,24 @@ function getTimeframeAdjustedChange(baseChange24h, timeframe) {
   const change = Number(baseChange24h || 0);
 
   switch (timeframe) {
-    case "1m":
-      return change / 1440;
-    case "5m":
-      return change / 288;
-    case "15m":
-      return change / 96;
-    case "1h":
-      return change / 24;
-    case "4h":
-      return change / 6;
-    case "24h":
-      return change;
-    case "7d":
-      return change * 2.2;
-    default:
-      return change / 24;
+    case "1m": return change / 1440;
+    case "5m": return change / 288;
+    case "15m": return change / 96;
+    case "1h": return change / 24;
+    case "4h": return change / 6;
+    case "24h": return change;
+    case "7d": return change * 2.2;
+    default: return change / 24;
   }
 }
 
 function applyStyle(style) {
-  const safeStyle = ["classic", "3d", "anime", "minimal"].includes(style)
-    ? style
-    : "classic";
+  const safeStyle = ["classic", "3d", "anime", "minimal"].includes(style) ? style : "3d";
 
   const root = getAppRoot();
   if (root) root.className = `style-${safeStyle}`;
 
-  document.body.classList.remove(
-    "style-classic",
-    "style-3d",
-    "style-anime",
-    "style-minimal"
-  );
+  document.body.classList.remove("style-classic", "style-3d", "style-anime", "style-minimal");
   document.body.classList.add(`style-${safeStyle}`);
 
   if (byId("styleSelector")) {
@@ -486,8 +471,7 @@ async function fetchJson(url, fallback = null) {
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    return json;
+    return await res.json();
   } catch (error) {
     debugMessage(`Fetch failed for ${url}: ${error.message}`);
     return fallback;
@@ -550,11 +534,7 @@ function updateHero(score, mood) {
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
-    setImage(
-      heroFaceImg,
-      getHeroImagePath(style, mood.key),
-      getHeroImagePath("classic", mood.key)
-    );
+    setImage(heroFaceImg, getHeroImagePath(style, mood.key), getHeroImagePath("3d", mood.key));
   }
 
   if (emotionBarMood) emotionBarMood.textContent = mood.name;
@@ -564,11 +544,7 @@ function updateHero(score, mood) {
   if (emotionPointer) emotionPointer.style.left = `${clamp(score, 0, 100)}%`;
 
   if (emotionPointerImg) {
-    setImage(
-      emotionPointerImg,
-      getIconImagePath(style, mood.key),
-      getIconImagePath("classic", mood.key)
-    );
+    setImage(emotionPointerImg, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
   }
 
   if (heartbeatWrap && heartbeatPath) {
@@ -600,11 +576,7 @@ function updateSocial(socialScore) {
   const socialIconImg = byId("socialIconImg");
   if (socialIconImg) {
     socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(
-      socialIconImg,
-      getIconImagePath(style, socialMood.key),
-      getIconImagePath("classic", socialMood.key)
-    );
+    setImage(socialIconImg, getIconImagePath(style, socialMood.key), getIconImagePath("3d", socialMood.key));
   }
 
   return { socialScore, socialMood };
@@ -626,7 +598,7 @@ function updateDriverPanel() {
 
 function getGlobalMarketContext() {
   return {
-    style: byId("styleSelector")?.value || "classic",
+    style: "3d",
     globalMood: currentGlobalMood?.name || "Neutral",
     globalScore: currentGlobalScore,
     globalTimeframe,
@@ -657,7 +629,7 @@ function buildMemePrompt(ctx) {
   return [
     "Create a high-quality crypto meme image based on the current market context.",
     "",
-    `Selected visual style: ${ctx.style}`,
+    `Selected visual style: 3d`,
     `Global mood: ${ctx.globalMood}`,
     `Global timeframe: ${ctx.globalTimeframe}`,
     `Global market move: ${formatPercent(ctx.globalChange)}`,
@@ -687,7 +659,7 @@ function buildMemePrompt(ctx) {
 
 function buildMemeScene(ctx) {
   return `
-<strong>Scene:</strong> A ${ctx.style} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
+<strong>Scene:</strong> A 3d Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
 
 <strong>Visual tone:</strong> The image should feel premium, dramatic and native to crypto X, with clear emotional readability and a strong meme format.
   `.trim();
@@ -704,8 +676,31 @@ function buildDailyMeme(ctx) {
 }
 
 function buildXPost(ctx) {
-  const caption = `${ctx.activeCoin} market mood: ${ctx.globalMood}. ${ctx.macroLabel} is shaping sentiment while the market prints ${formatPercent(ctx.globalChange)} on the ${ctx.globalTimeframe} view. ${ctx.coinPerformance} on the selected chart keeps the reaction focused on ${ctx.activeCoin}.`;
-  const alt = `A ${ctx.style} Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
+  const moodIconMap = {
+    Euphoria: "🤩",
+    Content: "😌",
+    Optimism: "🙂",
+    Neutral: "😐",
+    Doubt: "🤨",
+    Concern: "😟",
+    Frustration: "😤"
+  };
+
+  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
+
+  const caption =
+`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+
+📊 Driver: ${ctx.macroLabel}
+⏱️ Timeframe: ${ctx.globalTimeframe}
+📉 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
+
+${moodIcon} ${ctx.macroNarrative}
+
+Live 3D sentiment by WojakMeter ⚡`;
+
+  const alt = `A 3D Wojak-style crypto market meme showing ${ctx.globalMood} sentiment for ${ctx.activeCoin}, with a trading dashboard, emotional reaction, and market context tied to ${ctx.macroLabel.toLowerCase()}.`;
   const hashtags = `#Crypto #Bitcoin #${ctx.activeCoin} #WojakMeter`;
 
   return { caption, alt, hashtags };
@@ -725,16 +720,27 @@ function buildStoryMode(ctx) {
 
 function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
+  const moodIconMap = {
+    Euphoria: "🤩",
+    Content: "😌",
+    Optimism: "🙂",
+    Neutral: "😐",
+    Doubt: "🤨",
+    Concern: "😟",
+    Frustration: "😤"
+  };
+
+  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
 
   const text =
-`Crypto market mood: ${ctx.globalMood} (${ctx.globalScore}/100)
+`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
 
-Driver: ${ctx.macroLabel}
-Timeframe: ${ctx.globalTimeframe}
-Market move: ${formatPercent(ctx.globalChange)}
-Volume: ${ctx.globalVolume}
+📊 Driver: ${ctx.macroLabel}
+⏱️ Timeframe: ${ctx.globalTimeframe}
+📉 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
 
-${ctx.macroNarrative}
+${moodIcon} ${ctx.macroNarrative}
 
 Track the market mood live 👇`;
 
@@ -1281,21 +1287,13 @@ async function loadCoinDetails() {
     const coinMoodIcon = byId("coinMoodIconImg");
     if (coinMoodIcon) {
       coinMoodIcon.className = `chart-mood-chip-icon mood-icon-img ${mood.anim}`;
-      setImage(
-        coinMoodIcon,
-        getIconImagePath(style, mood.key),
-        getIconImagePath("classic", mood.key)
-      );
+      setImage(coinMoodIcon, getIconImagePath(style, mood.key), getIconImagePath("3d", mood.key));
     }
 
     const socialIcon = byId("detailSocialIconImg");
     if (socialIcon) {
       socialIcon.className = `chart-mood-chip-icon mood-icon-img ${socialMood.anim}`;
-      setImage(
-        socialIcon,
-        getIconImagePath(style, socialMood.key),
-        getIconImagePath("classic", socialMood.key)
-      );
+      setImage(socialIcon, getIconImagePath(style, socialMood.key), getIconImagePath("3d", socialMood.key));
     }
 
     const intervalIds = {
@@ -1411,12 +1409,10 @@ function setupButtons() {
   });
 
   byId("styleSelector")?.addEventListener("change", async () => {
-    const value = byId("styleSelector").value;
-
-    applyStyle(value);
+    applyStyle("3d");
 
     try {
-      localStorage.setItem("wojakStyle", value);
+      localStorage.setItem("wojakStyle", "3d");
     } catch {}
 
     renderScale();
@@ -1482,13 +1478,11 @@ function renderScale() {
 }
 
 function initStyle() {
-  let savedStyle = "classic";
+  applyStyle("3d");
 
   try {
-    savedStyle = localStorage.getItem("wojakStyle") || "classic";
+    localStorage.setItem("wojakStyle", "3d");
   } catch {}
-
-  applyStyle(savedStyle);
 }
 
 function startAutoRefresh() {
