@@ -568,16 +568,27 @@ async function copyStudioTarget(targetId) {
 
 function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
+  const moodIconMap = {
+    Euphoria: "🤩",
+    Content: "😌",
+    Optimism: "🙂",
+    Neutral: "😐",
+    Doubt: "🤨",
+    Concern: "😟",
+    Frustration: "😤"
+  };
+
+  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
 
   const text =
-`MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${roundScore(ctx.globalScore)}/100)
+`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
 
-Driver: ${ctx.macroLabel}
-Timeframe: ${ctx.globalTimeframe}
-Move: ${formatPercent(ctx.globalChange)}
-Volume: ${ctx.globalVolume}
+📊 Driver: ${ctx.macroLabel}
+⏱️ Timeframe: ${ctx.globalTimeframe}
+📉 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
 
-${ctx.macroNarrative}
+${moodIcon} ${ctx.macroNarrative}
 
 Track the market mood live 👇`;
 
