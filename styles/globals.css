@@ -505,12 +505,6 @@ textarea{
   color:var(--muted);
 }
 
-.hero-score::after{
-  content:" / 100";
-  color:var(--muted);
-  font-weight:600;
-}
-
 .score-value{
   font-weight:800;
 }
@@ -1655,7 +1649,7 @@ textarea{
   75%{ transform:translateX(-1px); }
 }
 
-/* ===== MOOD COLORS ===== */
+/* ===== MOOD TEXT COLORS ===== */
 
 .mood-euphoria{ color:var(--green); }
 .mood-content{ color:var(--green-2); }
@@ -1721,7 +1715,7 @@ textarea{
 
 @media (max-width: 720px){
   .app-shell{
-    padding:14px 14px 120px;
+    padding:14px;
   }
 
   .topbar{
