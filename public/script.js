@@ -1296,3 +1296,81 @@ if (document.readyState === "loading") {
 } else {
   boot();
 }
+
+// ===== SOCIAL BUBBLE EXPAND =====
+(function () {
+  const bubble = document.getElementById("socialBubble");
+  const expand = document.getElementById("socialExpand");
+
+  if (!bubble || !expand) return;
+
+  bubble.addEventListener("click", () => {
+    expand.classList.toggle("hidden");
+  });
+})();
+
+// ===== EMOTION PULSE =====
+(function () {
+  const toggle = document.getElementById("pulseToggle");
+  const panel = document.getElementById("pulsePanel");
+  const msg = document.getElementById("pulseMsg");
+
+  if (!toggle || !panel) return;
+
+  toggle.addEventListener("click", () => {
+    panel.classList.toggle("hidden");
+  });
+
+  const COOLDOWN = 5 * 60 * 1000;
+
+  function canVote() {
+    const last = localStorage.getItem("lastVoteTime");
+    if (!last) return true;
+    return Date.now() - Number(last) > COOLDOWN;
+  }
+
+  function setVoteTime() {
+    localStorage.setItem("lastVoteTime", Date.now());
+  }
+
+  function getScoreFromMood(mood) {
+    const map = {
+      frustration: 10,
+      concern: 25,
+      doubt: 40,
+      neutral: 50,
+      optimism: 65,
+      content: 75,
+      euphoria: 90
+    };
+    return map[mood] || 50;
+  }
+
+  function triggerPulse(moodKey) {
+    if (!window.updateHero) return;
+
+    const score = getScoreFromMood(moodKey);
+    const mood = getMoodByScore(score);
+
+    updateHero(score, mood);
+
+    setTimeout(() => {
+      updateHero(currentGlobalScore, currentGlobalMood);
+    }, 2000);
+  }
+
+  panel.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!canVote()) {
+        msg.textContent = "Wait 5 minutes to vote again";
+        return;
+      }
+
+      const mood = btn.dataset.vote;
+      setVoteTime();
+      msg.textContent = "Vote registered";
+
+      triggerPulse(mood);
+    });
+  });
+})();
