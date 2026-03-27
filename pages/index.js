@@ -155,19 +155,72 @@ export default function Home({ ogImageUrl }) {
                       💧
                     </div>
 
-                    <div className="hero-social-badge" aria-label="Social sentiment">
-                      <div className="hero-social-badge-label">𝕏</div>
-                      <div className="hero-social-badge-icon">
-                        <img
-                          id="socialIconImg"
-                          className="mood-icon-img anim-float"
-                          src="/assets/icons/3d/neutral.png"
-                          alt="Social mood icon"
-                        />
+                    <div className="hero-social-wrapper" id="socialWrapper">
+                      <div
+                        className="hero-social-badge social-neutral"
+                        id="socialBadge"
+                        aria-label="Social sentiment"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="hero-social-badge-label">𝕏</div>
+
+                        <div className="hero-social-badge-icon">
+                          <img
+                            id="socialIconImg"
+                            className="mood-icon-img anim-float"
+                            src="/assets/icons/3d/neutral.png"
+                            alt="Social mood icon"
+                          />
+                        </div>
+
+                        <div className="hero-social-badge-text">
+                          <span id="socialMoodMini">Neutral</span>
+                          <strong id="socialScoreMini">50</strong>
+                        </div>
                       </div>
-                      <div className="hero-social-badge-text">
-                        <span id="socialMoodMini">Neutral</span>
-                        <strong id="socialScoreMini">50</strong>
+
+                      <div className="social-panel" id="socialPanel" aria-hidden="true">
+                        <div className="social-panel-inner">
+                          <div className="social-panel-row">
+                            <span>Social Mood</span>
+                            <strong id="socialPanelMood">Neutral</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Score</span>
+                            <strong id="socialPanelScore">50</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Interactions</span>
+                            <strong id="socialPanelInteractions">--</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Bullish</span>
+                            <strong id="socialPanelBull">--</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Bearish</span>
+                            <strong id="socialPanelBear">--</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Neutral</span>
+                            <strong id="socialPanelNeutral">--</strong>
+                          </div>
+
+                          <div className="social-panel-row">
+                            <span>Window</span>
+                            <strong id="socialPanelWindow">1h</strong>
+                          </div>
+
+                          <div className="social-panel-note" id="socialPanelNote">
+                            Based on social activity and engagement signals.
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -327,6 +380,101 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </div>
                 </section>
+              </div>
+            </section>
+
+            <section className="emotion-pulse-card card" id="emotion-pulse">
+              <div className="section-head">
+                <h3>EMOTION PULSE</h3>
+                <span className="muted">Vote with the same emotion icons used across the page</span>
+              </div>
+
+              <div className="pulse-layout">
+                <div className="pulse-vote-grid" id="emotionPulseVoteGrid">
+                  <button className="pulse-vote-btn" data-emotion="frustration" type="button">
+                    <img
+                      src="/assets/icons/3d/frustration.png"
+                      alt="Frustration"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Frustration</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="concern" type="button">
+                    <img
+                      src="/assets/icons/3d/concern.png"
+                      alt="Concern"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Concern</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="doubt" type="button">
+                    <img
+                      src="/assets/icons/3d/doubt.png"
+                      alt="Doubt"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Doubt</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="neutral" type="button">
+                    <img
+                      src="/assets/icons/3d/neutral.png"
+                      alt="Neutral"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Neutral</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="optimism" type="button">
+                    <img
+                      src="/assets/icons/3d/optimism.png"
+                      alt="Optimism"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Optimism</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="content" type="button">
+                    <img
+                      src="/assets/icons/3d/content.png"
+                      alt="Content"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Content</span>
+                  </button>
+
+                  <button className="pulse-vote-btn" data-emotion="euphoria" type="button">
+                    <img
+                      src="/assets/icons/3d/euphoria.png"
+                      alt="Euphoria"
+                      className="pulse-vote-icon"
+                    />
+                    <span>Euphoria</span>
+                  </button>
+                </div>
+
+                <div className="pulse-meta-grid">
+                  <div className="pulse-meta-box">
+                    <span>Community Mood</span>
+                    <strong id="pulseMood">Neutral</strong>
+                  </div>
+
+                  <div className="pulse-meta-box">
+                    <span>Score</span>
+                    <strong id="pulseScore">50</strong>
+                  </div>
+
+                  <div className="pulse-meta-box">
+                    <span>Votes</span>
+                    <strong id="pulseVotes">0</strong>
+                  </div>
+                </div>
+
+                <div className="pulse-distribution" id="pulseDistribution"></div>
+
+                <div className="pulse-feedback" id="pulseFeedback" aria-live="polite"></div>
               </div>
             </section>
 
@@ -808,7 +956,9 @@ export async function getServerSideProps({ req }) {
     const sentimentJson = await sentimentRes.json().catch(() => null);
 
     const rawGlobal = globalJson?.raw || {};
-    const change = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const change = Number(
+      globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0
+    );
     const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
 
     const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
