@@ -155,19 +155,64 @@ export default function Home({ ogImageUrl }) {
                       💧
                     </div>
 
-                    <div className="hero-social-badge" aria-label="Social sentiment">
-                      <div className="hero-social-badge-label">𝕏</div>
-                      <div className="hero-social-badge-icon">
-                        <img
-                          id="socialIconImg"
-                          className="mood-icon-img anim-float"
-                          src="/assets/icons/3d/neutral.png"
-                          alt="Social mood icon"
-                        />
+                    <div className="hero-social-wrapper" id="socialWrapper">
+                      <div
+                        className="hero-social-badge social-neutral"
+                        id="socialBubble"
+                        aria-label="Social sentiment"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="hero-social-badge-label">𝕏</div>
+                        <div className="hero-social-badge-icon">
+                          <img
+                            id="socialIconImg"
+                            className="mood-icon-img anim-float"
+                            src="/assets/icons/3d/neutral.png"
+                            alt="Social mood icon"
+                          />
+                        </div>
+                        <div className="hero-social-badge-text">
+                          <span id="socialMoodMini">Neutral</span>
+                          <strong id="socialScoreMini">50</strong>
+                        </div>
                       </div>
-                      <div className="hero-social-badge-text">
-                        <span id="socialMoodMini">Neutral</span>
-                        <strong id="socialScoreMini">50</strong>
+
+                      <div className="social-expand hidden" id="socialExpand">
+                        <div className="social-expand-content">
+                          <div className="social-expand-row">
+                            <strong>Social Mood</strong>
+                            <span id="socialExpandMood">Neutral</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Social Score</strong>
+                            <span id="socialExpandScore">50</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Interactions</strong>
+                            <span id="socialExpandEngagement">--</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Bullish</strong>
+                            <span id="socialExpandBullish">--</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Bearish</strong>
+                            <span id="socialExpandBearish">--</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Neutral</strong>
+                            <span id="socialExpandNeutral">--</span>
+                          </div>
+                          <div className="social-expand-row">
+                            <strong>Window</strong>
+                            <span id="socialExpandWindow">1h</span>
+                          </div>
+
+                          <div className="social-expand-note">
+                            Social mood is derived from aggregated market sentiment across X.
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -717,29 +762,56 @@ export default function Home({ ogImageUrl }) {
               </div>
             </section>
 
-<div className="emotion-pulse-toggle" id="pulseToggle">
-  ⚡
-</div>
+            <div className="emotion-pulse-toggle" id="pulseToggle" role="button" tabIndex={0}>
+              <span className="pulse-toggle-icon">⚡</span>
+              <span className="pulse-toggle-text">Emotion Pulse</span>
+            </div>
 
-<div className="emotion-pulse-panel hidden" id="pulsePanel">
-  <div className="pulse-header">
-    <strong>Emotion Pulse</strong>
-  </div>
+            <div className="emotion-pulse-panel hidden" id="pulsePanel">
+              <div className="pulse-header">
+                <strong>Emotion Pulse</strong>
+                <span className="pulse-subtitle">Community reaction</span>
+              </div>
 
-  <div className="pulse-grid">
-    <button data-vote="frustration"><img src="/assets/icons/3d/frustration.png"/></button>
-    <button data-vote="concern"><img src="/assets/icons/3d/concern.png"/></button>
-    <button data-vote="doubt"><img src="/assets/icons/3d/doubt.png"/></button>
-    <button data-vote="neutral"><img src="/assets/icons/3d/neutral.png"/></button>
-    <button data-vote="optimism"><img src="/assets/icons/3d/optimism.png"/></button>
-    <button data-vote="content"><img src="/assets/icons/3d/content.png"/></button>
-    <button data-vote="euphoria"><img src="/assets/icons/3d/euphoria.png"/></button>
-  </div>
+              <div id="pulseStats" className="pulse-stats"></div>
 
-  <div className="pulse-msg" id="pulseMsg"></div>
-</div>
+              <div className="pulse-grid">
+                <button data-vote="frustration" type="button">
+                  <img src="/assets/icons/3d/frustration.png" alt="frustration" />
+                </button>
+                <button data-vote="concern" type="button">
+                  <img src="/assets/icons/3d/concern.png" alt="concern" />
+                </button>
+                <button data-vote="doubt" type="button">
+                  <img src="/assets/icons/3d/doubt.png" alt="doubt" />
+                </button>
+                <button data-vote="neutral" type="button">
+                  <img src="/assets/icons/3d/neutral.png" alt="neutral" />
+                </button>
+                <button data-vote="optimism" type="button">
+                  <img src="/assets/icons/3d/optimism.png" alt="optimism" />
+                </button>
+                <button data-vote="content" type="button">
+                  <img src="/assets/icons/3d/content.png" alt="content" />
+                </button>
+                <button data-vote="euphoria" type="button">
+                  <img src="/assets/icons/3d/euphoria.png" alt="euphoria" />
+                </button>
+              </div>
 
+              <div className="pulse-summary">
+                <div className="pulse-summary-box">
+                  <span>Pulse Mood</span>
+                  <strong id="pulseMood">Neutral</strong>
+                </div>
+                <div className="pulse-summary-box">
+                  <span>Total Votes</span>
+                  <strong id="pulseTotalVotes">0</strong>
+                </div>
+              </div>
 
+              <div className="pulse-msg" id="pulseMsg"></div>
+            </div>
           </main>
 
           <footer className="wm-footer">
@@ -832,7 +904,9 @@ export async function getServerSideProps({ req }) {
     const sentimentJson = await sentimentRes.json().catch(() => null);
 
     const rawGlobal = globalJson?.raw || {};
-    const change = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const change = Number(
+      globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0
+    );
     const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
 
     const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
