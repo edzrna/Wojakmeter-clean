@@ -39,6 +39,8 @@ let currentHeaderVolumeValue = 0;
 
 let socialPanelOpen = false;
 let pulseReactionTimer = null;
+let isPulsePreviewActive = false;
+let pulsePreviewTimeout = null;
 
 let pulseVotes = {
   frustration: 2,
@@ -353,7 +355,6 @@ function getVolumeImpulseScore(volumeUsd) {
 
 function getBtcDominanceImpulseScore(btcDom) {
   if (!Number.isFinite(btcDom) || btcDom <= 0) return 50;
-
   if (btcDom >= 58) return 43;
   if (btcDom >= 55) return 46;
   if (btcDom >= 52) return 49;
@@ -432,6 +433,7 @@ function updateHero(score, mood, options = {}) {
 
   if (heroFaceImg) {
     heroFaceImg.className = `hero-face-img ${mood.anim}`;
+
     if (pulseMode) {
       heroFaceImg.classList.add("hero-face-pulse");
       clearTimeout(heroFaceImg.__pulseTimer);
@@ -439,6 +441,7 @@ function updateHero(score, mood, options = {}) {
         heroFaceImg.classList.remove("hero-face-pulse");
       }, 700);
     }
+
     setImage(
       heroFaceImg,
       getHeroImagePath(style, mood.key),
@@ -553,17 +556,33 @@ function updateSocial(socialScore) {
 }
 
 function updateDriverPanel() {
-  const driverKey = currentDominantDriver;
-  const mood = currentGlobalMood;
+  const driverKey = currentDominantDriver || "market_flow";
+  const mood = currentGlobalMood || getMoodByScore(50);
 
-  if (byId("driverMacro")) byId("driverMacro").textContent = getDriverLabel(driverKey);
-  if (byId("driverNarrative")) byId("driverNarrative").textContent = getDriverNarrative(driverKey);
-  if (byId("driverTimeframeReaction")) {
-    byId("driverTimeframeReaction").textContent = `${getReactionLabel(globalTimeframe)} (${globalTimeframe})`;
+  const macroLabel = getDriverLabel(driverKey);
+  const narrative = getDriverNarrative(driverKey);
+  const reaction = `${getReactionLabel(globalTimeframe)} (${globalTimeframe})`;
+  const riskTone = getRiskToneFromMood(mood.key);
+
+  const driverMacroEl = byId("driverMacro");
+  const driverNarrativeEl = byId("driverNarrative");
+  const driverTimeframeReactionEl = byId("driverTimeframeReaction");
+  const driverRiskToneEl = byId("driverRiskTone");
+  const macroDriverSelect = byId("macroDriver");
+  const heroDriverLabel = byId("heroDriverLabel");
+
+  if (driverMacroEl) driverMacroEl.textContent = macroLabel;
+  if (driverNarrativeEl) driverNarrativeEl.textContent = narrative;
+  if (driverTimeframeReactionEl) driverTimeframeReactionEl.textContent = reaction;
+  if (driverRiskToneEl) driverRiskToneEl.textContent = riskTone;
+
+  if (macroDriverSelect && macroDriverSelect.value !== driverKey) {
+    macroDriverSelect.value = driverKey;
   }
-  if (byId("driverRiskTone")) byId("driverRiskTone").textContent = getRiskToneFromMood(mood.key);
 
-  updateHeroTitle();
+  if (heroDriverLabel) {
+    heroDriverLabel.textContent = ` (${macroLabel})`;
+  }
 }
 
 function renderTicker(coins) {
@@ -655,11 +674,13 @@ function getSocialScoreFromMarket(change, trending = 50, memes = 50) {
 
 function computeMarketScoreFromInputs(change, trendingScore, memeScore) {
   const base = normalizeChangeToScore(change, 12);
-  const combined = base * 0.74 + trendingScore * 0.16 + memeScore * 0.10;
+  const combined = base * 0.74 + trendingScore * 0.16 + memeScore * 0.1;
   return roundScore(combined);
 }
 
 function recomputeHeroSystem() {
+  if (isPulsePreviewActive) return;
+
   const heroScore = computeHeroProScore();
   currentGlobalScore = heroScore;
   currentGlobalMood = getMoodByScore(heroScore);
@@ -689,7 +710,7 @@ async function loadSentiment() {
   isLoadingSentiment = true;
 
   try {
-    // Macro driver queda manual.
+    // Manual mode only: no sobrescribir market driver desde API.
     updateDriverPanel();
   } finally {
     isLoadingSentiment = false;
@@ -1208,19 +1229,25 @@ function showPulseMessage(text, isError = false) {
 }
 
 function triggerPulseReaction(moodKey) {
-  const score = getPulseWeightMap()[moodKey] || 50;
+  const weights = getPulseWeightMap();
+  const score = weights[moodKey] || 50;
   const mood = getMoodByScore(score);
+
+  isPulsePreviewActive = true;
+  clearTimeout(pulsePreviewTimeout);
 
   updateHero(score, mood, { pulseMode: true });
   updateSocial(score);
 
-  clearTimeout(pulseReactionTimer);
-  pulseReactionTimer = setTimeout(() => {
+  pulsePreviewTimeout = setTimeout(() => {
+    isPulsePreviewActive = false;
     recomputeHeroSystem();
   }, PULSE_REACTION_MS);
 }
 
 function handlePulseVote(moodKey) {
+  if (!moodKey) return;
+
   if (!canVotePulse()) {
     showPulseMessage(
       `Wait 5 minutes before voting again. Time left: ${formatCooldownTime(getPulseRemainingCooldownMs())}`,
@@ -1232,11 +1259,14 @@ function handlePulseVote(moodKey) {
   setLastPulseVoteTime(Date.now());
   pulseVotes[moodKey] = (pulseVotes[moodKey] || 0) + 1;
 
+  currentPulseScore = getPulseScore();
   renderPulseStats();
-  triggerPulseReaction(moodKey);
-  recomputeHeroSystem();
 
-  showPulseMessage(`Vote registered: ${getMoodByScore(getPulseWeightMap()[moodKey]).name}`);
+  showPulseMessage(
+    `Vote registered: ${getMoodByScore(getPulseWeightMap()[moodKey]).name}`
+  );
+
+  triggerPulseReaction(moodKey);
 }
 
 function setupSocialExpand() {
@@ -1286,20 +1316,52 @@ function setupPulsePanel() {
 
   if (!toggle || !panel) return;
 
-  function togglePanel() {
-    panel.classList.toggle("hidden");
-  }
+  const closePanel = () => {
+    panel.classList.add("hidden");
+    toggle.classList.remove("open");
+  };
+
+  const openPanel = () => {
+    panel.classList.remove("hidden");
+    toggle.classList.add("open");
+  };
+
+  const togglePanel = (e) => {
+    if (e) e.stopPropagation();
+
+    const isHidden = panel.classList.contains("hidden");
+    if (isHidden) openPanel();
+    else closePanel();
+  };
 
   toggle.addEventListener("click", togglePanel);
+
   toggle.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      togglePanel();
+      togglePanel(e);
+    }
+    if (e.key === "Escape") {
+      closePanel();
+    }
+  });
+
+  panel.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", (e) => {
+    const clickedInsideToggle = toggle.contains(e.target);
+    const clickedInsidePanel = panel.contains(e.target);
+
+    if (!clickedInsideToggle && !clickedInsidePanel) {
+      closePanel();
     }
   });
 
   panel.querySelectorAll("[data-vote]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
       handlePulseVote(btn.dataset.vote);
     });
   });
@@ -1558,11 +1620,14 @@ function setupButtons() {
     });
   });
 
-  byId("macroDriver")?.addEventListener("change", () => {
-    currentDominantDriver = byId("macroDriver").value || "market_flow";
-    updateDriverPanel();
-    renderStudio();
-  });
+  const macroDriverEl = byId("macroDriver");
+  if (macroDriverEl) {
+    macroDriverEl.addEventListener("change", (e) => {
+      currentDominantDriver = e.target.value || "market_flow";
+      updateDriverPanel();
+      renderStudio();
+    });
+  }
 
   byId("styleSelector")?.addEventListener("change", () => {
     const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
@@ -1676,10 +1741,12 @@ async function boot() {
   currentPulseScore = getPulseScore();
 
   renderScale();
+  renderPulseStats();
+  updateDriverPanel();
+
   setupButtons();
   setupSocialExpand();
   setupPulsePanel();
-  renderPulseStats();
 
   await loadAll();
   startAutoRefresh();
