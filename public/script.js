@@ -30,8 +30,12 @@ let topMemesData = [];
 let currentGlobalMood = getMoodByScore(50);
 let currentGlobalChange = 0;
 let currentGlobalScore = 50;
+let currentMarketScore = 50;
 let currentSocialScore = 50;
+let currentPulseScore = 50;
 let currentDominantDriver = "market_flow";
+let currentBtcDominanceValue = 50;
+let currentHeaderVolumeValue = 0;
 
 let socialPanelOpen = false;
 let pulseReactionTimer = null;
@@ -70,15 +74,20 @@ function clamp(num, min, max) {
   return Math.max(min, Math.min(max, num));
 }
 
+function roundScore(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.round(clamp(num, 0, 100));
+}
+
 function average(arr) {
   if (!Array.isArray(arr) || !arr.length) return 0;
   return arr.reduce((sum, n) => sum + Number(n || 0), 0) / arr.length;
 }
 
-function roundScore(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
-  return Math.round(clamp(num, 0, 100));
+function safeNum(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 function formatCurrencyCompact(value) {
@@ -146,6 +155,19 @@ function getMoodByScore(score) {
 
 function normalizeChangeToScore(changePct, sensitivity = 10) {
   return clamp(50 + Number(changePct || 0) * sensitivity, 0, 100);
+}
+
+function getMoodColor(key) {
+  const map = {
+    frustration: "#ff3b4d",
+    concern: "#ff6c79",
+    doubt: "#ff9da6",
+    neutral: "#cfd7e3",
+    optimism: "#a6ffc4",
+    content: "#7cffaa",
+    euphoria: "#4dff88"
+  };
+  return map[key] || "#cfd7e3";
 }
 
 function getCurrentStyle() {
@@ -319,6 +341,60 @@ function heartbeatPathForMood(moodKey) {
   return paths[moodKey] || paths.neutral;
 }
 
+function getVolumeImpulseScore(volumeUsd) {
+  if (!Number.isFinite(volumeUsd) || volumeUsd <= 0) return 50;
+  if (volumeUsd >= 220e9) return 78;
+  if (volumeUsd >= 170e9) return 70;
+  if (volumeUsd >= 120e9) return 62;
+  if (volumeUsd >= 80e9) return 54;
+  if (volumeUsd >= 50e9) return 46;
+  return 40;
+}
+
+function getBtcDominanceImpulseScore(btcDom) {
+  if (!Number.isFinite(btcDom) || btcDom <= 0) return 50;
+
+  if (btcDom >= 58) return 43;
+  if (btcDom >= 55) return 46;
+  if (btcDom >= 52) return 49;
+  if (btcDom >= 49) return 53;
+  if (btcDom >= 46) return 57;
+  return 61;
+}
+
+function getTrendingMomentumScore() {
+  if (!trendingCoinsData.length) return 50;
+  const avgTrending = average(
+    trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))
+  );
+  return normalizeChangeToScore(avgTrending, 3.5);
+}
+
+function getMemeMomentumScore() {
+  if (!topMemesData.length) return 50;
+  const avgMemes = average(
+    topMemesData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))
+  );
+  return normalizeChangeToScore(avgMemes, 3.2);
+}
+
+function computeHeroProScore() {
+  const marketScore = roundScore(currentMarketScore);
+  const socialScore = roundScore(currentSocialScore);
+  const pulseScore = roundScore(currentPulseScore);
+  const volumeScore = roundScore(getVolumeImpulseScore(currentHeaderVolumeValue));
+  const btcDomScore = roundScore(getBtcDominanceImpulseScore(currentBtcDominanceValue));
+
+  const score =
+    marketScore * 0.58 +
+    socialScore * 0.22 +
+    pulseScore * 0.12 +
+    volumeScore * 0.04 +
+    btcDomScore * 0.04;
+
+  return roundScore(score);
+}
+
 function updateHeroTitle() {
   const heroDriverLabel = byId("heroDriverLabel");
   if (!heroDriverLabel) return;
@@ -391,21 +467,44 @@ function updateHero(score, mood, options = {}) {
 
 function updateSocialPanel(score, socialMood) {
   const roundedScore = roundScore(score);
-  const interactions = Math.floor(5000 + Math.random() * 10000);
-  const bullish = clamp(Math.round(roundedScore * 0.9), 0, 100);
-  const bearish = clamp(Math.round((100 - roundedScore) * 0.78), 0, 100);
-  const neutral = clamp(100 - bullish - bearish, 0, 100);
+
+  const interactions =
+    Math.max(
+      1200,
+      Math.round(
+        3500 +
+          Math.abs(currentGlobalChange) * 2200 +
+          average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 180
+      )
+    );
+
+  const bullish = clamp(Math.round(roundedScore * 0.82), 0, 100);
+  const bearish = clamp(Math.round((100 - roundedScore) * 0.82), 0, 100);
+  const neutral = clamp(100 - Math.round((bullish + bearish) * 0.55), 0, 100);
 
   if (byId("socialExpandMood")) {
     byId("socialExpandMood").textContent = socialMood.name;
     byId("socialExpandMood").className = `mood-${socialMood.key}`;
   }
   if (byId("socialExpandScore")) byId("socialExpandScore").textContent = roundedScore;
-  if (byId("socialExpandEngagement")) byId("socialExpandEngagement").textContent = interactions.toLocaleString("en-US");
-  if (byId("socialExpandBullish")) byId("socialExpandBullish").textContent = `${bullish}%`;
-  if (byId("socialExpandBearish")) byId("socialExpandBearish").textContent = `${bearish}%`;
-  if (byId("socialExpandNeutral")) byId("socialExpandNeutral").textContent = `${neutral}%`;
-  if (byId("socialExpandWindow")) byId("socialExpandWindow").textContent = globalTimeframe;
+  if (byId("socialExpandEngagement")) {
+    byId("socialExpandEngagement").textContent = interactions.toLocaleString("en-US");
+  }
+  if (byId("socialExpandBullish")) {
+    byId("socialExpandBullish").textContent = `${bullish}%`;
+    byId("socialExpandBullish").className = "positive";
+  }
+  if (byId("socialExpandBearish")) {
+    byId("socialExpandBearish").textContent = `${bearish}%`;
+    byId("socialExpandBearish").className = "negative";
+  }
+  if (byId("socialExpandNeutral")) {
+    byId("socialExpandNeutral").textContent = `${neutral}%`;
+    byId("socialExpandNeutral").className = "neutral";
+  }
+  if (byId("socialExpandWindow")) {
+    byId("socialExpandWindow").textContent = globalTimeframe;
+  }
 }
 
 function updateSocial(socialScore) {
@@ -535,10 +634,54 @@ function normalizeCoinMarketItem(item) {
   };
 }
 
+function getMarketBaseChangeForTimeframe(raw24hChange, timeframe) {
+  switch (timeframe) {
+    case "1m": return raw24hChange / 1440;
+    case "5m": return raw24hChange / 288;
+    case "15m": return raw24hChange / 96;
+    case "1h": return raw24hChange / 24;
+    case "4h": return raw24hChange / 6;
+    case "24h": return raw24hChange;
+    case "7d": return raw24hChange * 2.2;
+    default: return raw24hChange / 24;
+  }
+}
+
 function getSocialScoreFromMarket(change, trending = 50, memes = 50) {
-  return Math.round(
+  return roundScore(
     clamp(50 + change * 7 + (trending - 50) * 0.15 + (memes - 50) * 0.1, 0, 100)
   );
+}
+
+function computeMarketScoreFromInputs(change, trendingScore, memeScore) {
+  const base = normalizeChangeToScore(change, 12);
+  const combined = base * 0.74 + trendingScore * 0.16 + memeScore * 0.10;
+  return roundScore(combined);
+}
+
+function recomputeHeroSystem() {
+  const heroScore = computeHeroProScore();
+  currentGlobalScore = heroScore;
+  currentGlobalMood = getMoodByScore(heroScore);
+
+  updateHero(currentGlobalScore, currentGlobalMood);
+  updateSocial(currentSocialScore);
+  updateDriverPanel();
+
+  const globalChangeEl = byId("globalMarketChange");
+  if (globalChangeEl) {
+    globalChangeEl.textContent = formatPercent(currentGlobalChange);
+    globalChangeEl.classList.remove("positive", "negative", "neutral");
+    if (currentGlobalChange > 0) globalChangeEl.classList.add("positive");
+    else if (currentGlobalChange < 0) globalChangeEl.classList.add("negative");
+    else globalChangeEl.classList.add("neutral");
+  }
+
+  if (byId("globalMarketTimeframe")) {
+    byId("globalMarketTimeframe").textContent = globalTimeframe;
+  }
+
+  renderStudio();
 }
 
 async function loadSentiment() {
@@ -546,22 +689,8 @@ async function loadSentiment() {
   isLoadingSentiment = true;
 
   try {
-    const data = await fetchJson("/api/sentiment", null);
-    if (data?.driver) {
-      const map = {
-        "Market flow / price action": "market_flow",
-        "ETF / institutional adoption": "etf_adoption",
-        "Rate hike fears": "rate_hike",
-        "Rate cut hopes": "rate_cut",
-        "Regulation crackdown": "regulation_crackdown",
-        "Crypto hack / insolvency": "crypto_hack",
-        "War escalation": "war_escalation",
-        "Neutral macro environment": "neutral_macro"
-      };
-      const key = map[data.driver] || "market_flow";
-      currentDominantDriver = key;
-      if (byId("macroDriver")) byId("macroDriver").value = key;
-    }
+    // Macro driver queda manual.
+    updateDriverPanel();
   } finally {
     isLoadingSentiment = false;
   }
@@ -577,90 +706,62 @@ async function loadGlobalMarket() {
 
     const globalData = response.raw || {};
 
+    const btcDom =
+      response.btcDominance && response.btcDominance !== "--"
+        ? parseFloat(String(response.btcDominance).replace("%", ""))
+        : safeNum(globalData.market_cap_percentage?.btc, 50);
+
+    currentBtcDominanceValue = btcDom;
+
     if (byId("btcDominance")) {
-      if (response.btcDominance && response.btcDominance !== "--") {
-        byId("btcDominance").textContent = response.btcDominance;
-      } else if (globalData.market_cap_percentage?.btc != null) {
-        byId("btcDominance").textContent = `${Number(globalData.market_cap_percentage.btc).toFixed(1)}%`;
-      }
+      byId("btcDominance").textContent = `${btcDom.toFixed(1)}%`;
     }
+
+    const marketCapText =
+      response.marketCap && response.marketCap !== "--"
+        ? response.marketCap
+        : formatCurrencyCompact(globalData.total_market_cap?.usd);
 
     if (byId("headerMarketCap")) {
-      byId("headerMarketCap").textContent =
-        response.marketCap && response.marketCap !== "--"
-          ? response.marketCap
-          : formatCurrencyCompact(globalData.total_market_cap?.usd);
+      byId("headerMarketCap").textContent = marketCapText;
     }
+
+    const volumeUsd = safeNum(globalData.total_volume?.usd, 0);
+    currentHeaderVolumeValue = volumeUsd;
+
+    const volumeText =
+      response.volume && response.volume !== "--"
+        ? response.volume
+        : formatCurrencyCompact(volumeUsd);
 
     if (byId("headerVolume")) {
-      byId("headerVolume").textContent =
-        response.volume && response.volume !== "--"
-          ? response.volume
-          : formatCurrencyCompact(globalData.total_volume?.usd);
+      byId("headerVolume").textContent = volumeText;
     }
 
-    const raw24hChange = Number(response.change ?? 0);
+    const raw24hChange = safeNum(response.change, 0);
+    currentGlobalChange = getMarketBaseChangeForTimeframe(raw24hChange, globalTimeframe);
 
-    switch (globalTimeframe) {
-      case "1m":
-        currentGlobalChange = raw24hChange / 1440;
-        break;
-      case "5m":
-        currentGlobalChange = raw24hChange / 288;
-        break;
-      case "15m":
-        currentGlobalChange = raw24hChange / 96;
-        break;
-      case "1h":
-        currentGlobalChange = raw24hChange / 24;
-        break;
-      case "4h":
-        currentGlobalChange = raw24hChange / 6;
-        break;
-      case "24h":
-        currentGlobalChange = raw24hChange;
-        break;
-      case "7d":
-        currentGlobalChange = raw24hChange * 2.2;
-        break;
-      default:
-        currentGlobalChange = raw24hChange / 24;
-        break;
-    }
+    const trendingScore = getTrendingMomentumScore();
+    const memeScore = getMemeMomentumScore();
 
-    currentGlobalScore = normalizeChangeToScore(currentGlobalChange, 12);
-    currentGlobalMood = getMoodByScore(currentGlobalScore);
-    currentSocialScore = getSocialScoreFromMarket(
+    currentMarketScore = computeMarketScoreFromInputs(
       currentGlobalChange,
-      50 + average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 4,
-      50 + average(topMemesData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 4
+      trendingScore,
+      memeScore
     );
 
-    updateHero(currentGlobalScore, currentGlobalMood);
-    updateSocial(currentSocialScore);
-    updateDriverPanel();
-
-    const globalChangeEl = byId("globalMarketChange");
-    if (globalChangeEl) {
-      globalChangeEl.textContent = formatPercent(currentGlobalChange);
-      globalChangeEl.classList.remove("positive", "negative", "neutral");
-      if (currentGlobalChange > 0) globalChangeEl.classList.add("positive");
-      else if (currentGlobalChange < 0) globalChangeEl.classList.add("negative");
-      else globalChangeEl.classList.add("neutral");
-    }
+    currentPulseScore = getPulseScore();
+    currentSocialScore = getSocialScoreFromMarket(
+      currentGlobalChange,
+      trendingScore,
+      memeScore
+    );
 
     if (byId("globalMarketVolume")) {
-      byId("globalMarketVolume").textContent =
-        response.volume && response.volume !== "--"
-          ? response.volume
-          : formatCurrencyCompact(globalData.total_volume?.usd);
+      byId("globalMarketVolume").textContent = volumeText;
     }
 
-    if (byId("globalMarketTimeframe")) {
-      byId("globalMarketTimeframe").textContent = globalTimeframe;
-    }
-
-    renderStudio();
+    recomputeHeroSystem();
   } finally {
     isLoadingGlobal = false;
   }
@@ -1056,12 +1157,16 @@ function renderPulseStats() {
   const rows = Object.keys(weights).map((key) => {
     const votes = pulseVotes[key] || 0;
     const pct = Math.round((votes / total) * 100);
+    const color = getMoodColor(key);
 
     return `
       <div class="pulse-row">
         <img src="/assets/icons/3d/${key}.png" width="18" height="18" alt="${key}">
         <div class="pulse-bar">
-          <div class="pulse-bar-fill" style="width:${pct}%"></div>
+          <div
+            class="pulse-bar-fill"
+            style="width:${pct}%; background:${color}; box-shadow:0 0 10px ${color}55;"
+          ></div>
         </div>
         <span>${pct}% (${votes})</span>
       </div>
@@ -1071,12 +1176,19 @@ function renderPulseStats() {
   container.innerHTML = rows;
 
   const pulseMood = getPulseMood();
+  currentPulseScore = getPulseScore();
+
   if (byId("pulseMood")) {
     byId("pulseMood").textContent = pulseMood.name;
     byId("pulseMood").className = `mood-${pulseMood.key}`;
   }
+
   if (byId("pulseTotalVotes")) {
     byId("pulseTotalVotes").textContent = getPulseTotalVotes();
+  }
+
+  if (byId("pulseScore")) {
+    byId("pulseScore").textContent = currentPulseScore;
   }
 }
 
@@ -1104,8 +1216,7 @@ function triggerPulseReaction(moodKey) {
 
   clearTimeout(pulseReactionTimer);
   pulseReactionTimer = setTimeout(() => {
-    updateHero(currentGlobalScore, currentGlobalMood);
-    updateSocial(currentSocialScore);
+    recomputeHeroSystem();
   }, PULSE_REACTION_MS);
 }
 
@@ -1123,6 +1234,8 @@ function handlePulseVote(moodKey) {
 
   renderPulseStats();
   triggerPulseReaction(moodKey);
+  recomputeHeroSystem();
+
   showPulseMessage(`Vote registered: ${getMoodByScore(getPulseWeightMap()[moodKey]).name}`);
 }
 
@@ -1217,6 +1330,9 @@ function getGlobalMarketContext() {
   return {
     globalMood: currentGlobalMood?.name || "Neutral",
     globalScore: roundScore(currentGlobalScore),
+    marketScore: roundScore(currentMarketScore),
+    socialScore: roundScore(currentSocialScore),
+    pulseScore: roundScore(currentPulseScore),
     globalTimeframe,
     globalChange: currentGlobalChange ?? 0,
     globalVolume: byId("globalMarketVolume")?.textContent || "--",
@@ -1274,6 +1390,8 @@ function buildMemeScene(ctx) {
   return `
 <strong>Scene:</strong> A ${DEFAULT_STYLE} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
 
+<strong>Signal mix:</strong> Market ${ctx.marketScore}/100 • Social ${ctx.socialScore}/100 • Pulse ${ctx.pulseScore}/100
+
 <strong>Visual tone:</strong> The image should feel premium, dramatic and native to crypto X, with clear emotional readability and a strong meme format.
   `.trim();
 }
@@ -1282,6 +1400,8 @@ function buildDailyMeme(ctx) {
   return `
 <strong>Today's market setup:</strong> The crypto market is sitting in <strong>${ctx.globalMood}</strong> on the <strong>${ctx.globalTimeframe}</strong> view, with overall market performance at <strong>${formatPercent(ctx.globalChange)}</strong>.
 
+<strong>Signal blend:</strong> Market <strong>${ctx.marketScore}</strong> • Social <strong>${ctx.socialScore}</strong> • Pulse <strong>${ctx.pulseScore}</strong>
+
 <strong>Daily meme angle:</strong> Focus on ${ctx.activeCoin} as the emotional anchor, use ${ctx.macroLabel.toLowerCase()} as the macro backdrop, and make the reaction feel instantly understandable for crypto traders scrolling X.
   `.trim();
 }
@@ -1289,6 +1409,10 @@ function buildDailyMeme(ctx) {
 function buildXPost(ctx) {
   const caption =
 `MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+
+Market: ${ctx.marketScore}
+Social: ${ctx.socialScore}
+Pulse: ${ctx.pulseScore}
 
 Driver: ${ctx.macroLabel}
 Timeframe: ${ctx.globalTimeframe}
@@ -1309,7 +1433,7 @@ function buildStoryMode(ctx) {
   return `
 <div class="story-block"><strong>Market context</strong><br>The market is trading with <strong>${ctx.globalMood}</strong> on the <strong>${ctx.globalTimeframe}</strong> timeframe, while overall market performance sits at <strong>${formatPercent(ctx.globalChange)}</strong>.</div>
 
-<div class="story-block"><strong>Social mood</strong><br>Crypto social sentiment is leaning <strong>${ctx.socialMood}</strong>, which reinforces the broader emotional tone around the market.</div>
+<div class="story-block"><strong>Signal blend</strong><br>The current emotion index is built from <strong>market (${ctx.marketScore})</strong>, <strong>social (${ctx.socialScore})</strong>, and <strong>community pulse (${ctx.pulseScore})</strong>.</div>
 
 <div class="story-block"><strong>Technical confirmation</strong><br>${ctx.activeCoin} is showing <strong>${ctx.technicalMood}</strong> conditions on the <strong>${ctx.coinTimeframe}</strong> structure, with current selected performance at <strong>${ctx.coinPerformance}</strong>.</div>
   `.trim();
@@ -1359,6 +1483,10 @@ function shareMoodOnX() {
 
   const text =
 `MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+
+Market: ${ctx.marketScore}
+Social: ${ctx.socialScore}
+Pulse: ${ctx.pulseScore}
 
 Driver: ${ctx.macroLabel}
 Timeframe: ${ctx.globalTimeframe}
@@ -1442,8 +1570,7 @@ function setupButtons() {
     if (byId("styleSelector")) byId("styleSelector").value = DEFAULT_STYLE;
 
     renderPulseStats();
-    updateHero(currentGlobalScore, currentGlobalMood);
-    updateSocial(currentSocialScore);
+    recomputeHeroSystem();
     loadCoinDetails();
     renderScale();
   });
@@ -1458,6 +1585,8 @@ async function loadAll() {
     loadTopMemes(),
     loadSentiment()
   ]);
+
+  currentPulseScore = getPulseScore();
 
   await loadGlobalMarket();
   await loadCoinDetails();
@@ -1543,6 +1672,8 @@ async function boot() {
 
   const savedCoin = loadSavedActiveCoin();
   if (savedCoin) activeCoinSymbol = savedCoin;
+
+  currentPulseScore = getPulseScore();
 
   renderScale();
   setupButtons();
