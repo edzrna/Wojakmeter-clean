@@ -164,6 +164,7 @@ export default function Home({ ogImageUrl }) {
                         tabIndex={0}
                       >
                         <div className="hero-social-badge-label">𝕏</div>
+
                         <div className="hero-social-badge-icon">
                           <img
                             id="socialIconImg"
@@ -172,6 +173,7 @@ export default function Home({ ogImageUrl }) {
                             alt="Social mood icon"
                           />
                         </div>
+
                         <div className="hero-social-badge-text">
                           <span id="socialMoodMini">Neutral</span>
                           <strong id="socialScoreMini">50</strong>
@@ -184,33 +186,40 @@ export default function Home({ ogImageUrl }) {
                             <strong>Social Mood</strong>
                             <span id="socialExpandMood">Neutral</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Social Score</strong>
                             <span id="socialExpandScore">50</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Interactions</strong>
                             <span id="socialExpandEngagement">--</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Bullish</strong>
                             <span id="socialExpandBullish">--</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Bearish</strong>
                             <span id="socialExpandBearish">--</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Neutral</strong>
                             <span id="socialExpandNeutral">--</span>
                           </div>
+
                           <div className="social-expand-row">
                             <strong>Window</strong>
                             <span id="socialExpandWindow">1h</span>
                           </div>
 
                           <div className="social-expand-note">
-                            Social mood is derived from aggregated market sentiment across X.
+                            Social mood is derived from aggregated market sentiment across X,
+                            trending coins and meme activity.
                           </div>
                         </div>
                       </div>
@@ -807,6 +816,10 @@ export default function Home({ ogImageUrl }) {
                 <div className="pulse-summary-box">
                   <span>Total Votes</span>
                   <strong id="pulseTotalVotes">0</strong>
+                </div>
+                <div className="pulse-summary-box">
+                  <span>Pulse Score</span>
+                  <strong id="pulseScore">50</strong>
                 </div>
               </div>
 
