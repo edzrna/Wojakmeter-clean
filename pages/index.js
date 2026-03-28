@@ -716,6 +716,30 @@ export default function Home({ ogImageUrl }) {
                 </p>
               </div>
             </section>
+
+<div className="emotion-pulse-toggle" id="pulseToggle">
+  ⚡
+</div>
+
+<div className="emotion-pulse-panel hidden" id="pulsePanel">
+  <div className="pulse-header">
+    <strong>Emotion Pulse</strong>
+  </div>
+
+  <div className="pulse-grid">
+    <button data-vote="frustration"><img src="/assets/icons/3d/frustration.png"/></button>
+    <button data-vote="concern"><img src="/assets/icons/3d/concern.png"/></button>
+    <button data-vote="doubt"><img src="/assets/icons/3d/doubt.png"/></button>
+    <button data-vote="neutral"><img src="/assets/icons/3d/neutral.png"/></button>
+    <button data-vote="optimism"><img src="/assets/icons/3d/optimism.png"/></button>
+    <button data-vote="content"><img src="/assets/icons/3d/content.png"/></button>
+    <button data-vote="euphoria"><img src="/assets/icons/3d/euphoria.png"/></button>
+  </div>
+
+  <div className="pulse-msg" id="pulseMsg"></div>
+</div>
+
+
           </main>
 
           <footer className="wm-footer">
