@@ -381,7 +381,7 @@ a {
 .hero-face-img {
   position: relative;
   z-index: 2;
-  width: min(380px, 82%);
+  width: min(450px, 82%);
   height: auto;
   object-fit: contain;
   transition: transform 0.28s ease, opacity 0.28s ease;
