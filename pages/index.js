@@ -1753,7 +1753,7 @@ export async function getServerSideProps({ req }) {
                   <h4 className="wm-footer-title">Community</h4>
 
                   <a
-                    href="https://x.com/WojakMeter"
+                    href="https://x.com/karma0282"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
@@ -1774,7 +1774,7 @@ export async function getServerSideProps({ req }) {
                   </a>
 
                   <a
-                    href="https://t.me/WojakMeter_bot"
+                    href="https://t.me/WojakMeter"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
