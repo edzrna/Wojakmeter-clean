@@ -67,7 +67,8 @@ export default function Home({ ogImageUrl }) {
         <meta name="theme-color" content="#071018" />
 
         <link rel="canonical" href="https://wojakmeter.com" />
-        <link rel="icon" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2" />
+        <link rel="shortcut icon" href="/favicon.png?v=2" />
 
         <meta property="og:title" content="WojakMeter – The Crypto Emotion Index" />
         <meta
