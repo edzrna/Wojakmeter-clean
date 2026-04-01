@@ -879,7 +879,7 @@ export default function Home({ ogImageUrl }) {
                   </a>
 
                   <a
-                    href="https://t.me/WojakMeter_bot"
+                    href="https://t.me/WojakMeter"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
@@ -982,8 +982,8 @@ export async function getServerSideProps({ req }) {
           content="Real-time crypto market emotion powered by price action and sentiment."
         />
         <meta name="twitter:image" content={ogImageUrl} />
-        <meta name="twitter:site" content="@WojakMeter" />
-        <meta name="twitter:creator" content="@WojakMeter" />
+        <meta name="twitter:site" content="@karma0282" />
+        <meta name="twitter:creator" content="@karma0282" />
       </Head>
 
       <Script
@@ -1766,7 +1766,7 @@ export async function getServerSideProps({ req }) {
                         />
                       </svg>
                     </span>
-                    @WojakMeter
+                    @karma0282
                   </a>
 
                   <a href="mailto:contact@wojakmeter.com" className="footer-link">
