@@ -1443,7 +1443,7 @@ function buildMemePrompt(ctx) {
     "",
     "Branding:",
     '- Add the website text: "wojakmeter.com"',
-    '- Add the X account text: "@WojakMeter"',
+    '- Add the X account text: "@karma0282"',
     "- Put branding in the bottom-right corner"
   ].join("\n");
 }
