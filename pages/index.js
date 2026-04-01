@@ -956,7 +956,7 @@ export async function getServerSideProps({ req }) {
       }
     };
   }
-}        />
+}        
 
         <meta name="robots" content="index, follow" />
         <meta name="author" content="WojakMeter" />
