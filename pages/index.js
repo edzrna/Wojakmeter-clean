@@ -44,7 +44,7 @@ export default function Home({ ogImageUrl }) {
         url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png"
       }
     },
-    sameAs: ["https://x.com/WojakMeter"]
+    sameAs: ["https://x.com/karma0282"]
   };
 
   return (
