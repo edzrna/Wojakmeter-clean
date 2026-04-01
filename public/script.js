@@ -3,6 +3,8 @@ window.onerror = function (msg, url, line, col) {
   return false;
 };
 
+const BRAND_X = "@karma0282";
+const BRAND_NAME = "wojakmeter";
 const TOP_COINS_REFRESH_MS = 30000;
 const GLOBAL_REFRESH_MS = 45000;
 const COIN_DETAILS_REFRESH_MS = 30000;
