@@ -909,13 +909,13 @@ export async function getServerSideProps({ req }) {
   const baseUrl = `${protocol}://${host}`;
 
   try {
-    const [globalRes, sentimentRes] = await Promise.all([
+    const [globalRes, signalRes] = await Promise.all([
       fetch(`${baseUrl}/api/global`),
-      fetch(`${baseUrl}/api/sentiment`)
+      fetch(`${baseUrl}/api/signal`)
     ]);
 
     const globalJson = await globalRes.json().catch(() => null);
-    const sentimentJson = await sentimentRes.json().catch(() => null);
+    const signalJson = await signalRes.json().catch(() => null);
 
     const rawGlobal = globalJson?.raw || {};
     const change = Number(
@@ -923,13 +923,13 @@ export async function getServerSideProps({ req }) {
     );
     const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
 
-    const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
-    const mood = scoreToMood(score);
+    const score = Number(signalJson?.score ?? clamp(50 + change * 10, 0, 100));
+    const mood = signalJson?.emotion?.key || scoreToMood(score);
 
     const volumeCompact = formatCompactVolume(volumeUsd);
 
-    const driver = sentimentJson?.driver || "Market flow / price action";
-    const risk = sentimentJson?.risk || "Balanced";
+    const driver = signalJson?.driver || "Market flow / price action";
+    const risk = signalJson?.risk || "Balanced";
 
     const ogImageUrl =
       `${baseUrl}/api/og` +
