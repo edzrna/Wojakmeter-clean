@@ -1,4 +1,4 @@
-import { computeMarketSignal } from "@/lib/signal-engine";
+import { computeMarketSignal } from "../../lib/signal-engine";
 
 export default async function handler(req, res) {
   try {
