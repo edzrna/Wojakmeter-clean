@@ -38,6 +38,7 @@ let currentPulseScore = 50;
 let currentDominantDriver = "market_flow";
 let currentBtcDominanceValue = 50;
 let currentHeaderVolumeValue = 0;
+let currentSignalPayload = null;
 
 let socialPanelOpen = false;
 let pulseReactionTimer = null;
@@ -683,11 +684,18 @@ function computeMarketScoreFromInputs(change, trendingScore, memeScore) {
 function recomputeHeroSystem() {
   if (isPulsePreviewActive) return;
 
-  const heroScore = computeHeroProScore();
-  currentGlobalScore = heroScore;
-  currentGlobalMood = getMoodByScore(heroScore);
+  if (currentSignalPayload && typeof currentSignalPayload.score !== "undefined") {
+    const score = roundScore(currentSignalPayload.score);
+    currentGlobalScore = score;
+    currentGlobalMood = getMoodByScore(score);
+    updateHero(currentGlobalScore, currentGlobalMood);
+  } else {
+    const heroScore = computeHeroProScore();
+    currentGlobalScore = heroScore;
+    currentGlobalMood = getMoodByScore(heroScore);
+    updateHero(currentGlobalScore, currentGlobalMood);
+  }
 
-  updateHero(currentGlobalScore, currentGlobalMood);
   updateSocial(currentSocialScore);
   updateDriverPanel();
 
@@ -712,7 +720,34 @@ async function loadSentiment() {
   isLoadingSentiment = true;
 
   try {
-    // Manual mode only: no sobrescribir market driver desde API.
+    const signal = await fetchJson(`/api/signal?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
+
+    if (signal && typeof signal === "object") {
+      currentSignalPayload = signal;
+
+      const score = roundScore(signal.score ?? 50);
+      const market = roundScore(signal.components?.market ?? score);
+      const social = roundScore(signal.components?.social ?? score);
+      const pulse = roundScore(signal.components?.pulse ?? getPulseScore());
+
+      currentGlobalScore = score;
+      currentGlobalMood = getMoodByScore(score);
+
+      currentMarketScore = market;
+      currentSocialScore = social;
+      currentPulseScore = pulse;
+
+      if (signal.driver) {
+        currentDominantDriver = signal.driver;
+      }
+
+      updateHero(currentGlobalScore, currentGlobalMood);
+      updateSocial(currentSocialScore);
+      updateDriverPanel();
+      renderStudio();
+      return;
+    }
+
     updateDriverPanel();
   } finally {
     isLoadingSentiment = false;
@@ -767,24 +802,28 @@ async function loadGlobalMarket() {
     const trendingScore = getTrendingMomentumScore();
     const memeScore = getMemeMomentumScore();
 
-    currentMarketScore = computeMarketScoreFromInputs(
-      currentGlobalChange,
-      trendingScore,
-      memeScore
-    );
+    if (!currentSignalPayload) {
+      currentMarketScore = computeMarketScoreFromInputs(
+        currentGlobalChange,
+        trendingScore,
+        memeScore
+      );
 
-    currentPulseScore = getPulseScore();
-    currentSocialScore = getSocialScoreFromMarket(
-      currentGlobalChange,
-      trendingScore,
-      memeScore
-    );
+      currentPulseScore = getPulseScore();
+      currentSocialScore = getSocialScoreFromMarket(
+        currentGlobalChange,
+        trendingScore,
+        memeScore
+      );
+    }
 
     if (byId("globalMarketVolume")) {
       byId("globalMarketVolume").textContent = volumeText;
     }
 
-    recomputeHeroSystem();
+    if (!isLoadingSentiment) {
+      recomputeHeroSystem();
+    }
   } finally {
     isLoadingGlobal = false;
   }
@@ -1585,6 +1624,7 @@ function setupButtons() {
         b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
       });
       await loadGlobalMarket();
+      await loadSentiment();
     });
   });
 
@@ -1656,13 +1696,11 @@ async function loadAll() {
   await Promise.allSettled([
     loadTopCoins(),
     loadTrendingCoins(),
-    loadTopMemes(),
-    loadSentiment()
+    loadTopMemes()
   ]);
 
-  currentPulseScore = getPulseScore();
-
   await loadGlobalMarket();
+  await loadSentiment();
   await loadCoinDetails();
 
   renderPulseStats();
@@ -1732,10 +1770,10 @@ function initStyle() {
 function startAutoRefresh() {
   setInterval(loadTopCoins, TOP_COINS_REFRESH_MS);
   setInterval(loadGlobalMarket, GLOBAL_REFRESH_MS);
+  setInterval(loadSentiment, SENTIMENT_REFRESH_MS);
   setInterval(loadCoinDetails, COIN_DETAILS_REFRESH_MS);
   setInterval(loadTrendingCoins, TRENDING_REFRESH_MS);
   setInterval(loadTopMemes, MEMES_REFRESH_MS);
-  setInterval(loadSentiment, SENTIMENT_REFRESH_MS);
 }
 
 async function boot() {
