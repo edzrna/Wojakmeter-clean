@@ -3,17 +3,17 @@ import Script from "next/script";
 import Link from "next/link";
 
 function clamp(num, min, max) {
-return Math.max(min, Math.min(max, num));
+  return Math.max(min, Math.min(max, num));
 }
 
 function scoreToMood(score) {
-if (score >= 85) return "euphoria";
-if (score >= 70) return "content";
-if (score >= 60) return "optimism";
-if (score >= 45) return "neutral";
-if (score >= 35) return "doubt";
-if (score >= 20) return "concern";
-return "frustration";
+  if (score >= 85) return "euphoria";
+  if (score >= 70) return "content";
+  if (score >= 60) return "optimism";
+  if (score >= 45) return "neutral";
+  if (score >= 35) return "doubt";
+  if (score >= 20) return "concern";
+  return "frustration";
 }
 
 function formatCompactVolume(volumeUsd) {
