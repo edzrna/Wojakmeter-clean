@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=2" strategy="afterInteractive" />
+      <Script src="/script.js?v=3" strategy="afterInteractive" />
 
       <div className="style-3d">
         <div className="app-shell">
@@ -242,6 +242,166 @@ export default function Home({ ogImageUrl }) {
                     Score: <span id="heroScore">50</span> / 100
                   </div>
 
+                  <div className="hero-modes" id="heroModes">
+                    <button
+                      type="button"
+                      className="hero-mode-btn active"
+                      data-hero-mode="raw"
+                      id="heroModeRaw"
+                    >
+                      Raw Market
+                    </button>
+                    <button
+                      type="button"
+                      className="hero-mode-btn"
+                      data-hero-mode="composite"
+                      id="heroModeComposite"
+                    >
+                      Composite
+                    </button>
+                    <button
+                      type="button"
+                      className="hero-mode-btn"
+                      data-hero-mode="custom"
+                      id="heroModeCustom"
+                    >
+                      Custom Layers
+                    </button>
+                  </div>
+
+                  <section className="wm-gauge-shell" id="wmGaugeShell">
+                    <div className="wm-gauge-head">
+                      <div className="wm-gauge-title">WojakMeter Engine</div>
+                      <div className="wm-gauge-score">
+                        Final Score <strong id="gaugeScoreHead">50</strong>/100
+                      </div>
+                    </div>
+
+                    <div className="wm-gauge-wrap">
+                      <svg
+                        className="wm-gauge-svg"
+                        viewBox="0 0 300 190"
+                        preserveAspectRatio="xMidYMid meet"
+                        aria-hidden="true"
+                      >
+                        <path
+                          className="gauge-track"
+                          d="M30 150 A120 120 0 0 1 270 150"
+                        ></path>
+                        <path
+                          id="gaugeFill"
+                          d="M30 150 A120 120 0 0 1 270 150"
+                        ></path>
+                      </svg>
+
+                      <div className="gauge-needle-wrap">
+                        <div className="gauge-needle" id="gaugeNeedle"></div>
+                      </div>
+
+                      <div className="gauge-center-cap"></div>
+
+                      <div className="gauge-score-center">
+                        <div id="gaugeScore">50</div>
+                        <div id="gaugeMood">Neutral</div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="wm-layers disabled-layers" id="wmLayers">
+                    <div className="layer-title">
+                      Toggle layers to see how each force affects the hero
+                    </div>
+
+                    <div className="layer-buttons" id="layerButtons">
+                      <button
+                        type="button"
+                        className="layer-btn active"
+                        data-layer="market"
+                        id="toggleLayerMarket"
+                      >
+                        Market Mood
+                      </button>
+                      <button
+                        type="button"
+                        className="layer-btn"
+                        data-layer="social"
+                        id="toggleLayerSocial"
+                      >
+                        Social Mood
+                      </button>
+                      <button
+                        type="button"
+                        className="layer-btn"
+                        data-layer="driver"
+                        id="toggleLayerDriver"
+                      >
+                        Market Driver
+                      </button>
+                      <button
+                        type="button"
+                        className="layer-btn"
+                        data-layer="pulse"
+                        id="toggleLayerPulse"
+                      >
+                        Emotion Pulse
+                      </button>
+                    </div>
+
+                    <div className="layer-grid">
+                      <div className="layer-card">
+                        <span className="layer-card-label">Market</span>
+                        <strong className="layer-card-score" id="layerScoreMarket">
+                          50
+                        </strong>
+                        <div className="layer-mini-bar">
+                          <span id="layerBarMarket"></span>
+                        </div>
+                        <div className="layer-impact" id="layerImpactMarket">
+                          Base
+                        </div>
+                      </div>
+
+                      <div className="layer-card">
+                        <span className="layer-card-label">Social</span>
+                        <strong className="layer-card-score" id="layerScoreSocial">
+                          50
+                        </strong>
+                        <div className="layer-mini-bar">
+                          <span id="layerBarSocial"></span>
+                        </div>
+                        <div className="layer-impact" id="layerImpactSocial">
+                          +0
+                        </div>
+                      </div>
+
+                      <div className="layer-card">
+                        <span className="layer-card-label">Driver</span>
+                        <strong className="layer-card-score" id="layerScoreDriver">
+                          50
+                        </strong>
+                        <div className="layer-mini-bar">
+                          <span id="layerBarDriver"></span>
+                        </div>
+                        <div className="layer-impact" id="layerImpactDriver">
+                          +0
+                        </div>
+                      </div>
+
+                      <div className="layer-card">
+                        <span className="layer-card-label">Pulse</span>
+                        <strong className="layer-card-score" id="layerScorePulse">
+                          50
+                        </strong>
+                        <div className="layer-mini-bar">
+                          <span id="layerBarPulse"></span>
+                        </div>
+                        <div className="layer-impact" id="layerImpactPulse">
+                          +0
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
                   <div className="heartbeat-wrap" id="heartbeatWrap">
                     <div className="heartbeat-heart" id="heartbeatHeart">
                       ❤
@@ -329,7 +489,6 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="1m">1m</button>
                     <button data-timeframe="5m">5m</button>
                     <button data-timeframe="15m">15m</button>
                     <button data-timeframe="1h" className="active">
@@ -451,7 +610,6 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="chart-toolbar">
                     <div className="timeframes compact" id="chartTimeframes">
-                      <button data-timeframe="1m">1m</button>
                       <button data-timeframe="5m">5m</button>
                       <button data-timeframe="15m">15m</button>
                       <button data-timeframe="1h" className="active">
@@ -533,10 +691,6 @@ export default function Home({ ogImageUrl }) {
 
                 <div className="market-intervals">
                   <div className="interval-box">
-                    <span>1m</span>
-                    <strong id="perf1m">--</strong>
-                  </div>
-                  <div className="interval-box">
                     <span>5m</span>
                     <strong id="perf5m">--</strong>
                   </div>
@@ -559,6 +713,11 @@ export default function Home({ ogImageUrl }) {
                   <div className="interval-box">
                     <span>7d</span>
                     <strong id="perf7d">--</strong>
+                  </div>
+
+                  <div className="interval-box hidden">
+                    <span>1m</span>
+                    <strong id="perf1m">--</strong>
                   </div>
                 </div>
               </section>
