@@ -1,5 +1,9 @@
 import { cachedJson, fetchJsonWithRetry } from "../../lib/data-proxy";
 
+function clamp(num, min, max) {
+  return Math.max(min, Math.min(max, num));
+}
+
 function classifyNews(headlines = []) {
   let score = 50;
 
@@ -19,7 +23,7 @@ function classifyNews(headlines = []) {
     if (title.includes("rate hike")) score -= 5;
   });
 
-  score = Math.max(0, Math.min(100, score));
+  score = clamp(score, 0, 100);
 
   let signal = "neutral";
   if (score > 60) signal = "bullish";
@@ -28,15 +32,57 @@ function classifyNews(headlines = []) {
   return { score, signal };
 }
 
+function moodFromScore(score) {
+  if (score >= 85) return "euphoria";
+  if (score >= 70) return "content";
+  if (score >= 60) return "optimism";
+  if (score >= 45) return "neutral";
+  if (score >= 35) return "doubt";
+  if (score >= 20) return "concern";
+  return "frustration";
+}
+
+function computeDriverScore(driverLabel) {
+  const label = String(driverLabel || "").toLowerCase();
+
+  if (label.includes("etf")) return 72;
+  if (label.includes("institutional")) return 72;
+  if (label.includes("rate cut")) return 64;
+  if (label.includes("market flow")) return 50;
+  if (label.includes("neutral macro")) return 50;
+  if (label.includes("regulation")) return 35;
+  if (label.includes("hack")) return 25;
+  if (label.includes("insolvency")) return 25;
+  if (label.includes("war")) return 28;
+  if (label.includes("rate hike")) return 38;
+
+  return 50;
+}
+
+function computeCompositeScore({ fearGreed, socialScore, driverScore }) {
+  return Math.round(
+    clamp(
+      Number(fearGreed || 50) * 0.5 +
+        Number(socialScore || 50) * 0.3 +
+        Number(driverScore || 50) * 0.2,
+      0,
+      100
+    )
+  );
+}
+
 async function getFearGreed() {
   try {
-    const json = await fetchJsonWithRetry("https://api.alternative.me/fng/?limit=1&format=json", {
-      timeoutMs: 5000,
-      retries: 1
-    });
+    const json = await fetchJsonWithRetry(
+      "https://api.alternative.me/fng/?limit=1&format=json",
+      {
+        timeoutMs: 5000,
+        retries: 1
+      }
+    );
 
     const value = Number(json?.data?.[0]?.value || 50);
-    return Math.max(0, Math.min(100, value));
+    return clamp(value, 0, 100);
   } catch {
     return 50;
   }
@@ -44,6 +90,7 @@ async function getFearGreed() {
 
 async function getNews() {
   const token = process.env.CRYPTOPANIC_TOKEN;
+
   if (!token) {
     return { headlines: [], score: 50, signal: "neutral" };
   }
@@ -57,7 +104,10 @@ async function getNews() {
       }
     );
 
-    const headlines = (json?.results || []).map((x) => ({ title: x?.title || "" }));
+    const headlines = (json?.results || []).map((x) => ({
+      title: x?.title || ""
+    }));
+
     const classified = classifyNews(headlines);
 
     return {
@@ -87,9 +137,11 @@ export default async function handler(req, res) {
                 : "Market flow / price action";
 
         const risk =
-          fearGreed > 65 ? "Risk-on" :
-          fearGreed < 35 ? "Defensive" :
-          "Balanced";
+          fearGreed > 65
+            ? "Risk-on"
+            : fearGreed < 35
+              ? "Defensive"
+              : "Balanced";
 
         const narrative =
           news.score < 35
@@ -98,13 +150,33 @@ export default async function handler(req, res) {
               ? "Positive adoption-style headlines are supporting market confidence."
               : "Price action is leading sentiment with no major macro override.";
 
+        const socialScore = Number(news.score || 50);
+        const driverScore = computeDriverScore(driver);
+        const score = computeCompositeScore({
+          fearGreed,
+          socialScore,
+          driverScore
+        });
+
         return {
           fearGreed,
-          newsScore: news.score,
+          newsScore: socialScore,
           newsSignal: news.signal,
+
+          socialScore,
+          socialMood: moodFromScore(socialScore),
+
           driver,
+          driverScore,
+          driverMood: moodFromScore(driverScore),
+
           risk,
-          narrative
+          narrative,
+
+          score,
+          mood: moodFromScore(score),
+
+          headlinesCount: Array.isArray(news.headlines) ? news.headlines.length : 0
         };
       },
       {
@@ -115,13 +187,31 @@ export default async function handler(req, res) {
 
     res.status(200).json(result.data);
   } catch {
+    const socialScore = 50;
+    const driver = "Market flow / price action";
+    const driverScore = 50;
+    const fearGreed = 50;
+    const score = 50;
+
     res.status(200).json({
-      fearGreed: 50,
-      newsScore: 50,
+      fearGreed,
+      newsScore: socialScore,
       newsSignal: "neutral",
-      driver: "Market flow / price action",
+
+      socialScore,
+      socialMood: "neutral",
+
+      driver,
+      driverScore,
+      driverMood: "neutral",
+
       risk: "Balanced",
-      narrative: "Price action is leading sentiment with no major macro override."
+      narrative: "Price action is leading sentiment with no major macro override.",
+
+      score,
+      mood: "neutral",
+
+      headlinesCount: 0
     });
   }
 }
