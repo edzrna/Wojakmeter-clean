@@ -35,6 +35,7 @@ let currentGlobalScore = 50;
 let currentMarketScore = 50;
 let currentSocialScore = 50;
 let currentPulseScore = 50;
+let currentDriverScore = 50;
 let currentDominantDriver = "market_flow";
 let currentBtcDominanceValue = 50;
 let currentHeaderVolumeValue = 0;
@@ -43,6 +44,18 @@ let socialPanelOpen = false;
 let pulseReactionTimer = null;
 let isPulsePreviewActive = false;
 let pulsePreviewTimeout = null;
+
+let heroMode = "composite"; // raw | composite | custom
+
+let activeLayers = {
+  market: true,
+  social: true,
+  driver: true,
+  pulse: true,
+  volume: false,
+  btc: false,
+  trending: false
+};
 
 let pulseVotes = {
   frustration: 2,
@@ -145,6 +158,12 @@ function formatPercent(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "--";
   return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+}
+
+function formatSignedNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "0";
+  return `${num >= 0 ? "+" : ""}${num.toFixed(0)}`;
 }
 
 function getMoodByScore(score) {
@@ -381,6 +400,24 @@ function getMemeMomentumScore() {
   return normalizeChangeToScore(avgMemes, 3.2);
 }
 
+function getDriverBaseScore(driverKey = currentDominantDriver, marketScore = currentMarketScore) {
+  const baseMap = {
+    market_flow: 50,
+    social_sentiment: 58,
+    etf_adoption: 72,
+    rate_cut: 64,
+    rate_hike: 34,
+    regulation_crackdown: 26,
+    crypto_hack: 18,
+    war_escalation: 22,
+    neutral_macro: 50
+  };
+
+  const base = safeNum(baseMap[driverKey], 50);
+  const marketBias = (roundScore(marketScore) - 50) * 0.18;
+  return roundScore(clamp(base + marketBias, 0, 100));
+}
+
 function computeHeroProScore() {
   const marketScore = roundScore(currentMarketScore);
   const socialScore = roundScore(currentSocialScore);
@@ -398,10 +435,156 @@ function computeHeroProScore() {
   return roundScore(score);
 }
 
+function computeLayerScores() {
+  const market = roundScore(currentMarketScore);
+  const social = roundScore(currentSocialScore);
+  const driver = roundScore(currentDriverScore || getDriverBaseScore());
+  const pulse = roundScore(currentPulseScore);
+  const volume = roundScore(getVolumeImpulseScore(currentHeaderVolumeValue));
+  const btc = roundScore(getBtcDominanceImpulseScore(currentBtcDominanceValue));
+  const trending = roundScore(getTrendingMomentumScore());
+
+  return { market, social, driver, pulse, volume, btc, trending };
+}
+
+function computeLayeredScore() {
+  const scores = computeLayerScores();
+
+  if (heroMode === "raw") {
+    return scores.market;
+  }
+
+  if (heroMode === "composite") {
+    const score =
+      scores.market * 0.50 +
+      scores.social * 0.18 +
+      scores.driver * 0.14 +
+      scores.pulse * 0.08 +
+      scores.volume * 0.04 +
+      scores.btc * 0.03 +
+      scores.trending * 0.03;
+
+    return roundScore(score);
+  }
+
+  let total = 0;
+  let weight = 0;
+
+  const weights = {
+    market: 0.38,
+    social: 0.16,
+    driver: 0.16,
+    pulse: 0.10,
+    volume: 0.07,
+    btc: 0.06,
+    trending: 0.07
+  };
+
+  Object.keys(activeLayers).forEach((key) => {
+    if (activeLayers[key]) {
+      total += scores[key] * (weights[key] || 0);
+      weight += weights[key] || 0;
+    }
+  });
+
+  if (weight <= 0) return 50;
+  return roundScore(total / weight);
+}
+
 function updateHeroTitle() {
   const heroDriverLabel = byId("heroDriverLabel");
   if (!heroDriverLabel) return;
   heroDriverLabel.textContent = ` (${getDriverLabel(currentDominantDriver)})`;
+}
+
+function updateGauge(score, mood) {
+  const needle = byId("gaugeNeedle");
+  const scoreEl = byId("gaugeScore");
+  const moodEl = byId("gaugeMood");
+  const fill = byId("gaugeFill");
+
+  const rounded = roundScore(score);
+  const angle = -90 + (rounded / 100) * 180;
+
+  if (needle) {
+    needle.style.transform = `rotate(${angle}deg)`;
+  }
+
+  if (scoreEl) scoreEl.textContent = String(rounded);
+  if (moodEl) moodEl.textContent = mood.name;
+
+  if (fill) {
+    fill.style.stroke = getMoodColor(mood.key);
+  }
+}
+
+function setGaugeBar(id, value, moodKey) {
+  const el = byId(id);
+  if (!el) return;
+  el.style.width = `${roundScore(value)}%`;
+  el.style.background = getMoodColor(moodKey);
+  el.style.boxShadow = `0 0 12px ${getMoodColor(moodKey)}66`;
+}
+
+function updateLayerScoresUI() {
+  const scores = computeLayerScores();
+
+  const map = {
+    layerBaseScore: scores.market,
+    layerSocialScore: scores.social,
+    layerDriverScore: scores.driver,
+    layerVolumeScore: scores.volume,
+    layerBtcScore: scores.btc,
+    layerPulseScore: scores.pulse,
+    layerTrendingScore: scores.trending
+  };
+
+  Object.entries(map).forEach(([id, value]) => {
+    const el = byId(id);
+    if (el) el.textContent = String(roundScore(value));
+  });
+
+  setGaugeBar("gaugeMarket", scores.market, getMoodByScore(scores.market).key);
+  setGaugeBar("gaugeSocial", scores.social, getMoodByScore(scores.social).key);
+  setGaugeBar("gaugeDriver", scores.driver, getMoodByScore(scores.driver).key);
+  setGaugeBar("gaugePulse", scores.pulse, getMoodByScore(scores.pulse).key);
+
+  const impactBase = byId("impactBase");
+  const impactSocial = byId("impactSocial");
+  const impactDriver = byId("impactDriver");
+  const impactPulse = byId("impactPulse");
+
+  if (impactBase) impactBase.textContent = formatSignedNumber(scores.market - 50);
+  if (impactSocial) impactSocial.textContent = formatSignedNumber(scores.social - 50);
+  if (impactDriver) impactDriver.textContent = formatSignedNumber(scores.driver - 50);
+  if (impactPulse) impactPulse.textContent = formatSignedNumber(scores.pulse - 50);
+
+  [impactBase, impactSocial, impactDriver, impactPulse].forEach((el) => {
+    if (!el) return;
+    const n = Number(el.textContent);
+    el.classList.remove("positive", "negative", "neutral");
+    if (n > 0) el.classList.add("positive");
+    else if (n < 0) el.classList.add("negative");
+    else el.classList.add("neutral");
+  });
+}
+
+function updateLayerButtonsState() {
+  qsa(".layer-btn[data-layer]").forEach((btn) => {
+    const key = btn.dataset.layer;
+    if (key in activeLayers) {
+      btn.classList.toggle("active", !!activeLayers[key]);
+    }
+  });
+
+  qsa(".hero-mode-btn[data-mode]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === heroMode);
+  });
+
+  const layersWrap = byId("wmLayers");
+  if (layersWrap) {
+    layersWrap.classList.toggle("disabled-layers", heroMode !== "custom");
+  }
 }
 
 function updateHero(score, mood, options = {}) {
@@ -442,6 +625,12 @@ function updateHero(score, mood, options = {}) {
       heroFaceImg.__pulseTimer = setTimeout(() => {
         heroFaceImg.classList.remove("hero-face-pulse");
       }, 700);
+    } else {
+      heroFaceImg.classList.add("hero-face-react");
+      clearTimeout(heroFaceImg.__reactTimer);
+      heroFaceImg.__reactTimer = setTimeout(() => {
+        heroFaceImg.classList.remove("hero-face-react");
+      }, 280);
     }
 
     setImage(
@@ -468,6 +657,8 @@ function updateHero(score, mood, options = {}) {
     heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key}`;
     heartbeatPath.setAttribute("d", heartbeatPathForMood(mood.key));
   }
+
+  updateGauge(score, mood);
 }
 
 function updateSocialPanel(score, socialMood) {
@@ -683,13 +874,15 @@ function computeMarketScoreFromInputs(change, trendingScore, memeScore) {
 function recomputeHeroSystem() {
   if (isPulsePreviewActive) return;
 
-  const heroScore = computeHeroProScore();
+  const heroScore = computeLayeredScore();
   currentGlobalScore = heroScore;
   currentGlobalMood = getMoodByScore(heroScore);
 
   updateHero(currentGlobalScore, currentGlobalMood);
   updateSocial(currentSocialScore);
   updateDriverPanel();
+  updateLayerScoresUI();
+  updateLayerButtonsState();
 
   const globalChangeEl = byId("globalMarketChange");
   if (globalChangeEl) {
@@ -712,7 +905,40 @@ async function loadSentiment() {
   isLoadingSentiment = true;
 
   try {
-    // Manual mode only: no sobrescribir market driver desde API.
+    const signal = await fetchJson("/api/signal", null);
+
+    if (signal && typeof signal === "object") {
+      if (signal.driver && typeof signal.driver === "string") {
+        // No forzamos siempre el driver si el usuario ya cambió manualmente,
+        // pero sí aceptamos si coincide o si no hay valor.
+        if (!currentDominantDriver || currentDominantDriver === "market_flow") {
+          const validDriver = [
+            "market_flow",
+            "social_sentiment",
+            "etf_adoption",
+            "rate_cut",
+            "rate_hike",
+            "regulation_crackdown",
+            "crypto_hack",
+            "war_escalation",
+            "neutral_macro"
+          ].includes(signal.driver);
+
+          if (validDriver) {
+            currentDominantDriver = signal.driver;
+          }
+        }
+      }
+
+      if (signal.driverScore != null) {
+        currentDriverScore = roundScore(signal.driverScore);
+      } else {
+        currentDriverScore = getDriverBaseScore(currentDominantDriver, currentMarketScore);
+      }
+    } else {
+      currentDriverScore = getDriverBaseScore(currentDominantDriver, currentMarketScore);
+    }
+
     updateDriverPanel();
   } finally {
     isLoadingSentiment = false;
@@ -779,6 +1005,8 @@ async function loadGlobalMarket() {
       trendingScore,
       memeScore
     );
+
+    currentDriverScore = getDriverBaseScore(currentDominantDriver, currentMarketScore);
 
     if (byId("globalMarketVolume")) {
       byId("globalMarketVolume").textContent = volumeText;
@@ -919,6 +1147,7 @@ async function loadTrendingCoins() {
 
     trendingCoinsData = coins.slice(0, 10);
     renderCoinSections();
+    recomputeHeroSystem();
   } finally {
     isLoadingTrending = false;
   }
@@ -936,6 +1165,7 @@ async function loadTopMemes() {
 
     topMemesData = coins.slice(0, 10);
     renderCoinSections();
+    recomputeHeroSystem();
   } finally {
     isLoadingMemes = false;
   }
@@ -1213,6 +1443,8 @@ function renderPulseStats() {
   if (byId("pulseScore")) {
     byId("pulseScore").textContent = currentPulseScore;
   }
+
+  updateLayerScoresUI();
 }
 
 function showPulseMessage(text, isError = false) {
@@ -1401,7 +1633,8 @@ function getGlobalMarketContext() {
     globalChange: currentGlobalChange ?? 0,
     globalVolume: byId("globalMarketVolume")?.textContent || "--",
     macroLabel: getDriverLabel(currentDominantDriver),
-    macroNarrative: getDriverNarrative(currentDominantDriver)
+    macroNarrative: getDriverNarrative(currentDominantDriver),
+    heroMode
   };
 }
 
@@ -1427,6 +1660,7 @@ function buildMemePrompt(ctx) {
     `Global timeframe: ${ctx.globalTimeframe}`,
     `Global market move: ${formatPercent(ctx.globalChange)}`,
     `Global volume: ${ctx.globalVolume}`,
+    `Hero mode: ${ctx.heroMode}`,
     `Coin focus: ${ctx.activeCoin}`,
     `Coin timeframe: ${ctx.coinTimeframe}`,
     `Technical mood: ${ctx.technicalMood}`,
@@ -1445,7 +1679,7 @@ function buildMemePrompt(ctx) {
     "",
     "Branding:",
     '- Add the website text: "wojakmeter.com"',
-    '- Add the X account text: "@karma0282"',
+    `- Add the X account text: "${BRAND_X}"`,
     "- Put branding in the bottom-right corner"
   ].join("\n");
 }
@@ -1474,6 +1708,7 @@ function buildXPost(ctx) {
   const caption =
 `MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
 
+Mode: ${ctx.heroMode.toUpperCase()}
 Market: ${ctx.marketScore}
 Social: ${ctx.socialScore}
 Pulse: ${ctx.pulseScore}
@@ -1559,6 +1794,7 @@ function shareMoodOnX() {
   const text =
 `${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
 
+🎛️ Mode: ${ctx.heroMode.toUpperCase()}
 📊 Driver: ${ctx.macroLabel}
 ⏱️ Timeframe: ${ctx.globalTimeframe}
 📉 Move: ${formatPercent(ctx.globalChange)}
@@ -1577,6 +1813,31 @@ Track the market mood live 👇`;
   window.open(shareUrl, "_blank", "noopener,noreferrer");
 }
 
+function setupLayerButtons() {
+  qsa(".layer-btn[data-layer]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (heroMode !== "custom") return;
+
+      const key = btn.dataset.layer;
+      if (!(key in activeLayers)) return;
+
+      if (key === "market") return; // base market siempre encendido en custom
+
+      activeLayers[key] = !activeLayers[key];
+      updateLayerButtonsState();
+      recomputeHeroSystem();
+    });
+  });
+
+  qsa(".hero-mode-btn[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      heroMode = btn.dataset.mode || "composite";
+      updateLayerButtonsState();
+      recomputeHeroSystem();
+    });
+  });
+}
+
 function setupButtons() {
   qsa("#heroTimeframes button").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1585,6 +1846,8 @@ function setupButtons() {
         b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
       });
       await loadGlobalMarket();
+      await loadSentiment();
+      recomputeHeroSystem();
     });
   });
 
@@ -1617,6 +1880,7 @@ function setupButtons() {
   });
 
   initStudioTabs();
+  setupLayerButtons();
 
   qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1633,7 +1897,9 @@ function setupButtons() {
   if (macroDriverEl) {
     macroDriverEl.addEventListener("change", (e) => {
       currentDominantDriver = e.target.value || "market_flow";
+      currentDriverScore = getDriverBaseScore(currentDominantDriver, currentMarketScore);
       updateDriverPanel();
+      recomputeHeroSystem();
       renderStudio();
     });
   }
@@ -1666,6 +1932,8 @@ async function loadAll() {
   await loadCoinDetails();
 
   renderPulseStats();
+  updateLayerScoresUI();
+  updateLayerButtonsState();
   renderStudio();
 }
 
@@ -1727,6 +1995,9 @@ function initStyle() {
     heartbeatWrap.className = "heartbeat-wrap heartbeat-neutral";
     heartbeatPath.setAttribute("d", heartbeatPathForMood("neutral"));
   }
+
+  updateGauge(50, getMoodByScore(50));
+  updateLayerButtonsState();
 }
 
 function startAutoRefresh() {
@@ -1748,10 +2019,13 @@ async function boot() {
   if (savedCoin) activeCoinSymbol = savedCoin;
 
   currentPulseScore = getPulseScore();
+  currentDriverScore = getDriverBaseScore(currentDominantDriver, currentMarketScore);
 
   renderScale();
   renderPulseStats();
   updateDriverPanel();
+  updateLayerScoresUI();
+  updateLayerButtonsState();
 
   setupButtons();
   setupSocialExpand();
