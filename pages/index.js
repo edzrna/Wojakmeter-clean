@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=5" strategy="afterInteractive" />
+      <Script src="/script.js?v=4" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -558,81 +558,6 @@ export default function Home({ ogImageUrl }) {
                 </button>
                 <button className="tab-btn" data-tab="memes">
                   Top Meme Coins
-                </button>
-              </div>
-
-              <div className="emotion-filters" id="emotionFilters">
-                <button
-                  type="button"
-                  className="emotion-filter-btn active"
-                  data-emotion="all"
-                  aria-label="All emotions"
-                  title="All emotions"
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="euphoria"
-                  aria-label="Euphoria"
-                  title="Euphoria"
-                >
-                  <img src="/assets/icons/classic/euphoria.png" alt="Euphoria" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="content"
-                  aria-label="Content"
-                  title="Content"
-                >
-                  <img src="/assets/icons/classic/content.png" alt="Content" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="optimism"
-                  aria-label="Optimism"
-                  title="Optimism"
-                >
-                  <img src="/assets/icons/classic/optimism.png" alt="Optimism" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="neutral"
-                  aria-label="Neutral"
-                  title="Neutral"
-                >
-                  <img src="/assets/icons/classic/neutral.png" alt="Neutral" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="doubt"
-                  aria-label="Doubt"
-                  title="Doubt"
-                >
-                  <img src="/assets/icons/classic/doubt.png" alt="Doubt" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="concern"
-                  aria-label="Concern"
-                  title="Concern"
-                >
-                  <img src="/assets/icons/classic/concern.png" alt="Concern" />
-                </button>
-                <button
-                  type="button"
-                  className="emotion-filter-btn"
-                  data-emotion="frustration"
-                  aria-label="Frustration"
-                  title="Frustration"
-                >
-                  <img src="/assets/icons/classic/frustration.png" alt="Frustration" />
                 </button>
               </div>
 
