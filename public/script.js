@@ -14,7 +14,9 @@ const MEMES_REFRESH_MS = 90000;
 const SENTIMENT_REFRESH_MS = 60000;
 
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
-const DEFAULT_STYLE = "3d";
+const DEFAULT_STYLE = "classic";
+const STYLE_STORAGE_KEY = "wojakStyle";
+const SHARED_ICON_STYLE = "classic";
 
 const PULSE_VOTE_STORAGE_KEY = "wmPulseLastVoteTime";
 const PULSE_VOTE_COOLDOWN_MS = 5 * 60 * 1000;
@@ -195,7 +197,8 @@ function getMoodColor(key) {
 
 function getCurrentStyle() {
   const select = byId("styleSelector");
-  return select?.value || DEFAULT_STYLE;
+  const value = String(select?.value || "").toLowerCase();
+  return ["classic", "synth", "boyak"].includes(value) ? value : DEFAULT_STYLE;
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -203,7 +206,7 @@ function getHeroImagePath(style, moodKey) {
 }
 
 function getIconImagePath(style, moodKey) {
-  return `/assets/icons/${style}/${moodKey}.png`;
+  return `/assets/icons/${SHARED_ICON_STYLE}/${moodKey}.png`;
 }
 
 function setImage(el, path, fallback = "") {
@@ -231,6 +234,33 @@ function loadSavedActiveCoin() {
   } catch {
     return null;
   }
+}
+
+function saveSelectedStyle(style) {
+  if (!style) return;
+  try {
+    localStorage.setItem(STYLE_STORAGE_KEY, String(style).toLowerCase());
+  } catch {}
+}
+
+function loadSavedStyle() {
+  try {
+    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
+    if (!saved) return DEFAULT_STYLE;
+
+    const normalized = String(saved).toLowerCase();
+    const allowed = ["classic", "synth", "boyak"];
+    return allowed.includes(normalized) ? normalized : DEFAULT_STYLE;
+  } catch {
+    return DEFAULT_STYLE;
+  }
+}
+
+function applyStyleClass(style) {
+  const root = document.body;
+  if (!root) return;
+  root.classList.remove("style-classic", "style-synth", "style-boyak");
+  root.classList.add(`style-${style}`);
 }
 
 function getDriverLabel(driverKey) {
@@ -1424,6 +1454,7 @@ function renderPulseStats() {
 
   const total = getPulseTotalVotes() || 1;
   const weights = getPulseWeightMap();
+  const style = getCurrentStyle();
 
   const rows = Object.keys(weights).map((key) => {
     const votes = pulseVotes[key] || 0;
@@ -1432,7 +1463,7 @@ function renderPulseStats() {
 
     return `
       <div class="pulse-row">
-        <img src="/assets/icons/3d/${key}.png" width="18" height="18" alt="${key}">
+        <img src="${getIconImagePath(style, key)}" width="18" height="18" alt="${key}">
         <div class="pulse-bar">
           <div
             class="pulse-bar-fill"
@@ -1941,10 +1972,10 @@ function setupButtons() {
   }
 
   byId("styleSelector")?.addEventListener("change", async () => {
-    const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
     const style = getCurrentStyle();
 
-    if (styleRoot) styleRoot.className = `style-${style}`;
+    saveSelectedStyle(style);
+    applyStyleClass(style);
 
     renderPulseStats();
     recomputeHeroSystem();
@@ -2003,16 +2034,17 @@ function renderScale() {
 }
 
 function initStyle() {
-  const styleRoot = qs(".style-classic, .style-3d, .style-anime, .style-minimal");
-  const style = getCurrentStyle();
+  const savedStyle = loadSavedStyle();
+  const style = ["classic", "synth", "boyak"].includes(savedStyle)
+    ? savedStyle
+    : DEFAULT_STYLE;
 
-  if (styleRoot) {
-    styleRoot.className = `style-${style}`;
+  const selector = byId("styleSelector");
+  if (selector) {
+    selector.value = style;
   }
 
-  if (byId("styleSelector")) {
-    byId("styleSelector").value = style;
-  }
+  applyStyleClass(style);
 
   const heroFaceImg = byId("heroFaceImg");
   const socialIconImg = byId("socialIconImg");
@@ -2020,11 +2052,21 @@ function initStyle() {
   const detailSocialIconImg = byId("detailSocialIconImg");
   const coinMoodIconImg = byId("coinMoodIconImg");
 
-  if (heroFaceImg) setImage(heroFaceImg, getHeroImagePath(style, "neutral"), getHeroImagePath(DEFAULT_STYLE, "neutral"));
-  if (socialIconImg) setImage(socialIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (pointerImg) setImage(pointerImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (detailSocialIconImg) setImage(detailSocialIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
-  if (coinMoodIconImg) setImage(coinMoodIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
+  if (heroFaceImg) {
+    setImage(heroFaceImg, getHeroImagePath(style, "neutral"), getHeroImagePath(DEFAULT_STYLE, "neutral"));
+  }
+  if (socialIconImg) {
+    setImage(socialIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
+  }
+  if (pointerImg) {
+    setImage(pointerImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
+  }
+  if (detailSocialIconImg) {
+    setImage(detailSocialIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
+  }
+  if (coinMoodIconImg) {
+    setImage(coinMoodIconImg, getIconImagePath(style, "neutral"), getIconImagePath(DEFAULT_STYLE, "neutral"));
+  }
 
   const heartbeatWrap = byId("heartbeatWrap");
   const heartbeatPath = byId("heartbeatPath");
