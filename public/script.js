@@ -33,6 +33,7 @@ let globalTimeframe = "1h";
 let chartTimeframe = "1h";
 let chartMode = "line";
 let activeMarketTab = "coins";
+let activeEmotionFilter = "all";
 
 let topCoinsData = [];
 let trendingCoinsData = [];
@@ -193,6 +194,20 @@ function getMoodColor(key) {
     euphoria: "#4dff88"
   };
   return map[key] || "#cfd7e3";
+}
+
+function getEmotionBorderColor(emotionKey) {
+  const map = {
+    all: "rgba(255,255,255,0.18)",
+    euphoria: "#4dff88",
+    content: "#7cffaa",
+    optimism: "#a6ffc4",
+    neutral: "#ffffff",
+    doubt: "#ff9da6",
+    concern: "#ff6c79",
+    frustration: "#ff3b4d"
+  };
+  return map[emotionKey] || "rgba(255,255,255,0.18)";
 }
 
 function getCurrentStyle() {
@@ -924,6 +939,75 @@ function computeMarketScoreFromInputs(change, trendingScore, memeScore, fearGree
   return roundScore(combined);
 }
 
+function getCoinBySymbol(symbol) {
+  const normalized = String(symbol || "").toUpperCase();
+
+  return (
+    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    null
+  );
+}
+
+function getCoinChangeForTimeframe(coin, timeframe) {
+  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
+  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
+
+  switch (timeframe) {
+    case "5m": return h1 / 12;
+    case "15m": return h1 / 4;
+    case "1h": return h1;
+    case "4h": return h24 / 6;
+    case "24h": return h24;
+    case "7d": return d7;
+    default: return h24;
+  }
+}
+
+function getCoinEmotionKey(coin, timeframe = globalTimeframe) {
+  const change = Number(getCoinChangeForTimeframe(coin, timeframe) ?? 0);
+  const score = normalizeChangeToScore(change, 10);
+  return getMoodByScore(score).key;
+}
+
+function filterCoinsByEmotion(data, emotionKey) {
+  if (!Array.isArray(data)) return [];
+  if (emotionKey === "all") return data.slice(0, 10);
+
+  return data
+    .filter((coin) => getCoinEmotionKey(coin, globalTimeframe) === emotionKey)
+    .slice(0, 10);
+}
+
+function updateEmotionFilterButtons() {
+  qsa(".emotion-filter-btn").forEach((btn) => {
+    const emotion = btn.dataset.emotion || "all";
+    const isActive = emotion === activeEmotionFilter;
+    const borderColor = isActive
+      ? getEmotionBorderColor(emotion)
+      : "rgba(255,255,255,0.08)";
+
+    btn.classList.toggle("active", isActive);
+    btn.style.borderColor = borderColor;
+    btn.style.borderWidth = isActive ? "2px" : "1px";
+    btn.style.boxShadow = isActive ? `0 0 0 1px ${borderColor}22 inset` : "none";
+  });
+}
+
+function setupEmotionFilters() {
+  qsa(".emotion-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeEmotionFilter = btn.dataset.emotion || "all";
+      updateEmotionFilterButtons();
+      renderCoinSections();
+    });
+  });
+
+  updateEmotionFilterButtons();
+}
+
 function recomputeHeroSystem() {
   if (isPulsePreviewActive) return;
 
@@ -1065,6 +1149,8 @@ async function loadGlobalMarket() {
     }
 
     recomputeHeroSystem();
+    renderCoinSections();
+    updateEmotionFilterButtons();
   } finally {
     isLoadingGlobal = false;
   }
@@ -1073,7 +1159,7 @@ async function loadGlobalMarket() {
 function createCoinCard(coin, isActive = false) {
   const style = getCurrentStyle();
   const symbol = coin.symbol?.toUpperCase?.() || "--";
-  const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const change = Number(getCoinChangeForTimeframe(coin, globalTimeframe) ?? 0);
   const score = normalizeChangeToScore(change, 6);
   const mood = getMoodByScore(score);
 
@@ -1133,12 +1219,20 @@ function renderGrid(targetId, data, emptyLabel = "Unavailable") {
 
   grid.innerHTML = "";
 
-  if (!Array.isArray(data) || !data.length) {
-    grid.appendChild(createFallbackCard(emptyLabel));
+  const filteredData = filterCoinsByEmotion(data, activeEmotionFilter);
+
+  if (!Array.isArray(filteredData) || !filteredData.length) {
+    grid.appendChild(
+      createFallbackCard(
+        activeEmotionFilter === "all"
+          ? emptyLabel
+          : `No ${activeEmotionFilter} coins`
+      )
+    );
     return;
   }
 
-  data.slice(0, 10).forEach((coin) => {
+  filteredData.forEach((coin) => {
     const isActive = activeCoinSymbol === coin.symbol?.toUpperCase?.();
     grid.appendChild(createCoinCard(coin, isActive));
   });
@@ -1178,6 +1272,7 @@ async function loadTopCoins() {
       }
 
       renderCoinSections();
+      updateEmotionFilterButtons();
     } else if (!topCoinsData.length) {
       renderTicker([]);
       renderCoinSections();
@@ -1199,6 +1294,7 @@ async function loadTrendingCoins() {
 
     trendingCoinsData = coins.slice(0, 10);
     renderCoinSections();
+    updateEmotionFilterButtons();
   } finally {
     isLoadingTrending = false;
   }
@@ -1216,35 +1312,9 @@ async function loadTopMemes() {
 
     topMemesData = coins.slice(0, 10);
     renderCoinSections();
+    updateEmotionFilterButtons();
   } finally {
     isLoadingMemes = false;
-  }
-}
-
-function getCoinBySymbol(symbol) {
-  const normalized = String(symbol || "").toUpperCase();
-
-  return (
-    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    null
-  );
-}
-
-function getCoinChangeForTimeframe(coin, timeframe) {
-  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
-  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
-
-  switch (timeframe) {
-    case "5m": return h1 / 12;
-    case "15m": return h1 / 4;
-    case "1h": return h1;
-    case "4h": return h24 / 6;
-    case "24h": return h24;
-    case "7d": return d7;
-    default: return h24;
   }
 }
 
@@ -1912,6 +1982,8 @@ function setupButtons() {
       });
       await loadGlobalMarket();
       await loadSentiment();
+      renderCoinSections();
+      updateEmotionFilterButtons();
     });
   });
 
@@ -1946,6 +2018,7 @@ function setupButtons() {
   initStudioTabs();
   setupHeroModes();
   setupLayerButtons();
+  setupEmotionFilters();
 
   qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1981,6 +2054,8 @@ function setupButtons() {
     recomputeHeroSystem();
     await loadCoinDetails();
     renderScale();
+    renderCoinSections();
+    updateEmotionFilterButtons();
   });
 
   byId("shareMoodBtn")?.addEventListener("click", shareMoodOnX);
@@ -2001,6 +2076,8 @@ async function loadAll() {
 
   renderPulseStats();
   renderStudio();
+  renderCoinSections();
+  updateEmotionFilterButtons();
 }
 
 function renderScale() {
