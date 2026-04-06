@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=4" strategy="afterInteractive" />
+      <Script src="/script.js?v=3" strategy="afterInteractive" />
 
       <div className="style-3d">
         <div className="app-shell">
@@ -267,20 +267,6 @@ export default function Home({ ogImageUrl }) {
                     >
                       Custom Layers
                     </button>
-                    <button
-                      type="button"
-                      className="hero-mode-btn"
-                      data-hero-mode="coin"
-                      id="heroModeCoin"
-                    >
-                      Coin Mode
-                    </button>
-                  </div>
-
-                  <div className="hero-share-row">
-                    <button id="backToMarketBtn" className="action-btn" type="button">
-                      Back to Market
-                    </button>
                   </div>
 
                   <section className="wm-gauge-shell" id="wmGaugeShell">
@@ -318,29 +304,6 @@ export default function Home({ ogImageUrl }) {
                         <div id="gaugeScore">50</div>
                         <div id="gaugeMood">Neutral</div>
                       </div>
-                    </div>
-                  </section>
-
-                  <section className="emotion-timeline card hidden" id="emotionTimeline">
-                    <div className="section-head">
-                      <h3>EMOTION TIMELINE</h3>
-                      <span className="muted">How the selected coin felt over time</span>
-                    </div>
-
-                    <div className="emotion-chart-wrap">
-                      <svg
-                        id="emotionChartSvg"
-                        viewBox="0 0 900 220"
-                        preserveAspectRatio="none"
-                        aria-hidden="true"
-                      >
-                        <path id="emotionChartArea"></path>
-                        <path id="emotionChartLine"></path>
-                      </svg>
-                    </div>
-
-                    <div className="emotion-chart-footer">
-                      <span id="emotionTimelineLabel">Viewing emotional trend</span>
                     </div>
                   </section>
 
@@ -1119,7 +1082,7 @@ export async function getServerSideProps({ req }) {
     );
     const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
 
-    const score = Number(sentimentJson?.fearGreed ?? clamp(50 + change * 10, 0, 100));
+    const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
     const mood = scoreToMood(score);
 
     const volumeCompact = formatCompactVolume(volumeUsd);
