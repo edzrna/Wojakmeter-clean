@@ -98,9 +98,9 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=3" strategy="afterInteractive" />
+      <Script src="/script.js?v=4" strategy="afterInteractive" />
 
-      <div className="style-3d">
+      <div className="style-classic">
         <div className="app-shell">
           <header className="topbar cardless" id="market">
             <div className="topbar-left">
@@ -128,11 +128,10 @@ export default function Home({ ogImageUrl }) {
                 <label className="style-label" htmlFor="styleSelector">
                   Wojak Style
                 </label>
-                <select id="styleSelector" defaultValue="3d">
+                <select id="styleSelector" defaultValue="classic">
                   <option value="classic">Classic</option>
-                  <option value="3d">3D</option>
-                  <option value="anime">Anime</option>
-                  <option value="minimal">Minimal</option>
+                  <option value="synth">Synth</option>
+                  <option value="boyak">Boyak</option>
                 </select>
               </div>
             </div>
