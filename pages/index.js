@@ -125,16 +125,17 @@ export default function Home({ ogImageUrl }) {
               </div>
 
               <div className="topbar-right">
-                <label className="style-label">Wojak Style</label>
-
-              <select id="styleSelector" defaultValue="classic">
-                <option value="classic">Classic</option>
-                <option value="synth">Synth</option>
-                <option value="boyak">Boyak</option>
-              </select>
-
+                <label className="style-label" htmlFor="styleSelector">
+                  Wojak Style
+                </label>
+                <select id="styleSelector" defaultValue="3d">
+                  <option value="classic">Classic</option>
+                  <option value="3d">3D</option>
+                  <option value="anime">Anime</option>
+                  <option value="minimal">Minimal</option>
+                </select>
+              </div>
             </div>
-
           </header>
 
           <div className="ticker-bar" id="tickerBar">
