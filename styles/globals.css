@@ -484,6 +484,58 @@ a {
   color: var(--muted);
 }
 
+/* HERO stage con timeline detrás */
+.wojak-stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero-timeline-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.38;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-timeline-backdrop.hidden {
+  display: none;
+}
+
+.hero-timeline-backdrop svg {
+  width: 92%;
+  height: 78%;
+}
+
+#heroTimelineArea {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
+#heroTimelineLine {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-face-img {
+  position: relative;
+  z-index: 3;
+}
+
+.hero-social-wrapper {
+  z-index: 4;
+}
+
+.sweat {
+  z-index: 4;
+}
+
 .social-euphoria {
   border-color: rgba(77, 255, 136, 0.38);
   box-shadow: 0 0 0 1px rgba(77, 255, 136, 0.14) inset;
