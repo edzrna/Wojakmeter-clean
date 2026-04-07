@@ -81,6 +81,7 @@ let isLoadingCoinDetails = false;
 let isLoadingTrending = false;
 let isLoadingMemes = false;
 let isLoadingSentiment = false;
+let isLoadingHeroTimeline = false;
 let hasBooted = false;
 
 function byId(id) {
@@ -308,12 +309,10 @@ function getRiskToneFromMood(moodKey) {
 
 function getReactionLabel(timeframe) {
   switch (timeframe) {
-    case "5m": return "Fast reaction";
-    case "15m": return "Responsive intraday reaction";
     case "1h": return "Balanced intraday reaction";
     case "4h": return "Broader structural reaction";
     case "24h": return "Higher conviction reaction";
-    case "7d": return "Macro-leaning reaction";
+    case "30d": return "Trend-cycle reaction";
     default: return "Balanced reaction";
   }
 }
@@ -570,7 +569,7 @@ function setLayerCard(scoreId, barId, impactId, score, impactText, moodKey) {
   }
 }
 
-function updateLayerUI(finalScore) {
+function updateLayerUI() {
   const marketImpact = "Base";
   const socialImpact = activeLayers.social || heroMode === HERO_MODE_COMPOSITE
     ? `${currentSocialScore >= currentMarketScore ? "+" : "-"}${Math.abs(currentSocialScore - currentMarketScore)}`
@@ -629,8 +628,7 @@ function updateLayerUI(finalScore) {
     btn.disabled = heroMode !== HERO_MODE_CUSTOM;
   });
 
-  const modeButtons = qsa(".hero-mode-btn");
-  modeButtons.forEach((btn) => {
+  qsa(".hero-mode-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.heroMode === heroMode);
   });
 }
@@ -890,12 +888,10 @@ function normalizeCoinMarketItem(item) {
 
 function getMarketBaseChangeForTimeframe(raw24hChange, timeframe) {
   switch (timeframe) {
-    case "5m": return raw24hChange / 288;
-    case "15m": return raw24hChange / 96;
     case "1h": return raw24hChange / 24;
     case "4h": return raw24hChange / 6;
     case "24h": return raw24hChange;
-    case "7d": return raw24hChange * 2.2;
+    case "30d": return raw24hChange * 3.2;
     default: return raw24hChange / 24;
   }
 }
@@ -924,6 +920,107 @@ function computeMarketScoreFromInputs(change, trendingScore, memeScore, fearGree
   return roundScore(combined);
 }
 
+function getCoinBySymbol(symbol) {
+  const normalized = String(symbol || "").toUpperCase();
+
+  return (
+    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    null
+  );
+}
+
+function getCoinChangeForTimeframe(coin, timeframe) {
+  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
+  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
+
+  switch (timeframe) {
+    case "1h": return h1;
+    case "4h": return h24 / 6;
+    case "24h": return h24;
+    case "30d": return d7 * 2.8;
+    case "5m": return h1 / 12;
+    case "15m": return h1 / 4;
+    case "7d": return d7;
+    default: return h24;
+  }
+}
+
+function getHeroTimelineCoin() {
+  const activeCoin = getCoinBySymbol(activeCoinSymbol);
+  if (activeCoin?.id) return activeCoin;
+  return getCoinBySymbol("BTC") || { id: "bitcoin", symbol: "BTC", name: "Bitcoin" };
+}
+
+function buildEmotionTimelinePath(rawPrices) {
+  const pathEl = byId("emotionTimelinePath");
+  if (!pathEl) return;
+
+  if (!Array.isArray(rawPrices) || rawPrices.length < 2) {
+    pathEl.setAttribute("d", "");
+    return;
+  }
+
+  const points = rawPrices
+    .map((entry) => {
+      const value = Array.isArray(entry) ? Number(entry[1]) : Number(entry);
+      return Number.isFinite(value) ? value : null;
+    })
+    .filter(Boolean);
+
+  if (points.length < 2) {
+    pathEl.setAttribute("d", "");
+    return;
+  }
+
+  const first = points[0] || 1;
+  const scores = points.map((price) => {
+    const pct = ((price - first) / first) * 100;
+    return normalizeChangeToScore(pct, globalTimeframe === "30d" ? 4.5 : globalTimeframe === "24h" ? 7 : globalTimeframe === "4h" ? 9 : 11);
+  });
+
+  const w = 400;
+  const h = 200;
+  const topPad = 20;
+  const bottomPad = 22;
+  const usableH = h - topPad - bottomPad;
+
+  const d = scores
+    .map((score, i) => {
+      const x = (i / (scores.length - 1)) * w;
+      const y = topPad + (100 - score) / 100 * usableH;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  pathEl.setAttribute("d", d);
+
+  const lastMood = getMoodByScore(scores[scores.length - 1]);
+  pathEl.style.stroke = getMoodColor(lastMood.key);
+}
+
+async function loadHeroTimeline() {
+  if (isLoadingHeroTimeline) return;
+  isLoadingHeroTimeline = true;
+
+  try {
+    const coin = getHeroTimelineCoin();
+    if (!coin?.id) return;
+
+    const timelineRes = await fetchJson(
+      `/api/coin-chart?coin=${encodeURIComponent(coin.id)}&timeframe=${encodeURIComponent(globalTimeframe)}`,
+      null
+    );
+
+    const rawPrices = timelineRes?.prices;
+    buildEmotionTimelinePath(rawPrices);
+  } finally {
+    isLoadingHeroTimeline = false;
+  }
+}
+
 function recomputeHeroSystem() {
   if (isPulsePreviewActive) return;
 
@@ -934,7 +1031,7 @@ function recomputeHeroSystem() {
   updateHero(currentGlobalScore, currentGlobalMood);
   updateSocial(currentSocialScore);
   updateDriverPanel();
-  updateLayerUI(heroScore);
+  updateLayerUI();
 
   const globalChangeEl = byId("globalMarketChange");
   if (globalChangeEl) {
@@ -1065,6 +1162,7 @@ async function loadGlobalMarket() {
     }
 
     recomputeHeroSystem();
+    await loadHeroTimeline();
   } finally {
     isLoadingGlobal = false;
   }
@@ -1103,6 +1201,7 @@ function createCoinCard(coin, isActive = false) {
     saveActiveCoin(activeCoinSymbol);
     renderCoinSections();
     await loadCoinDetails();
+    await loadHeroTimeline();
     renderStudio();
     qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -1221,33 +1320,6 @@ async function loadTopMemes() {
   }
 }
 
-function getCoinBySymbol(symbol) {
-  const normalized = String(symbol || "").toUpperCase();
-
-  return (
-    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    null
-  );
-}
-
-function getCoinChangeForTimeframe(coin, timeframe) {
-  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
-  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
-
-  switch (timeframe) {
-    case "5m": return h1 / 12;
-    case "15m": return h1 / 4;
-    case "1h": return h1;
-    case "4h": return h24 / 6;
-    case "24h": return h24;
-    case "7d": return d7;
-    default: return h24;
-  }
-}
-
 function drawLineChart(prices) {
   const path = byId("coinChartPath");
   const area = byId("coinChartArea");
@@ -1359,7 +1431,7 @@ async function loadCoinDetails() {
     if (!coin || !coin.id) return;
 
     const value = getCoinChangeForTimeframe(coin, chartTimeframe);
-    const technicalMood = getMoodByScore(normalizeChangeToScore(value, 10));
+    const technicalMood = getMoodByScore(normalizeChangeToScore(value, chartTimeframe === "30d" ? 5 : 10));
     const socialMood = getMoodByScore(currentSocialScore);
     const style = getCurrentStyle();
 
@@ -1404,11 +1476,12 @@ async function loadCoinDetails() {
     }
 
     const intervalIds = {
-      "5m": "perf5m",
-      "15m": "perf15m",
       "1h": "perf1h",
       "4h": "perf4h",
       "24h": "perf24h",
+      "30d": "perf30d",
+      "5m": "perf5m",
+      "15m": "perf15m",
       "7d": "perf7d"
     };
 
@@ -1912,6 +1985,7 @@ function setupButtons() {
       });
       await loadGlobalMarket();
       await loadSentiment();
+      await loadHeroTimeline();
     });
   });
 
@@ -1980,6 +2054,7 @@ function setupButtons() {
     renderPulseStats();
     recomputeHeroSystem();
     await loadCoinDetails();
+    await loadHeroTimeline();
     renderScale();
   });
 
@@ -1998,6 +2073,7 @@ async function loadAll() {
   await loadGlobalMarket();
   await loadSentiment();
   await loadCoinDetails();
+  await loadHeroTimeline();
 
   renderPulseStats();
   renderStudio();
@@ -2082,6 +2158,11 @@ function initStyle() {
     gaugeFill.style.strokeWidth = "12";
     gaugeFill.style.strokeDasharray = "188 377";
   }
+
+  const heroTimelinePath = byId("emotionTimelinePath");
+  if (heroTimelinePath) {
+    heroTimelinePath.setAttribute("d", "");
+  }
 }
 
 function startAutoRefresh() {
@@ -2108,7 +2189,7 @@ async function boot() {
   renderPulseStats();
   updateDriverPanel();
   updateGauge(50, getMoodByScore(50));
-  updateLayerUI(50);
+  updateLayerUI();
 
   setupButtons();
   setupSocialExpand();
