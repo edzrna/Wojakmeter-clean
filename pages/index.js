@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=4" strategy="afterInteractive" />
+      <Script src="/script.js?v=5" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -223,6 +223,12 @@ export default function Home({ ogImageUrl }) {
                           </div>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="emotion-timeline-bg" id="emotionTimelineBg">
+                      <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+                        <path id="emotionTimelinePath" d=""></path>
+                      </svg>
                     </div>
 
                     <img
@@ -488,14 +494,12 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="5m">5m</button>
-                    <button data-timeframe="15m">15m</button>
                     <button data-timeframe="1h" className="active">
                       1h
                     </button>
                     <button data-timeframe="4h">4h</button>
                     <button data-timeframe="24h">24h</button>
-                    <button data-timeframe="7d">7d</button>
+                    <button data-timeframe="30d">30d</button>
                   </div>
                 </div>
 
@@ -609,14 +613,12 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="chart-toolbar">
                     <div className="timeframes compact" id="chartTimeframes">
-                      <button data-timeframe="5m">5m</button>
-                      <button data-timeframe="15m">15m</button>
                       <button data-timeframe="1h" className="active">
                         1h
                       </button>
                       <button data-timeframe="4h">4h</button>
                       <button data-timeframe="24h">24h</button>
-                      <button data-timeframe="7d">7d</button>
+                      <button data-timeframe="30d">30d</button>
                     </div>
 
                     <div className="chart-mode-switch" id="chartModeSwitch">
@@ -690,14 +692,6 @@ export default function Home({ ogImageUrl }) {
 
                 <div className="market-intervals">
                   <div className="interval-box">
-                    <span>5m</span>
-                    <strong id="perf5m">--</strong>
-                  </div>
-                  <div className="interval-box">
-                    <span>15m</span>
-                    <strong id="perf15m">--</strong>
-                  </div>
-                  <div className="interval-box">
                     <span>1h</span>
                     <strong id="perf1h">--</strong>
                   </div>
@@ -710,10 +704,22 @@ export default function Home({ ogImageUrl }) {
                     <strong id="perf24h">--</strong>
                   </div>
                   <div className="interval-box">
+                    <span>30d</span>
+                    <strong id="perf30d">--</strong>
+                  </div>
+
+                  <div className="interval-box hidden">
+                    <span>5m</span>
+                    <strong id="perf5m">--</strong>
+                  </div>
+                  <div className="interval-box hidden">
+                    <span>15m</span>
+                    <strong id="perf15m">--</strong>
+                  </div>
+                  <div className="interval-box hidden">
                     <span>7d</span>
                     <strong id="perf7d">--</strong>
                   </div>
-
                   <div className="interval-box hidden">
                     <span>1m</span>
                     <strong id="perf1m">--</strong>
