@@ -12,7 +12,6 @@ const COIN_DETAILS_REFRESH_MS = 30000;
 const TRENDING_REFRESH_MS = 60000;
 const MEMES_REFRESH_MS = 90000;
 const SENTIMENT_REFRESH_MS = 60000;
-const HERO_TIMELINE_REFRESH_MS = 60000;
 
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
 const DEFAULT_STYLE = "classic";
@@ -86,7 +85,6 @@ let isLoadingCoinDetails = false;
 let isLoadingTrending = false;
 let isLoadingMemes = false;
 let isLoadingSentiment = false;
-let isLoadingHeroTimeline = false;
 let hasBooted = false;
 
 function byId(id) {
@@ -462,6 +460,25 @@ function getMemeMomentumScore() {
     topMemesData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))
   );
   return normalizeChangeToScore(avgMemes, 3.2);
+}
+
+function getMarketBaseChangeForTimeframe(change24h, timeframe) {
+  const base = Number(change24h || 0);
+
+  switch (timeframe) {
+    case "1h":
+      return base * 0.25;
+    case "4h":
+      return base * 0.5;
+    case "24h":
+      return base;
+    case "7d":
+      return base * 2.2;
+    case "30d":
+      return base * 4;
+    default:
+      return base;
+  }
 }
 
 function computeCompositeScore() {
@@ -861,15 +878,121 @@ function buildHeroTimeline(series) {
   wrapper.classList.remove("hidden");
 }
 
-async function loadHeroTimeline() {
-  if (isLoadingHeroTimeline) return;
-  isLoadingHeroTimeline = true;
+function renderTicker(coins) {
+  const ticker = byId("tickerBar");
+  if (!ticker) return;
 
+  if (!Array.isArray(coins) || !coins.length) {
+    ticker.innerHTML = `<span>Loading market...</span>`;
+    return;
+  }
+
+  const items = coins.slice(0, 8).map((coin) => {
+    const symbol = coin.symbol?.toUpperCase?.() || "--";
+    const price = formatCurrency(coin.current_price);
+    const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+    const cls = change > 0 ? "pos" : change < 0 ? "neg" : "neu";
+    const sign = change > 0 ? "+" : "";
+    const logo = coin.image || "";
+
+    return `
+      <div class="ticker-item">
+        <div class="ticker-top">
+          <img class="ticker-logo" src="${logo}" alt="${symbol} logo">
+          <span class="ticker-price">${price}</span>
+        </div>
+        <div class="ticker-bottom">
+          <span class="ticker-symbol">${symbol}</span>
+          <span class="${cls}">${sign}${change.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  ticker.innerHTML = `<div class="ticker-track">${items}</div>`;
+}
+
+async function fetchJson(url, fallback = null) {
   try {
-    const res = await fetchJson(`/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
-    buildHeroTimeline(res?.timeline || []);
-  } finally {
-    isLoadingHeroTimeline = false;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeCoinMarketItem(item) {
+  if (!item) return null;
+
+  return {
+    id: item.id || item.coin_id || item.api_symbol || item.symbol?.toLowerCase?.() || "",
+    name: item.name || item.symbol?.toUpperCase?.() || "Unknown",
+    symbol: item.symbol || item.name || "--",
+    image: item.image || item.thumb || item.large || "",
+    current_price: item.current_price ?? item.price ?? null,
+    market_cap: item.market_cap ?? null,
+    total_volume: item.total_volume ?? null,
+    price_change_percentage_1h_in_currency:
+      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency:
+      item.price_change_percentage_24h_in_currency ??
+      item.data?.price_change_percentage_24h?.usd ??
+      item.change ??
+      item.change_24h ??
+      0,
+    price_change_percentage_7d_in_currency:
+      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
+  };
+}
+
+function getSocialScoreFromMarket(change, trending = 50, memes = 50, newsScore = 50) {
+  return roundScore(
+    clamp(
+      50 +
+        change * 5 +
+        (trending - 50) * 0.12 +
+        (memes - 50) * 0.1 +
+        (Number(newsScore || 50) - 50) * 0.55,
+      0,
+      100
+    )
+  );
+}
+
+function computeMarketScoreFromInputs(change, trendingScore, memeScore, fearGreed = 50) {
+  const base = normalizeChangeToScore(change, 12);
+  const combined =
+    base * 0.62 +
+    trendingScore * 0.14 +
+    memeScore * 0.08 +
+    Number(fearGreed || 50) * 0.16;
+  return roundScore(combined);
+}
+
+function getCoinBySymbol(symbol) {
+  const normalized = String(symbol || "").toUpperCase();
+
+  return (
+    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
+    null
+  );
+}
+
+function getCoinChangeForTimeframe(coin, timeframe) {
+  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
+  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
+
+  switch (timeframe) {
+    case "1h": return h1;
+    case "4h": return h24 / 6;
+    case "24h": return h24;
+    case "7d": return d7;
+    case "30d": return d7 * 2.8;
+    default: return h24;
   }
 }
 
@@ -982,35 +1105,14 @@ async function loadGlobalMarket() {
     const raw24hChange = safeNum(response.change, 0);
     currentGlobalChange = getMarketBaseChangeForTimeframe(raw24hChange, globalTimeframe);
 
-    const trendingScore = getTrendingMomentumScore();
-    const memeScore = getMemeMomentumScore();
-
-    const sentimentResponse = await fetchJson("/api/sentiment", null);
-    const fearGreed = sentimentResponse?.fearGreed ?? 50;
-    const newsScore = sentimentResponse?.newsScore ?? 50;
-
     currentMarketScore = computeMarketScoreFromInputs(
       currentGlobalChange,
-      trendingScore,
-      memeScore,
-      fearGreed
-    );
-
-    currentSocialScore = getSocialScoreFromMarket(
-      currentGlobalChange,
-      trendingScore,
-      memeScore,
-      newsScore
+      getTrendingMomentumScore(),
+      getMemeMomentumScore(),
+      50
     );
 
     currentPulseScore = getPulseScore();
-
-    if (sentimentResponse) {
-      currentDominantDriver = mapDriverLabelToKey(sentimentResponse.driver || "Market flow / price action");
-      currentDriverScore = getDriverScoreFromKey(currentDominantDriver);
-      currentNarrative = sentimentResponse.narrative || getDriverNarrative(currentDominantDriver);
-      currentRiskTone = sentimentResponse.risk || "Balanced";
-    }
 
     if (byId("globalMarketVolume")) {
       byId("globalMarketVolume").textContent = volumeText;
@@ -1904,8 +2006,8 @@ function setupButtons() {
     renderPulseStats();
     recomputeHeroSystem();
     await loadCoinDetails();
-    await loadHeroTimeline();
     renderScale();
+    await loadGlobalMarket();
   });
 
   byId("shareMoodBtn")?.addEventListener("click", shareMoodOnX);
@@ -2024,7 +2126,6 @@ function startAutoRefresh() {
   setInterval(loadTrendingCoins, TRENDING_REFRESH_MS);
   setInterval(loadTopMemes, MEMES_REFRESH_MS);
   setInterval(loadSentiment, SENTIMENT_REFRESH_MS);
-  setInterval(loadHeroTimeline, HERO_TIMELINE_REFRESH_MS);
 }
 
 async function boot() {
