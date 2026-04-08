@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=6" strategy="afterInteractive" />
+      <Script src="/script.js?v=7" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -246,6 +246,54 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="hero-score" id="heroScoreWrap">
                     Score: <span id="heroScore">50</span> / 100
+                  </div>
+
+                  <section className="emotion-bar-inline emotion-bar-inline-minimal" id="emotionBarSection">
+                    <div className="emotion-track-wrap">
+                      <div className="emotion-track emotion-track-gradient" id="emotionTrack">
+                        <div
+                          className="emotion-pointer"
+                          id="emotionPointer"
+                          aria-label="WojakMeter indicator"
+                        >
+                          <div className="emotion-pointer-arrow"></div>
+                          <div className="emotion-pointer-face">
+                            <img
+                              id="emotionPointerImg"
+                              src="/assets/icons/classic/neutral.png"
+                              alt="Current emotional state"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="heartbeat-wrap" id="heartbeatWrap">
+                    <div className="heartbeat-heart" id="heartbeatHeart">
+                      ❤
+                    </div>
+                    <div className="heartbeat-chart">
+                      <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
+                        <path id="heartbeatPath" d=""></path>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="hero-share-row">
+                    <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
+                      Share mood on X
+                    </button>
+                  </div>
+
+                  <div className="timeframes hero-timeframes" id="heroTimeframes">
+                    <button data-timeframe="1h">1h</button>
+                    <button data-timeframe="4h">4h</button>
+                    <button data-timeframe="24h" className="active">
+                      24h
+                    </button>
+                    <button data-timeframe="7d">7d</button>
+                    <button data-timeframe="30d">30d</button>
                   </div>
 
                   <div className="hero-modes" id="heroModes">
@@ -408,67 +456,6 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </section>
 
-                  <div className="heartbeat-wrap" id="heartbeatWrap">
-                    <div className="heartbeat-heart" id="heartbeatHeart">
-                      ❤
-                    </div>
-                    <div className="heartbeat-chart">
-                      <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="heartbeatPath" d=""></path>
-                      </svg>
-                    </div>
-                  </div>
-
-                  <section className="emotion-bar-inline" id="emotionBarSection">
-                    <div className="section-head section-head-tight">
-                      <h3>WOJAKMETER BAR</h3>
-                    </div>
-
-                    <div className="emotion-track-wrap">
-                      <div className="emotion-track" id="emotionTrack">
-                        <div className="emotion-segment seg-frustration">Frustration</div>
-                        <div className="emotion-segment seg-concern">Concern</div>
-                        <div className="emotion-segment seg-doubt">Doubt</div>
-                        <div className="emotion-segment seg-neutral">Neutral</div>
-                        <div className="emotion-segment seg-optimism">Optimism</div>
-                        <div className="emotion-segment seg-content">Content</div>
-                        <div className="emotion-segment seg-euphoria">Euphoria</div>
-
-                        <div
-                          className="emotion-pointer"
-                          id="emotionPointer"
-                          aria-label="WojakMeter indicator"
-                        >
-                          <div className="emotion-pointer-arrow"></div>
-                          <div className="emotion-pointer-face">
-                            <img
-                              id="emotionPointerImg"
-                              src="/assets/icons/classic/neutral.png"
-                              alt="Current emotional state"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="emotion-meta">
-                      <div className="emotion-meta-box">
-                        <span>Current Mood</span>
-                        <strong id="emotionBarMood">Neutral</strong>
-                      </div>
-
-                      <div className="emotion-meta-box">
-                        <span>Score</span>
-                        <strong id="emotionBarScore">50</strong>
-                      </div>
-
-                      <div className="emotion-meta-box">
-                        <span>Range</span>
-                        <strong id="emotionBarRange">45–59</strong>
-                      </div>
-                    </div>
-                  </section>
-
                   <div className="hero-market-line">
                     <div className="hero-line-item">
                       <span>Market Change</span>
@@ -486,22 +473,6 @@ export default function Home({ ogImageUrl }) {
                       <span>Timeframe</span>
                       <strong id="globalMarketTimeframe">24h</strong>
                     </div>
-                  </div>
-
-                  <div className="hero-share-row">
-                    <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
-                      Share mood on X
-                    </button>
-                  </div>
-
-                  <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="1h">1h</button>
-                    <button data-timeframe="4h">4h</button>
-                    <button data-timeframe="24h" className="active">
-                      24h
-                    </button>
-                    <button data-timeframe="7d">7d</button>
-                    <button data-timeframe="30d">30d</button>
                   </div>
                 </div>
 
