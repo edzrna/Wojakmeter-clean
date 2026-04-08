@@ -591,41 +591,10 @@ function updateLayerUI() {
     ? `${currentPulseScore >= currentMarketScore ? "+" : "-"}${pulseDiff}`
     : "+0";
 
-  setLayerCard(
-    "layerScoreMarket",
-    "layerBarMarket",
-    "layerImpactMarket",
-    currentMarketScore,
-    marketImpact,
-    getMoodByScore(currentMarketScore).key
-  );
-
-  setLayerCard(
-    "layerScoreSocial",
-    "layerBarSocial",
-    "layerImpactSocial",
-    currentSocialScore,
-    socialImpact,
-    getMoodByScore(currentSocialScore).key
-  );
-
-  setLayerCard(
-    "layerScoreDriver",
-    "layerBarDriver",
-    "layerImpactDriver",
-    currentDriverScore,
-    driverImpact,
-    getMoodByScore(currentDriverScore).key
-  );
-
-  setLayerCard(
-    "layerScorePulse",
-    "layerBarPulse",
-    "layerImpactPulse",
-    currentPulseScore,
-    pulseImpact,
-    getMoodByScore(currentPulseScore).key
-  );
+  setLayerCard("layerScoreMarket", "layerBarMarket", "layerImpactMarket", currentMarketScore, marketImpact, getMoodByScore(currentMarketScore).key);
+  setLayerCard("layerScoreSocial", "layerBarSocial", "layerImpactSocial", currentSocialScore, socialImpact, getMoodByScore(currentSocialScore).key);
+  setLayerCard("layerScoreDriver", "layerBarDriver", "layerImpactDriver", currentDriverScore, driverImpact, getMoodByScore(currentDriverScore).key);
+  setLayerCard("layerScorePulse", "layerBarPulse", "layerImpactPulse", currentPulseScore, pulseImpact, getMoodByScore(currentPulseScore).key);
 
   const shell = byId("wmLayers");
   if (shell) {
@@ -719,8 +688,8 @@ function updateSocialPanel(score, socialMood) {
       1200,
       Math.round(
         3500 +
-          Math.abs(currentGlobalChange) * 2200 +
-          average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 180
+        Math.abs(currentGlobalChange) * 2200 +
+        average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 180
       )
     );
 
@@ -733,9 +702,7 @@ function updateSocialPanel(score, socialMood) {
     byId("socialExpandMood").className = `mood-${socialMood.key}`;
   }
   if (byId("socialExpandScore")) byId("socialExpandScore").textContent = roundedScore;
-  if (byId("socialExpandEngagement")) {
-    byId("socialExpandEngagement").textContent = interactions.toLocaleString("en-US");
-  }
+  if (byId("socialExpandEngagement")) byId("socialExpandEngagement").textContent = interactions.toLocaleString("en-US");
   if (byId("socialExpandBullish")) {
     byId("socialExpandBullish").textContent = `${bullish}%`;
     byId("socialExpandBullish").className = "positive";
@@ -828,135 +795,6 @@ function updateDriverPanel() {
   }
 }
 
-function renderTicker(coins) {
-  const ticker = byId("tickerBar");
-  if (!ticker) return;
-
-  if (!Array.isArray(coins) || !coins.length) {
-    ticker.innerHTML = `<span>Loading market...</span>`;
-    return;
-  }
-
-  const items = coins.slice(0, 8).map((coin) => {
-    const symbol = coin.symbol?.toUpperCase?.() || "--";
-    const price = formatCurrency(coin.current_price);
-    const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-    const cls = change > 0 ? "pos" : change < 0 ? "neg" : "neu";
-    const sign = change > 0 ? "+" : "";
-    const logo = coin.image || "";
-
-    return `
-      <div class="ticker-item">
-        <div class="ticker-top">
-          <img class="ticker-logo" src="${logo}" alt="${symbol} logo">
-          <span class="ticker-price">${price}</span>
-        </div>
-        <div class="ticker-bottom">
-          <span class="ticker-symbol">${symbol}</span>
-          <span class="${cls}">${sign}${change.toFixed(1)}%</span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  ticker.innerHTML = `<div class="ticker-track">${items}</div>`;
-}
-
-async function fetchJson(url, fallback = null) {
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch {
-    return fallback;
-  }
-}
-
-function normalizeCoinMarketItem(item) {
-  if (!item) return null;
-
-  return {
-    id: item.id || item.coin_id || item.api_symbol || item.symbol?.toLowerCase?.() || "",
-    name: item.name || item.symbol?.toUpperCase?.() || "Unknown",
-    symbol: item.symbol || item.name || "--",
-    image: item.image || item.thumb || item.large || "",
-    current_price: item.current_price ?? item.price ?? null,
-    market_cap: item.market_cap ?? null,
-    total_volume: item.total_volume ?? null,
-    price_change_percentage_1h_in_currency:
-      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency:
-      item.price_change_percentage_24h_in_currency ??
-      item.data?.price_change_percentage_24h?.usd ??
-      item.change ??
-      item.change_24h ??
-      0,
-    price_change_percentage_7d_in_currency:
-      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
-  };
-}
-
-function getMarketBaseChangeForTimeframe(raw24hChange, timeframe) {
-  switch (timeframe) {
-    case "1h": return raw24hChange / 24;
-    case "4h": return raw24hChange / 6;
-    case "24h": return raw24hChange;
-    case "7d": return raw24hChange * 2.2;
-    case "30d": return raw24hChange * 3.2;
-    default: return raw24hChange;
-  }
-}
-
-function getSocialScoreFromMarket(change, trending = 50, memes = 50, newsScore = 50) {
-  return roundScore(
-    clamp(
-      50 +
-        change * 5 +
-        (trending - 50) * 0.12 +
-        (memes - 50) * 0.1 +
-        (Number(newsScore || 50) - 50) * 0.55,
-      0,
-      100
-    )
-  );
-}
-
-function computeMarketScoreFromInputs(change, trendingScore, memeScore, fearGreed = 50) {
-  const base = normalizeChangeToScore(change, 12);
-  const combined =
-    base * 0.62 +
-    trendingScore * 0.14 +
-    memeScore * 0.08 +
-    Number(fearGreed || 50) * 0.16;
-  return roundScore(combined);
-}
-
-function getCoinBySymbol(symbol) {
-  const normalized = String(symbol || "").toUpperCase();
-
-  return (
-    topCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    trendingCoinsData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    topMemesData.find((coin) => coin.symbol?.toUpperCase?.() === normalized) ||
-    null
-  );
-}
-
-function getCoinChangeForTimeframe(coin, timeframe) {
-  const h1 = Number(coin.price_change_percentage_1h_in_currency ?? 0);
-  const h24 = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-  const d7 = Number(coin.price_change_percentage_7d_in_currency ?? 0);
-
-  switch (timeframe) {
-    case "1h": return h1;
-    case "4h": return h24 / 6;
-    case "24h": return h24;
-    case "7d": return d7;
-    case "30d": return d7 * 2.8;
-    default: return h24;
-  }
-}
-
 function buildHeroTimeline(series) {
   const wrapper = byId("heroTimelineBackdrop");
   const line = byId("heroTimelineLine");
@@ -988,6 +826,7 @@ function buildHeroTimeline(series) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
+
   const w = 900;
   const h = 280;
   const topPad = 16;
@@ -1027,12 +866,8 @@ async function loadHeroTimeline() {
   isLoadingHeroTimeline = true;
 
   try {
-    const res = await fetchJson(
-      `/api/global-history?timeframe=${encodeURIComponent(globalTimeframe)}`,
-      null
-    );
-
-    buildHeroTimeline(res?.series || []);
+    const res = await fetchJson(`/api/global?timeframe=${encodeURIComponent(globalTimeframe)}`, null);
+    buildHeroTimeline(res?.timeline || []);
   } finally {
     isLoadingHeroTimeline = false;
   }
@@ -1120,7 +955,7 @@ async function loadGlobalMarket() {
       byId("btcDominance").textContent = `${btcDom.toFixed(1)}%`;
     }
 
-    const marketCapValue = safeNum(globalData.total_market_cap?.usd, 0);
+    const marketCapValue = safeNum(response.marketCapUsd ?? globalData.total_market_cap?.usd, 0);
     currentGlobalMarketCapValue = marketCapValue;
 
     const marketCapText =
@@ -1132,7 +967,7 @@ async function loadGlobalMarket() {
       byId("headerMarketCap").textContent = marketCapText;
     }
 
-    const volumeUsd = safeNum(globalData.total_volume?.usd, 0);
+    const volumeUsd = safeNum(response.volumeUsd ?? globalData.total_volume?.usd, 0);
     currentHeaderVolumeValue = volumeUsd;
 
     const volumeText =
@@ -1181,8 +1016,8 @@ async function loadGlobalMarket() {
       byId("globalMarketVolume").textContent = volumeText;
     }
 
+    buildHeroTimeline(response.timeline || []);
     recomputeHeroSystem();
-    await loadHeroTimeline();
   } finally {
     isLoadingGlobal = false;
   }
@@ -1634,10 +1469,7 @@ function handlePulseVote(moodKey) {
   currentPulseScore = getPulseScore();
   renderPulseStats();
 
-  showPulseMessage(
-    `Vote registered: ${getMoodByScore(getPulseWeightMap()[moodKey]).name}`
-  );
-
+  showPulseMessage(`Vote registered: ${getMoodByScore(getPulseWeightMap()[moodKey]).name}`);
   triggerPulseReaction(moodKey);
 }
 
@@ -1745,19 +1577,9 @@ function setupHeroModes() {
       heroMode = btn.dataset.heroMode || HERO_MODE_RAW;
 
       if (heroMode === HERO_MODE_RAW) {
-        activeLayers = {
-          market: true,
-          social: false,
-          driver: false,
-          pulse: false
-        };
+        activeLayers = { market: true, social: false, driver: false, pulse: false };
       } else if (heroMode === HERO_MODE_COMPOSITE) {
-        activeLayers = {
-          market: true,
-          social: true,
-          driver: true,
-          pulse: true
-        };
+        activeLayers = { market: true, social: true, driver: true, pulse: true };
       }
 
       recomputeHeroSystem();
@@ -2009,7 +1831,6 @@ function setupButtons() {
 
       await loadGlobalMarket();
       await loadSentiment();
-      await loadHeroTimeline();
     });
   });
 
@@ -2102,7 +1923,6 @@ async function loadAll() {
   await loadGlobalMarket();
   await loadSentiment();
   await loadCoinDetails();
-  await loadHeroTimeline();
 
   renderPulseStats();
   renderStudio();
