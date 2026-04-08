@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=5" strategy="afterInteractive" />
+      <Script src="/script.js?v=6" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -169,7 +169,7 @@ export default function Home({ ogImageUrl }) {
                           <img
                             id="socialIconImg"
                             className="mood-icon-img anim-float"
-                            src="/assets/icons/3d/neutral.png"
+                            src="/assets/icons/classic/neutral.png"
                             alt="Social mood icon"
                           />
                         </div>
@@ -214,7 +214,7 @@ export default function Home({ ogImageUrl }) {
 
                           <div className="social-expand-row">
                             <strong>Window</strong>
-                            <span id="socialExpandWindow">1h</span>
+                            <span id="socialExpandWindow">24h</span>
                           </div>
 
                           <div className="social-expand-note">
@@ -225,16 +225,17 @@ export default function Home({ ogImageUrl }) {
                       </div>
                     </div>
 
-                    <div className="emotion-timeline-bg" id="emotionTimelineBg">
-                      <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="emotionTimelinePath" d=""></path>
+                    <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
+                      <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+                        <path id="heroTimelineArea" d=""></path>
+                        <path id="heroTimelineLine" d=""></path>
                       </svg>
                     </div>
 
                     <img
                       id="heroFaceImg"
                       className="hero-face-img anim-float"
-                      src="/assets/hero/3d/neutral.png"
+                      src="/assets/hero/classic/neutral.png"
                       alt="Global market mood"
                     />
                   </div>
@@ -442,7 +443,7 @@ export default function Home({ ogImageUrl }) {
                           <div className="emotion-pointer-face">
                             <img
                               id="emotionPointerImg"
-                              src="/assets/icons/3d/neutral.png"
+                              src="/assets/icons/classic/neutral.png"
                               alt="Current emotional state"
                             />
                           </div>
@@ -483,7 +484,7 @@ export default function Home({ ogImageUrl }) {
                     <div className="hero-line-sep"></div>
                     <div className="hero-line-item">
                       <span>Timeframe</span>
-                      <strong id="globalMarketTimeframe">1h</strong>
+                      <strong id="globalMarketTimeframe">24h</strong>
                     </div>
                   </div>
 
@@ -494,11 +495,12 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="1h" className="active">
-                      1h
-                    </button>
+                    <button data-timeframe="1h">1h</button>
                     <button data-timeframe="4h">4h</button>
-                    <button data-timeframe="24h">24h</button>
+                    <button data-timeframe="24h" className="active">
+                      24h
+                    </button>
+                    <button data-timeframe="7d">7d</button>
                     <button data-timeframe="30d">30d</button>
                   </div>
                 </div>
@@ -613,11 +615,12 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="chart-toolbar">
                     <div className="timeframes compact" id="chartTimeframes">
-                      <button data-timeframe="1h" className="active">
-                        1h
-                      </button>
+                      <button data-timeframe="1h">1h</button>
                       <button data-timeframe="4h">4h</button>
-                      <button data-timeframe="24h">24h</button>
+                      <button data-timeframe="24h" className="active">
+                        24h
+                      </button>
+                      <button data-timeframe="7d">7d</button>
                       <button data-timeframe="30d">30d</button>
                     </div>
 
@@ -637,7 +640,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="coinMoodIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Technical mood icon"
                     />
                     <div>
@@ -650,7 +653,7 @@ export default function Home({ ogImageUrl }) {
                     <img
                       id="detailSocialIconImg"
                       className="chart-mood-chip-icon mood-icon-img anim-float"
-                      src="/assets/icons/3d/neutral.png"
+                      src="/assets/icons/classic/neutral.png"
                       alt="Social mood icon"
                     />
                     <div>
@@ -669,7 +672,7 @@ export default function Home({ ogImageUrl }) {
 
                 <div className="chart-placeholder">
                   <div className="chart-time-label" id="chartTimeLabel">
-                    Viewing 1h structure
+                    Viewing 24h structure
                   </div>
 
                   <svg
@@ -686,7 +689,7 @@ export default function Home({ ogImageUrl }) {
 
                 <div className="chart-footer">
                   <div className="muted">
-                    <span id="selectedTimeframe">1h</span>
+                    <span id="selectedTimeframe">24h</span>
                   </div>
                 </div>
 
@@ -704,6 +707,10 @@ export default function Home({ ogImageUrl }) {
                     <strong id="perf24h">--</strong>
                   </div>
                   <div className="interval-box">
+                    <span>7d</span>
+                    <strong id="perf7d">--</strong>
+                  </div>
+                  <div className="interval-box">
                     <span>30d</span>
                     <strong id="perf30d">--</strong>
                   </div>
@@ -715,10 +722,6 @@ export default function Home({ ogImageUrl }) {
                   <div className="interval-box hidden">
                     <span>15m</span>
                     <strong id="perf15m">--</strong>
-                  </div>
-                  <div className="interval-box hidden">
-                    <span>7d</span>
-                    <strong id="perf7d">--</strong>
                   </div>
                   <div className="interval-box hidden">
                     <span>1m</span>
@@ -951,25 +954,25 @@ export default function Home({ ogImageUrl }) {
 
               <div className="pulse-grid">
                 <button data-vote="frustration" type="button">
-                  <img src="/assets/icons/3d/frustration.png" alt="frustration" />
+                  <img src="/assets/icons/classic/frustration.png" alt="frustration" />
                 </button>
                 <button data-vote="concern" type="button">
-                  <img src="/assets/icons/3d/concern.png" alt="concern" />
+                  <img src="/assets/icons/classic/concern.png" alt="concern" />
                 </button>
                 <button data-vote="doubt" type="button">
-                  <img src="/assets/icons/3d/doubt.png" alt="doubt" />
+                  <img src="/assets/icons/classic/doubt.png" alt="doubt" />
                 </button>
                 <button data-vote="neutral" type="button">
-                  <img src="/assets/icons/3d/neutral.png" alt="neutral" />
+                  <img src="/assets/icons/classic/neutral.png" alt="neutral" />
                 </button>
                 <button data-vote="optimism" type="button">
-                  <img src="/assets/icons/3d/optimism.png" alt="optimism" />
+                  <img src="/assets/icons/classic/optimism.png" alt="optimism" />
                 </button>
                 <button data-vote="content" type="button">
-                  <img src="/assets/icons/3d/content.png" alt="content" />
+                  <img src="/assets/icons/classic/content.png" alt="content" />
                 </button>
                 <button data-vote="euphoria" type="button">
-                  <img src="/assets/icons/3d/euphoria.png" alt="euphoria" />
+                  <img src="/assets/icons/classic/euphoria.png" alt="euphoria" />
                 </button>
               </div>
 
@@ -1099,13 +1102,13 @@ export async function getServerSideProps({ req }) {
       `${baseUrl}/api/og` +
       `?mood=${encodeURIComponent(mood)}` +
       `&score=${encodeURIComponent(score)}` +
-      `&tf=1h` +
+      `&tf=24h` +
       `&change=${encodeURIComponent(change.toFixed(2))}` +
       `&volume=${encodeURIComponent(volumeCompact)}` +
       `&coin=${encodeURIComponent("MARKET")}` +
       `&driver=${encodeURIComponent(driver)}` +
       `&risk=${encodeURIComponent(risk)}` +
-      `&style=${encodeURIComponent("3d")}`;
+      `&style=${encodeURIComponent("classic")}`;
 
     return {
       props: {
@@ -1116,7 +1119,7 @@ export async function getServerSideProps({ req }) {
     return {
       props: {
         ogImageUrl:
-          `${baseUrl}/api/og?mood=neutral&score=50&tf=1h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=3d`
+          `${baseUrl}/api/og?mood=neutral&score=50&tf=24h&change=0&volume=%24--&coin=MARKET&driver=Market%20flow%20%2F%20price%20action&risk=Balanced&style=classic`
       }
     };
   }
