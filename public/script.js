@@ -29,8 +29,8 @@ const HERO_MODE_CUSTOM = "custom";
 let heroMode = HERO_MODE_RAW;
 
 let activeCoinSymbol = "BTC";
-let globalTimeframe = "1h";
-let chartTimeframe = "1h";
+let globalTimeframe = "24h";
+let chartTimeframe = "24h";
 let chartMode = "line";
 let activeMarketTab = "coins";
 
@@ -312,6 +312,7 @@ function getReactionLabel(timeframe) {
     case "1h": return "Balanced intraday reaction";
     case "4h": return "Broader structural reaction";
     case "24h": return "Higher conviction reaction";
+    case "7d": return "Macro-leaning reaction";
     case "30d": return "Trend-cycle reaction";
     default: return "Balanced reaction";
   }
@@ -570,15 +571,19 @@ function setLayerCard(scoreId, barId, impactId, score, impactText, moodKey) {
 }
 
 function updateLayerUI() {
+  const socialDiff = Math.abs(roundScore(currentSocialScore) - roundScore(currentMarketScore));
+  const driverDiff = Math.abs(roundScore(currentDriverScore) - roundScore(currentMarketScore));
+  const pulseDiff = Math.abs(roundScore(currentPulseScore) - roundScore(currentMarketScore));
+
   const marketImpact = "Base";
   const socialImpact = activeLayers.social || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentSocialScore >= currentMarketScore ? "+" : "-"}${Math.abs(currentSocialScore - currentMarketScore)}`
+    ? `${currentSocialScore >= currentMarketScore ? "+" : "-"}${socialDiff}`
     : "+0";
   const driverImpact = activeLayers.driver || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentDriverScore >= currentMarketScore ? "+" : "-"}${Math.abs(currentDriverScore - currentMarketScore)}`
+    ? `${currentDriverScore >= currentMarketScore ? "+" : "-"}${driverDiff}`
     : "+0";
   const pulseImpact = activeLayers.pulse || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentPulseScore >= currentMarketScore ? "+" : "-"}${Math.abs(currentPulseScore - currentMarketScore)}`
+    ? `${currentPulseScore >= currentMarketScore ? "+" : "-"}${pulseDiff}`
     : "+0";
 
   setLayerCard(
@@ -891,8 +896,9 @@ function getMarketBaseChangeForTimeframe(raw24hChange, timeframe) {
     case "1h": return raw24hChange / 24;
     case "4h": return raw24hChange / 6;
     case "24h": return raw24hChange;
+    case "7d": return raw24hChange * 2.2;
     case "30d": return raw24hChange * 3.2;
-    default: return raw24hChange / 24;
+    default: return raw24hChange;
   }
 }
 
@@ -940,10 +946,10 @@ function getCoinChangeForTimeframe(coin, timeframe) {
     case "1h": return h1;
     case "4h": return h24 / 6;
     case "24h": return h24;
+    case "7d": return d7;
     case "30d": return d7 * 2.8;
     case "5m": return h1 / 12;
     case "15m": return h1 / 4;
-    case "7d": return d7;
     default: return h24;
   }
 }
@@ -954,51 +960,75 @@ function getHeroTimelineCoin() {
   return getCoinBySymbol("BTC") || { id: "bitcoin", symbol: "BTC", name: "Bitcoin" };
 }
 
-function buildEmotionTimelinePath(rawPrices) {
-  const pathEl = byId("emotionTimelinePath");
-  if (!pathEl) return;
+function buildHeroTimeline(rawPrices) {
+  const wrapper = byId("heroTimelineBackdrop");
+  const line = byId("heroTimelineLine");
+  const area = byId("heroTimelineArea");
+
+  if (!wrapper || !line || !area) return;
 
   if (!Array.isArray(rawPrices) || rawPrices.length < 2) {
-    pathEl.setAttribute("d", "");
+    wrapper.classList.add("hidden");
+    line.setAttribute("d", "");
+    area.setAttribute("d", "");
     return;
   }
 
-  const points = rawPrices
+  const values = rawPrices
     .map((entry) => {
-      const value = Array.isArray(entry) ? Number(entry[1]) : Number(entry);
-      return Number.isFinite(value) ? value : null;
+      const price = Array.isArray(entry) ? Number(entry[1]) : Number(entry);
+      return Number.isFinite(price) ? price : null;
     })
-    .filter(Boolean);
+    .filter((v) => v != null);
 
-  if (points.length < 2) {
-    pathEl.setAttribute("d", "");
+  if (values.length < 2) {
+    wrapper.classList.add("hidden");
+    line.setAttribute("d", "");
+    area.setAttribute("d", "");
     return;
   }
 
-  const first = points[0] || 1;
-  const scores = points.map((price) => {
+  const first = values[0] || 1;
+  const sensitivity =
+    globalTimeframe === "30d" ? 4.5 :
+    globalTimeframe === "7d" ? 6 :
+    globalTimeframe === "24h" ? 7 :
+    globalTimeframe === "4h" ? 9 : 11;
+
+  const scores = values.map((price) => {
     const pct = ((price - first) / first) * 100;
-    return normalizeChangeToScore(pct, globalTimeframe === "30d" ? 4.5 : globalTimeframe === "24h" ? 7 : globalTimeframe === "4h" ? 9 : 11);
+    return normalizeChangeToScore(pct, sensitivity);
   });
 
-  const w = 400;
-  const h = 200;
-  const topPad = 20;
-  const bottomPad = 22;
+  const w = 900;
+  const h = 280;
+  const topPad = 24;
+  const bottomPad = 26;
   const usableH = h - topPad - bottomPad;
 
-  const d = scores
-    .map((score, i) => {
-      const x = (i / (scores.length - 1)) * w;
-      const y = topPad + (100 - score) / 100 * usableH;
-      return `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    })
+  const points = scores.map((score, i) => {
+    const x = (i / (scores.length - 1)) * w;
+    const y = topPad + ((100 - score) / 100) * usableH;
+    return [x, y];
+  });
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(2)} ${p[1].toFixed(2)}`)
     .join(" ");
 
-  pathEl.setAttribute("d", d);
+  const areaPath = `${linePath} L ${w} ${h} L 0 ${h} Z`;
 
   const lastMood = getMoodByScore(scores[scores.length - 1]);
-  pathEl.style.stroke = getMoodColor(lastMood.key);
+  const color = getMoodColor(lastMood.key);
+
+  line.setAttribute("d", linePath);
+  area.setAttribute("d", areaPath);
+
+  line.style.stroke = color;
+  line.style.fill = "none";
+  area.style.fill = `${color}18`;
+
+  wrapper.classList.remove("hidden");
 }
 
 async function loadHeroTimeline() {
@@ -1014,8 +1044,7 @@ async function loadHeroTimeline() {
       null
     );
 
-    const rawPrices = timelineRes?.prices;
-    buildEmotionTimelinePath(rawPrices);
+    buildHeroTimeline(timelineRes?.prices);
   } finally {
     isLoadingHeroTimeline = false;
   }
@@ -1479,10 +1508,10 @@ async function loadCoinDetails() {
       "1h": "perf1h",
       "4h": "perf4h",
       "24h": "perf24h",
+      "7d": "perf7d",
       "30d": "perf30d",
       "5m": "perf5m",
-      "15m": "perf15m",
-      "7d": "perf7d"
+      "15m": "perf15m"
     };
 
     Object.entries(intervalIds).forEach(([tf, id]) => {
@@ -2159,10 +2188,13 @@ function initStyle() {
     gaugeFill.style.strokeDasharray = "188 377";
   }
 
-  const heroTimelinePath = byId("emotionTimelinePath");
-  if (heroTimelinePath) {
-    heroTimelinePath.setAttribute("d", "");
-  }
+  const heroTimelineBackdrop = byId("heroTimelineBackdrop");
+  const heroTimelineLine = byId("heroTimelineLine");
+  const heroTimelineArea = byId("heroTimelineArea");
+
+  if (heroTimelineBackdrop) heroTimelineBackdrop.classList.add("hidden");
+  if (heroTimelineLine) heroTimelineLine.setAttribute("d", "");
+  if (heroTimelineArea) heroTimelineArea.setAttribute("d", "");
 }
 
 function startAutoRefresh() {
@@ -2190,6 +2222,23 @@ async function boot() {
   updateDriverPanel();
   updateGauge(50, getMoodByScore(50));
   updateLayerUI();
+
+  qsa("#heroTimeframes button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.timeframe === globalTimeframe);
+  });
+
+  qsa("#chartTimeframes button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.timeframe === chartTimeframe);
+  });
+
+  const selectedTf = byId("selectedTimeframe");
+  if (selectedTf) selectedTf.textContent = chartTimeframe;
+
+  const chartTimeLabel = byId("chartTimeLabel");
+  if (chartTimeLabel) chartTimeLabel.textContent = `Viewing ${chartTimeframe} structure`;
+
+  const globalTf = byId("globalMarketTimeframe");
+  if (globalTf) globalTf.textContent = globalTimeframe;
 
   setupButtons();
   setupSocialExpand();
