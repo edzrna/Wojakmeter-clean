@@ -12,6 +12,7 @@ const COIN_DETAILS_REFRESH_MS = 30000;
 const TRENDING_REFRESH_MS = 60000;
 const MEMES_REFRESH_MS = 90000;
 const SENTIMENT_REFRESH_MS = 60000;
+const HERO_TIMELINE_REFRESH_MS = 60000;
 
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
 const DEFAULT_STYLE = "classic";
@@ -25,6 +26,9 @@ const PULSE_REACTION_MS = 1800;
 const HERO_MODE_RAW = "raw";
 const HERO_MODE_COMPOSITE = "composite";
 const HERO_MODE_CUSTOM = "custom";
+
+const HERO_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
+const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 
 let heroMode = HERO_MODE_RAW;
 
@@ -50,6 +54,7 @@ let currentDriverScore = 50;
 let currentDominantDriver = "market_flow";
 let currentBtcDominanceValue = 50;
 let currentHeaderVolumeValue = 0;
+let currentGlobalMarketCapValue = 0;
 
 let currentNarrative = "Price action is leading sentiment with no major macro override.";
 let currentRiskTone = "Balanced";
@@ -948,38 +953,30 @@ function getCoinChangeForTimeframe(coin, timeframe) {
     case "24h": return h24;
     case "7d": return d7;
     case "30d": return d7 * 2.8;
-    case "5m": return h1 / 12;
-    case "15m": return h1 / 4;
     default: return h24;
   }
 }
 
-function getHeroTimelineCoin() {
-  const activeCoin = getCoinBySymbol(activeCoinSymbol);
-  if (activeCoin?.id) return activeCoin;
-  return getCoinBySymbol("BTC") || { id: "bitcoin", symbol: "BTC", name: "Bitcoin" };
-}
-
-function buildHeroTimeline(rawPrices) {
+function buildHeroTimeline(series) {
   const wrapper = byId("heroTimelineBackdrop");
   const line = byId("heroTimelineLine");
   const area = byId("heroTimelineArea");
 
   if (!wrapper || !line || !area) return;
 
-  if (!Array.isArray(rawPrices) || rawPrices.length < 2) {
+  if (!Array.isArray(series) || series.length < 2) {
     wrapper.classList.add("hidden");
     line.setAttribute("d", "");
     area.setAttribute("d", "");
     return;
   }
 
-  const values = rawPrices
+  const values = series
     .map((entry) => {
-      const price = Array.isArray(entry) ? Number(entry[1]) : Number(entry);
-      return Number.isFinite(price) ? price : null;
+      if (Array.isArray(entry)) return Number(entry[1]);
+      return Number(entry?.value ?? entry?.marketCap ?? entry);
     })
-    .filter((v) => v != null);
+    .filter((v) => Number.isFinite(v));
 
   if (values.length < 2) {
     wrapper.classList.add("hidden");
@@ -988,27 +985,18 @@ function buildHeroTimeline(rawPrices) {
     return;
   }
 
-  const first = values[0] || 1;
-  const sensitivity =
-    globalTimeframe === "30d" ? 4.5 :
-    globalTimeframe === "7d" ? 6 :
-    globalTimeframe === "24h" ? 7 :
-    globalTimeframe === "4h" ? 9 : 11;
-
-  const scores = values.map((price) => {
-    const pct = ((price - first) / first) * 100;
-    return normalizeChangeToScore(pct, sensitivity);
-  });
-
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
   const w = 900;
   const h = 280;
-  const topPad = 24;
-  const bottomPad = 26;
+  const topPad = 16;
+  const bottomPad = 18;
   const usableH = h - topPad - bottomPad;
 
-  const points = scores.map((score, i) => {
-    const x = (i / (scores.length - 1)) * w;
-    const y = topPad + ((100 - score) / 100) * usableH;
+  const points = values.map((value, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = topPad + (1 - ((value - min) / range)) * usableH;
     return [x, y];
   });
 
@@ -1018,15 +1006,18 @@ function buildHeroTimeline(rawPrices) {
 
   const areaPath = `${linePath} L ${w} ${h} L 0 ${h} Z`;
 
-  const lastMood = getMoodByScore(scores[scores.length - 1]);
-  const color = getMoodColor(lastMood.key);
+  const first = values[0];
+  const last = values[values.length - 1];
+  const changePct = first > 0 ? ((last - first) / first) * 100 : 0;
+  const mood = getMoodByScore(normalizeChangeToScore(changePct, globalTimeframe === "30d" ? 5 : 8));
+  const color = getMoodColor(mood.key);
 
   line.setAttribute("d", linePath);
   area.setAttribute("d", areaPath);
 
   line.style.stroke = color;
   line.style.fill = "none";
-  area.style.fill = `${color}18`;
+  area.style.fill = `${color}14`;
 
   wrapper.classList.remove("hidden");
 }
@@ -1036,15 +1027,12 @@ async function loadHeroTimeline() {
   isLoadingHeroTimeline = true;
 
   try {
-    const coin = getHeroTimelineCoin();
-    if (!coin?.id) return;
-
-    const timelineRes = await fetchJson(
-      `/api/coin-chart?coin=${encodeURIComponent(coin.id)}&timeframe=${encodeURIComponent(globalTimeframe)}`,
+    const res = await fetchJson(
+      `/api/global-history?timeframe=${encodeURIComponent(globalTimeframe)}`,
       null
     );
 
-    buildHeroTimeline(timelineRes?.prices);
+    buildHeroTimeline(res?.series || []);
   } finally {
     isLoadingHeroTimeline = false;
   }
@@ -1132,10 +1120,13 @@ async function loadGlobalMarket() {
       byId("btcDominance").textContent = `${btcDom.toFixed(1)}%`;
     }
 
+    const marketCapValue = safeNum(globalData.total_market_cap?.usd, 0);
+    currentGlobalMarketCapValue = marketCapValue;
+
     const marketCapText =
       response.marketCap && response.marketCap !== "--"
         ? response.marketCap
-        : formatCurrencyCompact(globalData.total_market_cap?.usd);
+        : formatCurrencyCompact(marketCapValue);
 
     if (byId("headerMarketCap")) {
       byId("headerMarketCap").textContent = marketCapText;
@@ -1230,7 +1221,6 @@ function createCoinCard(coin, isActive = false) {
     saveActiveCoin(activeCoinSymbol);
     renderCoinSections();
     await loadCoinDetails();
-    await loadHeroTimeline();
     renderStudio();
     qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -1509,9 +1499,7 @@ async function loadCoinDetails() {
       "4h": "perf4h",
       "24h": "perf24h",
       "7d": "perf7d",
-      "30d": "perf30d",
-      "5m": "perf5m",
-      "15m": "perf15m"
+      "30d": "perf30d"
     };
 
     Object.entries(intervalIds).forEach(([tf, id]) => {
@@ -1524,6 +1512,7 @@ async function loadCoinDetails() {
 
     qsa("#chartTimeframes button").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.timeframe === chartTimeframe);
+      btn.classList.toggle("hidden", !CHART_ALLOWED_TIMEFRAMES.includes(btn.dataset.timeframe));
     });
 
     qsa(".chart-mode-btn").forEach((btn) => {
@@ -2007,11 +1996,17 @@ Track the market mood live 👇`;
 
 function setupButtons() {
   qsa("#heroTimeframes button").forEach((btn) => {
+    const tf = btn.dataset.timeframe;
+    btn.classList.toggle("hidden", !HERO_ALLOWED_TIMEFRAMES.includes(tf));
+
     btn.addEventListener("click", async () => {
-      globalTimeframe = btn.dataset.timeframe;
+      if (!HERO_ALLOWED_TIMEFRAMES.includes(tf)) return;
+
+      globalTimeframe = tf;
       qsa("#heroTimeframes button").forEach((b) => {
         b.classList.toggle("active", b.dataset.timeframe === globalTimeframe);
       });
+
       await loadGlobalMarket();
       await loadSentiment();
       await loadHeroTimeline();
@@ -2019,8 +2014,13 @@ function setupButtons() {
   });
 
   qsa("#chartTimeframes button").forEach((btn) => {
+    const tf = btn.dataset.timeframe;
+    btn.classList.toggle("hidden", !CHART_ALLOWED_TIMEFRAMES.includes(tf));
+
     btn.addEventListener("click", async () => {
-      chartTimeframe = btn.dataset.timeframe;
+      if (!CHART_ALLOWED_TIMEFRAMES.includes(tf)) return;
+
+      chartTimeframe = tf;
       await loadCoinDetails();
     });
   });
@@ -2204,6 +2204,7 @@ function startAutoRefresh() {
   setInterval(loadTrendingCoins, TRENDING_REFRESH_MS);
   setInterval(loadTopMemes, MEMES_REFRESH_MS);
   setInterval(loadSentiment, SENTIMENT_REFRESH_MS);
+  setInterval(loadHeroTimeline, HERO_TIMELINE_REFRESH_MS);
 }
 
 async function boot() {
@@ -2225,10 +2226,12 @@ async function boot() {
 
   qsa("#heroTimeframes button").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.timeframe === globalTimeframe);
+    btn.classList.toggle("hidden", !HERO_ALLOWED_TIMEFRAMES.includes(btn.dataset.timeframe));
   });
 
   qsa("#chartTimeframes button").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.timeframe === chartTimeframe);
+    btn.classList.toggle("hidden", !CHART_ALLOWED_TIMEFRAMES.includes(btn.dataset.timeframe));
   });
 
   const selectedTf = byId("selectedTimeframe");
