@@ -59,7 +59,7 @@ export default function Home({ ogImageUrl }) {
 
         <meta
           name="keywords"
-          content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology"
+          content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology, mood token, mood pump fun"
         />
 
         <meta name="robots" content="index, follow" />
@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=7" strategy="afterInteractive" />
+      <Script src="/script.js?v=8" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -125,6 +125,10 @@ export default function Home({ ogImageUrl }) {
               </div>
 
               <div className="topbar-right">
+                <a href="#mood-token" className="topbar-mood-link">
+                  MOOD
+                </a>
+
                 <label className="style-label" htmlFor="styleSelector">
                   Wojak Style
                 </label>
@@ -248,7 +252,10 @@ export default function Home({ ogImageUrl }) {
                     Score: <span id="heroScore">50</span> / 100
                   </div>
 
-                  <section className="emotion-bar-inline emotion-bar-inline-minimal" id="emotionBarSection">
+                  <section
+                    className="emotion-bar-inline emotion-bar-inline-minimal"
+                    id="emotionBarSection"
+                  >
                     <div className="emotion-track-wrap">
                       <div className="emotion-track emotion-track-gradient" id="emotionTrack">
                         <div
@@ -517,6 +524,116 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </div>
                 </section>
+              </div>
+            </section>
+
+            <section className="mood-token-card card" id="mood-token">
+              <div className="section-head">
+                <h3>MOOD</h3>
+                <span className="muted">The new token of WojakMeter</span>
+              </div>
+
+              <div className="mood-token-grid">
+                <div className="mood-token-main">
+                  <div className="mood-token-copy">
+                    <span className="about-label">MOOD LIVE</span>
+                    <h2 className="about-title">MOOD is the new WojakMeter token.</h2>
+                    <p className="about-text">
+                      Track the live sentiment of MOOD, copy the CA instantly, and use this section
+                      as the official token hub inside WojakMeter.
+                    </p>
+                  </div>
+
+                  <div className="mood-ca-box">
+                    <div className="mood-ca-head">
+                      <span>Contract Address</span>
+                    </div>
+
+                    <div className="mood-ca-row">
+                      <code id="moodContractAddress">MOOD_CA_HERE</code>
+                      <button
+                        type="button"
+                        className="action-btn"
+                        id="copyMoodCaBtn"
+                        data-copy-text="MOOD_CA_HERE"
+                      >
+                        Copy CA
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mood-actions-row">
+                    <a
+                      href="https://pump.fun"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="action-btn mood-buy-btn"
+                    >
+                      Buy on Pump.fun
+                    </a>
+
+                    <a href="#top-coins" className="action-btn mood-secondary-btn">
+                      View Market Section
+                    </a>
+                  </div>
+
+                  <div className="mood-stats-grid">
+                    <div className="mood-stat-box">
+                      <span>MOOD Price</span>
+                      <strong id="moodTokenPrice">--</strong>
+                    </div>
+                    <div className="mood-stat-box">
+                      <span>MOOD Market Cap</span>
+                      <strong id="moodTokenMarketCap">--</strong>
+                    </div>
+                    <div className="mood-stat-box">
+                      <span>MOOD Volume</span>
+                      <strong id="moodTokenVolume">--</strong>
+                    </div>
+                    <div className="mood-stat-box">
+                      <span>Buy / Sell Pressure</span>
+                      <strong id="moodTokenFlow">--</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mood-token-visual">
+                  <div className="mood-stage" id="moodStage">
+                    <div className="mood-stage-glow" id="moodStageGlow"></div>
+
+                    <img
+                      id="moodHeroImg"
+                      className="mood-hero-img anim-float"
+                      src="/assets/hero/classic/neutral.png"
+                      alt="Mood token sentiment"
+                    />
+
+                    <div className="mood-token-badge" id="moodTokenBadge">
+                      <span>MOOD Sentiment</span>
+                      <strong id="moodTokenMood">Neutral</strong>
+                    </div>
+                  </div>
+
+                  <div className="mood-token-score-row">
+                    <div className="mood-token-score-box">
+                      <span>Score</span>
+                      <strong id="moodTokenScore">50</strong>
+                    </div>
+                    <div className="mood-token-score-box">
+                      <span>Volatility</span>
+                      <strong id="moodTokenVolatility">--</strong>
+                    </div>
+                    <div className="mood-token-score-box">
+                      <span>Last Action</span>
+                      <strong id="moodTokenLastAction">Watching...</strong>
+                    </div>
+                  </div>
+
+                  <div className="mood-token-note">
+                    This block is ready to connect to MOOD activity from Pump.fun so the hero can
+                    react live to buys, sells, volatility and pressure shifts.
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -980,8 +1097,9 @@ export default function Home({ ogImageUrl }) {
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Navigation</h4>
                   <a href="#about">About</a>
-                  <a href="#top-coins">Top Coins</a>
                   <a href="#market">Market Mood</a>
+                  <a href="#mood-token">MOOD</a>
+                  <a href="#top-coins">Top Coins</a>
                   <a href="#wojak-studio">Wojak Studio</a>
                 </div>
 
