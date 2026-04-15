@@ -33,9 +33,21 @@ const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 // MOOD TOKEN CONFIG
 // ===============================
 const MOOD_CA = "0x0000000000000000000000000000000000000000"; // CAMBIA ESTO
-let moodPrice = 0.00012;
+const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
+const MOOD_MAX_TRADES = 24;
+
+let moodSocket = null;
+let moodReconnectTimer = null;
+let moodTrades = [];
+let moodPrice = 0;
+let moodPrevPrice = 0;
 let moodLastAction = "Neutral flow";
-let moodSimulationTimer = null;
+let moodBuyCount = 0;
+let moodSellCount = 0;
+let moodBuyVolume = 0;
+let moodSellVolume = 0;
+let moodLiveScore = 50;
+let moodLiveMood = getMoodByScore(50);
 
 let heroMode = HERO_MODE_RAW;
 
@@ -178,6 +190,24 @@ function formatPercent(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "--";
   return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+}
+
+function formatCompactNumber(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "--";
+  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
+  if (num >= 1) return num.toFixed(2);
+  if (num > 0) return num.toFixed(6);
+  return "0";
+}
+
+function shortenAddress(value) {
+  const text = String(value || "");
+  if (text.length <= 10) return text || "--";
+  return `${text.slice(0, 4)}...${text.slice(-4)}`;
 }
 
 function getMoodByScore(score) {
@@ -1929,123 +1959,309 @@ Track the market mood live 👇`;
 }
 
 // ===============================
-// MOOD TOKEN SYSTEM
+// MOOD TOKEN SYSTEM (LIVE)
 // ===============================
 
-function initMoodToken() {
-  const caEl = byId("moodContractAddress");
-  if (caEl) {
-    caEl.textContent = MOOD_CA;
+function getMoodTokenElements() {
+  return {
+    section: byId("moodSection"),
+    ca: byId("moodContractAddress"),
+    copyBtn: byId("copyMoodCA"),
+    price: byId("moodPrice"),
+    change: byId("moodChange"),
+    volatility: byId("moodVolatility"),
+    flow: byId("moodFlow"),
+    buys: byId("moodBuys"),
+    sells: byId("moodSells"),
+    lastAction: byId("moodLastAction"),
+    heroImg: byId("moodHeroImg"),
+    heroScore: byId("moodHeroScore"),
+    heroMood: byId("moodHeroMood"),
+    badge: byId("moodTokenBadge"),
+    feed: byId("moodTradesFeed")
+  };
+}
+
+function computeMoodTradeScore() {
+  const totalCount = moodBuyCount + moodSellCount;
+  const totalVolume = moodBuyVolume + moodSellVolume;
+
+  const flowBias = totalCount > 0
+    ? ((moodBuyCount - moodSellCount) / totalCount) * 20
+    : 0;
+
+  const volumeBias = totalVolume > 0
+    ? ((moodBuyVolume - moodSellVolume) / totalVolume) * 24
+    : 0;
+
+  const priceBias = moodPrevPrice > 0 && moodPrice > 0
+    ? clamp(((moodPrice - moodPrevPrice) / moodPrevPrice) * 100 * 8, -18, 18)
+    : 0;
+
+  return roundScore(50 + flowBias + volumeBias + priceBias);
+}
+
+function renderMoodTradesFeed() {
+  const els = getMoodTokenElements();
+  if (!els.feed) return;
+
+  if (!moodTrades.length) {
+    els.feed.innerHTML = `<div class="mood-empty-feed">Waiting live trades...</div>`;
+    return;
   }
 
-  const copyBtn = byId("copyMoodCA");
-  if (copyBtn && !copyBtn.dataset.bound) {
-    copyBtn.dataset.bound = "1";
-    copyBtn.addEventListener("click", async () => {
+  els.feed.innerHTML = moodTrades.map((trade) => {
+    return `
+      <div class="mood-trade-row">
+        <div class="mood-trade-side ${trade.side}">
+          ${trade.side.toUpperCase()}
+        </div>
+        <div class="mood-trade-main">
+          <strong>$${formatCompactNumber(trade.usdValue)}</strong>
+          <span>${shortenAddress(trade.trader)}</span>
+        </div>
+        <div class="mood-trade-time">${trade.time}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateMoodHero(mood, score) {
+  const els = getMoodTokenElements();
+  const style = getCurrentStyle();
+
+  if (els.heroImg) {
+    els.heroImg.className = `mood-hero-img ${mood.anim}`;
+    setImage(
+      els.heroImg,
+      getHeroImagePath(style, mood.key),
+      getHeroImagePath(DEFAULT_STYLE, mood.key)
+    );
+  }
+
+  if (els.heroScore) {
+    els.heroScore.textContent = String(roundScore(score));
+  }
+
+  if (els.heroMood) {
+    els.heroMood.textContent = mood.name;
+    els.heroMood.className = `mood-${mood.key}`;
+  }
+
+  if (els.badge) {
+    els.badge.className = `mood-token-badge mood-${mood.key}`;
+    const strong = els.badge.querySelector("strong");
+    if (strong) strong.textContent = mood.name;
+  }
+
+  const moodStage = qs(".mood-stage");
+  if (moodStage) {
+    moodStage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
+  }
+}
+
+function updateMoodUI() {
+  const els = getMoodTokenElements();
+  if (!els.section) return;
+
+  const priceChangePct =
+    moodPrevPrice > 0 && moodPrice > 0
+      ? ((moodPrice - moodPrevPrice) / moodPrevPrice) * 100
+      : 0;
+
+  const volatility = Math.min(99.99, Math.abs(priceChangePct) * 4.2);
+  moodLiveScore = computeMoodTradeScore();
+  moodLiveMood = getMoodByScore(moodLiveScore);
+
+  if (els.ca) els.ca.textContent = MOOD_CA;
+  if (els.price) els.price.textContent = moodPrice > 0 ? formatCurrency(moodPrice) : "$--";
+
+  if (els.change) {
+    els.change.textContent = formatPercent(priceChangePct);
+    els.change.classList.remove("positive", "negative", "neutral");
+    if (priceChangePct > 0) els.change.classList.add("positive");
+    else if (priceChangePct < 0) els.change.classList.add("negative");
+    else els.change.classList.add("neutral");
+  }
+
+  if (els.volatility) els.volatility.textContent = `${volatility.toFixed(2)}%`;
+  if (els.flow) els.flow.textContent = moodBuyVolume >= moodSellVolume ? "Buy pressure" : "Sell pressure";
+  if (els.buys) els.buys.textContent = String(moodBuyCount);
+  if (els.sells) els.sells.textContent = String(moodSellCount);
+  if (els.lastAction) els.lastAction.textContent = moodLastAction;
+
+  updateMoodHero(moodLiveMood, moodLiveScore);
+  renderMoodTradesFeed();
+}
+
+function parseMoodTradePayload(payload) {
+  if (!payload || typeof payload !== "object") return null;
+
+  const sideText = String(
+    payload.txType ||
+    payload.side ||
+    payload.type ||
+    payload.tradeType ||
+    ""
+  ).toLowerCase();
+
+  const side = sideText.includes("sell") ? "sell" : "buy";
+
+  const price =
+    safeNum(
+      payload.priceUsd ??
+      payload.price ??
+      payload.usdPrice ??
+      payload.marketCapUsdPerToken ??
+      0,
+      0
+    );
+
+  const tokenAmount = safeNum(
+    payload.tokenAmount ??
+    payload.amount ??
+    payload.baseAmount ??
+    payload.tokens ??
+    0,
+    0
+  );
+
+  const usdValue = safeNum(
+    payload.vUsd ??
+    payload.volumeUsd ??
+    payload.usdVolume ??
+    payload.notionalUsd ??
+    (price > 0 && tokenAmount > 0 ? price * tokenAmount : 0),
+    0
+  );
+
+  const trader =
+    payload.traderPublicKey ||
+    payload.wallet ||
+    payload.user ||
+    payload.owner ||
+    "";
+
+  const timestamp = payload.timestamp || payload.time || Date.now();
+
+  return {
+    side,
+    price,
+    usdValue,
+    tokenAmount,
+    trader,
+    time: new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+  };
+}
+
+function registerMoodTrade(rawTrade) {
+  const trade = parseMoodTradePayload(rawTrade);
+  if (!trade) return;
+
+  if (trade.price > 0) {
+    if (moodPrice <= 0) {
+      moodPrice = trade.price;
+      moodPrevPrice = trade.price;
+    } else {
+      moodPrevPrice = moodPrice;
+      moodPrice = trade.price;
+    }
+  }
+
+  if (trade.side === "buy") {
+    moodBuyCount += 1;
+    moodBuyVolume += trade.usdValue;
+    moodLastAction = "Aggressive buying";
+  } else {
+    moodSellCount += 1;
+    moodSellVolume += trade.usdValue;
+    moodLastAction = "Market selling";
+  }
+
+  moodTrades.unshift(trade);
+  if (moodTrades.length > MOOD_MAX_TRADES) {
+    moodTrades = moodTrades.slice(0, MOOD_MAX_TRADES);
+  }
+
+  updateMoodUI();
+}
+
+function connectMoodSocket() {
+  const els = getMoodTokenElements();
+  if (!els.section) return;
+  if (!MOOD_CA || MOOD_CA.includes("0000000000000000000000000000000000000000")) return;
+
+  clearTimeout(moodReconnectTimer);
+
+  try {
+    if (moodSocket && (moodSocket.readyState === WebSocket.OPEN || moodSocket.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    moodSocket = new WebSocket(MOOD_WS_URL);
+
+    moodSocket.onopen = () => {
+      try {
+        moodSocket.send(JSON.stringify({
+          method: "subscribeTokenTrade",
+          keys: [MOOD_CA]
+        }));
+      } catch {}
+    };
+
+    moodSocket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+
+        if (Array.isArray(payload)) {
+          payload.forEach(registerMoodTrade);
+        } else {
+          registerMoodTrade(payload);
+        }
+      } catch (error) {
+        console.error("MOOD WS parse error:", error);
+      }
+    };
+
+    moodSocket.onerror = () => {
+      try {
+        moodSocket.close();
+      } catch {}
+    };
+
+    moodSocket.onclose = () => {
+      moodReconnectTimer = setTimeout(connectMoodSocket, 2500);
+    };
+  } catch (error) {
+    console.error("MOOD WS connection error:", error);
+    moodReconnectTimer = setTimeout(connectMoodSocket, 2500);
+  }
+}
+
+function initMoodToken() {
+  const els = getMoodTokenElements();
+  if (!els.section) return;
+
+  if (els.ca) {
+    els.ca.textContent = MOOD_CA;
+  }
+
+  if (els.copyBtn && !els.copyBtn.dataset.bound) {
+    els.copyBtn.dataset.bound = "1";
+    els.copyBtn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(MOOD_CA);
-        const original = copyBtn.textContent;
-        copyBtn.textContent = "Copied";
+        const original = els.copyBtn.textContent || "Copy";
+        els.copyBtn.textContent = "Copied";
         setTimeout(() => {
-          copyBtn.textContent = original || "Copy";
+          els.copyBtn.textContent = original;
         }, 1200);
       } catch {}
     });
   }
 
-  if (!byId("moodSection")) return;
-  startMoodSimulation();
-}
-
-function startMoodSimulation() {
-  if (moodSimulationTimer) return;
-
-  moodSimulationTimer = setInterval(() => {
-    const change = (Math.random() - 0.5) * 0.02;
-    moodPrice = Math.max(0.00001, moodPrice + change);
-
-    const volatility = Math.abs(change) * 100;
-    const flow = change > 0 ? "Buy pressure" : "Sell pressure";
-    moodLastAction = change > 0 ? "Aggressive buying" : "Market selling";
-
-    updateMoodUI({
-      price: moodPrice,
-      change,
-      volatility,
-      flow
-    });
-  }, 2500);
-}
-
-function updateMoodUI(data) {
-  const { price, change, volatility, flow } = data;
-
-  const priceEl = byId("moodPrice");
-  if (priceEl) {
-    priceEl.textContent = `$${price.toFixed(6)}`;
-  }
-
-  const changeEl = byId("moodChange");
-  if (changeEl) {
-    changeEl.textContent = formatPercent(change * 100);
-    changeEl.classList.remove("positive", "negative", "neutral");
-    changeEl.classList.add(change >= 0 ? "positive" : "negative");
-  }
-
-  const volEl = byId("moodVolatility");
-  if (volEl) {
-    volEl.textContent = `${volatility.toFixed(2)}%`;
-  }
-
-  const flowEl = byId("moodFlow");
-  if (flowEl) {
-    flowEl.textContent = flow;
-  }
-
-  const lastActionEl = byId("moodLastAction");
-  if (lastActionEl) {
-    lastActionEl.textContent = moodLastAction;
-  }
-
-  const score = normalizeChangeToScore(change * 100, 20);
-  const mood = getMoodByScore(score);
-  updateMoodHero(mood, score);
-}
-
-function updateMoodHero(mood, score) {
-  const img = byId("moodHeroImg");
-  const badge = byId("moodTokenBadge");
-  const stage = qs(".mood-stage");
-  const scoreEl = byId("moodHeroScore");
-  const moodEl = byId("moodHeroMood");
-
-  if (img) {
-    img.className = `mood-hero-img ${mood.anim}`;
-    setImage(
-      img,
-      getHeroImagePath(getCurrentStyle(), mood.key),
-      getHeroImagePath(DEFAULT_STYLE, mood.key)
-    );
-  }
-
-  if (badge) {
-    badge.className = `mood-token-badge mood-${mood.key}`;
-    const strong = badge.querySelector("strong");
-    if (strong) strong.textContent = mood.name;
-  }
-
-  if (scoreEl) {
-    scoreEl.textContent = String(roundScore(score));
-  }
-
-  if (moodEl) {
-    moodEl.textContent = mood.name;
-    moodEl.className = `mood-${mood.key}`;
-  }
-
-  if (stage) {
-    stage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
-  }
+  updateMoodUI();
+  connectMoodSocket();
 }
 
 function setupButtons() {
@@ -2140,7 +2356,8 @@ function setupButtons() {
     await loadGlobalMarket();
 
     if (byId("moodSection")) {
-      updateMoodHero(getMoodByScore(50), 50);
+      updateMoodHero(moodLiveMood, moodLiveScore);
+      renderMoodTradesFeed();
     }
   });
 
@@ -2254,7 +2471,11 @@ function initStyle() {
 
   const moodHeroImg = byId("moodHeroImg");
   if (moodHeroImg) {
-    setImage(moodHeroImg, getHeroImagePath(style, "neutral"), getHeroImagePath(DEFAULT_STYLE, "neutral"));
+    setImage(
+      moodHeroImg,
+      getHeroImagePath(style, "neutral"),
+      getHeroImagePath(DEFAULT_STYLE, "neutral")
+    );
   }
 }
 
