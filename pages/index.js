@@ -125,7 +125,7 @@ export default function Home({ ogImageUrl }) {
               </div>
 
               <div className="topbar-right">
-                <a href="#mood-token" className="topbar-mood-link">
+                <a href="#moodSection" className="topbar-mood-link">
                   MOOD
                 </a>
 
@@ -527,7 +527,7 @@ export default function Home({ ogImageUrl }) {
               </div>
             </section>
 
-            <section className="mood-token-card card" id="mood-token">
+            <section className="mood-token-card card" id="moodSection">
               <div className="section-head">
                 <h3>MOOD</h3>
                 <span className="muted">The new token of WojakMeter</span>
@@ -539,8 +539,7 @@ export default function Home({ ogImageUrl }) {
                     <span className="about-label">MOOD LIVE</span>
                     <h2 className="about-title">MOOD is the new WojakMeter token.</h2>
                     <p className="about-text">
-                      Track the live sentiment of MOOD, copy the CA instantly, and use this section
-                      as the official token hub inside WojakMeter.
+                      Real-time emotional trading feed powered by WojakMeter.
                     </p>
                   </div>
 
@@ -550,13 +549,8 @@ export default function Home({ ogImageUrl }) {
                     </div>
 
                     <div className="mood-ca-row">
-                      <code id="moodContractAddress">MOOD_CA_HERE</code>
-                      <button
-                        type="button"
-                        className="action-btn"
-                        id="copyMoodCaBtn"
-                        data-copy-text="MOOD_CA_HERE"
-                      >
+                      <code id="moodContractAddress">0x0000000000000000000000000000000000000000</code>
+                      <button type="button" className="action-btn" id="copyMoodCA">
                         Copy CA
                       </button>
                     </div>
@@ -573,26 +567,44 @@ export default function Home({ ogImageUrl }) {
                     </a>
 
                     <a href="#top-coins" className="action-btn mood-secondary-btn">
-                      View Market Section
+                      View Market
                     </a>
                   </div>
 
                   <div className="mood-stats-grid">
                     <div className="mood-stat-box">
-                      <span>MOOD Price</span>
-                      <strong id="moodTokenPrice">--</strong>
+                      <span>Price</span>
+                      <strong id="moodPrice">$0.000000</strong>
                     </div>
+
                     <div className="mood-stat-box">
-                      <span>MOOD Market Cap</span>
-                      <strong id="moodTokenMarketCap">--</strong>
+                      <span>Change</span>
+                      <strong id="moodChange">--</strong>
                     </div>
+
                     <div className="mood-stat-box">
-                      <span>MOOD Volume</span>
-                      <strong id="moodTokenVolume">--</strong>
+                      <span>Volatility</span>
+                      <strong id="moodVolatility">--</strong>
                     </div>
+
                     <div className="mood-stat-box">
-                      <span>Buy / Sell Pressure</span>
-                      <strong id="moodTokenFlow">--</strong>
+                      <span>Flow</span>
+                      <strong id="moodFlow">--</strong>
+                    </div>
+
+                    <div className="mood-stat-box">
+                      <span>Buys</span>
+                      <strong id="moodBuys">0</strong>
+                    </div>
+
+                    <div className="mood-stat-box">
+                      <span>Sells</span>
+                      <strong id="moodSells">0</strong>
+                    </div>
+
+                    <div className="mood-stat-box">
+                      <span>Last Action</span>
+                      <strong id="moodLastAction">Watching...</strong>
                     </div>
                   </div>
                 </div>
@@ -617,16 +629,16 @@ export default function Home({ ogImageUrl }) {
                   <div className="mood-token-score-row">
                     <div className="mood-token-score-box">
                       <span>Score</span>
-                      <strong id="moodTokenScore">50</strong>
+                      <strong id="moodHeroScore">50</strong>
                     </div>
                     <div className="mood-token-score-box">
-                      <span>Volatility</span>
-                      <strong id="moodTokenVolatility">--</strong>
+                      <span>Mood</span>
+                      <strong id="moodHeroMood">Neutral</strong>
                     </div>
-                    <div className="mood-token-score-box">
-                      <span>Last Action</span>
-                      <strong id="moodTokenLastAction">Watching...</strong>
-                    </div>
+                  </div>
+
+                  <div className="mood-trades-feed" id="moodTradesFeed">
+                    <div className="mood-empty-feed">Waiting live trades...</div>
                   </div>
 
                   <div className="mood-token-note">
@@ -1098,7 +1110,7 @@ export default function Home({ ogImageUrl }) {
                   <h4 className="wm-footer-title">Navigation</h4>
                   <a href="#about">About</a>
                   <a href="#market">Market Mood</a>
-                  <a href="#mood-token">MOOD</a>
+                  <a href="#moodSection">MOOD</a>
                   <a href="#top-coins">Top Coins</a>
                   <a href="#wojak-studio">Wojak Studio</a>
                 </div>
