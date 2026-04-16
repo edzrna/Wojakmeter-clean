@@ -306,17 +306,26 @@ a {
 .tab-btn,
 .chart-mode-btn,
 .layer-btn,
-.hero-mode-btn {
+.hero-mode-btn,
+.mood-input {
   border: 1px solid var(--line);
   background: var(--panel-3);
   color: var(--text);
   padding: 10px 14px;
   border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
   transition: 0.22s ease;
   font-family: var(--font-ui);
   font-weight: 700;
+}
+
+button,
+.action-btn,
+.tab-btn,
+.chart-mode-btn,
+.layer-btn,
+.hero-mode-btn {
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .timeframes button:hover,
@@ -413,11 +422,12 @@ a {
   overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(180deg, #162535 0%, #0d1825 100%);
+  isolation: isolate;
 }
 
 .hero-face-img {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   width: min(450px, 82%);
   height: auto;
   object-fit: contain;
@@ -515,12 +525,6 @@ a {
   color: var(--muted);
 }
 
-.wojak-stage {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-
 .hero-timeline-backdrop {
   position: absolute;
   inset: 0;
@@ -553,16 +557,11 @@ a {
   stroke-linejoin: round;
 }
 
-.hero-face-img {
-  position: relative;
-  z-index: 3;
-}
-
-.hero-social-wrapper {
-  z-index: 4;
-}
-
 .sweat {
+  position: absolute;
+  right: 18%;
+  top: 18%;
+  font-size: 26px;
   z-index: 4;
 }
 
@@ -648,14 +647,6 @@ a {
   font-size: 12px;
   line-height: 1.45;
   color: var(--muted);
-}
-
-.sweat {
-  position: absolute;
-  right: 18%;
-  top: 18%;
-  font-size: 26px;
-  z-index: 3;
 }
 
 .hidden {
@@ -1975,6 +1966,26 @@ pre.studio-output {
   line-height: 1.5;
 }
 
+.mood-search-box {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.mood-input {
+  border-radius: 14px;
+  background: #0c1622;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  outline: none;
+  width: 100%;
+}
+
+.mood-input::placeholder {
+  color: rgba(255,255,255,0.42);
+  font-weight: 600;
+}
+
 .mood-actions-row {
   display: flex;
   gap: 12px;
@@ -2000,6 +2011,49 @@ pre.studio-output {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.mood-token-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+    rgba(10, 18, 28, 0.88);
+}
+
+.mood-token-meta img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0b141e;
+  flex: 0 0 auto;
+}
+
+.mood-token-meta-copy {
+  min-width: 0;
+}
+
+.mood-token-meta-copy strong {
+  display: block;
+  color: var(--title);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.mood-token-meta-copy span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .mood-stats-grid {
@@ -2167,55 +2221,6 @@ pre.studio-output {
   color: #d7e7f6;
   line-height: 1.7;
   font-size: 0.96rem;
-}
-
-/* ===== MOOD LIVE FEED ===== */
-
-.mood-trades-feed {
-  max-height: 160px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-right: 4px;
-}
-
-.mood-trades-feed::-webkit-scrollbar {
-  width: 4px;
-}
-
-.mood-trades-feed::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
-  border-radius: 999px;
-}
-
-.mood-trade {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  border: 1px solid var(--line-soft);
-  background: rgba(255,255,255,0.02);
-}
-
-.mood-trade.buy {
-  color: var(--green);
-  border-color: rgba(77,255,136,0.18);
-}
-
-.mood-trade.sell {
-  color: var(--red);
-  border-color: rgba(255,59,77,0.18);
-}
-
-.mood-empty-feed {
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-  padding: 10px;
 }
 
 /* ===== MOOD STATE COLORS ===== */
@@ -3124,6 +3129,10 @@ pre.studio-output {
   .mood-ca-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .mood-search-box {
+    grid-template-columns: 1fr;
   }
 
   .mood-actions-row {
