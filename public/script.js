@@ -32,7 +32,7 @@ const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 // ===============================
 // MOOD TOKEN CONFIG
 // ===============================
-const MOOD_CA = "0x0000000000000000000000000000000000000000"; // CAMBIA ESTO
+const MOOD_CA = "2aThfScmJfDCPU1LcH8kFWMQK74Rmhv9jJ9v5QcPpump"; // CAMBIA ESTO
 const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
 const MOOD_MAX_TRADES = 24;
 
