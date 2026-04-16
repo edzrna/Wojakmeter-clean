@@ -3368,4 +3368,96 @@ pre.studio-output {
   #moodContractAddress {
     font-size: 0.82rem;
   }
+
+.mood-chart-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.mood-chart-backdrop.hidden {
+  display: none;
+}
+
+.mood-chart-backdrop svg {
+  width: 100%;
+  height: 100%;
+}
+
+#moodChartLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#moodChartArea {
+  fill: rgba(77, 255, 136, 0.08);
+}
+
+.token-buy-burst {
+  animation: tokenBuyBurst 0.55s ease;
+}
+
+.token-sell-shake {
+  animation: tokenSellShake 0.55s ease;
+}
+
+@keyframes tokenBuyBurst {
+  0% { transform: scale(1); }
+  35% { transform: scale(var(--token-react-scale, 1.06)); }
+  65% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tokenSellShake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(calc(var(--token-react-shift, 6px) * -1)); }
+  40% { transform: translateX(var(--token-react-shift, 6px)); }
+  60% { transform: translateX(calc(var(--token-react-shift, 6px) * -0.8)); }
+  80% { transform: translateX(calc(var(--token-react-shift, 6px) * 0.8)); }
+  100% { transform: translateX(0); }
+}
+
+.mood-trades-feed {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.mood-trade {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,0.02);
+}
+
+.mood-trade.buy {
+  color: var(--green);
+  border-color: rgba(77,255,136,0.18);
+}
+
+.mood-trade.sell {
+  color: var(--red);
+  border-color: rgba(255,59,77,0.18);
+}
+
+.mood-empty-feed {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 10px;
+}
+
 }
