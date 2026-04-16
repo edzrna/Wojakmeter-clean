@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=8" strategy="afterInteractive" />
+      <Script src="/script.js?v=9" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -596,6 +596,17 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </div>
 
+                  <div className="timeframes mood-token-timeframes" id="moodTokenTimeframes">
+                    <button data-token-timeframe="1m">1m</button>
+                    <button data-token-timeframe="5m" className="active">
+                      5m
+                    </button>
+                    <button data-token-timeframe="15m">15m</button>
+                    <button data-token-timeframe="1h">1h</button>
+                    <button data-token-timeframe="4h">4h</button>
+                    <button data-token-timeframe="24h">24h</button>
+                  </div>
+
                   <div className="mood-stats-grid">
                     <div className="mood-stat-box">
                       <span>Price</span>
@@ -638,6 +649,13 @@ export default function Home({ ogImageUrl }) {
                   <div className="mood-stage" id="moodStage">
                     <div className="mood-stage-glow" id="moodStageGlow"></div>
 
+                    <div className="mood-chart-backdrop hidden" id="moodChartBackdrop">
+                      <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+                        <path id="moodChartArea" d=""></path>
+                        <path id="moodChartLine" d=""></path>
+                      </svg>
+                    </div>
+
                     <img
                       id="moodHeroImg"
                       className="mood-hero-img anim-float"
@@ -647,7 +665,7 @@ export default function Home({ ogImageUrl }) {
 
                     <div className="mood-token-badge" id="moodTokenBadge">
                       <span>Token Sentiment</span>
-                      <strong id="moodTokenMood">Neutral</strong>
+                      <strong>Neutral</strong>
                     </div>
                   </div>
 
@@ -658,12 +676,16 @@ export default function Home({ ogImageUrl }) {
                     </div>
                     <div className="mood-token-score-box">
                       <span>Status</span>
-                      <strong id="moodTokenMood">Neutral</strong>
+                      <strong id="moodHeroMood">Neutral</strong>
                     </div>
                     <div className="mood-token-score-box">
                       <span>Source</span>
                       <strong id="moodTokenSource">Pump.fun</strong>
                     </div>
+                  </div>
+
+                  <div className="mood-trades-feed" id="moodTradesFeed">
+                    <div className="mood-empty-feed">Waiting live trades...</div>
                   </div>
 
                   <div className="mood-token-note">
