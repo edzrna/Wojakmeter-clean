@@ -38,10 +38,6 @@ const MOOD_MAIN_CA = "";
 const MOOD_MAIN_LABEL = "MOOD (Coming Soon)";
 const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
 
-const PUMP_TRENDING_FALLBACKS = [
-  // "So11111111111111111111111111111111111111112"
-];
-
 let isUsingDefaultTrending = true;
 let isUsingMoodToken = false;
 
@@ -62,8 +58,10 @@ let moodTokenTimeframe = "5m";
 let moodTokenMeta = {
   name: "Trending Pump.fun Token",
   symbol: "---",
-  image: "/assets/logo/wojakmeter_logo.png"
+  image: "/assets/logo/wojakmeter_logo.png",
+  source: "Pump.fun"
 };
+
 let moodHistory = {
   "1m": [],
   "5m": [],
@@ -765,7 +763,9 @@ function updateHero(score, mood, options = {}) {
     );
   }
 
-  if (emotionPointer) emotionPointer.style.left = `${clamp(roundScore(score), 0, 100)}%`;
+  if (emotionPointer) {
+    emotionPointer.style.left = `${clamp(roundScore(score), 0, 100)}%`;
+  }
 
   if (emotionPointerImg) {
     setImage(
@@ -803,6 +803,7 @@ function updateSocialPanel(score, socialMood) {
     byId("socialExpandMood").textContent = socialMood.name;
     byId("socialExpandMood").className = `mood-${socialMood.key}`;
   }
+
   setText("socialExpandScore", String(roundedScore));
   setText("socialExpandEngagement", interactions.toLocaleString("en-US"));
 
@@ -814,10 +815,12 @@ function updateSocialPanel(score, socialMood) {
     bullishEl.textContent = `${bullish}%`;
     bullishEl.className = "positive";
   }
+
   if (bearishEl) {
     bearishEl.textContent = `${bearish}%`;
     bearishEl.className = "negative";
   }
+
   if (neutralEl) {
     neutralEl.textContent = `${neutral}%`;
     neutralEl.className = "neutral";
@@ -1985,7 +1988,10 @@ function getMoodTokenElements() {
     flow: byId("moodTokenFlow") || byId("moodFlow"),
     heroImg: byId("moodHeroImg"),
     heroScore: byId("moodTokenScore") || byId("moodHeroScore"),
-    heroMood: qsa("#moodTokenMood"),
+    heroMoodNodes: [
+      byId("moodHeroMood"),
+      byId("moodTokenMood")
+    ].filter(Boolean),
     volatility: byId("moodTokenVolatility") || byId("moodVolatility"),
     lastAction: byId("moodTokenLastAction") || byId("moodLastAction"),
     badge: byId("moodTokenBadge"),
@@ -2046,7 +2052,10 @@ function updateMoodTokenMeta(meta = {}) {
   }
 
   if (els.source) {
-    els.source.textContent = isUsingMoodToken ? MOOD_MAIN_LABEL : "Pump.fun";
+    els.source.textContent =
+      meta.source ||
+      moodTokenMeta.source ||
+      (isUsingMoodToken ? MOOD_MAIN_LABEL : "Pump.fun");
   }
 }
 
@@ -2113,14 +2122,14 @@ function updateMoodHero(mood, score) {
     );
   }
 
-  if (els.heroScore) els.heroScore.textContent = String(roundScore(score));
-
-  if (Array.isArray(els.heroMood)) {
-    els.heroMood.forEach((node) => {
-      node.textContent = mood.name;
-      node.className = `mood-${mood.key}`;
-    });
+  if (els.heroScore) {
+    els.heroScore.textContent = String(roundScore(score));
   }
+
+  els.heroMoodNodes.forEach((node) => {
+    node.textContent = mood.name;
+    node.className = `mood-${mood.key}`;
+  });
 
   if (els.badge) {
     els.badge.className = `mood-token-badge mood-${mood.key}`;
@@ -2286,7 +2295,9 @@ function updateMoodUI() {
     else changeEl.classList.add("neutral");
   }
 
-  if (els.volatility) els.volatility.textContent = `${volatilityValue.toFixed(2)}%`;
+  if (els.volatility) {
+    els.volatility.textContent = `${volatilityValue.toFixed(2)}%`;
+  }
 
   if (els.lastAction) {
     els.lastAction.textContent = moodLastAction;
@@ -2439,7 +2450,9 @@ function registerMoodTrade(rawTrade) {
   }
 
   moodTrades.unshift(trade);
-  if (moodTrades.length > 24) moodTrades = moodTrades.slice(0, 24);
+  if (moodTrades.length > 24) {
+    moodTrades = moodTrades.slice(0, 24);
+  }
 
   updateMoodUI();
   applyMoodHeroImpulse(trade.side, trade.usdValue);
@@ -2573,7 +2586,7 @@ function resetMoodTokenState() {
   };
 }
 
-function loadMoodTokenAddress(newAddress, meta = {}) {
+async function loadMoodTokenAddress(newAddress, meta = {}) {
   const cleaned = String(newAddress || "").trim();
 
   if (!cleaned) {
@@ -2588,49 +2601,73 @@ function loadMoodTokenAddress(newAddress, meta = {}) {
   resetMoodTokenState();
   updateMoodTokenMeta(meta);
   updateMoodUI();
+
+  const tokenInfo = await fetchJson(
+    `/api/pumpfun-token?ca=${encodeURIComponent(cleaned)}`,
+    null
+  );
+
+  if (tokenInfo && typeof tokenInfo === "object") {
+    updateMoodTokenMeta({
+      name: tokenInfo?.meta?.name || meta?.name,
+      symbol: tokenInfo?.meta?.symbol || meta?.symbol,
+      image: tokenInfo?.meta?.image || meta?.image,
+      source: tokenInfo?.meta?.source || meta?.source || "Pump.fun"
+    });
+
+    moodPrice = safeNum(tokenInfo?.price, 0);
+    moodPrevPrice = moodPrice;
+    moodBuyCount = safeNum(tokenInfo?.buys, 0);
+    moodSellCount = safeNum(tokenInfo?.sells, 0);
+
+    const v = safeNum(tokenInfo?.volume, 0);
+    moodBuyVolume = v * 0.52;
+    moodSellVolume = v * 0.48;
+
+    moodLastAction = tokenInfo?.lastAction || "Watching...";
+
+    if (moodPrice > 0) {
+      registerPriceIntoTimeframes(moodPrice);
+    }
+  }
+
+  updateMoodUI();
   connectMoodSocket();
 }
 
 async function tryLoadDefaultTrendingToken() {
-  const ownApi = await fetchJson("/api/pumpfun-trending", null);
+  const ownApi = await fetchJson("/api/pumpfun-trending", { tokens: [] });
+  const tokens = Array.isArray(ownApi?.tokens) ? ownApi.tokens : [];
 
-  if (ownApi && Array.isArray(ownApi.tokens) && ownApi.tokens.length) {
-    const top = ownApi.tokens[0];
-    if (top?.address || top?.mint) {
-      isUsingDefaultTrending = true;
-      isUsingMoodToken = false;
+  if (tokens.length) {
+    const top = tokens[0];
 
-      loadMoodTokenAddress(top.address || top.mint, {
-        name: top.name || "Trending Token",
-        symbol: top.symbol || "---",
-        image: top.image || "/assets/logo/wojakmeter_logo.png"
-      });
-      return;
-    }
-  }
-
-  if (PUMP_TRENDING_FALLBACKS.length) {
     isUsingDefaultTrending = true;
     isUsingMoodToken = false;
 
-    loadMoodTokenAddress(PUMP_TRENDING_FALLBACKS[0], {
-      name: "Trending Pump.fun Token",
-      symbol: "---",
-      image: "/assets/logo/wojakmeter_logo.png"
+    await loadMoodTokenAddress(top.address || top.mint, {
+      name: top.name || "Trending Token",
+      symbol: top.symbol || "---",
+      image: top.image || "/assets/logo/wojakmeter_logo.png",
+      source: "Pump.fun Trending"
     });
-    return;
+
+    return true;
   }
 
-  isUsingDefaultTrending = false;
-  isUsingMoodToken = true;
+  const HARD_FALLBACK = "So11111111111111111111111111111111111111112";
 
-  updateMoodTokenMeta({
-    name: "MOOD",
-    symbol: "MOOD",
-    image: "/assets/logo/wojakmeter_logo.png"
+  isUsingDefaultTrending = true;
+  isUsingMoodToken = false;
+
+  await loadMoodTokenAddress(HARD_FALLBACK, {
+    name: "SOL (Fallback)",
+    symbol: "SOL",
+    image: "/assets/logo/wojakmeter_logo.png",
+    source: "Fallback"
   });
 
-  updateMoodUI();
+  return true;
 }
 
 function ensureMoodBackdropMarkup() {
@@ -2639,54 +2676,66 @@ function ensureMoodBackdropMarkup() {
 
   if (byId("moodChartBackdrop")) return;
 
+  const wrapper = document.createElement("div");
+  wrapper.id = "moodChartBackdrop";
+  wrapper.className = "mood-chart-backdrop hidden";
+
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("id", "moodChartBackdrop");
   svg.setAttribute("viewBox", "0 0 900 280");
   svg.setAttribute("preserveAspectRatio", "none");
-  svg.classList.add("hidden");
-  svg.style.position = "absolute";
-  svg.style.inset = "0";
-  svg.style.width = "100%";
-  svg.style.height = "100%";
-  svg.style.opacity = "0.18";
-  svg.style.pointerEvents = "none";
-  svg.style.zIndex = "1";
+  svg.setAttribute("aria-hidden", "true");
 
   const area = document.createElementNS("http://www.w3.org/2000/svg", "path");
   area.setAttribute("id", "moodChartArea");
 
   const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
   line.setAttribute("id", "moodChartLine");
-  line.style.fill = "none";
-  line.style.strokeWidth = "3";
-  line.style.strokeLinecap = "round";
-  line.style.strokeLinejoin = "round";
 
   svg.appendChild(area);
   svg.appendChild(line);
-  stage.insertBefore(svg, stage.firstChild);
+  wrapper.appendChild(svg);
+
+  const glow = byId("moodStageGlow");
+  if (glow) {
+    stage.insertBefore(wrapper, glow.nextSibling);
+  } else {
+    stage.insertBefore(wrapper, stage.firstChild);
+  }
 }
 
 function ensureMoodTimeframeMarkup() {
-  const visual = qs(".mood-token-visual");
-  if (!visual || byId("moodTokenTimeframes")) return;
+  if (byId("moodTokenTimeframes")) return;
+
+  const main = qs(".mood-token-main");
+  const statsGrid = qs(".mood-stats-grid");
+  if (!main || !statsGrid) return;
 
   const row = document.createElement("div");
-  row.className = "timeframes";
+  row.className = "timeframes mood-token-timeframes";
   row.id = "moodTokenTimeframes";
-  row.style.marginTop = "2px";
-  row.style.justifyContent = "center";
 
   row.innerHTML = TOKEN_ALLOWED_TIMEFRAMES.map((tf) => {
     const active = tf === moodTokenTimeframe ? "active" : "";
     return `<button type="button" class="${active}" data-token-timeframe="${tf}">${tf}</button>`;
   }).join("");
 
+  main.insertBefore(row, statsGrid);
+}
+
+function ensureMoodFeedMarkup() {
+  const visual = qs(".mood-token-visual");
   const note = qs(".mood-token-note");
-  if (note && note.parentNode === visual) {
-    visual.insertBefore(row, note);
+  if (!visual || byId("moodTradesFeed")) return;
+
+  const feed = document.createElement("div");
+  feed.className = "mood-trades-feed";
+  feed.id = "moodTradesFeed";
+  feed.innerHTML = `<div class="mood-empty-feed">Waiting live trades...</div>`;
+
+  if (note) {
+    visual.insertBefore(feed, note);
   } else {
-    visual.appendChild(row);
+    visual.appendChild(feed);
   }
 }
 
@@ -2712,17 +2761,18 @@ function setupMoodTokenControls() {
 
   if (els.searchBtn && els.input && !els.searchBtn.dataset.bound) {
     els.searchBtn.dataset.bound = "1";
-    els.searchBtn.addEventListener("click", () => {
+    els.searchBtn.addEventListener("click", async () => {
       const ca = String(els.input.value || "").trim();
       if (!ca) return;
 
       isUsingDefaultTrending = false;
       isUsingMoodToken = false;
 
-      loadMoodTokenAddress(ca, {
+      await loadMoodTokenAddress(ca, {
         name: "Custom Token",
         symbol: "---",
-        image: "/assets/logo/wojakmeter_logo.png"
+        image: "/assets/logo/wojakmeter_logo.png",
+        source: "Custom"
       });
     });
   }
@@ -2739,7 +2789,7 @@ function setupMoodTokenControls() {
 
   if (els.loadMoodBtn && !els.loadMoodBtn.dataset.bound) {
     els.loadMoodBtn.dataset.bound = "1";
-    els.loadMoodBtn.addEventListener("click", () => {
+    els.loadMoodBtn.addEventListener("click", async () => {
       if (!MOOD_MAIN_CA) {
         alert("MOOD token launching soon 🚀");
         return;
@@ -2748,10 +2798,11 @@ function setupMoodTokenControls() {
       isUsingMoodToken = true;
       isUsingDefaultTrending = false;
 
-      loadMoodTokenAddress(MOOD_MAIN_CA, {
+      await loadMoodTokenAddress(MOOD_MAIN_CA, {
         name: "MOOD",
         symbol: "MOOD",
-        image: "/assets/logo/wojakmeter_logo.png"
+        image: "/assets/logo/wojakmeter_logo.png",
+        source: "MOOD"
       });
     });
   }
@@ -2775,8 +2826,11 @@ async function initMoodToken() {
 
   ensureMoodBackdropMarkup();
   ensureMoodTimeframeMarkup();
+  ensureMoodFeedMarkup();
 
-  if (els.ca) els.ca.textContent = MOOD_MAIN_CA || "Coming soon";
+  if (els.ca) {
+    els.ca.textContent = "Auto loading...";
+  }
 
   setupMoodTokenControls();
   await tryLoadDefaultTrendingToken();
