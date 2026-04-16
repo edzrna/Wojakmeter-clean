@@ -32,16 +32,25 @@ const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 // ===============================
 // MOOD TOKEN CONFIG
 // ===============================
-const MOOD_CA = "ACtfUWtgvaXrQGNMiohTusi5jcx5RJf5zwu9aAxkpump"; // CAMBIA ESTO
+let MOOD_CA = ""; // dejar vacío hasta launch
+const MOOD_MAIN_CA = ""; // dejar vacío por ahora
+const MOOD_MAIN_LABEL = "MOOD (Coming Soon)";
 const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
-const MOOD_MAX_TRADES = 24;
+
+const PUMP_TRENDING_FALLBACKS = [
+  // puedes dejar esto vacío o meter aquí un CA de prueba mientras haces tests
+  // "So11111111111111111111111111111111111111112"
+];
+
+let isUsingDefaultTrending = true;
+let isUsingMoodToken = false;
 
 let moodSocket = null;
 let moodReconnectTimer = null;
 let moodTrades = [];
 let moodPrice = 0;
 let moodPrevPrice = 0;
-let moodLastAction = "Neutral flow";
+let moodLastAction = "Watching...";
 let moodBuyCount = 0;
 let moodSellCount = 0;
 let moodBuyVolume = 0;
@@ -206,7 +215,8 @@ function formatCompactNumber(value) {
 
 function shortenAddress(value) {
   const text = String(value || "");
-  if (text.length <= 10) return text || "--";
+  if (!text) return "--";
+  if (text.length <= 10) return text;
   return `${text.slice(0, 4)}...${text.slice(-4)}`;
 }
 
@@ -1959,27 +1969,47 @@ Track the market mood live 👇`;
 }
 
 // ===============================
-// MOOD TOKEN SYSTEM (LIVE)
+// MOOD TOKEN SYSTEM
 // ===============================
 
 function getMoodTokenElements() {
   return {
-    section: byId("moodSection"),
+    section: byId("mood-token"),
     ca: byId("moodContractAddress"),
-    copyBtn: byId("copyMoodCA"),
-    price: byId("moodPrice"),
-    change: byId("moodChange"),
-    volatility: byId("moodVolatility"),
-    flow: byId("moodFlow"),
-    buys: byId("moodBuys"),
-    sells: byId("moodSells"),
-    lastAction: byId("moodLastAction"),
+    copyBtn: byId("copyMoodCaBtn"),
+    price: byId("moodTokenPrice"),
+    marketCap: byId("moodTokenMarketCap"),
+    volume: byId("moodTokenVolume"),
+    flow: byId("moodTokenFlow"),
     heroImg: byId("moodHeroImg"),
-    heroScore: byId("moodHeroScore"),
-    heroMood: byId("moodHeroMood"),
+    heroScore: byId("moodTokenScore"),
+    heroMood: byId("moodTokenMood"),
+    volatility: byId("moodTokenVolatility"),
+    lastAction: byId("moodTokenLastAction"),
     badge: byId("moodTokenBadge"),
-    feed: byId("moodTradesFeed")
+    name: byId("moodTokenName"),
+    symbol: byId("moodTokenSymbol"),
+    image: byId("moodTokenImg"),
+    input: byId("tokenSearchInput"),
+    searchBtn: byId("tokenSearchBtn"),
+    loadMoodBtn: byId("loadMoodMain")
   };
+}
+
+function updateMoodTokenMeta(meta = {}) {
+  const els = getMoodTokenElements();
+
+  if (els.name) {
+    els.name.textContent = meta.name || (isUsingMoodToken ? "MOOD" : "Trending Pump.fun Token");
+  }
+
+  if (els.symbol) {
+    els.symbol.textContent = meta.symbol ? `$${String(meta.symbol).toUpperCase()}` : (isUsingMoodToken ? "$MOOD" : "$---");
+  }
+
+  if (els.image) {
+    els.image.src = meta.image || "/assets/logo/wojakmeter_logo.png";
+  }
 }
 
 function computeMoodTradeScore() {
@@ -1999,31 +2029,6 @@ function computeMoodTradeScore() {
     : 0;
 
   return roundScore(50 + flowBias + volumeBias + priceBias);
-}
-
-function renderMoodTradesFeed() {
-  const els = getMoodTokenElements();
-  if (!els.feed) return;
-
-  if (!moodTrades.length) {
-    els.feed.innerHTML = `<div class="mood-empty-feed">Waiting live trades...</div>`;
-    return;
-  }
-
-  els.feed.innerHTML = moodTrades.map((trade) => {
-    return `
-      <div class="mood-trade-row">
-        <div class="mood-trade-side ${trade.side}">
-          ${trade.side.toUpperCase()}
-        </div>
-        <div class="mood-trade-main">
-          <strong>$${formatCompactNumber(trade.usdValue)}</strong>
-          <span>${shortenAddress(trade.trader)}</span>
-        </div>
-        <div class="mood-trade-time">${trade.time}</div>
-      </div>
-    `;
-  }).join("");
 }
 
 function updateMoodHero(mood, score) {
@@ -2054,9 +2059,15 @@ function updateMoodHero(mood, score) {
     if (strong) strong.textContent = mood.name;
   }
 
-  const moodStage = qs(".mood-stage");
-  if (moodStage) {
-    moodStage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
+  const stage = byId("moodStage");
+  const glow = byId("moodStageGlow");
+
+  if (stage) {
+    stage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
+  }
+
+  if (glow) {
+    glow.style.background = `radial-gradient(circle, ${getMoodColor(mood.key)}33 0%, ${getMoodColor(mood.key)}18 35%, rgba(0,0,0,0) 72%)`;
   }
 }
 
@@ -2069,29 +2080,66 @@ function updateMoodUI() {
       ? ((moodPrice - moodPrevPrice) / moodPrevPrice) * 100
       : 0;
 
-  const volatility = Math.min(99.99, Math.abs(priceChangePct) * 4.2);
+  const totalVolume = moodBuyVolume + moodSellVolume;
+  const marketCapApprox = moodPrice > 0 ? moodPrice * 1000000000 : 0; // aproximación visual
+  const volatilityValue = Math.min(99.99, Math.abs(priceChangePct) * 4.2);
+
   moodLiveScore = computeMoodTradeScore();
   moodLiveMood = getMoodByScore(moodLiveScore);
 
-  if (els.ca) els.ca.textContent = MOOD_CA;
-  if (els.price) els.price.textContent = moodPrice > 0 ? formatCurrency(moodPrice) : "$--";
-
-  if (els.change) {
-    els.change.textContent = formatPercent(priceChangePct);
-    els.change.classList.remove("positive", "negative", "neutral");
-    if (priceChangePct > 0) els.change.classList.add("positive");
-    else if (priceChangePct < 0) els.change.classList.add("negative");
-    else els.change.classList.add("neutral");
+  if (els.ca) {
+    els.ca.textContent = MOOD_CA || "Coming soon";
   }
 
-  if (els.volatility) els.volatility.textContent = `${volatility.toFixed(2)}%`;
-  if (els.flow) els.flow.textContent = moodBuyVolume >= moodSellVolume ? "Buy pressure" : "Sell pressure";
-  if (els.buys) els.buys.textContent = String(moodBuyCount);
-  if (els.sells) els.sells.textContent = String(moodSellCount);
-  if (els.lastAction) els.lastAction.textContent = moodLastAction;
+  if (els.price) {
+    els.price.textContent = moodPrice > 0 ? formatCurrency(moodPrice) : "--";
+  }
+
+  if (els.marketCap) {
+    els.marketCap.textContent = marketCapApprox > 0 ? formatCurrencyCompact(marketCapApprox) : "--";
+  }
+
+  if (els.volume) {
+    els.volume.textContent = totalVolume > 0 ? formatCurrencyCompact(totalVolume) : "--";
+  }
+
+  if (els.flow) {
+    const flowText =
+      moodBuyVolume > moodSellVolume
+        ? "Buy pressure"
+        : moodSellVolume > moodBuyVolume
+          ? "Sell pressure"
+          : "Balanced";
+
+    els.flow.textContent = flowText;
+    els.flow.classList.remove("positive", "negative", "neutral");
+    if (flowText === "Buy pressure") els.flow.classList.add("positive");
+    else if (flowText === "Sell pressure") els.flow.classList.add("negative");
+    else els.flow.classList.add("neutral");
+  }
+
+  const changeEl = byId("moodChange");
+  if (changeEl) {
+    changeEl.textContent = formatPercent(priceChangePct);
+    changeEl.classList.remove("positive", "negative", "neutral");
+    if (priceChangePct > 0) changeEl.classList.add("positive");
+    else if (priceChangePct < 0) changeEl.classList.add("negative");
+    else changeEl.classList.add("neutral");
+  }
+
+  if (els.volatility) {
+    els.volatility.textContent = `${volatilityValue.toFixed(2)}%`;
+  }
+
+  if (els.lastAction) {
+    els.lastAction.textContent = moodLastAction;
+    els.lastAction.classList.remove("positive", "negative", "neutral");
+    if (moodLastAction.toLowerCase().includes("buy")) els.lastAction.classList.add("positive");
+    else if (moodLastAction.toLowerCase().includes("sell")) els.lastAction.classList.add("negative");
+    else els.lastAction.classList.add("neutral");
+  }
 
   updateMoodHero(moodLiveMood, moodLiveScore);
-  renderMoodTradesFeed();
 }
 
 function parseMoodTradePayload(payload) {
@@ -2142,7 +2190,9 @@ function parseMoodTradePayload(payload) {
     payload.owner ||
     "";
 
-  const timestamp = payload.timestamp || payload.time || Date.now();
+  const name = payload.name || payload.tokenName || "";
+  const symbol = payload.symbol || payload.ticker || "";
+  const image = payload.image || payload.imageUrl || payload.logo || "";
 
   return {
     side,
@@ -2150,13 +2200,23 @@ function parseMoodTradePayload(payload) {
     usdValue,
     tokenAmount,
     trader,
-    time: new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    name,
+    symbol,
+    image
   };
 }
 
 function registerMoodTrade(rawTrade) {
   const trade = parseMoodTradePayload(rawTrade);
   if (!trade) return;
+
+  if (trade.name || trade.symbol || trade.image) {
+    updateMoodTokenMeta({
+      name: trade.name,
+      symbol: trade.symbol,
+      image: trade.image
+    });
+  }
 
   if (trade.price > 0) {
     if (moodPrice <= 0) {
@@ -2179,25 +2239,37 @@ function registerMoodTrade(rawTrade) {
   }
 
   moodTrades.unshift(trade);
-  if (moodTrades.length > MOOD_MAX_TRADES) {
-    moodTrades = moodTrades.slice(0, MOOD_MAX_TRADES);
+  if (moodTrades.length > 24) {
+    moodTrades = moodTrades.slice(0, 24);
   }
 
   updateMoodUI();
 }
 
-function connectMoodSocket() {
-  const els = getMoodTokenElements();
-  if (!els.section) return;
-  if (!MOOD_CA || MOOD_CA.includes("0000000000000000000000000000000000000000")) return;
-
+function cleanupMoodSocket() {
   clearTimeout(moodReconnectTimer);
 
   try {
-    if (moodSocket && (moodSocket.readyState === WebSocket.OPEN || moodSocket.readyState === WebSocket.CONNECTING)) {
-      return;
+    if (moodSocket) {
+      moodSocket.onopen = null;
+      moodSocket.onmessage = null;
+      moodSocket.onerror = null;
+      moodSocket.onclose = null;
+      moodSocket.close();
     }
+  } catch {}
 
+  moodSocket = null;
+}
+
+function connectMoodSocket() {
+  const els = getMoodTokenElements();
+  if (!els.section) return;
+  if (!MOOD_CA) return;
+
+  cleanupMoodSocket();
+
+  try {
     moodSocket = new WebSocket(MOOD_WS_URL);
 
     moodSocket.onopen = () => {
@@ -2206,7 +2278,9 @@ function connectMoodSocket() {
           method: "subscribeTokenTrade",
           keys: [MOOD_CA]
         }));
-      } catch {}
+      } catch (error) {
+        console.error("MOOD subscribe error:", error);
+      }
     };
 
     moodSocket.onmessage = (event) => {
@@ -2230,28 +2304,104 @@ function connectMoodSocket() {
     };
 
     moodSocket.onclose = () => {
-      moodReconnectTimer = setTimeout(connectMoodSocket, 2500);
+      clearTimeout(moodReconnectTimer);
+      moodReconnectTimer = setTimeout(() => {
+        if (MOOD_CA) connectMoodSocket();
+      }, 2500);
     };
   } catch (error) {
     console.error("MOOD WS connection error:", error);
-    moodReconnectTimer = setTimeout(connectMoodSocket, 2500);
+    clearTimeout(moodReconnectTimer);
+    moodReconnectTimer = setTimeout(() => {
+      if (MOOD_CA) connectMoodSocket();
+    }, 2500);
   }
 }
 
-function initMoodToken() {
-  const els = getMoodTokenElements();
-  if (!els.section) return;
+function resetMoodTokenState() {
+  moodTrades = [];
+  moodPrice = 0;
+  moodPrevPrice = 0;
+  moodLastAction = "Watching...";
+  moodBuyCount = 0;
+  moodSellCount = 0;
+  moodBuyVolume = 0;
+  moodSellVolume = 0;
+  moodLiveScore = 50;
+  moodLiveMood = getMoodByScore(50);
+}
 
-  if (els.ca) {
-    els.ca.textContent = MOOD_CA;
+function loadMoodTokenAddress(newAddress, meta = {}) {
+  const cleaned = String(newAddress || "").trim();
+
+  if (!cleaned) {
+    resetMoodTokenState();
+    cleanupMoodSocket();
+    updateMoodUI();
+    if (meta) updateMoodTokenMeta(meta);
+    return;
   }
+
+  MOOD_CA = cleaned;
+  resetMoodTokenState();
+  updateMoodTokenMeta(meta);
+  updateMoodUI();
+  connectMoodSocket();
+}
+
+async function tryLoadDefaultTrendingToken() {
+  // primero intenta endpoint propio si lo agregas luego
+  const ownApi = await fetchJson("/api/pumpfun-trending", null);
+
+  if (ownApi && Array.isArray(ownApi.tokens) && ownApi.tokens.length) {
+    const top = ownApi.tokens[0];
+    if (top?.address || top?.mint) {
+      isUsingDefaultTrending = true;
+      isUsingMoodToken = false;
+      loadMoodTokenAddress(top.address || top.mint, {
+        name: top.name || "Trending Token",
+        symbol: top.symbol || "---",
+        image: top.image || ""
+      });
+      return;
+    }
+  }
+
+  // fallback manual de pruebas
+  if (PUMP_TRENDING_FALLBACKS.length) {
+    isUsingDefaultTrending = true;
+    isUsingMoodToken = false;
+    loadMoodTokenAddress(PUMP_TRENDING_FALLBACKS[0], {
+      name: "Trending Pump.fun Token",
+      symbol: "---",
+      image: "/assets/logo/wojakmeter_logo.png"
+    });
+    return;
+  }
+
+  // si no hay nada, deja MOOD pending
+  isUsingDefaultTrending = false;
+  isUsingMoodToken = true;
+  updateMoodTokenMeta({
+    name: "MOOD",
+    symbol: "MOOD",
+    image: "/assets/logo/wojakmeter_logo.png"
+  });
+  updateMoodUI();
+}
+
+function setupMoodTokenControls() {
+  const els = getMoodTokenElements();
 
   if (els.copyBtn && !els.copyBtn.dataset.bound) {
     els.copyBtn.dataset.bound = "1";
     els.copyBtn.addEventListener("click", async () => {
+      const text = MOOD_CA || "";
+      if (!text) return;
+
       try {
-        await navigator.clipboard.writeText(MOOD_CA);
-        const original = els.copyBtn.textContent || "Copy";
+        await navigator.clipboard.writeText(text);
+        const original = els.copyBtn.textContent || "Copy CA";
         els.copyBtn.textContent = "Copied";
         setTimeout(() => {
           els.copyBtn.textContent = original;
@@ -2260,8 +2410,53 @@ function initMoodToken() {
     });
   }
 
-  updateMoodUI();
-  connectMoodSocket();
+  if (els.searchBtn && els.input && !els.searchBtn.dataset.bound) {
+    els.searchBtn.dataset.bound = "1";
+    els.searchBtn.addEventListener("click", () => {
+      const ca = String(els.input.value || "").trim();
+      if (!ca) return;
+
+      isUsingDefaultTrending = false;
+      isUsingMoodToken = false;
+
+      loadMoodTokenAddress(ca, {
+        name: "Custom Token",
+        symbol: "---",
+        image: "/assets/logo/wojakmeter_logo.png"
+      });
+    });
+  }
+
+  if (els.loadMoodBtn && !els.loadMoodBtn.dataset.bound) {
+    els.loadMoodBtn.dataset.bound = "1";
+    els.loadMoodBtn.addEventListener("click", () => {
+      if (!MOOD_MAIN_CA) {
+        alert("MOOD token launching soon 🚀");
+        return;
+      }
+
+      isUsingMoodToken = true;
+      isUsingDefaultTrending = false;
+
+      loadMoodTokenAddress(MOOD_MAIN_CA, {
+        name: "MOOD",
+        symbol: "MOOD",
+        image: "/assets/logo/wojakmeter_logo.png"
+      });
+    });
+  }
+}
+
+async function initMoodToken() {
+  const els = getMoodTokenElements();
+  if (!els.section) return;
+
+  if (els.ca) {
+    els.ca.textContent = MOOD_MAIN_CA || "Coming soon";
+  }
+
+  setupMoodTokenControls();
+  await tryLoadDefaultTrendingToken();
 }
 
 function setupButtons() {
@@ -2355,10 +2550,7 @@ function setupButtons() {
     renderScale();
     await loadGlobalMarket();
 
-    if (byId("moodSection")) {
-      updateMoodHero(moodLiveMood, moodLiveScore);
-      renderMoodTradesFeed();
-    }
+    updateMoodHero(moodLiveMood, moodLiveScore);
   });
 
   byId("shareMoodBtn")?.addEventListener("click", shareMoodOnX);
@@ -2527,8 +2719,8 @@ async function boot() {
   setupButtons();
   setupSocialExpand();
   setupPulsePanel();
-  initMoodToken();
 
+  await initMoodToken();
   await loadAll();
   startAutoRefresh();
 }
