@@ -73,6 +73,9 @@ let moodHistory = {
   "24h": []
 };
 
+// ===============================
+// APP STATE
+// ===============================
 let heroMode = HERO_MODE_RAW;
 
 let activeCoinSymbol = "BTC";
@@ -243,9 +246,10 @@ function setText(id, value) {
   if (el) el.textContent = value;
 }
 
-function setHtml(id, value) {
-  const el = byId(id);
-  if (el) el.innerHTML = value;
+function setAllText(id, value) {
+  qsa(`#${CSS.escape(id)}`).forEach((el) => {
+    el.textContent = value;
+  });
 }
 
 function setImage(el, path, fallback = "") {
@@ -257,6 +261,15 @@ function setImage(el, path, fallback = "") {
       el.src = fallback;
     };
   }
+}
+
+function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 // ===============================
@@ -969,11 +982,11 @@ function renderTicker(coins) {
     return `
       <div class="ticker-item">
         <div class="ticker-top">
-          <img class="ticker-logo" src="${logo}" alt="${symbol} logo">
-          <span class="ticker-price">${price}</span>
+          <img class="ticker-logo" src="${escapeHtml(logo)}" alt="${escapeHtml(symbol)} logo">
+          <span class="ticker-price">${escapeHtml(price)}</span>
         </div>
         <div class="ticker-bottom">
-          <span class="ticker-symbol">${symbol}</span>
+          <span class="ticker-symbol">${escapeHtml(symbol)}</span>
           <span class="${cls}">${sign}${change.toFixed(1)}%</span>
         </div>
       </div>
@@ -1194,16 +1207,16 @@ function createCoinCard(coin, isActive = false) {
   card.innerHTML = `
     <div class="coin-card-top">
       <div class="coin-main">
-        <img class="coin-logo" src="${coin.image || ""}" alt="${symbol} logo">
-        <div class="price">${formatCurrency(coin.current_price)}</div>
+        <img class="coin-logo" src="${escapeHtml(coin.image || "")}" alt="${escapeHtml(symbol)} logo">
+        <div class="price">${escapeHtml(formatCurrency(coin.current_price))}</div>
       </div>
     </div>
     <div class="coin-card-bottom">
-      <div class="symbol">${symbol}</div>
+      <div class="symbol">${escapeHtml(symbol)}</div>
       <div class="change ${change >= 0 ? "positive" : "negative"}">${formatPercent(change)}</div>
     </div>
     <div class="coin-emoji">
-      <img src="${getIconImagePath(style, mood.key)}" alt="${symbol} mood">
+      <img src="${escapeHtml(getIconImagePath(style, mood.key))}" alt="${escapeHtml(symbol)} mood">
     </div>
   `;
 
@@ -1230,7 +1243,7 @@ function createFallbackCard(title = "Unavailable") {
       </div>
     </div>
     <div class="coin-card-bottom">
-      <div class="symbol">${title}</div>
+      <div class="symbol">${escapeHtml(title)}</div>
       <div class="change neutral">--</div>
     </div>
   `;
@@ -1545,7 +1558,7 @@ function renderPulseStats() {
 
     return `
       <div class="pulse-row">
-        <img src="${getIconImagePath(style, key)}" width="18" height="18" alt="${key}">
+        <img src="${escapeHtml(getIconImagePath(style, key))}" width="18" height="18" alt="${escapeHtml(key)}">
         <div class="pulse-bar">
           <div
             class="pulse-bar-fill"
@@ -1972,7 +1985,7 @@ function getMoodTokenElements() {
     flow: byId("moodTokenFlow") || byId("moodFlow"),
     heroImg: byId("moodHeroImg"),
     heroScore: byId("moodTokenScore") || byId("moodHeroScore"),
-    heroMood: byId("moodTokenMood") || byId("moodHeroMood"),
+    heroMood: qsa("#moodTokenMood"),
     volatility: byId("moodTokenVolatility") || byId("moodVolatility"),
     lastAction: byId("moodTokenLastAction") || byId("moodLastAction"),
     badge: byId("moodTokenBadge"),
@@ -1982,6 +1995,7 @@ function getMoodTokenElements() {
     input: byId("tokenSearchInput"),
     searchBtn: byId("tokenSearchBtn"),
     loadMoodBtn: byId("loadMoodMain"),
+    source: byId("moodTokenSource"),
     feed: byId("moodTradesFeed"),
     backdrop: byId("moodChartBackdrop"),
     backdropLine: byId("moodChartLine"),
@@ -2030,6 +2044,10 @@ function updateMoodTokenMeta(meta = {}) {
   if (els.image) {
     els.image.src = moodTokenMeta.image || "/assets/logo/wojakmeter_logo.png";
   }
+
+  if (els.source) {
+    els.source.textContent = isUsingMoodToken ? MOOD_MAIN_LABEL : "Pump.fun";
+  }
 }
 
 function computeMoodTradeScore() {
@@ -2044,15 +2062,11 @@ function computeMoodTradeScore() {
     ? (moodBuyVolume - moodSellVolume) / totalVolume
     : 0;
 
-  const priceChangePct =
-    moodPrevPrice > 0 && moodPrice > 0
-      ? ((moodPrice - moodPrevPrice) / moodPrevPrice) * 100
-      : 0;
-
-  const volatilityValue = Math.min(100, Math.abs(priceChangePct) * 5.5);
+  const tfChange = getMoodTimeframeChange(moodTokenTimeframe);
+  const volatilityValue = Math.min(100, Math.abs(tfChange) * 5.5);
   const mergedFlow = flowBias * 0.45 + volumeBias * 0.55;
 
-  return getTokenReactionScore(priceChangePct, mergedFlow, volatilityValue);
+  return getTokenReactionScore(tfChange, mergedFlow, volatilityValue);
 }
 
 function applyMoodHeroImpulse(side, usdValue) {
@@ -2101,9 +2115,11 @@ function updateMoodHero(mood, score) {
 
   if (els.heroScore) els.heroScore.textContent = String(roundScore(score));
 
-  if (els.heroMood) {
-    els.heroMood.textContent = mood.name;
-    els.heroMood.className = `mood-${mood.key}`;
+  if (Array.isArray(els.heroMood)) {
+    els.heroMood.forEach((node) => {
+      node.textContent = mood.name;
+      node.className = `mood-${mood.key}`;
+    });
   }
 
   if (els.badge) {
@@ -2148,7 +2164,7 @@ function renderMoodTradesFeed() {
       <div class="mood-trade ${trade.side}">
         <strong>${trade.side.toUpperCase()}</strong>
         <span>${trade.usdValue > 0 ? formatCurrency(trade.usdValue) : "$0.00"}</span>
-        <span>${shortenAddress(trade.trader)}</span>
+        <span>${escapeHtml(shortenAddress(trade.trader))}</span>
       </div>
     `;
   }).join("");
@@ -2232,10 +2248,7 @@ function updateMoodUI() {
   const els = getMoodTokenElements();
   if (!els.section) return;
 
-  const priceChangePct =
-    moodPrevPrice > 0 && moodPrice > 0
-      ? ((moodPrice - moodPrevPrice) / moodPrevPrice) * 100
-      : getMoodTimeframeChange(moodTokenTimeframe);
+  const priceChangePct = getMoodTimeframeChange(moodTokenTimeframe);
 
   const totalVolume = moodBuyVolume + moodSellVolume;
   const marketCapApprox = moodPrice > 0 ? moodPrice * 1000000000 : 0;
@@ -2297,6 +2310,7 @@ function parseMoodTradePayload(payload) {
     payload.side ||
     payload.type ||
     payload.tradeType ||
+    payload.eventType ||
     ""
   ).toLowerCase();
 
@@ -2307,6 +2321,7 @@ function parseMoodTradePayload(payload) {
     payload.price ??
     payload.usdPrice ??
     payload.marketCapUsdPerToken ??
+    payload.tokenPrice ??
     0,
     0
   );
@@ -2316,6 +2331,7 @@ function parseMoodTradePayload(payload) {
     payload.amount ??
     payload.baseAmount ??
     payload.tokens ??
+    payload.token_quantity ??
     0,
     0
   );
@@ -2325,6 +2341,7 @@ function parseMoodTradePayload(payload) {
     payload.volumeUsd ??
     payload.usdVolume ??
     payload.notionalUsd ??
+    payload.totalUsd ??
     (price > 0 && tokenAmount > 0 ? price * tokenAmount : 0),
     0
   );
@@ -2334,11 +2351,14 @@ function parseMoodTradePayload(payload) {
     payload.wallet ||
     payload.user ||
     payload.owner ||
+    payload.maker ||
     "";
 
-  const name = payload.name || payload.tokenName || "";
-  const symbol = payload.symbol || payload.ticker || "";
-  const image = payload.image || payload.imageUrl || payload.logo || "";
+  const name = payload.name || payload.tokenName || payload.token_name || "";
+  const symbol = payload.symbol || payload.ticker || payload.tokenSymbol || "";
+  const image = payload.image || payload.imageUrl || payload.logo || payload.uri || "";
+
+  if (!price && !usdValue && !sideText) return null;
 
   return {
     side,
@@ -2453,10 +2473,22 @@ function connectMoodSocket() {
 
     moodSocket.onopen = () => {
       try {
-        moodSocket.send(JSON.stringify({
-          method: "subscribeTokenTrade",
-          keys: [MOOD_CA]
-        }));
+        const payloadA = {
+          method: "subscribeTokenTrades",
+          params: { mint: MOOD_CA }
+        };
+        moodSocket.send(JSON.stringify(payloadA));
+
+        setTimeout(() => {
+          try {
+            if (!moodSocket || moodSocket.readyState !== WebSocket.OPEN) return;
+            const payloadB = {
+              method: "subscribeTokenTrade",
+              keys: [MOOD_CA]
+            };
+            moodSocket.send(JSON.stringify(payloadB));
+          } catch {}
+        }, 250);
       } catch (error) {
         console.error("MOOD subscribe error:", error);
       }
@@ -2464,9 +2496,36 @@ function connectMoodSocket() {
 
     moodSocket.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data);
-        if (Array.isArray(payload)) payload.forEach(registerMoodTrade);
-        else registerMoodTrade(payload);
+        const data = JSON.parse(event.data);
+        if (!data) return;
+
+        if (Array.isArray(data)) {
+          data.forEach(registerMoodTrade);
+          return;
+        }
+
+        if (
+          data.txType ||
+          data.side ||
+          data.tradeType ||
+          data.type ||
+          data.price ||
+          data.priceUsd ||
+          data.volumeUsd ||
+          data.vUsd
+        ) {
+          registerMoodTrade(data);
+          return;
+        }
+
+        if (Array.isArray(data.data)) {
+          data.data.forEach(registerMoodTrade);
+          return;
+        }
+
+        if (data.data && typeof data.data === "object") {
+          registerMoodTrade(data.data);
+        }
       } catch (error) {
         console.error("MOOD WS parse error:", error);
       }
@@ -2574,6 +2633,63 @@ async function tryLoadDefaultTrendingToken() {
   updateMoodUI();
 }
 
+function ensureMoodBackdropMarkup() {
+  const stage = byId("moodStage");
+  if (!stage) return;
+
+  if (byId("moodChartBackdrop")) return;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("id", "moodChartBackdrop");
+  svg.setAttribute("viewBox", "0 0 900 280");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.classList.add("hidden");
+  svg.style.position = "absolute";
+  svg.style.inset = "0";
+  svg.style.width = "100%";
+  svg.style.height = "100%";
+  svg.style.opacity = "0.18";
+  svg.style.pointerEvents = "none";
+  svg.style.zIndex = "1";
+
+  const area = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  area.setAttribute("id", "moodChartArea");
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  line.setAttribute("id", "moodChartLine");
+  line.style.fill = "none";
+  line.style.strokeWidth = "3";
+  line.style.strokeLinecap = "round";
+  line.style.strokeLinejoin = "round";
+
+  svg.appendChild(area);
+  svg.appendChild(line);
+  stage.insertBefore(svg, stage.firstChild);
+}
+
+function ensureMoodTimeframeMarkup() {
+  const visual = qs(".mood-token-visual");
+  if (!visual || byId("moodTokenTimeframes")) return;
+
+  const row = document.createElement("div");
+  row.className = "timeframes";
+  row.id = "moodTokenTimeframes";
+  row.style.marginTop = "2px";
+  row.style.justifyContent = "center";
+
+  row.innerHTML = TOKEN_ALLOWED_TIMEFRAMES.map((tf) => {
+    const active = tf === moodTokenTimeframe ? "active" : "";
+    return `<button type="button" class="${active}" data-token-timeframe="${tf}">${tf}</button>`;
+  }).join("");
+
+  const note = qs(".mood-token-note");
+  if (note && note.parentNode === visual) {
+    visual.insertBefore(row, note);
+  } else {
+    visual.appendChild(row);
+  }
+}
+
 function setupMoodTokenControls() {
   const els = getMoodTokenElements();
 
@@ -2641,6 +2757,9 @@ function setupMoodTokenControls() {
   }
 
   qsa("[data-token-timeframe]").forEach((btn) => {
+    if (btn.dataset.boundTf) return;
+    btn.dataset.boundTf = "1";
+
     btn.addEventListener("click", () => {
       const tf = btn.dataset.tokenTimeframe;
       if (!TOKEN_ALLOWED_TIMEFRAMES.includes(tf)) return;
@@ -2654,7 +2773,11 @@ async function initMoodToken() {
   const els = getMoodTokenElements();
   if (!els.section) return;
 
+  ensureMoodBackdropMarkup();
+  ensureMoodTimeframeMarkup();
+
   if (els.ca) els.ca.textContent = MOOD_MAIN_CA || "Coming soon";
+
   setupMoodTokenControls();
   await tryLoadDefaultTrendingToken();
 }
@@ -2683,9 +2806,9 @@ function renderScale() {
     item.className = "scale-item";
     item.innerHTML = `
       <div class="scale-face">
-        <img src="${getIconImagePath(style, mood.key)}" alt="${mood.name}">
+        <img src="${escapeHtml(getIconImagePath(style, mood.key))}" alt="${escapeHtml(mood.name)}">
       </div>
-      <strong>${mood.name}</strong>
+      <strong>${escapeHtml(mood.name)}</strong>
     `;
     grid.appendChild(item);
   });
