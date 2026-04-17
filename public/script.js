@@ -1,4 +1,4 @@
- window.onerror = function (msg, url, line, col) {
+window.onerror = function (msg, url, line, col) {
   console.error("WojakMeter Error:", msg, url, line, col);
   return false;
 };
@@ -55,6 +55,11 @@ let moodSellVolume = 0;
 let moodLiveScore = 50;
 let moodLiveMood = getMoodByScore(50);
 let moodTokenTimeframe = "5m";
+let moodBaseScore = 50;
+let moodBaseMood = getMoodByScore(50);
+let moodImpulseTimeout = null;
+let moodIsImpulseActive = false;
+
 let moodTokenMeta = {
   name: "Trending Pump.fun Token",
   symbol: "---",
@@ -1236,7 +1241,7 @@ function createCoinCard(coin, isActive = false) {
     </div>
     <div class="coin-card-bottom">
       <div class="symbol">${escapeHtml(symbol)}</div>
-      <div class="change ${change >= 0 ? "positive" : "negative"}">${formatPercent(change)}</div>
+      <div class="change ${change > 0 ? "positive" : change < 0 ? "negative" : "neutral"}">${formatPercent(change)}</div>
     </div>
     <div class="coin-emoji">
       <img src="${escapeHtml(getIconImagePath(style, mood.key))}" alt="${escapeHtml(symbol)} mood">
@@ -1551,7 +1556,11 @@ async function loadCoinDetails() {
     const rawPrices = chartResponse?.prices;
     if (Array.isArray(rawPrices) && rawPrices.length >= 2) {
       const prices = rawPrices
-        .map((entry) => (Array.isArray(entry) ? Number(entry[1]) : Number(entry)))
+        .map((entry) => {
+          if (Array.isArray(entry)) return Number(entry[1]);
+          if (entry && typeof entry === "object") return Number(entry.price ?? entry.value ?? entry.close);
+          return Number(entry);
+        })
         .filter((n) => Number.isFinite(n));
 
       if (prices.length >= 2) drawChart(prices);
@@ -2031,12 +2040,37 @@ function getMoodTokenElements() {
 
 function getMoodTradeIntensity(usdValue) {
   const v = Number(usdValue || 0);
-  if (v >= 100000) return 1;
-  if (v >= 50000) return 0.85;
-  if (v >= 10000) return 0.65;
-  if (v >= 2500) return 0.45;
-  if (v >= 500) return 0.25;
-  return 0.12;
+
+  if (v >= 25000) return "large";
+  if (v >= 5000) return "medium";
+  if (v >= 500) return "small";
+  return "tiny";
+}
+
+function getImpulseMoodFromTrade(side, usdValue) {
+  const size = getMoodTradeIntensity(usdValue);
+
+  if (side === "buy") {
+    if (size === "large") return getMoodByScore(92);
+    if (size === "medium") return getMoodByScore(75);
+    return getMoodByScore(64);
+  }
+
+  if (size === "large") return getMoodByScore(12);
+  if (size === "medium") return getMoodByScore(28);
+  return getMoodByScore(40);
+}
+
+function getBaseMoodFromTimeframeChange(changePct) {
+  const value = Number(changePct || 0);
+
+  if (value >= 18) return getMoodByScore(92);
+  if (value >= 8) return getMoodByScore(75);
+  if (value >= 2) return getMoodByScore(64);
+  if (value > -2) return getMoodByScore(50);
+  if (value > -8) return getMoodByScore(40);
+  if (value > -18) return getMoodByScore(28);
+  return getMoodByScore(12);
 }
 
 function getTokenReactionScore(priceChangePct, flowBias, volatilityValue) {
@@ -2080,22 +2114,8 @@ function updateMoodTokenMeta(meta = {}) {
 }
 
 function computeMoodTradeScore() {
-  const totalCount = moodBuyCount + moodSellCount;
-  const totalVolume = moodBuyVolume + moodSellVolume;
-
-  const flowBias = totalCount > 0
-    ? (moodBuyCount - moodSellCount) / totalCount
-    : 0;
-
-  const volumeBias = totalVolume > 0
-    ? (moodBuyVolume - moodSellVolume) / totalVolume
-    : 0;
-
   const tfChange = getMoodTimeframeChange(moodTokenTimeframe);
-  const volatilityValue = Math.min(100, Math.abs(tfChange) * 5.5);
-  const mergedFlow = flowBias * 0.45 + volumeBias * 0.55;
-
-  return getTokenReactionScore(tfChange, mergedFlow, volatilityValue);
+  return roundScore(normalizeChangeToScore(tfChange, 2.4));
 }
 
 function applyMoodHeroImpulse(side, usdValue) {
@@ -2104,7 +2124,15 @@ function applyMoodHeroImpulse(side, usdValue) {
 
   if (!heroImg || !stage) return;
 
-  const intensity = getMoodTradeIntensity(usdValue || 250);
+  const size = getMoodTradeIntensity(usdValue);
+  const intensityMap = {
+    tiny: 0.18,
+    small: 0.35,
+    medium: 0.65,
+    large: 1
+  };
+
+  const intensity = intensityMap[size] || 0.25;
 
   stage.style.setProperty("--token-react-scale", String(1 + intensity * 0.12));
   stage.style.setProperty("--token-react-shift", `${Math.max(6, Math.round(intensity * 16))}px`);
@@ -2130,30 +2158,64 @@ function applyMoodHeroImpulse(side, usdValue) {
   }, 900);
 }
 
-function updateMoodHero(mood, score) {
+function triggerMoodImpulse(side, usdValue) {
+  const impulseMood = getImpulseMoodFromTrade(side, usdValue);
+  moodIsImpulseActive = true;
+
+  clearTimeout(moodImpulseTimeout);
+
+  updateMoodHero(impulseMood, moodBaseScore, {
+    forceMood: true,
+    side,
+    flash: true
+  });
+
+  applyMoodHeroImpulse(side, usdValue);
+
+  const stage = byId("moodStage");
+  if (stage) {
+    stage.classList.remove("trade-buy-flash", "trade-sell-flash");
+    void stage.offsetWidth;
+    stage.classList.add(side === "buy" ? "trade-buy-flash" : "trade-sell-flash");
+  }
+
+  moodImpulseTimeout = setTimeout(() => {
+    moodIsImpulseActive = false;
+    updateMoodHero(moodBaseMood, moodBaseScore, { forceMood: true });
+    if (stage) {
+      stage.classList.remove("trade-buy-flash", "trade-sell-flash");
+    }
+  }, 1200);
+}
+
+function updateMoodHero(mood, score, options = {}) {
+  const { forceMood = false, side = "", flash = false } = options;
   const els = getMoodTokenElements();
   const style = getCurrentStyle();
 
-  if (els.heroImg) {
-    els.heroImg.className = `mood-hero-img ${mood.anim}`;
-    setImage(
-      els.heroImg,
-      getHeroImagePath(style, mood.key),
-      getHeroImagePath(DEFAULT_STYLE, mood.key)
-    );
+  if (!els.heroImg) return;
+
+  els.heroImg.className = `mood-hero-img ${mood.anim}`;
+
+  if (flash) {
+    els.heroImg.classList.add(side === "buy" ? "token-buy-burst" : "token-sell-shake");
+    clearTimeout(els.heroImg.__flashTimer);
+    els.heroImg.__flashTimer = setTimeout(() => {
+      els.heroImg?.classList.remove("token-buy-burst", "token-sell-shake");
+    }, 800);
   }
 
-  if (els.heroScore) {
-    els.heroScore.textContent = String(roundScore(score));
-    els.heroScore.classList.remove("positive", "negative", "neutral");
+  setImage(
+    els.heroImg,
+    getHeroImagePath(style, mood.key),
+    getHeroImagePath(DEFAULT_STYLE, mood.key)
+  );
 
-    if (mood.key === "euphoria" || mood.key === "content" || mood.key === "optimism") {
-      els.heroScore.classList.add("positive");
-    } else if (mood.key === "frustration" || mood.key === "concern" || mood.key === "doubt") {
-      els.heroScore.classList.add("negative");
-    } else {
-      els.heroScore.classList.add("neutral");
-    }
+  if (els.heroScore) {
+    const tfChange = getMoodTimeframeChange(moodTokenTimeframe);
+    els.heroScore.textContent = formatPercent(tfChange);
+    els.heroScore.classList.remove("positive", "negative", "neutral");
+    applyPolarityClass(els.heroScore, tfChange);
   }
 
   els.heroMoodNodes.forEach((node) => {
@@ -2182,6 +2244,7 @@ function updateMoodHero(mood, score) {
     );
     stage.classList.add(mood.key);
     stage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
+    stage.dataset.mood = mood.key;
   }
 
   if (glow) {
@@ -2211,7 +2274,7 @@ function renderMoodTradesFeed() {
     return `
       <div class="mood-trade ${trade.side}">
         <strong>${sideLabel}</strong>
-        <span>${amountText}</span>
+        <span class="${trade.side === "buy" ? "positive" : "negative"}">${amountText}</span>
         <span>${escapeHtml(shortenAddress(trade.trader))}</span>
       </div>
     `;
@@ -2254,8 +2317,7 @@ function drawMoodBackdrop() {
 
   const points = prices.map((price, i) => {
     const x = (i / (prices.length - 1)) * w;
-    const y =
-      topPad + (1 - ((price - min) / range)) * (h - topPad - bottomPad);
+    const y = topPad + (1 - ((price - min) / range)) * (h - topPad - bottomPad);
     return [x, y];
   });
 
@@ -2267,12 +2329,18 @@ function drawMoodBackdrop() {
 
   const first = prices[0];
   const last = prices[prices.length - 1];
-  const positive = last >= first;
+  const changePct = first > 0 ? ((last - first) / first) * 100 : 0;
 
-  const strokeColor = positive ? "#4dff88" : "#ff3b4d";
-  const fillColor = positive
-    ? "rgba(77,255,136,0.10)"
-    : "rgba(255,59,77,0.10)";
+  let strokeColor = "rgba(207,215,227,0.48)";
+  let fillColor = "rgba(207,215,227,0.08)";
+
+  if (changePct > 0.15) {
+    strokeColor = "#4dff88";
+    fillColor = "rgba(77,255,136,0.10)";
+  } else if (changePct < -0.15) {
+    strokeColor = "#ff3b4d";
+    fillColor = "rgba(255,59,77,0.10)";
+  }
 
   els.backdropLine.setAttribute("d", path);
   els.backdropArea.setAttribute("d", area);
@@ -2305,13 +2373,14 @@ function updateMoodUI() {
   if (!els.section) return;
 
   const priceChangePct = getMoodTimeframeChange(moodTokenTimeframe);
-
   const totalVolume = moodBuyVolume + moodSellVolume;
   const marketCapApprox = moodPrice > 0 ? moodPrice * 1000000000 : 0;
   const volatilityValue = Math.min(99.99, Math.abs(priceChangePct) * 4.2);
 
-  moodLiveScore = computeMoodTradeScore();
-  moodLiveMood = getMoodByScore(moodLiveScore);
+  moodBaseScore = computeMoodTradeScore();
+  moodBaseMood = getBaseMoodFromTimeframeChange(priceChangePct);
+  moodLiveScore = moodBaseScore;
+  moodLiveMood = moodBaseMood;
 
   if (els.ca) els.ca.textContent = MOOD_CA || "Coming soon";
 
@@ -2327,7 +2396,8 @@ function updateMoodUI() {
 
   if (els.volume) {
     els.volume.textContent = totalVolume > 0 ? formatCurrencyCompact(totalVolume) : "Loading live...";
-    applyPolarityClass(els.volume, totalVolume > 0 ? 1 : 0);
+    els.volume.classList.remove("positive", "negative", "neutral");
+    els.volume.classList.add("neutral");
   }
 
   if (els.flow) {
@@ -2370,7 +2440,10 @@ function updateMoodUI() {
     }
   }
 
-  updateMoodHero(moodLiveMood, moodLiveScore);
+  if (!moodIsImpulseActive) {
+    updateMoodHero(moodBaseMood, moodBaseScore, { forceMood: true });
+  }
+
   renderMoodTradesFeed();
   drawMoodBackdrop();
   renderMoodTimeframeButtons();
@@ -2537,7 +2610,6 @@ function registerMoodTrade(rawTrade) {
       moodPrevPrice = moodPrice;
       moodPrice = trade.price;
     }
-
     registerPriceIntoTimeframes(trade.price);
   } else if (trade.marketCapUsd > 0) {
     const syntheticPrice = trade.marketCapUsd / 1000000000;
@@ -2549,7 +2621,6 @@ function registerMoodTrade(rawTrade) {
         moodPrevPrice = moodPrice;
         moodPrice = syntheticPrice;
       }
-
       registerPriceIntoTimeframes(syntheticPrice);
     }
   }
@@ -2557,11 +2628,11 @@ function registerMoodTrade(rawTrade) {
   if (trade.side === "buy") {
     moodBuyCount += 1;
     moodBuyVolume += trade.usdValue;
-    moodLastAction = trade.usdValue > 1000 ? "Strong buy" : "Buy activity";
+    moodLastAction = trade.usdValue >= 5000 ? "Strong buy" : "Buy activity";
   } else {
     moodSellCount += 1;
     moodSellVolume += trade.usdValue;
-    moodLastAction = trade.usdValue > 1000 ? "Strong sell" : "Sell activity";
+    moodLastAction = trade.usdValue >= 5000 ? "Strong sell" : "Sell activity";
   }
 
   moodTrades.unshift(trade);
@@ -2570,7 +2641,7 @@ function registerMoodTrade(rawTrade) {
   }
 
   updateMoodUI();
-  applyMoodHeroImpulse(trade.side, trade.usdValue || 250);
+  triggerMoodImpulse(trade.side, trade.usdValue || 250);
 }
 
 function cleanupMoodSocket() {
@@ -2692,6 +2763,11 @@ function resetMoodTokenState() {
   moodSellVolume = 0;
   moodLiveScore = 50;
   moodLiveMood = getMoodByScore(50);
+  moodBaseScore = 50;
+  moodBaseMood = getMoodByScore(50);
+  moodIsImpulseActive = false;
+  clearTimeout(moodImpulseTimeout);
+
   moodHistory = {
     "1m": [],
     "5m": [],
@@ -2800,7 +2876,7 @@ function ensureMoodBackdropMarkup() {
   if (byId("moodChartBackdrop")) return;
 
   const wrapper = document.createElement("div");
-   wrapper.id = "moodChartBackdrop";
+  wrapper.id = "moodChartBackdrop";
   wrapper.className = "mood-chart-backdrop hidden";
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
