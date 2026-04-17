@@ -53,6 +53,7 @@ export default async function handler(req, res) {
     const totalSupply =
       Number(json?.total_supply) ||
       Number(json?.supply) ||
+      Number(json?.token_supply) ||
       0;
 
     const marketCap =
@@ -122,7 +123,10 @@ export default async function handler(req, res) {
       }
     });
   } catch (err) {
-    console.error("pumpfun-token handler error:", { ca, error: String(err?.message || err) });
+    console.error("pumpfun-token handler error:", {
+      ca,
+      error: String(err?.message || err)
+    });
 
     return res.status(200).json({
       error: "Handler failed",
