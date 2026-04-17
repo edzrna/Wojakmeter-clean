@@ -443,27 +443,15 @@ button,
 }
 
 @keyframes heroPulse {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(1.06);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  35% { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
 
 @keyframes heroReact {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.03);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  45% { transform: scale(1.03); }
+  100% { transform: scale(1); }
 }
 
 .hero-social-wrapper {
@@ -661,33 +649,13 @@ button,
   transition: color 0.25s ease;
 }
 
-.mood-neutral {
-  color: #ffffff;
-}
-
-.mood-optimism {
-  color: #a6ffc4;
-}
-
-.mood-content {
-  color: #7cffaa;
-}
-
-.mood-euphoria {
-  color: #4dff88;
-}
-
-.mood-doubt {
-  color: #ff9da6;
-}
-
-.mood-concern {
-  color: #ff6c79;
-}
-
-.mood-frustration {
-  color: #ff3b4d;
-}
+.mood-neutral { color: #ffffff; }
+.mood-optimism { color: #a6ffc4; }
+.mood-content { color: #7cffaa; }
+.mood-euphoria { color: #4dff88; }
+.mood-doubt { color: #ff9da6; }
+.mood-concern { color: #ff6c79; }
+.mood-frustration { color: #ff3b4d; }
 
 .hero-score {
   font-family: var(--font-ui);
@@ -1077,51 +1045,19 @@ button,
   stroke: #ff3b4d;
 }
 
-.heartbeat-euphoria .heartbeat-heart {
-  animation-duration: 0.75s;
-}
-
-.heartbeat-content .heartbeat-heart {
-  animation-duration: 1s;
-}
-
-.heartbeat-optimism .heartbeat-heart {
-  animation-duration: 1.15s;
-}
-
-.heartbeat-neutral .heartbeat-heart {
-  animation-duration: 1.3s;
-}
-
-.heartbeat-doubt .heartbeat-heart {
-  animation-duration: 1.45s;
-}
-
-.heartbeat-concern .heartbeat-heart {
-  animation-duration: 1.1s;
-}
-
-.heartbeat-frustration .heartbeat-heart {
-  animation-duration: 0.68s;
-}
+.heartbeat-euphoria .heartbeat-heart { animation-duration: 0.75s; }
+.heartbeat-content .heartbeat-heart { animation-duration: 1s; }
+.heartbeat-optimism .heartbeat-heart { animation-duration: 1.15s; }
+.heartbeat-neutral .heartbeat-heart { animation-duration: 1.3s; }
+.heartbeat-doubt .heartbeat-heart { animation-duration: 1.45s; }
+.heartbeat-concern .heartbeat-heart { animation-duration: 1.1s; }
+.heartbeat-frustration .heartbeat-heart { animation-duration: 0.68s; }
 
 @keyframes heartBeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  25% {
-    transform: scale(1.1);
-  }
-
-  40% {
-    transform: scale(0.96);
-  }
-
-  60% {
-    transform: scale(1.14);
-  }
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  40% { transform: scale(0.96); }
+  60% { transform: scale(1.14); }
 }
 
 /* ===== SECTION HEADERS ===== */
@@ -2086,6 +2022,7 @@ pre.studio-output {
   font-family: var(--font-display);
   font-size: 1.12rem;
   line-height: 1.15;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
 }
 
 .mood-token-visual {
@@ -2180,6 +2117,7 @@ pre.studio-output {
   color: var(--title);
   font-family: var(--font-display);
   font-size: 1.05rem;
+  transition: color 0.25s ease;
 }
 
 .mood-token-score-row {
@@ -2211,6 +2149,7 @@ pre.studio-output {
   color: var(--title);
   font-family: var(--font-display);
   font-size: 1.08rem;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
 }
 
 .mood-token-note {
@@ -2273,6 +2212,180 @@ pre.studio-output {
 
 .mood-stage.frustration .mood-stage-glow {
   background: radial-gradient(circle, rgba(255,59,77,0.25) 0%, transparent 70%);
+}
+
+/* ===== GLOBAL POLARITY HELPERS ===== */
+
+.positive {
+  color: var(--green) !important;
+}
+
+.negative {
+  color: var(--red) !important;
+}
+
+.neutral {
+  color: #aab4c5 !important;
+}
+
+.mood-stat-box strong.positive,
+.mood-token-score-box strong.positive,
+#moodChange.positive,
+#moodTokenFlow.positive,
+#moodTokenLastAction.positive,
+#moodTokenPrice.positive,
+#moodTokenMarketCap.positive,
+#moodTokenVolume.positive,
+#moodTokenScore.positive {
+  color: var(--green) !important;
+  text-shadow: 0 0 10px rgba(77, 255, 136, 0.12);
+}
+
+.mood-stat-box strong.negative,
+.mood-token-score-box strong.negative,
+#moodChange.negative,
+#moodTokenFlow.negative,
+#moodTokenLastAction.negative,
+#moodTokenPrice.negative,
+#moodTokenMarketCap.negative,
+#moodTokenVolume.negative,
+#moodTokenScore.negative {
+  color: var(--red) !important;
+  text-shadow: 0 0 10px rgba(255, 59, 77, 0.12);
+}
+
+.mood-stat-box strong.neutral,
+.mood-token-score-box strong.neutral,
+#moodChange.neutral,
+#moodTokenFlow.neutral,
+#moodTokenLastAction.neutral,
+#moodTokenPrice.neutral,
+#moodTokenMarketCap.neutral,
+#moodTokenVolume.neutral,
+#moodTokenScore.neutral {
+  color: #cfd7e3 !important;
+}
+
+/* ===== MOOD BACKDROP / REACTION / FEED ===== */
+
+.mood-chart-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.mood-chart-backdrop.hidden {
+  display: none;
+}
+
+.mood-chart-backdrop svg {
+  width: 100%;
+  height: 100%;
+}
+
+#moodChartLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#moodChartArea {
+  fill: rgba(77, 255, 136, 0.08);
+}
+
+.token-buy-burst {
+  animation: tokenBuyBurst 0.55s ease;
+}
+
+.token-sell-shake {
+  animation: tokenSellShake 0.55s ease;
+}
+
+@keyframes tokenBuyBurst {
+  0% { transform: scale(1); }
+  35% { transform: scale(var(--token-react-scale, 1.08)); }
+  65% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tokenSellShake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(calc(var(--token-react-shift, 8px) * -1)); }
+  40% { transform: translateX(var(--token-react-shift, 8px)); }
+  60% { transform: translateX(calc(var(--token-react-shift, 8px) * -0.8)); }
+  80% { transform: translateX(calc(var(--token-react-shift, 8px) * 0.8)); }
+  100% { transform: translateX(0); }
+}
+
+.mood-trades-feed {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.mood-trade {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,0.02);
+}
+
+.mood-trade strong {
+  min-width: 40px;
+  letter-spacing: 0.04em;
+}
+
+.mood-trade span:nth-child(2) {
+  font-weight: 700;
+}
+
+.mood-trade.buy {
+  color: var(--green);
+  border-color: rgba(77,255,136,0.18);
+  background: linear-gradient(180deg, rgba(77,255,136,0.05), rgba(77,255,136,0.015));
+}
+
+.mood-trade.sell {
+  color: var(--red);
+  border-color: rgba(255,59,77,0.18);
+  background: linear-gradient(180deg, rgba(255,59,77,0.05), rgba(255,59,77,0.015));
+}
+
+.mood-empty-feed {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 10px;
+}
+
+/* ===== MOOD BADGE / SCORE POLARITY ===== */
+
+.mood-token-badge.mood-euphoria strong,
+.mood-token-badge.mood-content strong,
+.mood-token-badge.mood-optimism strong {
+  color: var(--green);
+}
+
+.mood-token-badge.mood-frustration strong,
+.mood-token-badge.mood-concern strong,
+.mood-token-badge.mood-doubt strong {
+  color: var(--red);
+}
+
+.mood-token-badge.mood-neutral strong {
+  color: #ffffff;
 }
 
 /* ===== EMOTION PULSE FLOATING ===== */
@@ -2608,80 +2721,36 @@ pre.studio-output {
 }
 
 @keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 @keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.04);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
 }
 
 @keyframes shake {
-  0% {
-    transform: translate(0, 0);
-  }
-
-  25% {
-    transform: translate(-3px, 1px);
-  }
-
-  50% {
-    transform: translate(3px, -1px);
-  }
-
-  75% {
-    transform: translate(-3px, -1px);
-  }
-
-  100% {
-    transform: translate(0, 0);
-  }
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 1px); }
+  50% { transform: translate(3px, -1px); }
+  75% { transform: translate(-3px, -1px); }
+  100% { transform: translate(0, 0); }
 }
 
 @keyframes tilt {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-
-  25% {
-    transform: rotate(-3deg);
-  }
-
-  75% {
-    transform: rotate(3deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
 }
 
 @keyframes blink {
-  0%,
-  96%,
-  100% {
-    opacity: 1;
-  }
-
-  97%,
-  99% {
-    opacity: 0.88;
-  }
+  0%, 96%, 100% { opacity: 1; }
+  97%, 99% { opacity: 0.88; }
 }
 
 @keyframes moodGlowPulse {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
     opacity: 0.82;
   }
@@ -3369,95 +3438,16 @@ pre.studio-output {
     font-size: 0.82rem;
   }
 
-.mood-chart-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: 0.34;
-  pointer-events: none;
-}
+  .mood-trade {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
 
-.mood-chart-backdrop.hidden {
-  display: none;
-}
+  .mood-trade strong {
+    min-width: 36px;
+  }
 
-.mood-chart-backdrop svg {
-  width: 100%;
-  height: 100%;
-}
-
-#moodChartLine {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-#moodChartArea {
-  fill: rgba(77, 255, 136, 0.08);
-}
-
-.token-buy-burst {
-  animation: tokenBuyBurst 0.55s ease;
-}
-
-.token-sell-shake {
-  animation: tokenSellShake 0.55s ease;
-}
-
-@keyframes tokenBuyBurst {
-  0% { transform: scale(1); }
-  35% { transform: scale(var(--token-react-scale, 1.06)); }
-  65% { transform: scale(0.98); }
-  100% { transform: scale(1); }
-}
-
-@keyframes tokenSellShake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(calc(var(--token-react-shift, 6px) * -1)); }
-  40% { transform: translateX(var(--token-react-shift, 6px)); }
-  60% { transform: translateX(calc(var(--token-react-shift, 6px) * -0.8)); }
-  80% { transform: translateX(calc(var(--token-react-shift, 6px) * 0.8)); }
-  100% { transform: translateX(0); }
-}
-
-.mood-trades-feed {
-  max-height: 160px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-right: 4px;
-}
-
-.mood-trade {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  border: 1px solid var(--line-soft);
-  background: rgba(255,255,255,0.02);
-}
-
-.mood-trade.buy {
-  color: var(--green);
-  border-color: rgba(77,255,136,0.18);
-}
-
-.mood-trade.sell {
-  color: var(--red);
-  border-color: rgba(255,59,77,0.18);
-}
-
-.mood-empty-feed {
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-  padding: 10px;
-}
-
+  .mood-trades-feed {
+    max-height: 150px;
+  }
 }
