@@ -41,6 +41,12 @@ const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
 let isUsingDefaultTrending = true;
 let isUsingMoodToken = false;
 
+let moodSource = "pumpfun";
+let moodPairAddress = "";
+let moodDexId = "";
+let moodSupportsLiveTrades = false;
+let moodResolvedAddress = "";
+
 let moodSocket = null;
 let moodReconnectTimer = null;
 
@@ -55,16 +61,11 @@ let moodSellVolume = 0;
 let moodLiveScore = 50;
 let moodLiveMood = getMoodByScore(50);
 let moodTokenTimeframe = "5m";
-let moodBaseScore = 50;
-let moodBaseMood = getMoodByScore(50);
-let moodImpulseTimeout = null;
-let moodIsImpulseActive = false;
-
 let moodTokenMeta = {
-  name: "Trending Pump.fun Token",
+  name: "Trending Solana Token",
   symbol: "---",
   image: "/assets/logo/wojakmeter_logo.png",
-  source: "Pump.fun"
+  source: "Auto"
 };
 
 let moodHistory = {
@@ -1241,7 +1242,7 @@ function createCoinCard(coin, isActive = false) {
     </div>
     <div class="coin-card-bottom">
       <div class="symbol">${escapeHtml(symbol)}</div>
-      <div class="change ${change > 0 ? "positive" : change < 0 ? "negative" : "neutral"}">${formatPercent(change)}</div>
+      <div class="change ${change >= 0 ? "positive" : "negative"}">${formatPercent(change)}</div>
     </div>
     <div class="coin-emoji">
       <img src="${escapeHtml(getIconImagePath(style, mood.key))}" alt="${escapeHtml(symbol)} mood">
@@ -1556,11 +1557,7 @@ async function loadCoinDetails() {
     const rawPrices = chartResponse?.prices;
     if (Array.isArray(rawPrices) && rawPrices.length >= 2) {
       const prices = rawPrices
-        .map((entry) => {
-          if (Array.isArray(entry)) return Number(entry[1]);
-          if (entry && typeof entry === "object") return Number(entry.price ?? entry.value ?? entry.close);
-          return Number(entry);
-        })
+        .map((entry) => (Array.isArray(entry) ? Number(entry[1]) : Number(entry)))
         .filter((n) => Number.isFinite(n));
 
       if (prices.length >= 2) drawChart(prices);
@@ -2040,45 +2037,12 @@ function getMoodTokenElements() {
 
 function getMoodTradeIntensity(usdValue) {
   const v = Number(usdValue || 0);
-
-  if (v >= 25000) return "large";
-  if (v >= 5000) return "medium";
-  if (v >= 500) return "small";
-  return "tiny";
-}
-
-function getImpulseMoodFromTrade(side, usdValue) {
-  const size = getMoodTradeIntensity(usdValue);
-
-  if (side === "buy") {
-    if (size === "large") return getMoodByScore(92);
-    if (size === "medium") return getMoodByScore(75);
-    return getMoodByScore(64);
-  }
-
-  if (size === "large") return getMoodByScore(12);
-  if (size === "medium") return getMoodByScore(28);
-  return getMoodByScore(40);
-}
-
-function getBaseMoodFromTimeframeChange(changePct) {
-  const value = Number(changePct || 0);
-
-  if (value >= 18) return getMoodByScore(92);
-  if (value >= 8) return getMoodByScore(75);
-  if (value >= 2) return getMoodByScore(64);
-  if (value > -2) return getMoodByScore(50);
-  if (value > -8) return getMoodByScore(40);
-  if (value > -18) return getMoodByScore(28);
-  return getMoodByScore(12);
-}
-
-function getTokenReactionScore(priceChangePct, flowBias, volatilityValue) {
-  const base = 50;
-  const pricePart = clamp(priceChangePct * 3.2, -24, 24);
-  const flowPart = clamp(flowBias * 28, -22, 22);
-  const volPart = clamp(volatilityValue * 0.16, 0, 12);
-  return roundScore(base + pricePart + flowPart + (pricePart >= 0 ? volPart : -volPart * 0.45));
+  if (v >= 100000) return 1;
+  if (v >= 50000) return 0.85;
+  if (v >= 10000) return 0.65;
+  if (v >= 2500) return 0.45;
+  if (v >= 500) return 0.25;
+  return 0.12;
 }
 
 function updateMoodTokenMeta(meta = {}) {
@@ -2092,7 +2056,7 @@ function updateMoodTokenMeta(meta = {}) {
   if (els.name) {
     els.name.textContent =
       moodTokenMeta.name ||
-      (isUsingMoodToken ? "MOOD" : "Trending Pump.fun Token");
+      (isUsingMoodToken ? "MOOD" : "Trending Solana Token");
   }
 
   if (els.symbol) {
@@ -2109,13 +2073,40 @@ function updateMoodTokenMeta(meta = {}) {
     els.source.textContent =
       meta.source ||
       moodTokenMeta.source ||
-      (isUsingMoodToken ? MOOD_MAIN_LABEL : "Pump.fun");
+      (isUsingMoodToken ? MOOD_MAIN_LABEL : "Auto");
   }
+}
+
+async function resolveTokenSource(address) {
+  return await fetchJson(
+    `/api/token-resolve?address=${encodeURIComponent(address)}`,
+    null
+  );
+}
+
+function getImpulseMoodFromTrade(side, usdValue = 0) {
+  const v = Number(usdValue || 0);
+
+  if (side === "buy") {
+    if (v >= 10000) return getMoodByScore(92);
+    if (v >= 2500) return getMoodByScore(76);
+    if (v > 0) return getMoodByScore(64);
+    return getMoodByScore(60);
+  }
+
+  if (side === "sell") {
+    if (v >= 10000) return getMoodByScore(12);
+    if (v >= 2500) return getMoodByScore(26);
+    if (v > 0) return getMoodByScore(40);
+    return getMoodByScore(38);
+  }
+
+  return getMoodByScore(50);
 }
 
 function computeMoodTradeScore() {
   const tfChange = getMoodTimeframeChange(moodTokenTimeframe);
-  return roundScore(normalizeChangeToScore(tfChange, 2.4));
+  return roundScore(normalizeChangeToScore(tfChange, 7.5));
 }
 
 function applyMoodHeroImpulse(side, usdValue) {
@@ -2124,15 +2115,8 @@ function applyMoodHeroImpulse(side, usdValue) {
 
   if (!heroImg || !stage) return;
 
-  const size = getMoodTradeIntensity(usdValue);
-  const intensityMap = {
-    tiny: 0.18,
-    small: 0.35,
-    medium: 0.65,
-    large: 1
-  };
-
-  const intensity = intensityMap[size] || 0.25;
+  const intensity = getMoodTradeIntensity(usdValue || 250);
+  const impulseMood = getImpulseMoodFromTrade(side, usdValue || 0);
 
   stage.style.setProperty("--token-react-scale", String(1 + intensity * 0.12));
   stage.style.setProperty("--token-react-shift", `${Math.max(6, Math.round(intensity * 16))}px`);
@@ -2142,6 +2126,16 @@ function applyMoodHeroImpulse(side, usdValue) {
 
   void stage.offsetWidth;
   void heroImg.offsetWidth;
+
+  updateMoodHero(impulseMood, normalizeChangeToScore(
+    impulseMood.key === "euphoria" ? 6 :
+    impulseMood.key === "content" ? 3 :
+    impulseMood.key === "optimism" ? 1.2 :
+    impulseMood.key === "doubt" ? -1.2 :
+    impulseMood.key === "concern" ? -3 :
+    impulseMood.key === "frustration" ? -6 : 0,
+    7
+  ));
 
   if (side === "buy") {
     stage.classList.add("token-buy-burst");
@@ -2155,67 +2149,34 @@ function applyMoodHeroImpulse(side, usdValue) {
   stage.__reactTimer = setTimeout(() => {
     stage.classList.remove("token-buy-burst", "token-sell-shake");
     heroImg.classList.remove("token-buy-burst", "token-sell-shake");
+    updateMoodUI();
   }, 900);
 }
 
-function triggerMoodImpulse(side, usdValue) {
-  const impulseMood = getImpulseMoodFromTrade(side, usdValue);
-  moodIsImpulseActive = true;
-
-  clearTimeout(moodImpulseTimeout);
-
-  updateMoodHero(impulseMood, moodBaseScore, {
-    forceMood: true,
-    side,
-    flash: true
-  });
-
-  applyMoodHeroImpulse(side, usdValue);
-
-  const stage = byId("moodStage");
-  if (stage) {
-    stage.classList.remove("trade-buy-flash", "trade-sell-flash");
-    void stage.offsetWidth;
-    stage.classList.add(side === "buy" ? "trade-buy-flash" : "trade-sell-flash");
-  }
-
-  moodImpulseTimeout = setTimeout(() => {
-    moodIsImpulseActive = false;
-    updateMoodHero(moodBaseMood, moodBaseScore, { forceMood: true });
-    if (stage) {
-      stage.classList.remove("trade-buy-flash", "trade-sell-flash");
-    }
-  }, 1200);
-}
-
-function updateMoodHero(mood, score, options = {}) {
-  const { forceMood = false, side = "", flash = false } = options;
+function updateMoodHero(mood, score) {
   const els = getMoodTokenElements();
   const style = getCurrentStyle();
 
-  if (!els.heroImg) return;
-
-  els.heroImg.className = `mood-hero-img ${mood.anim}`;
-
-  if (flash) {
-    els.heroImg.classList.add(side === "buy" ? "token-buy-burst" : "token-sell-shake");
-    clearTimeout(els.heroImg.__flashTimer);
-    els.heroImg.__flashTimer = setTimeout(() => {
-      els.heroImg?.classList.remove("token-buy-burst", "token-sell-shake");
-    }, 800);
+  if (els.heroImg) {
+    els.heroImg.className = `mood-hero-img ${mood.anim}`;
+    setImage(
+      els.heroImg,
+      getHeroImagePath(style, mood.key),
+      getHeroImagePath(DEFAULT_STYLE, mood.key)
+    );
   }
 
-  setImage(
-    els.heroImg,
-    getHeroImagePath(style, mood.key),
-    getHeroImagePath(DEFAULT_STYLE, mood.key)
-  );
-
   if (els.heroScore) {
-    const tfChange = getMoodTimeframeChange(moodTokenTimeframe);
-    els.heroScore.textContent = formatPercent(tfChange);
+    els.heroScore.textContent = String(roundScore(score));
     els.heroScore.classList.remove("positive", "negative", "neutral");
-    applyPolarityClass(els.heroScore, tfChange);
+
+    if (mood.key === "euphoria" || mood.key === "content" || mood.key === "optimism") {
+      els.heroScore.classList.add("positive");
+    } else if (mood.key === "frustration" || mood.key === "concern" || mood.key === "doubt") {
+      els.heroScore.classList.add("negative");
+    } else {
+      els.heroScore.classList.add("neutral");
+    }
   }
 
   els.heroMoodNodes.forEach((node) => {
@@ -2244,7 +2205,6 @@ function updateMoodHero(mood, score, options = {}) {
     );
     stage.classList.add(mood.key);
     stage.style.boxShadow = `0 0 60px ${getMoodColor(mood.key)}22 inset`;
-    stage.dataset.mood = mood.key;
   }
 
   if (glow) {
@@ -2274,7 +2234,7 @@ function renderMoodTradesFeed() {
     return `
       <div class="mood-trade ${trade.side}">
         <strong>${sideLabel}</strong>
-        <span class="${trade.side === "buy" ? "positive" : "negative"}">${amountText}</span>
+        <span>${amountText}</span>
         <span>${escapeHtml(shortenAddress(trade.trader))}</span>
       </div>
     `;
@@ -2317,7 +2277,8 @@ function drawMoodBackdrop() {
 
   const points = prices.map((price, i) => {
     const x = (i / (prices.length - 1)) * w;
-    const y = topPad + (1 - ((price - min) / range)) * (h - topPad - bottomPad);
+    const y =
+      topPad + (1 - ((price - min) / range)) * (h - topPad - bottomPad);
     return [x, y];
   });
 
@@ -2329,18 +2290,12 @@ function drawMoodBackdrop() {
 
   const first = prices[0];
   const last = prices[prices.length - 1];
-  const changePct = first > 0 ? ((last - first) / first) * 100 : 0;
+  const positive = last >= first;
 
-  let strokeColor = "rgba(207,215,227,0.48)";
-  let fillColor = "rgba(207,215,227,0.08)";
-
-  if (changePct > 0.15) {
-    strokeColor = "#4dff88";
-    fillColor = "rgba(77,255,136,0.10)";
-  } else if (changePct < -0.15) {
-    strokeColor = "#ff3b4d";
-    fillColor = "rgba(255,59,77,0.10)";
-  }
+  const strokeColor = positive ? "#4dff88" : "#ff3b4d";
+  const fillColor = positive
+    ? "rgba(77,255,136,0.10)"
+    : "rgba(255,59,77,0.10)";
 
   els.backdropLine.setAttribute("d", path);
   els.backdropArea.setAttribute("d", area);
@@ -2377,12 +2332,10 @@ function updateMoodUI() {
   const marketCapApprox = moodPrice > 0 ? moodPrice * 1000000000 : 0;
   const volatilityValue = Math.min(99.99, Math.abs(priceChangePct) * 4.2);
 
-  moodBaseScore = computeMoodTradeScore();
-  moodBaseMood = getBaseMoodFromTimeframeChange(priceChangePct);
-  moodLiveScore = moodBaseScore;
-  moodLiveMood = moodBaseMood;
+  moodLiveScore = computeMoodTradeScore();
+  moodLiveMood = getMoodByScore(moodLiveScore);
 
-  if (els.ca) els.ca.textContent = MOOD_CA || "Coming soon";
+  if (els.ca) els.ca.textContent = moodResolvedAddress || MOOD_CA || "Coming soon";
 
   if (els.price) {
     els.price.textContent = moodPrice > 0 ? formatCurrency(moodPrice) : "Loading live...";
@@ -2396,8 +2349,7 @@ function updateMoodUI() {
 
   if (els.volume) {
     els.volume.textContent = totalVolume > 0 ? formatCurrencyCompact(totalVolume) : "Loading live...";
-    els.volume.classList.remove("positive", "negative", "neutral");
-    els.volume.classList.add("neutral");
+    applyPolarityClass(els.volume, totalVolume > 0 ? 1 : 0);
   }
 
   if (els.flow) {
@@ -2440,10 +2392,7 @@ function updateMoodUI() {
     }
   }
 
-  if (!moodIsImpulseActive) {
-    updateMoodHero(moodBaseMood, moodBaseScore, { forceMood: true });
-  }
-
+  updateMoodHero(moodLiveMood, moodLiveScore);
   renderMoodTradesFeed();
   drawMoodBackdrop();
   renderMoodTimeframeButtons();
@@ -2610,6 +2559,7 @@ function registerMoodTrade(rawTrade) {
       moodPrevPrice = moodPrice;
       moodPrice = trade.price;
     }
+
     registerPriceIntoTimeframes(trade.price);
   } else if (trade.marketCapUsd > 0) {
     const syntheticPrice = trade.marketCapUsd / 1000000000;
@@ -2621,6 +2571,7 @@ function registerMoodTrade(rawTrade) {
         moodPrevPrice = moodPrice;
         moodPrice = syntheticPrice;
       }
+
       registerPriceIntoTimeframes(syntheticPrice);
     }
   }
@@ -2628,11 +2579,21 @@ function registerMoodTrade(rawTrade) {
   if (trade.side === "buy") {
     moodBuyCount += 1;
     moodBuyVolume += trade.usdValue;
-    moodLastAction = trade.usdValue >= 5000 ? "Strong buy" : "Buy activity";
+    moodLastAction =
+      trade.usdValue >= 10000
+        ? "Strong buy"
+        : trade.usdValue >= 2500
+          ? "Medium buy"
+          : "Light buy";
   } else {
     moodSellCount += 1;
     moodSellVolume += trade.usdValue;
-    moodLastAction = trade.usdValue >= 5000 ? "Strong sell" : "Sell activity";
+    moodLastAction =
+      trade.usdValue >= 10000
+        ? "Strong sell"
+        : trade.usdValue >= 2500
+          ? "Medium sell"
+          : "Light sell";
   }
 
   moodTrades.unshift(trade);
@@ -2641,7 +2602,7 @@ function registerMoodTrade(rawTrade) {
   }
 
   updateMoodUI();
-  triggerMoodImpulse(trade.side, trade.usdValue || 250);
+  applyMoodHeroImpulse(trade.side, trade.usdValue || 250);
 }
 
 function cleanupMoodSocket() {
@@ -2664,6 +2625,7 @@ function connectMoodSocket() {
   const els = getMoodTokenElements();
   if (!els.section) return;
   if (!MOOD_CA) return;
+  if (!moodSupportsLiveTrades) return;
 
   cleanupMoodSocket();
 
@@ -2740,14 +2702,14 @@ function connectMoodSocket() {
     moodSocket.onclose = () => {
       clearTimeout(moodReconnectTimer);
       moodReconnectTimer = setTimeout(() => {
-        if (MOOD_CA) connectMoodSocket();
+        if (MOOD_CA && moodSupportsLiveTrades) connectMoodSocket();
       }, 2500);
     };
   } catch (error) {
     console.error("MOOD WS connection error:", error);
     clearTimeout(moodReconnectTimer);
     moodReconnectTimer = setTimeout(() => {
-      if (MOOD_CA) connectMoodSocket();
+      if (MOOD_CA && moodSupportsLiveTrades) connectMoodSocket();
     }, 2500);
   }
 }
@@ -2763,11 +2725,6 @@ function resetMoodTokenState() {
   moodSellVolume = 0;
   moodLiveScore = 50;
   moodLiveMood = getMoodByScore(50);
-  moodBaseScore = 50;
-  moodBaseMood = getMoodByScore(50);
-  moodIsImpulseActive = false;
-  clearTimeout(moodImpulseTimeout);
-
   moodHistory = {
     "1m": [],
     "5m": [],
@@ -2776,6 +2733,92 @@ function resetMoodTokenState() {
     "4h": [],
     "24h": []
   };
+}
+
+async function loadMoodMarketSnapshot() {
+  if (!moodResolvedAddress) return null;
+
+  const market = await fetchJson(
+    `/api/token-market?address=${encodeURIComponent(moodResolvedAddress)}`,
+    null
+  );
+
+  if (!market || typeof market !== "object") return null;
+
+  updateMoodTokenMeta({
+    name: market?.meta?.name || moodTokenMeta.name,
+    symbol: market?.meta?.symbol || moodTokenMeta.symbol,
+    image: market?.meta?.image || moodTokenMeta.image,
+    source: market?.meta?.source || moodTokenMeta.source
+  });
+
+  moodPrice = safeNum(market?.price, moodPrice);
+  moodPrevPrice = moodPrice;
+  moodBuyCount = safeNum(market?.buys, moodBuyCount);
+  moodSellCount = safeNum(market?.sells, moodSellCount);
+
+  const totalVolume = safeNum(market?.volume, 0);
+  if (totalVolume > 0) {
+    const totalTx = Math.max(1, moodBuyCount + moodSellCount);
+    const buyRatio = moodBuyCount / totalTx;
+    const sellRatio = moodSellCount / totalTx;
+    moodBuyVolume = totalVolume * buyRatio;
+    moodSellVolume = totalVolume * sellRatio;
+  }
+
+  moodLastAction = market?.lastAction || "Watching...";
+  moodPairAddress = market?.pairAddress || moodPairAddress;
+  moodDexId = market?.dexId || moodDexId;
+
+  if (moodPrice > 0) {
+    registerPriceIntoTimeframes(moodPrice);
+  }
+
+  updateMoodUI();
+  return market;
+}
+
+async function loadMoodChartSnapshot() {
+  if (!moodResolvedAddress) return null;
+
+  const chart = await fetchJson(
+    `/api/token-chart?address=${encodeURIComponent(moodResolvedAddress)}&timeframe=${encodeURIComponent(moodTokenTimeframe)}`,
+    null
+  );
+
+  if (!chart || !Array.isArray(chart?.prices) || chart.prices.length < 2) {
+    drawMoodBackdrop();
+    updateMoodUI();
+    return null;
+  }
+
+  moodHistory[moodTokenTimeframe] = chart.prices.map((p) => ({
+    ts: Number(p.ts || Date.now()),
+    price: Number(p.price || 0)
+  }));
+
+  const last = chart.prices[chart.prices.length - 1];
+  if (last?.price > 0) {
+    moodPrevPrice = moodPrice > 0 ? moodPrice : Number(last.price);
+    moodPrice = Number(last.price);
+  }
+
+  drawMoodBackdrop();
+  updateMoodUI();
+  return chart;
+}
+
+function startMoodPolling() {
+  clearInterval(window.__wmMoodMarketTimer);
+  clearInterval(window.__wmMoodChartTimer);
+
+  window.__wmMoodMarketTimer = setInterval(async () => {
+    await loadMoodMarketSnapshot();
+  }, 15000);
+
+  window.__wmMoodChartTimer = setInterval(async () => {
+    await loadMoodChartSnapshot();
+  }, 12000);
 }
 
 async function loadMoodTokenAddress(newAddress, meta = {}) {
@@ -2790,52 +2833,54 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
   }
 
   MOOD_CA = cleaned;
+  moodResolvedAddress = cleaned;
+
   resetMoodTokenState();
   updateMoodTokenMeta(meta);
   updateMoodUI();
 
-  const tokenInfo = await fetchJson(
-    `/api/pumpfun-token?ca=${encodeURIComponent(cleaned)}`,
-    null
-  );
+  const resolved = await resolveTokenSource(cleaned);
 
-  if (tokenInfo && typeof tokenInfo === "object") {
+  if (resolved?.ok) {
+    moodSource = resolved.source || "pumpfun";
+    moodResolvedAddress = resolved?.token?.address || cleaned;
+    moodPairAddress = resolved?.pair?.pairAddress || "";
+    moodDexId = resolved?.pair?.dexId || "";
+    moodSupportsLiveTrades = moodSource === "pumpfun";
+
     updateMoodTokenMeta({
-      name: tokenInfo?.meta?.name || meta?.name,
-      symbol: tokenInfo?.meta?.symbol || meta?.symbol,
-      image: tokenInfo?.meta?.image || meta?.image,
-      source: tokenInfo?.meta?.source || meta?.source || "Pump.fun"
+      name: resolved?.token?.name || meta?.name,
+      symbol: resolved?.token?.symbol || meta?.symbol,
+      image: resolved?.token?.image || meta?.image,
+      source:
+        moodSource === "dexscreener"
+          ? "DexScreener"
+          : moodSource === "pumpfun"
+            ? "Pump.fun"
+            : (meta?.source || "Unknown")
     });
 
-    moodPrice = safeNum(tokenInfo?.price, 0);
-    moodPrevPrice = moodPrice;
-    moodBuyCount = safeNum(tokenInfo?.buys, 0);
-    moodSellCount = safeNum(tokenInfo?.sells, 0);
-
-    const v = safeNum(tokenInfo?.volume, 0);
-    moodBuyVolume = v * 0.52;
-    moodSellVolume = v * 0.48;
-
-    moodLastAction = tokenInfo?.lastAction || "Waiting first live trade...";
-
-    if (moodPrice > 0) {
-      registerPriceIntoTimeframes(moodPrice);
-    } else if (safeNum(tokenInfo?.marketCap, 0) > 0) {
-      const syntheticPrice = safeNum(tokenInfo.marketCap, 0) / 1000000000;
-      if (syntheticPrice > 0) {
-        moodPrice = syntheticPrice;
-        moodPrevPrice = syntheticPrice;
-        registerPriceIntoTimeframes(syntheticPrice);
-      }
+    if (byId("moodContractAddress")) {
+      byId("moodContractAddress").textContent = moodResolvedAddress;
     }
+  } else {
+    moodSource = "pumpfun";
+    moodResolvedAddress = cleaned;
+    moodSupportsLiveTrades = true;
   }
 
-  updateMoodUI();
-  connectMoodSocket();
+  await loadMoodMarketSnapshot();
+  await loadMoodChartSnapshot();
+
+  if (moodSupportsLiveTrades) {
+    connectMoodSocket();
+  } else {
+    cleanupMoodSocket();
+  }
 }
 
 async function tryLoadDefaultTrendingToken() {
-  const ownApi = await fetchJson("/api/pumpfun-trending", { tokens: [] });
+  const ownApi = await fetchJson("/api/token-trending", { tokens: [] });
   const tokens = Array.isArray(ownApi?.tokens) ? ownApi.tokens : [];
 
   if (tokens.length) {
@@ -2848,7 +2893,7 @@ async function tryLoadDefaultTrendingToken() {
       name: top.name || "Trending Token",
       symbol: top.symbol || "---",
       image: top.image || "/assets/logo/wojakmeter_logo.png",
-      source: "Pump.fun Trending"
+      source: top.source === "dexscreener" ? "DexScreener" : "Pump.fun Trending"
     });
 
     return true;
@@ -2860,7 +2905,7 @@ async function tryLoadDefaultTrendingToken() {
   isUsingMoodToken = false;
 
   await loadMoodTokenAddress(HARD_FALLBACK, {
-    name: "SOL (Fallback)",
+    name: "SOL",
     symbol: "SOL",
     image: "/assets/logo/wojakmeter_logo.png",
     source: "Fallback"
@@ -2944,7 +2989,7 @@ function setupMoodTokenControls() {
   if (els.copyBtn && !els.copyBtn.dataset.bound) {
     els.copyBtn.dataset.bound = "1";
     els.copyBtn.addEventListener("click", async () => {
-      const text = MOOD_CA || "";
+      const text = moodResolvedAddress || MOOD_CA || "";
       if (!text) return;
 
       try {
@@ -3010,10 +3055,11 @@ function setupMoodTokenControls() {
     if (btn.dataset.boundTf) return;
     btn.dataset.boundTf = "1";
 
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const tf = btn.dataset.tokenTimeframe;
       if (!TOKEN_ALLOWED_TIMEFRAMES.includes(tf)) return;
       moodTokenTimeframe = tf;
+      await loadMoodChartSnapshot();
       updateMoodUI();
     });
   });
@@ -3033,6 +3079,7 @@ async function initMoodToken() {
 
   setupMoodTokenControls();
   await tryLoadDefaultTrendingToken();
+  startMoodPolling();
 }
 
 // ===============================
