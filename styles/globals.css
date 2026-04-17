@@ -2060,6 +2060,34 @@ pre.studio-output {
   z-index: 0;
 }
 
+.mood-chart-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.36;
+  pointer-events: none;
+}
+
+.mood-chart-backdrop.hidden {
+  display: none;
+}
+
+.mood-chart-backdrop svg {
+  width: 100%;
+  height: 100%;
+}
+
+#moodChartLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#moodChartArea {
+  fill: rgba(77, 255, 136, 0.08);
+}
+
 .mood-stage-glow {
   position: absolute;
   width: 220px;
@@ -2067,17 +2095,18 @@ pre.studio-output {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(77,255,136,0.1) 35%, rgba(77,255,136,0) 72%);
   filter: blur(10px);
-  z-index: 1;
+  z-index: 2;
   animation: moodGlowPulse 3.2s ease-in-out infinite;
 }
 
 .mood-hero-img {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   width: min(360px, 78%);
   height: auto;
   object-fit: contain;
   transition: transform 0.28s ease, filter 0.28s ease, opacity 0.28s ease;
+  will-change: transform, filter;
 }
 
 .mood-hero-img.react {
@@ -2094,7 +2123,7 @@ pre.studio-output {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 3;
+  z-index: 4;
   padding: 10px 12px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
