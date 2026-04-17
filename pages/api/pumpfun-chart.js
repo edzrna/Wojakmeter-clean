@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+
   const { ca, timeframe = "5m" } = req.query;
 
   if (!ca || typeof ca !== "string") {
@@ -37,7 +39,14 @@ export default async function handler(req, res) {
         prices: [],
         timeframe: safeTimeframe,
         source: "pumpfun",
-        error: `Upstream returned ${response.status}`
+        error: `Upstream returned ${response.status}`,
+        token: {
+          name: "",
+          symbol: "",
+          image: "",
+          marketCap: 0,
+          volume24h: 0
+        }
       });
     }
 
@@ -68,25 +77,27 @@ export default async function handler(req, res) {
       Number(json?.volume) ||
       0;
 
+    const token = {
+      name: json?.name || "",
+      symbol: json?.symbol || "",
+      image: json?.image_uri || json?.image || "",
+      marketCap: Number.isFinite(marketCap) ? marketCap : 0,
+      volume24h: Number.isFinite(volume24h) ? volume24h : 0
+    };
+
     if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
       return res.status(200).json({
         prices: [],
         timeframe: safeTimeframe,
         source: "pumpfun",
-        token: {
-          name: json?.name || "",
-          symbol: json?.symbol || "",
-          image: json?.image_uri || json?.image || "",
-          marketCap,
-          volume24h
-        }
+        token,
+        error: "No valid price"
       });
     }
 
     const now = Date.now();
     const series = [];
 
-    // Base determinista usando market cap / volume para evitar saltos absurdos
     const sentimentBias =
       marketCap > 0
         ? Math.min(0.12, Math.max(-0.12, (volume24h / Math.max(marketCap, 1)) * 0.35))
@@ -97,6 +108,7 @@ export default async function handler(req, res) {
       .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
 
     let rolling = rawPrice * (1 - 0.01 - (seedA % 7) * 0.0015);
+    rolling = Math.max(rawPrice * 0.12, rolling);
 
     for (let i = points - 1; i >= 1; i--) {
       const t = i / points;
@@ -112,19 +124,19 @@ export default async function handler(req, res) {
       rolling = rolling + directionalPull + biasPull + noise;
       rolling = Math.max(rawPrice * 0.12, rolling);
 
-      series.push({
-        ts: now - i * stepMs,
-        price: Number(rolling.toFixed(12))
-      });
+      series.push([
+        now - i * stepMs,
+        Number(rolling.toFixed(12))
+      ]);
     }
 
-    series.push({
-      ts: now,
-      price: Number(rawPrice.toFixed(12))
-    });
+    series.push([
+      now,
+      Number(rawPrice.toFixed(12))
+    ]);
 
-    const first = series[0]?.price || rawPrice;
-    const last = series[series.length - 1]?.price || rawPrice;
+    const first = Number(series[0]?.[1] || rawPrice);
+    const last = Number(series[series.length - 1]?.[1] || rawPrice);
     const changePct = first > 0 ? ((last - first) / first) * 100 : 0;
 
     return res.status(200).json({
@@ -133,13 +145,7 @@ export default async function handler(req, res) {
       currentPrice: Number(rawPrice.toFixed(12)),
       changePct: Number(changePct.toFixed(4)),
       source: "pumpfun",
-      token: {
-        name: json?.name || "",
-        symbol: json?.symbol || "",
-        image: json?.image_uri || json?.image || "",
-        marketCap,
-        volume24h
-      }
+      token
     });
   } catch (error) {
     console.error("pumpfun-chart error:", error);
@@ -148,7 +154,14 @@ export default async function handler(req, res) {
       prices: [],
       timeframe: safeTimeframe,
       source: "pumpfun",
-      error: "Failed to load chart"
+      error: "Failed to load chart",
+      token: {
+        name: "",
+        symbol: "",
+        image: "",
+        marketCap: 0,
+        volume24h: 0
+      }
     });
   }
 }
