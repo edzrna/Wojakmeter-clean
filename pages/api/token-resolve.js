@@ -1,4 +1,5 @@
-export default async function ha0t { address } = req.query;
+export default async function handler(req, res) {
+  const { address } = req.query;
 
   if (!address || typeof address !== "string") {
     return res.status(400).json({ error: "Missing address" });
@@ -17,6 +18,7 @@ export default async function ha0t { address } = req.query;
   async function tryDexScreener() {
     try {
       const dexUrl = `https://api.dexscreener.com/token-pairs/v1/solana/${encodeURIComponent(tokenAddress)}`;
+
       const r = await fetch(dexUrl, {
         headers: {
           accept: "application/json",
@@ -36,7 +38,8 @@ export default async function ha0t { address } = req.query;
           const liquidityUsd = Number(pair?.liquidity?.usd || 0);
           const volume24h = Number(pair?.volume?.h24 || 0);
           const txns24h =
-            Number(pair?.txns?.h24?.buys || 0) + Number(pair?.txns?.h24?.sells || 0);
+            Number(pair?.txns?.h24?.buys || 0) +
+            Number(pair?.txns?.h24?.sells || 0);
 
           return {
             ...pair,
@@ -54,7 +57,7 @@ export default async function ha0t { address } = req.query;
           chainId: best?.chainId || "solana",
           address:
             best?.baseToken?.address === tokenAddress
-              ? best?.baseToken?.address
+              ? best.baseToken.address
               : tokenAddress,
           name: best?.baseToken?.name || "Unknown Token",
           symbol: best?.baseToken?.symbol || "---",
@@ -72,7 +75,8 @@ export default async function ha0t { address } = req.query;
           volume24h: Number(best?.volume?.h24 || 0)
         }
       };
-    } catch {
+    } catch (error) {
+      console.error("token-resolve DexScreener error:", error);
       return null;
     }
   }
@@ -80,6 +84,7 @@ export default async function ha0t { address } = req.query;
   async function tryPumpFun() {
     try {
       const pumpUrl = `https://frontend-api.pump.fun/coins/${encodeURIComponent(tokenAddress)}`;
+
       const r = await fetch(pumpUrl, {
         headers: {
           accept: "application/json",
@@ -105,7 +110,7 @@ export default async function ha0t { address } = req.query;
 
       const priceUsd =
         Number(json?.price_usd) ||
-        (marketCap > 0 && totalSupply > 0 ? marketCap / totalSupply : 0) ||
+        ((marketCap > 0 && totalSupply > 0) ? marketCap / totalSupply : 0) ||
         0;
 
       return {
@@ -134,16 +139,21 @@ export default async function ha0t { address } = req.query;
             0
         }
       };
-    } catch {
+    } catch (error) {
+      console.error("token-resolve Pump.fun error:", error);
       return null;
     }
   }
 
   const dex = await tryDexScreener();
-  if (dex?.ok) return res.status(200).json(dex);
+  if (dex?.ok) {
+    return res.status(200).json(dex);
+  }
 
   const pump = await tryPumpFun();
-  if (pump?.ok) return res.status(200).json(pump);
+  if (pump?.ok) {
+    return res.status(200).json(pump);
+  }
 
   return fallbackResponse();
 }
