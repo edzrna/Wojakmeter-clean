@@ -39,10 +39,9 @@ export default async function handler(req, res) {
         .sort((a, b) => b.rankScore - a.rankScore)
         .slice(0, 12);
 
-      if (!tokens.length) return null;
-
-      return tokens;
-    } catch {
+      return tokens.length ? tokens : null;
+    } catch (error) {
+      console.error("token-trending Dex boosts error:", error);
       return null;
     }
   }
@@ -104,8 +103,9 @@ export default async function handler(req, res) {
 
       deduped.sort((a, b) => b.rankScore - a.rankScore);
 
-      return deduped.slice(0, 12);
-    } catch {
+      return deduped.length ? deduped.slice(0, 12) : null;
+    } catch (error) {
+      console.error("token-trending Dex search error:", error);
       return null;
     }
   }
@@ -154,10 +154,9 @@ export default async function handler(req, res) {
         .sort((a, b) => b.rankScore - a.rankScore)
         .slice(0, 12);
 
-      if (!tokens.length) return null;
-
-      return tokens;
-    } catch {
+      return tokens.length ? tokens : null;
+    } catch (error) {
+      console.error("token-trending Pump.fun error:", error);
       return null;
     }
   }
