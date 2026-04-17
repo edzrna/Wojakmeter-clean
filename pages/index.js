@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=9" strategy="afterInteractive" />
+      <Script src="/script.js?v=10" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -539,8 +539,8 @@ export default function Home({ ogImageUrl }) {
                     <span className="about-label">MOOD LIVE</span>
                     <h2 className="about-title">MOOD is the new WojakMeter token.</h2>
                     <p className="about-text">
-                      Track the hottest Pump.fun token by default, switch to MOOD anytime, or paste
-                      any contract address to watch live emotional flow.
+                      Track a default live token, switch to MOOD anytime, or paste any token
+                      contract address to watch live emotional flow.
                     </p>
                   </div>
 
@@ -561,7 +561,7 @@ export default function Home({ ogImageUrl }) {
                     <input
                       id="tokenSearchInput"
                       type="text"
-                      placeholder="Paste Pump.fun contract address..."
+                      placeholder="Paste token contract address..."
                       className="mood-input"
                     />
                     <button id="tokenSearchBtn" className="action-btn" type="button">
@@ -860,19 +860,6 @@ export default function Home({ ogImageUrl }) {
                   <div className="interval-box">
                     <span>30d</span>
                     <strong id="perf30d">--</strong>
-                  </div>
-
-                  <div className="interval-box hidden">
-                    <span>5m</span>
-                    <strong id="perf5m">--</strong>
-                  </div>
-                  <div className="interval-box hidden">
-                    <span>15m</span>
-                    <strong id="perf15m">--</strong>
-                  </div>
-                  <div className="interval-box hidden">
-                    <span>1m</span>
-                    <strong id="perf1m">--</strong>
                   </div>
                 </div>
               </section>
