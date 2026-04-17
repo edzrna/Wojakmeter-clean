@@ -59,7 +59,7 @@ export default function Home({ ogImageUrl }) {
 
         <meta
           name="keywords"
-          content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology, mood token, mood pump fun"
+          content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology, mood token, dexscreener sentiment, solana token mood"
         />
 
         <meta name="robots" content="index, follow" />
@@ -98,7 +98,7 @@ export default function Home({ ogImageUrl }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <Script src="/script.js?v=10" strategy="afterInteractive" />
+      <Script src="/script.js?v=11" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
@@ -530,17 +530,18 @@ export default function Home({ ogImageUrl }) {
             <section className="mood-token-card card" id="moodSection">
               <div className="section-head">
                 <h3>MOOD</h3>
-                <span className="muted">The new token of WojakMeter</span>
+                <span className="muted">Reactive token mood engine</span>
               </div>
 
               <div className="mood-token-grid">
                 <div className="mood-token-main">
                   <div className="mood-token-copy">
                     <span className="about-label">MOOD LIVE</span>
-                    <h2 className="about-title">MOOD is the new WojakMeter token.</h2>
+                    <h2 className="about-title">Watch any Solana token react in real time.</h2>
                     <p className="about-text">
-                      Track a default live token, switch to MOOD anytime, or paste any token
-                      contract address to watch live emotional flow.
+                      Track a default live token, switch to MOOD anytime, or paste any Solana token
+                      address to watch live emotional flow with DexScreener first and Pump.fun
+                      fallback.
                     </p>
                   </div>
 
@@ -550,7 +551,7 @@ export default function Home({ ogImageUrl }) {
                     </div>
 
                     <div className="mood-ca-row">
-                      <code id="moodContractAddress">Coming soon</code>
+                      <code id="moodContractAddress">Loading token...</code>
                       <button type="button" className="action-btn" id="copyMoodCaBtn">
                         Copy CA
                       </button>
@@ -561,7 +562,7 @@ export default function Home({ ogImageUrl }) {
                     <input
                       id="tokenSearchInput"
                       type="text"
-                      placeholder="Paste token contract address..."
+                      placeholder="Paste Solana token address..."
                       className="mood-input"
                     />
                     <button id="tokenSearchBtn" className="action-btn" type="button">
@@ -575,12 +576,12 @@ export default function Home({ ogImageUrl }) {
                     </button>
 
                     <a
-                      href="https://pump.fun"
+                      href="https://dexscreener.com"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="action-btn mood-secondary-btn"
                     >
-                      Pump.fun
+                      DexScreener
                     </a>
                   </div>
 
@@ -591,7 +592,7 @@ export default function Home({ ogImageUrl }) {
                       alt="Token icon"
                     />
                     <div className="mood-token-meta-copy">
-                      <strong id="moodTokenName">Trending Pump.fun Token</strong>
+                      <strong id="moodTokenName">Live Token</strong>
                       <span id="moodTokenSymbol">$---</span>
                     </div>
                   </div>
@@ -680,7 +681,7 @@ export default function Home({ ogImageUrl }) {
                     </div>
                     <div className="mood-token-score-box">
                       <span>Source</span>
-                      <strong id="moodTokenSource">Pump.fun</strong>
+                      <strong id="moodTokenSource">Auto</strong>
                     </div>
                   </div>
 
@@ -689,8 +690,8 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="mood-token-note">
-                    This module is ready to react to buys, sells, volatility shifts and live token
-                    pressure directly from Pump.fun-compatible activity.
+                    This module reacts to live token momentum, trade pressure, timeframe change and
+                    fallback market data using DexScreener first and Pump.fun when needed.
                   </div>
                 </div>
               </div>
