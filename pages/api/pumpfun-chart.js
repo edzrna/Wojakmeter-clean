@@ -6,25 +6,31 @@ export default async function handler(req, res) {
   }
 
   const allowedTimeframes = ["1m", "5m", "15m", "1h", "4h", "24h"];
-  const safeTimeframe = allowedTimeframes.includes(String(timeframe)) ? String(timeframe) : "5m";
+  const safeTimeframe = allowedTimeframes.includes(String(timeframe))
+    ? String(timeframe)
+    : "5m";
 
   const configByTimeframe = {
-    "1m": { points: 24, stepMs: 2500, volatility: 0.0035 },
-    "5m": { points: 30, stepMs: 10000, volatility: 0.006 },
-    "15m": { points: 40, stepMs: 30000, volatility: 0.009 },
-    "1h": { points: 60, stepMs: 60 * 1000, volatility: 0.012 },
-    "4h": { points: 80, stepMs: 3 * 60 * 1000, volatility: 0.018 },
-    "24h": { points: 120, stepMs: 12 * 60 * 1000, volatility: 0.03 }
+    "1m": { points: 24, stepMs: 2500, driftScale: 0.05, noiseScale: 0.0025 },
+    "5m": { points: 30, stepMs: 10000, driftScale: 0.06, noiseScale: 0.0045 },
+    "15m": { points: 40, stepMs: 30000, driftScale: 0.07, noiseScale: 0.0065 },
+    "1h": { points: 60, stepMs: 60 * 1000, driftScale: 0.08, noiseScale: 0.009 },
+    "4h": { points: 80, stepMs: 3 * 60 * 1000, driftScale: 0.09, noiseScale: 0.014 },
+    "24h": { points: 120, stepMs: 12 * 60 * 1000, driftScale: 0.1, noiseScale: 0.022 }
   };
 
-  const { points, stepMs, volatility } = configByTimeframe[safeTimeframe];
+  const { points, stepMs, driftScale, noiseScale } = configByTimeframe[safeTimeframe];
 
   try {
-    const response = await fetch(`https://frontend-api.pump.fun/coins/${encodeURIComponent(ca)}`, {
-      headers: {
-        accept: "application/json"
+    const response = await fetch(
+      `https://frontend-api.pump.fun/coins/${encodeURIComponent(ca)}`,
+      {
+        headers: {
+          accept: "application/json",
+          "user-agent": "Mozilla/5.0"
+        }
       }
-    });
+    );
 
     if (!response.ok) {
       return res.status(200).json({
@@ -37,10 +43,29 @@ export default async function handler(req, res) {
 
     const json = await response.json();
 
+    const totalSupply =
+      Number(json?.total_supply) ||
+      Number(json?.supply) ||
+      Number(json?.token_supply) ||
+      0;
+
+    const marketCap =
+      Number(json?.usd_market_cap) ||
+      Number(json?.market_cap) ||
+      Number(json?.marketCap) ||
+      0;
+
     const rawPrice =
       Number(json?.price_usd) ||
-      Number(json?.usd_market_cap && json?.total_supply ? json.usd_market_cap / json.total_supply : 0) ||
-      Number(json?.market_cap && json?.total_supply ? json.market_cap / json.total_supply : 0) ||
+      Number(json?.priceUsd) ||
+      Number(json?.price) ||
+      ((marketCap > 0 && totalSupply > 0) ? marketCap / totalSupply : 0) ||
+      0;
+
+    const volume24h =
+      Number(json?.volume_24h) ||
+      Number(json?.volume24h) ||
+      Number(json?.volume) ||
       0;
 
     if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
@@ -51,7 +76,9 @@ export default async function handler(req, res) {
         token: {
           name: json?.name || "",
           symbol: json?.symbol || "",
-          image: json?.image_uri || json?.image || ""
+          image: json?.image_uri || json?.image || "",
+          marketCap,
+          volume24h
         }
       });
     }
@@ -59,12 +86,31 @@ export default async function handler(req, res) {
     const now = Date.now();
     const series = [];
 
-    let rolling = rawPrice * (1 - (Math.random() * 0.015 + 0.005));
+    // Base determinista usando market cap / volume para evitar saltos absurdos
+    const sentimentBias =
+      marketCap > 0
+        ? Math.min(0.12, Math.max(-0.12, (volume24h / Math.max(marketCap, 1)) * 0.35))
+        : 0;
+
+    const seedA = String(ca)
+      .split("")
+      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+    let rolling = rawPrice * (1 - 0.01 - (seedA % 7) * 0.0015);
 
     for (let i = points - 1; i >= 1; i--) {
-      const drift = (rawPrice - rolling) * 0.08;
-      const noise = (Math.random() - 0.5) * volatility * rawPrice;
-      rolling = Math.max(rawPrice * 0.15, rolling + drift + noise);
+      const t = i / points;
+
+      const harmonic =
+        Math.sin((seedA % 13) + i * 0.55) * 0.35 +
+        Math.cos((seedA % 17) + i * 0.28) * 0.2;
+
+      const directionalPull = (rawPrice - rolling) * driftScale;
+      const biasPull = rawPrice * sentimentBias * (0.35 - t * 0.22);
+      const noise = harmonic * noiseScale * rawPrice;
+
+      rolling = rolling + directionalPull + biasPull + noise;
+      rolling = Math.max(rawPrice * 0.12, rolling);
 
       series.push({
         ts: now - i * stepMs,
@@ -91,11 +137,13 @@ export default async function handler(req, res) {
         name: json?.name || "",
         symbol: json?.symbol || "",
         image: json?.image_uri || json?.image || "",
-        marketCap: Number(json?.usd_market_cap || json?.market_cap || 0),
-        volume24h: Number(json?.volume_24h || 0)
+        marketCap,
+        volume24h
       }
     });
   } catch (error) {
+    console.error("pumpfun-chart error:", error);
+
     return res.status(200).json({
       prices: [],
       timeframe: safeTimeframe,
