@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   async function fromDexScreener() {
     try {
       const url = `https://api.dexscreener.com/token-pairs/v1/solana/${encodeURIComponent(tokenAddress)}`;
+
       const r = await fetch(url, {
         headers: {
           accept: "application/json",
@@ -28,7 +29,8 @@ export default async function handler(req, res) {
           const liquidityUsd = Number(pair?.liquidity?.usd || 0);
           const volume24h = Number(pair?.volume?.h24 || 0);
           const txns24h =
-            Number(pair?.txns?.h24?.buys || 0) + Number(pair?.txns?.h24?.sells || 0);
+            Number(pair?.txns?.h24?.buys || 0) +
+            Number(pair?.txns?.h24?.sells || 0);
 
           return {
             ...pair,
@@ -37,8 +39,17 @@ export default async function handler(req, res) {
         })
         .sort((a, b) => b.__score - a.__score)[0];
 
+      if (!best) return null;
+
       const buys = Number(best?.txns?.h24?.buys || 0);
       const sells = Number(best?.txns?.h24?.sells || 0);
+      const price = Number(best?.priceUsd || 0);
+      const marketCap =
+        Number(best?.marketCap || 0) ||
+        Number(best?.fdv || 0) ||
+        0;
+      const volume = Number(best?.volume?.h24 || 0);
+      const change = Number(best?.priceChange?.h24 || 0);
 
       return {
         source: "dexscreener",
@@ -48,20 +59,12 @@ export default async function handler(req, res) {
           image: best?.info?.imageUrl || "",
           source: "DexScreener"
         },
-        price:
-          Number(best?.priceUsd || 0),
-        marketCap:
-          Number(best?.marketCap || 0) || Number(best?.fdv || 0) || 0,
-        volume:
-          Number(best?.volume?.h24 || 0),
-        buys,
-        sells,
-        change:
-          Number(best?.priceChange?.h24 || 0),
-        liquidity:
-          Number(best?.liquidity?.usd || 0),
-        pairAddress: best?.pairAddress || "",
-        dexId: best?.dexId || "",
+        price: Number.isFinite(price) ? price : 0,
+        marketCap: Number.isFinite(marketCap) ? marketCap : 0,
+        volume: Number.isFinite(volume) ? volume : 0,
+        buys: Number.isFinite(buys) ? buys : 0,
+        sells: Number.isFinite(sells) ? sells : 0,
+        change: Number.isFinite(change) ? change : 0,
         lastAction:
           buys > sells
             ? "Buying pressure"
@@ -69,7 +72,8 @@ export default async function handler(req, res) {
               ? "Selling pressure"
               : "Balanced"
       };
-    } catch {
+    } catch (error) {
+      console.error("token-data DexScreener error:", error);
       return null;
     }
   }
@@ -77,6 +81,7 @@ export default async function handler(req, res) {
   async function fromPumpFun() {
     try {
       const endpoint = `https://frontend-api.pump.fun/coins/${encodeURIComponent(tokenAddress)}`;
+
       const r = await fetch(endpoint, {
         headers: {
           accept: "application/json",
@@ -92,6 +97,7 @@ export default async function handler(req, res) {
       const totalSupply =
         Number(json?.total_supply) ||
         Number(json?.supply) ||
+        Number(json?.token_supply) ||
         0;
 
       const marketCap =
@@ -99,74 +105,8 @@ export default async function handler(req, res) {
         Number(json?.market_cap) ||
         0;
 
-      const price =
+      const rawPrice =
         Number(json?.price_usd) ||
-        (marketCap > 0 && totalSupply > 0 ? marketCap / totalSupply : 0);
-
-      const volume =
-        Number(json?.volume_24h) || 0;
-
-      const buys =
-        Number(json?.buy_count_24h) || 0;
-
-      const sells =
-        Number(json?.sell_count_24h) || 0;
-
-      const change =
-        Number(json?.price_change_24h) || 0;
-
-      return {
-        source: "pumpfun",
-        meta: {
-          name: json?.name || "Unknown Token",
-          symbol: json?.symbol || "---",
-          image: json?.image_uri || json?.image || "",
-          source: "Pump.fun"
-        },
-        price,
-        marketCap,
-        volume,
-        buys,
-        sells,
-        change,
-        liquidity: 0,
-        pairAddress: tokenAddress,
-        dexId: "pumpfun",
-        lastAction:
-          buys > sells
-            ? "Buying pressure"
-            : sells > buys
-              ? "Selling pressure"
-              : "Balanced"
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  const dex = await fromDexScreener();
-  if (dex) return res.status(200).json(dex);
-
-  const pump = await fromPumpFun();
-  if (pump) return res.status(200).json(pump);
-
-  return res.status(200).json({
-    source: "none",
-    meta: {
-      name: "Unavailable",
-      symbol: "---",
-      image: "",
-      source: "Unavailable"
-    },
-    price: 0,
-    marketCap: 0,
-    volume: 0,
-    buys: 0,
-    sells: 0,
-    change: 0,
-    liquidity: 0,
-    pairAddress: "",
-    dexId: "",
-    lastAction: "No data"
-  });
-}
+        Number(json?.priceUsd) ||
+        Number(json?.price) ||
+        ((marketCap > 0 && total
