@@ -104,10 +104,7 @@ function parsePumpPortalTrade(payload) {
 function parseBirdeyeTrade(payload) {
   if (!payload || typeof payload !== "object") return null;
 
-  const raw =
-    payload.data ||
-    payload.message ||
-    payload;
+  const raw = payload.data || payload.message || payload;
 
   const sideText = String(
     raw.side ||
@@ -173,6 +170,258 @@ function parseBirdeyeTrade(payload) {
   };
 }
 
+async function openPumpPortalStream({ tokenAddress, res, isClosed }) {
+  const { WebSocket } = await import("ws");
+
+  return await new Promise((resolve) => {
+    let settled = false;
+    let socket = null;
+    let openTimer = null;
+    let inactivityTimer = null;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+
+      clearTimeout(openTimer);
+      clearTimeout(inactivityTimer);
+
+      resolve(result);
+    };
+
+    const resetInactivity = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        try {
+          socket?.close();
+        } catch {}
+        finish({ ok: false, reason: "pumpportal_inactive" });
+      }, 12000);
+    };
+
+    try {
+      socket = new WebSocket("wss://pumpportal.fun/api/data");
+
+      openTimer = setTimeout(() => {
+        try {
+          socket?.close();
+        } catch {}
+        finish({ ok: false, reason: "pumpportal_timeout" });
+      }, 7000);
+
+      socket.onopen = () => {
+        if (isClosed()) {
+          try {
+            socket.close();
+          } catch {}
+          return finish({ ok: false, reason: "client_closed" });
+        }
+
+        sendSse(res, "source", {
+          source: "pumpportal",
+          live: true
+        });
+
+        try {
+          socket.send(
+            JSON.stringify({
+              method: "subscribeTokenTrade",
+              keys: [tokenAddress]
+            })
+          );
+        } catch {}
+
+        resetInactivity();
+      };
+
+      socket.onmessage = (msg) => {
+        if (isClosed()) {
+          try {
+            socket.close();
+          } catch {}
+          return finish({ ok: false, reason: "client_closed" });
+        }
+
+        resetInactivity();
+
+        try {
+          const data = JSON.parse(msg.toString());
+
+          let emitted = false;
+
+          if (Array.isArray(data)) {
+            for (const item of data) {
+              const parsed = parsePumpPortalTrade(item);
+              if (parsed) {
+                sendSse(res, "trade", parsed);
+                emitted = true;
+              }
+            }
+          } else if (data?.data && Array.isArray(data.data)) {
+            for (const item of data.data) {
+              const parsed = parsePumpPortalTrade(item);
+              if (parsed) {
+                sendSse(res, "trade", parsed);
+                emitted = true;
+              }
+            }
+          } else {
+            const parsed = parsePumpPortalTrade(data?.data || data);
+            if (parsed) {
+              sendSse(res, "trade", parsed);
+              emitted = true;
+            }
+          }
+
+          if (emitted) {
+            finish({
+              ok: true,
+              socket,
+              provider: "pumpportal"
+            });
+          }
+        } catch {}
+      };
+
+      socket.onerror = () => {
+        try {
+          socket?.close();
+        } catch {}
+      };
+
+      socket.onclose = () => {
+        finish({ ok: false, reason: "pumpportal_closed" });
+      };
+    } catch {
+      finish({ ok: false, reason: "pumpportal_exception" });
+    }
+  });
+}
+
+async function openBirdeyeStream({ tokenAddress, res, isClosed, birdeyeKey }) {
+  const { WebSocket } = await import("ws");
+
+  return await new Promise((resolve) => {
+    let settled = false;
+    let socket = null;
+    let openTimer = null;
+    let inactivityTimer = null;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+
+      clearTimeout(openTimer);
+      clearTimeout(inactivityTimer);
+
+      resolve(result);
+    };
+
+    const resetInactivity = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        try {
+          socket?.close();
+        } catch {}
+        finish({ ok: false, reason: "birdeye_inactive" });
+      }, 15000);
+    };
+
+    try {
+      socket = new WebSocket(
+        `wss://public-api.birdeye.so/socket/solana?x-api-key=${encodeURIComponent(birdeyeKey)}`
+      );
+
+      openTimer = setTimeout(() => {
+        try {
+          socket?.close();
+        } catch {}
+        finish({ ok: false, reason: "birdeye_timeout" });
+      }, 8000);
+
+      socket.onopen = () => {
+        if (isClosed()) {
+          try {
+            socket.close();
+          } catch {}
+          return finish({ ok: false, reason: "client_closed" });
+        }
+
+        sendSse(res, "source", {
+          source: "birdeye",
+          live: true
+        });
+
+        try {
+          socket.send(
+            JSON.stringify({
+              type: "SUBSCRIBE_TXS",
+              data: {
+                address: tokenAddress
+              }
+            })
+          );
+        } catch {}
+
+        resetInactivity();
+      };
+
+      socket.onmessage = (msg) => {
+        if (isClosed()) {
+          try {
+            socket.close();
+          } catch {}
+          return finish({ ok: false, reason: "client_closed" });
+        }
+
+        resetInactivity();
+
+        try {
+          const data = JSON.parse(msg.toString());
+
+          let emitted = false;
+
+          if (Array.isArray(data)) {
+            for (const item of data) {
+              const parsed = parseBirdeyeTrade(item);
+              if (parsed) {
+                sendSse(res, "trade", parsed);
+                emitted = true;
+              }
+            }
+          } else {
+            const parsed = parseBirdeyeTrade(data);
+            if (parsed) {
+              sendSse(res, "trade", parsed);
+              emitted = true;
+            }
+          }
+
+          if (emitted) {
+            finish({
+              ok: true,
+              socket,
+              provider: "birdeye"
+            });
+          }
+        } catch {}
+      };
+
+      socket.onerror = () => {
+        try {
+          socket?.close();
+        } catch {}
+      };
+
+      socket.onclose = () => {
+        finish({ ok: false, reason: "birdeye_closed" });
+      };
+    } catch {
+      finish({ ok: false, reason: "birdeye_exception" });
+    }
+  });
+}
+
 export default async function handler(req, res) {
   const { address, source = "auto" } = req.query;
 
@@ -195,31 +444,27 @@ export default async function handler(req, res) {
     res.flushHeaders();
   }
 
-  sendSse(res, "ready", {
-    ok: true,
-    address: tokenAddress,
-    source: sourceValue
-  });
+  let closed = false;
+  let activeSocket = null;
 
   const heartbeat = setInterval(() => {
+    if (closed) return;
     sendSse(res, "ping", { ts: Date.now() });
   }, 15000);
-
-  let socket = null;
-  let closed = false;
 
   const cleanup = () => {
     if (closed) return;
     closed = true;
+
     clearInterval(heartbeat);
 
     try {
-      if (socket) {
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
-        socket.close();
+      if (activeSocket) {
+        activeSocket.onopen = null;
+        activeSocket.onmessage = null;
+        activeSocket.onerror = null;
+        activeSocket.onclose = null;
+        activeSocket.close();
       }
     } catch {}
 
@@ -228,116 +473,72 @@ export default async function handler(req, res) {
     } catch {}
   };
 
+  const isClosed = () => closed;
+
   req.on("close", cleanup);
+  req.on("aborted", cleanup);
 
-  const usePump =
-    sourceValue === "pumpfun" || sourceValue === "pump" || sourceValue === "auto";
+  sendSse(res, "ready", {
+    ok: true,
+    address: tokenAddress,
+    source: sourceValue
+  });
 
-  const useBirdeye =
+  const wantsPump =
+    sourceValue === "pumpfun" ||
+    sourceValue === "pump" ||
+    sourceValue === "auto";
+
+  const wantsBirdeye =
     sourceValue === "dexscreener" ||
     sourceValue === "birdeye" ||
     sourceValue === "auto";
 
-  if (usePump) {
-    try {
-      const { WebSocket } = await import("ws");
+  try {
+    if (wantsPump) {
+      const pumpResult = await openPumpPortalStream({
+        tokenAddress,
+        res,
+        isClosed
+      });
 
-      socket = new WebSocket("wss://pumpportal.fun/api/data");
+      if (pumpResult?.ok && pumpResult.socket) {
+        activeSocket = pumpResult.socket;
+        return;
+      }
+    }
 
-      socket.onopen = () => {
-        sendSse(res, "source", {
-          source: "pumpportal",
-          live: true
-        });
+    if (wantsBirdeye && birdeyeKey) {
+      const birdResult = await openBirdeyeStream({
+        tokenAddress,
+        res,
+        isClosed,
+        birdeyeKey
+      });
 
-        socket.send(
-          JSON.stringify({
-            method: "subscribeTokenTrade",
-            keys: [tokenAddress]
-          })
-        );
-      };
+      if (birdResult?.ok && birdResult.socket) {
+        activeSocket = birdResult.socket;
+        return;
+      }
+    }
 
-      socket.onmessage = (msg) => {
-        try {
-          const data = JSON.parse(msg.toString());
+    sendSse(res, "fallback", {
+      live: false,
+      reason: birdeyeKey ? "no_live_source" : "missing_birdeye_key"
+    });
 
-          if (Array.isArray(data)) {
-            for (const item of data) {
-              const parsed = parsePumpPortalTrade(item);
-              if (parsed) sendSse(res, "trade", parsed);
-            }
-            return;
-          }
+    setTimeout(() => {
+      cleanup();
+    }, 1000);
+  } catch (error) {
+    sendSse(res, "fallback", {
+      live: false,
+      reason: "stream_error",
+      message: error?.message || "Unknown stream error"
+    });
 
-          if (data?.data && Array.isArray(data.data)) {
-            for (const item of data.data) {
-              const parsed = parsePumpPortalTrade(item);
-              if (parsed) sendSse(res, "trade", parsed);
-            }
-            return;
-          }
-
-          const parsed = parsePumpPortalTrade(data?.data || data);
-          if (parsed) sendSse(res, "trade", parsed);
-        } catch {}
-      };
-
-      socket.onerror = () => {};
-      socket.onclose = () => {};
-      return;
-    } catch {}
+    setTimeout(() => {
+      cleanup();
+    }, 1000);
   }
-
-  if (useBirdeye && birdeyeKey) {
-    try {
-      const { WebSocket } = await import("ws");
-
-      socket = new WebSocket(
-        `wss://public-api.birdeye.so/socket/solana?x-api-key=${encodeURIComponent(birdeyeKey)}`
-      );
-
-      socket.onopen = () => {
-        sendSse(res, "source", {
-          source: "birdeye",
-          live: true
-        });
-
-        socket.send(
-          JSON.stringify({
-            type: "SUBSCRIBE_TXS",
-            data: {
-              address: tokenAddress
-            }
-          })
-        );
-      };
-
-      socket.onmessage = (msg) => {
-        try {
-          const data = JSON.parse(msg.toString());
-
-          if (Array.isArray(data)) {
-            for (const item of data) {
-              const parsed = parseBirdeyeTrade(item);
-              if (parsed) sendSse(res, "trade", parsed);
-            }
-            return;
-          }
-
-          const parsed = parseBirdeyeTrade(data);
-          if (parsed) sendSse(res, "trade", parsed);
-        } catch {}
-      };
-
-      socket.onerror = () => {};
-      socket.onclose = () => {};
-      return;
-    } catch {}
-  }
-
-  sendSse(res, "fallback", {
-    live: false,
-    reason: birdeyeKey ? "no_live_source" : "missing_birdeye_key"
-  });
 }
