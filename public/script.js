@@ -3,7 +3,7 @@ window.onerror = function (msg, url, line, col) {
   return false;
 };
 
-const BRAND_X = "@karma0282";
+const BRAND_X = "@wojakmeterx";
 const BRAND_NAME = "wojakmeter";
 
 const TOP_COINS_REFRESH_MS = 30000;
@@ -35,7 +35,7 @@ const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 // ===============================
 let MOOD_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
 const MOOD_MAIN_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
-const MOOD_MAIN_LABEL = "MOOD (Coming Soon)";
+const MOOD_MAIN_LABEL = "MOOD";
 const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
 
 let isUsingDefaultTrending = true;
@@ -49,6 +49,8 @@ let moodResolvedAddress = "";
 
 let moodSocket = null;
 let moodReconnectTimer = null;
+let moodEventSource = null;
+let moodStreamReconnectTimer = null;
 
 let moodTrades = [];
 let moodPrice = 0;
@@ -248,12 +250,6 @@ function shortenAddress(value) {
 function setText(id, value) {
   const el = byId(id);
   if (el) el.textContent = value;
-}
-
-function setAllText(id, value) {
-  qsa(`#${CSS.escape(id)}`).forEach((el) => {
-    el.textContent = value;
-  });
 }
 
 function setImage(el, path, fallback = "") {
@@ -2621,6 +2617,18 @@ function cleanupMoodSocket() {
   moodSocket = null;
 }
 
+function cleanupMoodStream() {
+  clearTimeout(moodStreamReconnectTimer);
+
+  try {
+    if (moodEventSource) {
+      moodEventSource.close();
+    }
+  } catch {}
+
+  moodEventSource = null;
+}
+
 function connectMoodSocket() {
   const els = getMoodTokenElements();
   if (!els.section) return;
@@ -2714,7 +2722,64 @@ function connectMoodSocket() {
   }
 }
 
+function connectMoodStream() {
+  if (!moodResolvedAddress) return;
+
+  cleanupMoodStream();
+
+  const streamUrl =
+    `/api/token-stream?address=${encodeURIComponent(moodResolvedAddress)}` +
+    `&source=${encodeURIComponent(moodSource || "auto")}`;
+
+  try {
+    moodEventSource = new EventSource(streamUrl);
+
+    moodEventSource.addEventListener("ready", () => {});
+
+    moodEventSource.addEventListener("source", (event) => {
+      try {
+        const payload = JSON.parse(event.data || "{}");
+
+        if (payload?.source === "birdeye") {
+          moodSource = "birdeye";
+          updateMoodTokenMeta({ source: "Birdeye Live" });
+        } else if (payload?.source === "pumpportal") {
+          moodSource = "pumpfun";
+          updateMoodTokenMeta({ source: "Pump.fun Live" });
+        }
+      } catch {}
+    });
+
+    moodEventSource.addEventListener("trade", (event) => {
+      try {
+        const payload = JSON.parse(event.data || "{}");
+        registerMoodTrade(payload);
+      } catch (error) {
+        console.error("Mood stream parse error:", error);
+      }
+    });
+
+    moodEventSource.addEventListener("fallback", () => {
+      cleanupMoodStream();
+    });
+
+    moodEventSource.onerror = () => {
+      cleanupMoodStream();
+
+      clearTimeout(moodStreamReconnectTimer);
+      moodStreamReconnectTimer = setTimeout(() => {
+        if (moodResolvedAddress) connectMoodStream();
+      }, 3000);
+    };
+  } catch (error) {
+    console.error("Mood stream connection error:", error);
+  }
+}
+
 function resetMoodTokenState() {
+  cleanupMoodSocket();
+  cleanupMoodStream();
+
   moodTrades = [];
   moodPrice = 0;
   moodPrevPrice = 0;
@@ -2739,7 +2804,7 @@ async function loadMoodMarketSnapshot() {
   if (!moodResolvedAddress) return null;
 
   const market = await fetchJson(
-    `/api/token-market?address=${encodeURIComponent(moodResolvedAddress)}`,
+    `/api/token-data?address=${encodeURIComponent(moodResolvedAddress)}`,
     null
   );
 
@@ -2767,8 +2832,6 @@ async function loadMoodMarketSnapshot() {
   }
 
   moodLastAction = market?.lastAction || "Watching...";
-  moodPairAddress = market?.pairAddress || moodPairAddress;
-  moodDexId = market?.dexId || moodDexId;
 
   if (moodPrice > 0) {
     registerPriceIntoTimeframes(moodPrice);
@@ -2826,7 +2889,6 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
 
   if (!cleaned) {
     resetMoodTokenState();
-    cleanupMoodSocket();
     updateMoodTokenMeta(meta);
     updateMoodUI();
     return;
@@ -2855,9 +2917,11 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
       source:
         moodSource === "dexscreener"
           ? "DexScreener"
-          : moodSource === "pumpfun"
-            ? "Pump.fun"
-            : (meta?.source || "Unknown")
+          : moodSource === "birdeye"
+            ? "Birdeye"
+            : moodSource === "pumpfun"
+              ? "Pump.fun"
+              : (meta?.source || "Unknown")
     });
 
     if (byId("moodContractAddress")) {
@@ -2872,10 +2936,15 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
   await loadMoodMarketSnapshot();
   await loadMoodChartSnapshot();
 
-  if (moodSupportsLiveTrades) {
+  cleanupMoodSocket();
+  cleanupMoodStream();
+
+  if (moodSource === "pumpfun") {
+    moodSupportsLiveTrades = true;
     connectMoodSocket();
   } else {
-    cleanupMoodSocket();
+    moodSupportsLiveTrades = false;
+    connectMoodStream();
   }
 }
 
@@ -2893,7 +2962,9 @@ async function tryLoadDefaultTrendingToken() {
       name: top.name || "Trending Token",
       symbol: top.symbol || "---",
       image: top.image || "/assets/logo/wojakmeter_logo.png",
-      source: top.source === "dexscreener" ? "DexScreener" : "Pump.fun Trending"
+      source: top.source === "dexscreener_boosts" || top.source === "dexscreener_search"
+        ? "DexScreener"
+        : "Pump.fun Trending"
     });
 
     return true;
@@ -3059,6 +3130,7 @@ function setupMoodTokenControls() {
       const tf = btn.dataset.tokenTimeframe;
       if (!TOKEN_ALLOWED_TIMEFRAMES.includes(tf)) return;
       moodTokenTimeframe = tf;
+      renderMoodTimeframeButtons();
       await loadMoodChartSnapshot();
       updateMoodUI();
     });
