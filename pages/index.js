@@ -16,7 +16,6 @@ function scoreToMood(score) {
   return "frustration";
 }
 
-
 function formatCompactVolume(volumeUsd) {
   const value = Number(volumeUsd || 0);
 
@@ -126,8 +125,16 @@ export default function Home({ ogImageUrl }) {
               </div>
 
               <div className="topbar-right">
-                <a href="#moodSection" className="topbar-mood-link">
-                  MOOD
+                <a
+                  href="#moodSection"
+                  className="topbar-mood-link mood-logo-link"
+                  aria-label="Go to MOOD section"
+                >
+                  <img
+                    src="/moodlogo.png"
+                    alt="MOOD Logo"
+                    className="mood-nav-logo"
+                  />
                 </a>
 
                 <label className="style-label" htmlFor="styleSelector">
@@ -530,7 +537,13 @@ export default function Home({ ogImageUrl }) {
 
             <section className="mood-token-card card" id="moodSection">
               <div className="section-head">
-                <h3>MOOD</h3>
+                <div className="mood-section-logo-wrap">
+                  <img
+                    src="/moodlogo.png"
+                    alt="MOOD Logo"
+                    className="mood-section-logo"
+                  />
+                </div>
                 <span className="muted">Reactive token mood engine</span>
               </div>
 
@@ -548,11 +561,11 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="mood-ca-box">
                     <div className="mood-ca-head">
-                      <span>Contract Address</span>
+                      <span>MOOD Contract Address</span>
                     </div>
 
                     <div className="mood-ca-row">
-                      <code id="moodContractAddress">Loading token...</code>
+                      <code id="moodContractAddress">PEGAR_ADDRESS_OFICIAL_AQUI</code>
                       <button type="button" className="action-btn" id="copyMoodCaBtn">
                         Copy CA
                       </button>
