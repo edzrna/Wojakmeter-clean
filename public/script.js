@@ -36,6 +36,7 @@ const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 let MOOD_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
 const MOOD_MAIN_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
 const MOOD_MAIN_LABEL = "MOOD";
+const MOOD_FIXED_DISPLAY_CA = "pega tu contrato aqui";
 
 let isUsingDefaultTrending = true;
 let isUsingMoodToken = false;
@@ -2341,7 +2342,7 @@ function updateMoodUI() {
   moodLiveScore = computeMoodTradeScore();
   moodLiveMood = getMoodByScore(moodLiveScore);
 
-  if (els.ca) els.ca.textContent = moodResolvedAddress || MOOD_CA || "Coming soon";
+  if (els.ca) els.ca.textContent = MOOD_FIXED_DISPLAY_CA;
 
   if (els.price) {
     els.price.textContent = moodPrice > 0 ? formatCurrency(moodPrice) : "Loading live...";
@@ -2829,10 +2830,6 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
       symbol: resolved?.token?.symbol || meta?.symbol,
       image: resolved?.token?.image || meta?.image
     });
-
-    if (byId("moodContractAddress")) {
-      byId("moodContractAddress").textContent = moodResolvedAddress;
-    }
   } else {
     moodResolvedAddress = cleaned;
   }
@@ -2953,7 +2950,7 @@ function setupMoodTokenControls() {
   if (els.copyBtn && !els.copyBtn.dataset.bound) {
     els.copyBtn.dataset.bound = "1";
     els.copyBtn.addEventListener("click", async () => {
-      const text = moodResolvedAddress || MOOD_CA || "";
+      const text = MOOD_FIXED_DISPLAY_CA || "";
       if (!text) return;
 
       try {
@@ -3039,7 +3036,7 @@ async function initMoodToken() {
   ensureMoodFeedMarkup();
 
   if (els.ca) {
-    els.ca.textContent = "Auto loading...";
+    els.ca.textContent = MOOD_FIXED_DISPLAY_CA;
   }
 
   setupMoodTokenControls();
