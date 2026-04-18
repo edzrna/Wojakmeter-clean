@@ -36,19 +36,16 @@ const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 let MOOD_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
 const MOOD_MAIN_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
 const MOOD_MAIN_LABEL = "MOOD";
-const MOOD_WS_URL = "wss://pumpportal.fun/api/data";
 
 let isUsingDefaultTrending = true;
 let isUsingMoodToken = false;
 
-let moodSource = "pumpfun";
+let moodMarketSource = "Auto";
+let moodTradesSource = "Waiting...";
 let moodPairAddress = "";
 let moodDexId = "";
-let moodSupportsLiveTrades = false;
 let moodResolvedAddress = "";
 
-let moodSocket = null;
-let moodReconnectTimer = null;
 let moodEventSource = null;
 let moodStreamReconnectTimer = null;
 
@@ -63,6 +60,7 @@ let moodSellVolume = 0;
 let moodLiveScore = 50;
 let moodLiveMood = getMoodByScore(50);
 let moodTokenTimeframe = "5m";
+
 let moodTokenMeta = {
   name: "Trending Solana Token",
   symbol: "---",
@@ -2041,6 +2039,21 @@ function getMoodTradeIntensity(usdValue) {
   return 0.12;
 }
 
+function getMoodCombinedSourceLabel() {
+  const market = moodMarketSource || "Auto";
+  const trades = moodTradesSource || "Waiting...";
+
+  if (trades === "Waiting..." || trades === "No live trades") {
+    return market;
+  }
+
+  if (market === trades) {
+    return market;
+  }
+
+  return `${market} + ${trades}`;
+}
+
 function updateMoodTokenMeta(meta = {}) {
   moodTokenMeta = {
     ...moodTokenMeta,
@@ -2066,10 +2079,7 @@ function updateMoodTokenMeta(meta = {}) {
   }
 
   if (els.source) {
-    els.source.textContent =
-      meta.source ||
-      moodTokenMeta.source ||
-      (isUsingMoodToken ? MOOD_MAIN_LABEL : "Auto");
+    els.source.textContent = getMoodCombinedSourceLabel();
   }
 }
 
@@ -2388,6 +2398,10 @@ function updateMoodUI() {
     }
   }
 
+  if (els.source) {
+    els.source.textContent = getMoodCombinedSourceLabel();
+  }
+
   updateMoodHero(moodLiveMood, moodLiveScore);
   renderMoodTradesFeed();
   drawMoodBackdrop();
@@ -2601,22 +2615,6 @@ function registerMoodTrade(rawTrade) {
   applyMoodHeroImpulse(trade.side, trade.usdValue || 250);
 }
 
-function cleanupMoodSocket() {
-  clearTimeout(moodReconnectTimer);
-
-  try {
-    if (moodSocket) {
-      moodSocket.onopen = null;
-      moodSocket.onmessage = null;
-      moodSocket.onerror = null;
-      moodSocket.onclose = null;
-      moodSocket.close();
-    }
-  } catch {}
-
-  moodSocket = null;
-}
-
 function cleanupMoodStream() {
   clearTimeout(moodStreamReconnectTimer);
 
@@ -2629,99 +2627,6 @@ function cleanupMoodStream() {
   moodEventSource = null;
 }
 
-function connectMoodSocket() {
-  const els = getMoodTokenElements();
-  if (!els.section) return;
-  if (!MOOD_CA) return;
-  if (!moodSupportsLiveTrades) return;
-
-  cleanupMoodSocket();
-
-  try {
-    moodSocket = new WebSocket(MOOD_WS_URL);
-
-    moodSocket.onopen = () => {
-      try {
-        const payloadA = {
-          method: "subscribeTokenTrades",
-          params: { mint: MOOD_CA }
-        };
-        moodSocket.send(JSON.stringify(payloadA));
-
-        setTimeout(() => {
-          try {
-            if (!moodSocket || moodSocket.readyState !== WebSocket.OPEN) return;
-            const payloadB = {
-              method: "subscribeTokenTrade",
-              keys: [MOOD_CA]
-            };
-            moodSocket.send(JSON.stringify(payloadB));
-          } catch {}
-        }, 250);
-      } catch (error) {
-        console.error("MOOD subscribe error:", error);
-      }
-    };
-
-    moodSocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (!data) return;
-
-        if (Array.isArray(data)) {
-          data.forEach(registerMoodTrade);
-          return;
-        }
-
-        if (
-          data.txType ||
-          data.side ||
-          data.tradeType ||
-          data.type ||
-          data.price ||
-          data.priceUsd ||
-          data.volumeUsd ||
-          data.vUsd ||
-          data.marketCapUsd
-        ) {
-          registerMoodTrade(data);
-          return;
-        }
-
-        if (Array.isArray(data.data)) {
-          data.data.forEach(registerMoodTrade);
-          return;
-        }
-
-        if (data.data && typeof data.data === "object") {
-          registerMoodTrade(data.data);
-        }
-      } catch (error) {
-        console.error("MOOD WS parse error:", error);
-      }
-    };
-
-    moodSocket.onerror = () => {
-      try {
-        moodSocket.close();
-      } catch {}
-    };
-
-    moodSocket.onclose = () => {
-      clearTimeout(moodReconnectTimer);
-      moodReconnectTimer = setTimeout(() => {
-        if (MOOD_CA && moodSupportsLiveTrades) connectMoodSocket();
-      }, 2500);
-    };
-  } catch (error) {
-    console.error("MOOD WS connection error:", error);
-    clearTimeout(moodReconnectTimer);
-    moodReconnectTimer = setTimeout(() => {
-      if (MOOD_CA && moodSupportsLiveTrades) connectMoodSocket();
-    }, 2500);
-  }
-}
-
 function connectMoodStream() {
   if (!moodResolvedAddress) return;
 
@@ -2729,7 +2634,7 @@ function connectMoodStream() {
 
   const streamUrl =
     `/api/token-stream?address=${encodeURIComponent(moodResolvedAddress)}` +
-    `&source=${encodeURIComponent(moodSource || "auto")}`;
+    `&source=auto`;
 
   try {
     moodEventSource = new EventSource(streamUrl);
@@ -2741,12 +2646,15 @@ function connectMoodStream() {
         const payload = JSON.parse(event.data || "{}");
 
         if (payload?.source === "birdeye") {
-          moodSource = "birdeye";
-          updateMoodTokenMeta({ source: "Birdeye Live" });
+          moodTradesSource = "Birdeye Live";
         } else if (payload?.source === "pumpportal") {
-          moodSource = "pumpfun";
-          updateMoodTokenMeta({ source: "Pump.fun Live" });
+          moodTradesSource = "Pump.fun Live";
+        } else {
+          moodTradesSource = "Live";
         }
+
+        updateMoodTokenMeta({});
+        updateMoodUI();
       } catch {}
     });
 
@@ -2760,11 +2668,18 @@ function connectMoodStream() {
     });
 
     moodEventSource.addEventListener("fallback", () => {
+      moodTradesSource = "No live trades";
+      updateMoodTokenMeta({});
+      updateMoodUI();
       cleanupMoodStream();
     });
 
     moodEventSource.onerror = () => {
       cleanupMoodStream();
+
+      moodTradesSource = "Reconnecting...";
+      updateMoodTokenMeta({});
+      updateMoodUI();
 
       clearTimeout(moodStreamReconnectTimer);
       moodStreamReconnectTimer = setTimeout(() => {
@@ -2777,7 +2692,6 @@ function connectMoodStream() {
 }
 
 function resetMoodTokenState() {
-  cleanupMoodSocket();
   cleanupMoodStream();
 
   moodTrades = [];
@@ -2790,6 +2704,7 @@ function resetMoodTokenState() {
   moodSellVolume = 0;
   moodLiveScore = 50;
   moodLiveMood = getMoodByScore(50);
+  moodTradesSource = "Waiting...";
   moodHistory = {
     "1m": [],
     "5m": [],
@@ -2810,11 +2725,12 @@ async function loadMoodMarketSnapshot() {
 
   if (!market || typeof market !== "object") return null;
 
+  moodMarketSource = market?.meta?.source || "Auto";
+
   updateMoodTokenMeta({
     name: market?.meta?.name || moodTokenMeta.name,
     symbol: market?.meta?.symbol || moodTokenMeta.symbol,
-    image: market?.meta?.image || moodTokenMeta.image,
-    source: market?.meta?.source || moodTokenMeta.source
+    image: market?.meta?.image || moodTokenMeta.image
   });
 
   moodPrice = safeNum(market?.price, moodPrice);
@@ -2904,48 +2820,27 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
   const resolved = await resolveTokenSource(cleaned);
 
   if (resolved?.ok) {
-    moodSource = resolved.source || "pumpfun";
     moodResolvedAddress = resolved?.token?.address || cleaned;
     moodPairAddress = resolved?.pair?.pairAddress || "";
     moodDexId = resolved?.pair?.dexId || "";
-    moodSupportsLiveTrades = moodSource === "pumpfun";
 
     updateMoodTokenMeta({
       name: resolved?.token?.name || meta?.name,
       symbol: resolved?.token?.symbol || meta?.symbol,
-      image: resolved?.token?.image || meta?.image,
-      source:
-        moodSource === "dexscreener"
-          ? "DexScreener"
-          : moodSource === "birdeye"
-            ? "Birdeye"
-            : moodSource === "pumpfun"
-              ? "Pump.fun"
-              : (meta?.source || "Unknown")
+      image: resolved?.token?.image || meta?.image
     });
 
     if (byId("moodContractAddress")) {
       byId("moodContractAddress").textContent = moodResolvedAddress;
     }
   } else {
-    moodSource = "pumpfun";
     moodResolvedAddress = cleaned;
-    moodSupportsLiveTrades = true;
   }
 
   await loadMoodMarketSnapshot();
   await loadMoodChartSnapshot();
 
-  cleanupMoodSocket();
-  cleanupMoodStream();
-
-  if (moodSource === "pumpfun") {
-    moodSupportsLiveTrades = true;
-    connectMoodSocket();
-  } else {
-    moodSupportsLiveTrades = false;
-    connectMoodStream();
-  }
+  connectMoodStream();
 }
 
 async function tryLoadDefaultTrendingToken() {
@@ -2962,9 +2857,7 @@ async function tryLoadDefaultTrendingToken() {
       name: top.name || "Trending Token",
       symbol: top.symbol || "---",
       image: top.image || "/assets/logo/wojakmeter_logo.png",
-      source: top.source === "dexscreener_boosts" || top.source === "dexscreener_search"
-        ? "DexScreener"
-        : "Pump.fun Trending"
+      source: "Auto"
     });
 
     return true;
