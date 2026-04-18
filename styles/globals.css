@@ -82,6 +82,32 @@ a {
   background: transparent;
 }
 
+.mood-logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.mood-nav-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.mood-section-logo-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.mood-section-logo {
+  height: 34px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
 /* ===== TOPBAR ===== */
 
 .topbar {
