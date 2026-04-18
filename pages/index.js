@@ -16,6 +16,7 @@ function scoreToMood(score) {
   return "frustration";
 }
 
+
 function formatCompactVolume(volumeUsd) {
   const value = Number(volumeUsd || 0);
 
