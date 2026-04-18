@@ -49,16 +49,33 @@ export default async function handler(req, res) {
         .sort((a, b) => b.__score - a.__score);
 
       const best = scored[0];
+      if (!best) return null;
+
+      const resolvedAddress =
+        best?.baseToken?.address ||
+        tokenAddress;
+
+      const priceUsd = Number(best?.priceUsd || 0);
+      const liquidityUsd = Number(best?.liquidity?.usd || 0);
+      const marketCap = Number(best?.marketCap || 0);
+      const fdv = Number(best?.fdv || 0);
+      const volume24h = Number(best?.volume?.h24 || 0);
+
+      if (
+        !resolvedAddress ||
+        (!Number.isFinite(priceUsd) || priceUsd <= 0) &&
+        (!Number.isFinite(volume24h) || volume24h <= 0) &&
+        (!Number.isFinite(liquidityUsd) || liquidityUsd <= 0)
+      ) {
+        return null;
+      }
 
       return {
         ok: true,
         source: "dexscreener",
         token: {
           chainId: best?.chainId || "solana",
-          address:
-            best?.baseToken?.address === tokenAddress
-              ? best.baseToken.address
-              : tokenAddress,
+          address: resolvedAddress,
           name: best?.baseToken?.name || "Unknown Token",
           symbol: best?.baseToken?.symbol || "---",
           image: best?.info?.imageUrl || "",
@@ -68,11 +85,11 @@ export default async function handler(req, res) {
           chainId: best?.chainId || "solana",
           dexId: best?.dexId || "",
           pairAddress: best?.pairAddress || "",
-          priceUsd: Number(best?.priceUsd || 0),
-          liquidityUsd: Number(best?.liquidity?.usd || 0),
-          marketCap: Number(best?.marketCap || 0),
-          fdv: Number(best?.fdv || 0),
-          volume24h: Number(best?.volume?.h24 || 0)
+          priceUsd: Number.isFinite(priceUsd) ? priceUsd : 0,
+          liquidityUsd: Number.isFinite(liquidityUsd) ? liquidityUsd : 0,
+          marketCap: Number.isFinite(marketCap) ? marketCap : 0,
+          fdv: Number.isFinite(fdv) ? fdv : 0,
+          volume24h: Number.isFinite(volume24h) ? volume24h : 0
         }
       };
     } catch (error) {
@@ -110,8 +127,24 @@ export default async function handler(req, res) {
 
       const priceUsd =
         Number(json?.price_usd) ||
+        Number(json?.priceUsd) ||
+        Number(json?.price) ||
         ((marketCap > 0 && totalSupply > 0) ? marketCap / totalSupply : 0) ||
         0;
+
+      const volume24h =
+        Number(json?.volume_24h) ||
+        Number(json?.volume24h) ||
+        Number(json?.volume) ||
+        0;
+
+      if (
+        (!Number.isFinite(priceUsd) || priceUsd <= 0) &&
+        (!Number.isFinite(marketCap) || marketCap <= 0) &&
+        (!Number.isFinite(volume24h) || volume24h <= 0)
+      ) {
+        return null;
+      }
 
       return {
         ok: true,
@@ -128,15 +161,11 @@ export default async function handler(req, res) {
           chainId: "solana",
           dexId: "pumpfun",
           pairAddress: tokenAddress,
-          priceUsd,
+          priceUsd: Number.isFinite(priceUsd) ? priceUsd : 0,
           liquidityUsd: 0,
-          marketCap,
+          marketCap: Number.isFinite(marketCap) ? marketCap : 0,
           fdv: 0,
-          volume24h:
-            Number(json?.volume_24h) ||
-            Number(json?.volume24h) ||
-            Number(json?.volume) ||
-            0
+          volume24h: Number.isFinite(volume24h) ? volume24h : 0
         }
       };
     } catch (error) {
