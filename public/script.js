@@ -33,10 +33,10 @@ const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 // ===============================
 // MOOD TOKEN CONFIG
 // ===============================
-let MOOD_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
-const MOOD_MAIN_CA = "CAjtTHvC878f8cZ4zEwdvgjkjFM7rbYN8Mb1go1cpump";
+let MOOD_CA = "4JkeVbpKKjaLEWFk6tbUV9mLzYD6xmaPPGZwgRvkpump";
+const MOOD_MAIN_CA = "4JkeVbpKKjaLEWFk6tbUV9mLzYD6xmaPPGZwgRvkpump";
 const MOOD_MAIN_LABEL = "MOOD";
-const MOOD_FIXED_DISPLAY_CA = "Coming Soon";
+const MOOD_FIXED_DISPLAY_CA = "4JkeVbpKKjaLEWFk6tbUV9mLzYD6xmaPPGZwgRvkpump";
 
 let isUsingDefaultTrending = true;
 let isUsingMoodToken = false;
