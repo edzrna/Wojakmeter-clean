@@ -144,7 +144,7 @@ export default function Home({ ogImageUrl }) {
                   <option value="classic">Classic</option>
                   <option value="synth">Synth</option>
                   <option value="boyak">Boyak</option>
-                  <option value="minimal">Boyak</option>
+                  <option value="minimal">Minimal</option>
                 </select>
               </div>
             </div>
