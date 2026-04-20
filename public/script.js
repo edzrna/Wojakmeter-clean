@@ -324,7 +324,7 @@ function getMoodColor(key) {
 function getCurrentStyle() {
   const select = byId("styleSelector");
   const value = String(select?.value || "").toLowerCase();
-  return ["classic", "synth", "boyak"].includes(value) ? value : DEFAULT_STYLE;
+  return ["classic", "synth", "boyak", "minimal"].includes(value) ? value : DEFAULT_STYLE;
 }
 
 function getHeroImagePath(style, moodKey) {
@@ -366,7 +366,7 @@ function loadSavedStyle() {
     const saved = localStorage.getItem(STYLE_STORAGE_KEY);
     if (!saved) return DEFAULT_STYLE;
     const normalized = String(saved).toLowerCase();
-    return ["classic", "synth", "boyak"].includes(normalized) ? normalized : DEFAULT_STYLE;
+    return ["classic", "synth", "boyak", "minimal"].includes(normalized) ? normalized : DEFAULT_STYLE;
   } catch {
     return DEFAULT_STYLE;
   }
@@ -375,7 +375,7 @@ function loadSavedStyle() {
 function applyStyleClass(style) {
   const root = document.body;
   if (!root) return;
-  root.classList.remove("style-classic", "style-synth", "style-boyak");
+  root.classList.remove("style-classic", "style-synth", "style-boyak", "style-minimal");
   root.classList.add(`style-${style}`);
 }
 
