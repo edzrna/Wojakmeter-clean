@@ -3089,7 +3089,7 @@ function renderScale() {
 // ===============================
 function initStyle() {
   const savedStyle = loadSavedStyle();
-  const style = ["classic", "synth", "boyak"].includes(savedStyle)
+  const style = ["classic", "synth", "boyak", "minimal"].includes(savedStyle)
     ? savedStyle
     : DEFAULT_STYLE;
 
