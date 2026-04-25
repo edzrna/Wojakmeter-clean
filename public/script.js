@@ -3052,6 +3052,7 @@ async function initMoodToken() {
   startMoodPolling();
 }
 
+// ===============================
 // BAG MOOD MODULE
 // ===============================
 const BAG_STORAGE_KEY = "wojakBagMoodHoldings";
@@ -3107,9 +3108,9 @@ function findLocalBagCoin(query) {
   const q = String(query || "").toLowerCase();
 
   return (
-    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
-    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
-    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
+    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
+    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
+    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
     null
   );
 }
@@ -3118,17 +3119,20 @@ function normalizeBagCoin(item) {
   if (!item) return null;
 
   return {
-    id: item.id  item.coinId  item.address || "",
+    id: item.id || item.coinId || item.address || "",
     symbol: String(item.symbol || "---").toUpperCase(),
-    name: item.name  item.symbol  "Unknown",
-    image: item.image  item.thumb  item.large || "/assets/logo/wojakmeter_logo.png",
+    name: item.name || item.symbol || "Unknown",
+    image: item.image || item.thumb || item.large || "/assets/logo/wojakmeter_logo.png",
     source: item.source || "local",
-    network: item.network  item.chain  "",
-    contract: item.contract  item.address  "",
+    network: item.network || item.chain || "",
+    contract: item.contract || item.address || "",
     current_price: item.current_price ?? item.price ?? null,
-    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
-    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
+    price_change_percentage_1h_in_currency:
+      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency:
+      item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
+    price_change_percentage_7d_in_currency:
+      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
   };
 }
 
@@ -3139,20 +3143,19 @@ async function searchBagCoins(query) {
   const local = findLocalBagCoin(clean);
 
   const localResults = local
-    ? [{
-        ...normalizeBagCoin(local),
-        source: "WojakMeter"
-      }]
+    ? [{ ...normalizeBagCoin(local), source: "WojakMeter" }]
     : [];
 
-  const remote = await fetchJson(/api/bag-search?q=${encodeURIComponent(clean)}, { results: [] });
+  const remote = await fetchJson(
+    /api/bag-search?q=${encodeURIComponent(clean)},
+    { results: [] }
+  );
 
   const remoteResults = Array.isArray(remote?.results)
     ? remote.results.map(normalizeBagCoin).filter(Boolean)
     : [];
 
   const merged = [...localResults, ...remoteResults];
-
   const seen = new Set();
 
   return merged
@@ -3185,7 +3188,8 @@ function getHoldingChange(holding) {
     default: return h24;
   }
 }
-[24/04/2026 05:41 p. m.] Ed Zrna: function calculateBagMood() {
+
+function calculateBagMood() {
   if (!bagMoodHoldings.length) {
     const mood = getMoodByScore(50);
     return { change: 0, score: 50, mood };
@@ -3198,7 +3202,10 @@ function getHoldingChange(holding) {
     return { change, score, mood: getMoodByScore(score) };
   }
 
-  const totalUsd = bagMoodHoldings.reduce((sum, h) => sum + Number(h.usdValue || 0), 0);
+  const totalUsd = bagMoodHoldings.reduce(
+    (sum, h) => sum + Number(h.usdValue || 0),
+    0
+  );
 
   if (totalUsd <= 0) {
     const mood = getMoodByScore(50);
@@ -3233,7 +3240,7 @@ function renderBagSearchResults() {
   }
 
   box.innerHTML = bagSearchResults.map((coin, index) => {
-    return 
+    return `
       <div class="bag-result">
         <div class="bag-coin">
           <img src="${escapeHtml(coin.image)}" alt="${escapeHtml(coin.symbol)}">
@@ -3249,7 +3256,7 @@ function renderBagSearchResults() {
           Add
         </button>
       </div>
-    ;
+    `;
   }).join("");
 
   qsa("[data-bag-result-index]").forEach((btn) => {
@@ -3337,7 +3344,8 @@ function renderBagMood() {
       getHeroImagePath(DEFAULT_STYLE, mood.key)
     );
   }
-[24/04/2026 05:41 p. m.] Ed Zrna: qsa("[data-bag-mode]").forEach((btn) => {
+
+  qsa("[data-bag-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.bagMode === bagMoodMode);
   });
 
@@ -3354,11 +3362,11 @@ function renderBagMood() {
   if (!list) return;
 
   if (!bagMoodHoldings.length) {
-    list.innerHTML = 
+    list.innerHTML = `
       <div class="bag-empty">
         Build your bag to see what it feels like.
       </div>
-    ;
+    `;
     return;
   }
 
@@ -3368,7 +3376,7 @@ function renderBagMood() {
     const coinMood = getMoodByScore(score);
     const cls = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
 
-    return 
+    return `
       <div class="bag-row">
         <div class="bag-coin">
           <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
@@ -3386,7 +3394,7 @@ function renderBagMood() {
           Remove
         </button>
       </div>
-    ;
+    `;
   }).join("");
 
   qsa("[data-remove-bag]").forEach((btn) => {
@@ -3401,12 +3409,12 @@ function shareBagMoodOnX() {
   const mood = result.mood;
 
   const text =
-My Bag Mood is ${mood.name} (${result.score}/100)
+`My Bag Mood is ${mood.name} (${result.score}/100)
 
 Portfolio move: ${formatPercent(result.change)}
 Timeframe: ${bagMoodTimeframe}
 
-Track the emotion of your bags 👇;
+Track the emotion of your bags 👇`;
 
   const tweetUrl = new URL("https://twitter.com/intent/tweet");
   tweetUrl.searchParams.set("text", text);
@@ -3416,7 +3424,7 @@ Track the emotion of your bags 👇;
 
   try {
     const win = window.open(href, "_blank", "noopener,noreferrer");
-    if (!win  win.closed  typeof win.closed === "undefined") {
+    if (!win || win.closed || typeof win.closed === "undefined") {
       window.location.href = href;
     }
   } catch {
@@ -3478,7 +3486,8 @@ function setupBagMoodControls() {
   if (styleSelector && !styleSelector.dataset.bound) {
     styleSelector.dataset.bound = "1";
     styleSelector.value = getBagMoodStyle();
-[24/04/2026 05:41 p. m.] Ed Zrna: styleSelector.addEventListener("change", () => {
+
+    styleSelector.addEventListener("change", () => {
       const selected = String(styleSelector.value || "").toLowerCase();
       if (!getAllowedBagStyles().includes(selected)) return;
 
