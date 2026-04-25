@@ -3505,6 +3505,7 @@ pre.studio-output {
   .mood-trades-feed {
     max-height: 150px;
   }
+}
 
 /* ===============================
    BAG MOOD SECTION
@@ -3758,7 +3759,7 @@ pre.studio-output {
 }
 
 /* EMPTY */
-[24/04/2026 05:57 p. m.] Ed Zrna: .bag-empty {
+.bag-empty {
   text-align: center;
   padding: 20px;
   color: var(--muted);
@@ -3786,5 +3787,4 @@ pre.studio-output {
     grid-template-columns: 1fr;
     gap: 6px;
   }
-}
 }
