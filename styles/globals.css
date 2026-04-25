@@ -3540,7 +3540,7 @@ pre.studio-output {
 
 .bag-mood-grid {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: 360px 1fr;
   gap: 24px;
   margin-top: 16px;
 }
@@ -3560,17 +3560,18 @@ pre.studio-output {
 }
 
 .bag-mood-stage {
-  background: radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 70%);
+  background: radial-gradient(circle at center, rgba(255,255,255,0.05), transparent 70%);
   border-radius: 18px;
-  padding: 20px;
+  padding: 26px;
+  min-height: 240px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .bag-mood-hero-img {
-  width: 140px;
-  height: 140px;
+  width: 210px;
+  height: 210px;
   object-fit: contain;
 }
 
@@ -3730,7 +3731,29 @@ pre.studio-output {
   border-radius: 12px;
   border: 1px solid var(--line-soft);
   font-size: 13px;
+  transition: 0.2s;
 }
+
+/* ACTIVE ROW */
+
+.active-bag-row {
+  border-color: rgba(77, 255, 136, 0.55);
+  background:
+    linear-gradient(180deg, rgba(77, 255, 136, 0.08), rgba(77, 255, 136, 0.025)),
+    var(--panel-2);
+  box-shadow: 0 0 0 1px rgba(77, 255, 136, 0.18) inset;
+}
+
+.bag-row[data-select-bag] {
+  cursor: pointer;
+}
+
+.bag-row[data-select-bag]:hover {
+  border-color: rgba(77, 255, 136, 0.28);
+  filter: brightness(1.05);
+}
+
+/* COLORS */
 
 .bag-row .positive {
   color: var(--green);
@@ -3759,6 +3782,7 @@ pre.studio-output {
 }
 
 /* EMPTY */
+
 .bag-empty {
   text-align: center;
   padding: 20px;
@@ -3783,8 +3807,55 @@ pre.studio-output {
     grid-template-columns: 1fr;
   }
 
+  .bag-mood-visual {
+    align-items: center;
+  }
+
+  .bag-mood-stage {
+    width: 100%;
+    min-height: 260px;
+  }
+
+  .bag-mood-hero-img {
+    width: 230px;
+    height: 230px;
+  }
+
   .bag-row {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 8px;
+  }
+
+  .bag-mode-tabs,
+  .bag-search-box,
+  .bag-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .bag-mood-section {
+    padding: 16px;
+  }
+
+  .bag-mood-stage {
+    min-height: 220px;
+    padding: 18px;
+  }
+
+  .bag-mood-hero-img {
+    width: 190px;
+    height: 190px;
+  }
+
+  .bag-result {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bag-add-btn,
+  .bag-remove-btn {
+    width: 100%;
   }
 }
