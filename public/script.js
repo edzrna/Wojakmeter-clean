@@ -3166,7 +3166,58 @@ async function searchBagCoins(query) {
     .slice(0, 12);
 }
 
+function getHoldingLiveCoin(holding) {
+  return getCoinBySymbol(holding.symbol) || holding;
+}
+
+function getHoldingCurrentPrice(holding) {
+  const liveCoin = getHoldingLiveCoin(holding);
+  return Number(liveCoin.current_price || holding.current_price || 0);
+}
+
+function getHoldingTokenAmount(holding) {
+  const entryPrice = Number(holding.entryPrice || 0);
+  const invested = Number(holding.usdValue || 0);
+
+  if (entryPrice > 0 && invested > 0) {
+    return invested / entryPrice;
+  }
+
+  return 0;
+}
+
+function getHoldingCurrentValue(holding) {
+  const amount = getHoldingTokenAmount(holding);
+  const currentPrice = getHoldingCurrentPrice(holding);
+
+  if (amount > 0 && currentPrice > 0) {
+    return amount * currentPrice;
+  }
+
+  return Number(holding.usdValue || 0);
+}
+
+function getHoldingPnl(holding) {
+  const invested = Number(holding.usdValue || 0);
+  const currentValue = getHoldingCurrentValue(holding);
+  const pnl = currentValue - invested;
+  const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+
+  return {
+    invested,
+    currentValue,
+    pnl,
+    pnlPercent
+  };
+}
+
 function getHoldingChange(holding) {
+  const pnlData = getHoldingPnl(holding);
+
+  if (Number(holding.entryPrice || 0) > 0) {
+    return pnlData.pnlPercent;
+  }
+
   const localCoin = getCoinBySymbol(holding.symbol);
 
   if (localCoin) {
@@ -3187,6 +3238,41 @@ function getHoldingChange(holding) {
   }
 }
 
+function getBagPortfolioTotals() {
+  return bagMoodHoldings.reduce(
+    (totals, holding) => {
+      const data = getHoldingPnl(holding);
+
+      totals.invested += data.invested;
+      totals.currentValue += data.currentValue;
+      totals.pnl += data.pnl;
+
+      return totals;
+    },
+    {
+      invested: 0,
+      currentValue: 0,
+      pnl: 0
+    }
+  );
+}
+
+function updateBagPortfolioSummary() {
+  const totals = getBagPortfolioTotals();
+  const pnlPercent = totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0;
+
+  setText("bagPortfolioValue", formatCurrency(totals.currentValue));
+  setText("bagTotalInvested", formatCurrency(totals.invested));
+  setText("bagPortfolioPnl", formatCurrency(totals.pnl));
+  setText("bagPortfolioPnlPercent", formatPercent(pnlPercent));
+
+  const pnlEl = byId("bagPortfolioPnl");
+  const pnlPercentEl = byId("bagPortfolioPnlPercent");
+
+  if (pnlEl) applyPolarityClass(pnlEl, totals.pnl);
+  if (pnlPercentEl) applyPolarityClass(pnlPercentEl, pnlPercent);
+}
+
 function calculateBagMood() {
   if (!bagMoodHoldings.length) {
     return { change: 0, score: 50, mood: getMoodByScore(50) };
@@ -3196,30 +3282,34 @@ function calculateBagMood() {
     const selected = bagMoodHoldings[bagSelectedIndex] || bagMoodHoldings[0];
     const change = selected ? getHoldingChange(selected) : 0;
     const score = roundScore(normalizeChangeToScore(change, 10));
-    return { change, score, mood: getMoodByScore(score) };
+
+    return {
+      change,
+      score,
+      mood: getMoodByScore(score)
+    };
   }
 
-  const totalUsd = bagMoodHoldings.reduce((sum, h) => sum + Number(h.usdValue || 0), 0);
+  const totals = getBagPortfolioTotals();
 
-  if (totalUsd <= 0) {
+  if (totals.invested <= 0) {
     return { change: 0, score: 50, mood: getMoodByScore(50) };
   }
 
-  let weightedChange = 0;
-
-  bagMoodHoldings.forEach((holding) => {
-    const weight = Number(holding.usdValue || 0) / totalUsd;
-    weightedChange += getHoldingChange(holding) * weight;
-  });
-
+  const weightedChange = (totals.pnl / totals.invested) * 100;
   const score = roundScore(normalizeChangeToScore(weightedChange, 10));
 
-  return { change: weightedChange, score, mood: getMoodByScore(score) };
+  return {
+    change: weightedChange,
+    score,
+    mood: getMoodByScore(score)
+  };
 }
 
 function renderBagSearchResults() {
   const box = byId("bagSearchResults");
   const usdValue = Number(byId("bagValueInput")?.value || 0);
+  const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
 
   if (!box) return;
 
@@ -3252,26 +3342,34 @@ function renderBagSearchResults() {
       const coin = bagSearchResults[index];
       if (!coin) return;
 
-      addBagHolding(coin, usdValue > 0 ? usdValue : 100);
+      addBagHolding(coin, usdValue > 0 ? usdValue : 100, entryPrice);
 
       bagSearchResults = [];
       renderBagSearchResults();
 
       const searchInput = byId("bagSearchInput");
       const valueInput = byId("bagValueInput");
+      const entryInput = byId("bagEntryPriceInput");
 
       if (searchInput) searchInput.value = "";
       if (valueInput) valueInput.value = "";
+      if (entryInput) entryInput.value = "";
     });
   });
 }
 
-function addBagHolding(coin, usdValue) {
+function addBagHolding(coin, usdValue, entryPrice = 0) {
   const normalized = normalizeBagCoin(coin);
   if (!normalized) return;
 
   const value = Number(usdValue || 0);
   if (!Number.isFinite(value) || value <= 0) return;
+
+  const cleanEntryPrice = Number(entryPrice || 0);
+  const finalEntryPrice =
+    Number.isFinite(cleanEntryPrice) && cleanEntryPrice > 0
+      ? cleanEntryPrice
+      : Number(normalized.current_price || 0);
 
   const existing = bagMoodHoldings.find((h) => {
     if (normalized.contract && h.contract) return h.contract === normalized.contract;
@@ -3280,9 +3378,15 @@ function addBagHolding(coin, usdValue) {
 
   if (existing) {
     existing.usdValue = value;
+    existing.entryPrice = finalEntryPrice;
     Object.assign(existing, normalized);
   } else {
-    bagMoodHoldings.push({ ...normalized, usdValue: value });
+    bagMoodHoldings.push({
+      ...normalized,
+      usdValue: value,
+      entryPrice: finalEntryPrice
+    });
+
     bagSelectedIndex = bagMoodHoldings.length - 1;
   }
 
@@ -3332,6 +3436,8 @@ function renderBagMood() {
     );
   }
 
+  updateBagPortfolioSummary();
+
   qsa("[data-bag-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.bagMode === bagMoodMode);
   });
@@ -3357,7 +3463,9 @@ function renderBagMood() {
     const change = getHoldingChange(holding);
     const score = roundScore(normalizeChangeToScore(change, 10));
     const coinMood = getMoodByScore(score);
-    const cls = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
+    const pnlData = getHoldingPnl(holding);
+    const currentPrice = getHoldingCurrentPrice(holding);
+    const cls = pnlData.pnl > 0 ? "positive" : pnlData.pnl < 0 ? "negative" : "neutral";
     const isActive = bagMoodMode === "single" && bagSelectedIndex === index ? "active-bag-row" : "";
 
     return `
@@ -3370,9 +3478,35 @@ function renderBagMood() {
           </div>
         </div>
 
-        <div>${formatCurrency(holding.usdValue)}</div>
-        <div class="${cls}">${formatPercent(change)}</div>
-        <div class="mood-${coinMood.key}">${coinMood.name}</div>
+        <div>
+          <span class="bag-row-label">Invested</span>
+          <strong>${formatCurrency(pnlData.invested)}</strong>
+        </div>
+
+        <div>
+          <span class="bag-row-label">Entry</span>
+          <strong>${formatCurrency(holding.entryPrice || 0)}</strong>
+        </div>
+
+        <div>
+          <span class="bag-row-label">Now</span>
+          <strong>${formatCurrency(currentPrice)}</strong>
+        </div>
+
+        <div>
+          <span class="bag-row-label">Value</span>
+          <strong>${formatCurrency(pnlData.currentValue)}</strong>
+        </div>
+
+        <div class="${cls}">
+          <span class="bag-row-label">PNL</span>
+          <strong>${formatCurrency(pnlData.pnl)} / ${formatPercent(pnlData.pnlPercent)}</strong>
+        </div>
+
+        <div class="mood-${coinMood.key}">
+          <span class="bag-row-label">Mood</span>
+          <strong>${coinMood.name}</strong>
+        </div>
 
         <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
           Remove
@@ -3400,11 +3534,14 @@ function renderBagMood() {
 function shareBagMoodOnX() {
   const result = calculateBagMood();
   const mood = result.mood;
+  const totals = getBagPortfolioTotals();
+  const pnlPercent = totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0;
 
   const text = `My Bag Mood is ${mood.name} (${result.score}/100)
 
-Portfolio move: ${formatPercent(result.change)}
-Timeframe: ${bagMoodTimeframe}
+Portfolio Value: ${formatCurrency(totals.currentValue)}
+Invested: ${formatCurrency(totals.invested)}
+PNL: ${formatCurrency(totals.pnl)} (${formatPercent(pnlPercent)})
 
 Track the emotion of your bags 👇`;
 
