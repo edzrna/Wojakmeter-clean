@@ -711,7 +711,6 @@ export default function Home({ ogImageUrl }) {
                 </div>
               </div>
             </section>
-			
 			{/* ===============================
    BAG MOOD MODULE
 ================================ */}
@@ -719,7 +718,9 @@ export default function Home({ ogImageUrl }) {
   <div className="section-head">
     <div>
       <h3>BAG MOOD</h3>
-      <span className="muted">Track the emotion of your bags.</span>
+      <span className="muted">
+        Track your portfolio value, PNL and emotional state.
+      </span>
     </div>
 
     <div className="bag-style-control">
@@ -734,7 +735,6 @@ export default function Home({ ogImageUrl }) {
   </div>
 
   <div className="bag-mood-grid">
-    {/* LEFT VISUAL */}
     <div className="bag-mood-visual">
       <div className="bag-mood-stage">
         <img
@@ -772,7 +772,6 @@ export default function Home({ ogImageUrl }) {
       </div>
     </div>
 
-    {/* RIGHT SIDE */}
     <div className="bag-mood-main">
       <div className="bag-mode-tabs">
         <button type="button" className="active" data-bag-mode="portfolio">
@@ -784,11 +783,21 @@ export default function Home({ ogImageUrl }) {
       </div>
 
       <div className="timeframes bag-timeframes">
-        <button type="button" data-bag-timeframe="1h">1h</button>
-        <button type="button" data-bag-timeframe="4h">4h</button>
-        <button type="button" data-bag-timeframe="24h" className="active">24h</button>
-        <button type="button" data-bag-timeframe="7d">7d</button>
-        <button type="button" data-bag-timeframe="30d">30d</button>
+        <button type="button" data-bag-timeframe="1h">
+          1h
+        </button>
+        <button type="button" data-bag-timeframe="4h">
+          4h
+        </button>
+        <button type="button" data-bag-timeframe="24h" className="active">
+          24h
+        </button>
+        <button type="button" data-bag-timeframe="7d">
+          7d
+        </button>
+        <button type="button" data-bag-timeframe="30d">
+          30d
+        </button>
       </div>
 
       <div className="bag-search-box">
@@ -803,7 +812,16 @@ export default function Home({ ogImageUrl }) {
           id="bagValueInput"
           type="number"
           min="0"
-          placeholder="USD value"
+          step="any"
+          placeholder="USD invested"
+        />
+
+        <input
+          id="bagEntryPriceInput"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="Entry price"
         />
 
         <button id="bagSearchBtn" type="button" className="action-btn">
@@ -812,6 +830,32 @@ export default function Home({ ogImageUrl }) {
       </div>
 
       <div id="bagSearchResults" className="bag-search-results"></div>
+
+      <div className="bag-portfolio-summary">
+        <div>
+          <span>Portfolio Value</span>
+          <strong id="bagPortfolioValue">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Total Invested</span>
+          <strong id="bagTotalInvested">$0.00</strong>
+        </div>
+
+        <div>
+          <span>PNL</span>
+          <strong id="bagPortfolioPnl" className="neutral">
+            $0.00
+          </strong>
+        </div>
+
+        <div>
+          <span>PNL %</span>
+          <strong id="bagPortfolioPnlPercent" className="neutral">
+            +0.00%
+          </strong>
+        </div>
+      </div>
 
       <div id="bagMoodList" className="bag-mood-list">
         <div className="bag-empty">
@@ -831,6 +875,7 @@ export default function Home({ ogImageUrl }) {
     </div>
   </div>
 </section>
+			                             
 
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
