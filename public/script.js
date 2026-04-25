@@ -3108,15 +3108,9 @@ function findLocalBagCoin(query) {
   const q = String(query || "").toLowerCase();
 
   return (
-    topCoinsData.find(
-      (c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q
-    ) ||
-    trendingCoinsData.find(
-      (c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q
-    ) ||
-    topMemesData.find(
-      (c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q
-    ) ||
+    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
+    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
+    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
     null
   );
 }
@@ -3153,7 +3147,7 @@ async function searchBagCoins(query) {
     : [];
 
   const remote = await fetchJson(
-    /api/bag-search?q=${encodeURIComponent(clean)},
+    `/api/bag-search?q=${encodeURIComponent(clean)}`,
     { results: [] }
   );
 
@@ -3166,7 +3160,7 @@ async function searchBagCoins(query) {
 
   return merged
     .filter((coin) => {
-      const key = ${coin.source}-${coin.id}-${coin.contract}-${coin.symbol};
+      const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -3186,18 +3180,12 @@ function getHoldingChange(holding) {
   const d7 = Number(holding.price_change_percentage_7d_in_currency || 0);
 
   switch (bagMoodTimeframe) {
-    case "1h":
-      return h1;
-    case "4h":
-      return h24 / 6;
-    case "24h":
-      return h24;
-    case "7d":
-      return d7;
-    case "30d":
-      return d7 * 2.8;
-    default:
-      return h24;
+    case "1h": return h1;
+    case "4h": return h24 / 6;
+    case "24h": return h24;
+    case "7d": return d7;
+    case "30d": return d7 * 2.8;
+    default: return h24;
   }
 }
 
@@ -3251,27 +3239,25 @@ function renderBagSearchResults() {
     return;
   }
 
-  box.innerHTML = bagSearchResults
-    .map((coin, index) => {
-      return `
-        <div class="bag-result">
-          <div class="bag-coin">
-            <img src="${escapeHtml(coin.image)}" alt="${escapeHtml(coin.symbol)}">
-            <div>
-              <strong>${escapeHtml(coin.symbol)}</strong>
-              <span>${escapeHtml(coin.name)}${coin.network ? " • " + escapeHtml(coin.network) : ""}</span>
-            </div>
+  box.innerHTML = bagSearchResults.map((coin, index) => {
+    return `
+      <div class="bag-result">
+        <div class="bag-coin">
+          <img src="${escapeHtml(coin.image)}" alt="${escapeHtml(coin.symbol)}">
+          <div>
+            <strong>${escapeHtml(coin.symbol)}</strong>
+            <span>${escapeHtml(coin.name)}${coin.network ? " • " + escapeHtml(coin.network) : ""}</span>
           </div>
-
-          <span>${escapeHtml(coin.source || "source")}</span>
-
-          <button class="bag-add-btn" type="button" data-bag-result-index="${index}">
-            Add
-          </button>
         </div>
-      `;
-    })
-    .join("");
+
+        <span>${escapeHtml(coin.source || "source")}</span>
+
+        <button class="bag-add-btn" type="button" data-bag-result-index="${index}">
+          Add
+        </button>
+      </div>
+    `;
+  }).join("");
 
   qsa("[data-bag-result-index]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -3336,12 +3322,12 @@ function renderBagMood() {
   const title = byId("bagMoodTitle");
   if (title) {
     title.textContent = mood.name;
-    title.className = mood-${mood.key};
+    title.className = `mood-${mood.key}`;
   }
 
   const changeEl = byId("bagMoodChange");
 
-  setText("bagMoodScore", ${result.score}/100);
+  setText("bagMoodScore", `${result.score}/100`);
   setText("bagMoodChange", formatPercent(result.change));
   setText("bagMoodTimeframe", bagMoodTimeframe);
 
@@ -3351,7 +3337,7 @@ function renderBagMood() {
 
   const heroImg = byId("bagMoodHeroImg");
   if (heroImg) {
-    heroImg.className = bag-mood-hero-img ${mood.anim};
+    heroImg.className = `bag-mood-hero-img ${mood.anim}`;
     setImage(
       heroImg,
       getHeroImagePath(bagStyle, mood.key),
@@ -3384,34 +3370,32 @@ function renderBagMood() {
     return;
   }
 
-  list.innerHTML = bagMoodHoldings
-    .map((holding, index) => {
-      const change = getHoldingChange(holding);
-      const score = roundScore(normalizeChangeToScore(change, 10));
-      const coinMood = getMoodByScore(score);
-      const cls = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
+  list.innerHTML = bagMoodHoldings.map((holding, index) => {
+    const change = getHoldingChange(holding);
+    const score = roundScore(normalizeChangeToScore(change, 10));
+    const coinMood = getMoodByScore(score);
+    const cls = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
 
-      return `
-        <div class="bag-row">
-          <div class="bag-coin">
-            <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
-            <div>
-              <strong>${escapeHtml(holding.symbol)}</strong>
-              <span>${escapeHtml(holding.name || "")}</span>
-            </div>
+    return `
+      <div class="bag-row">
+        <div class="bag-coin">
+          <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
+          <div>
+            <strong>${escapeHtml(holding.symbol)}</strong>
+            <span>${escapeHtml(holding.name || "")}</span>
           </div>
-
-          <div>${formatCurrency(holding.usdValue)}</div>
-          <div class="${cls}">${formatPercent(change)}</div>
-          <div class="mood-${coinMood.key}">${coinMood.name}</div>
-
-          <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
-            Remove
-          </button>
         </div>
-      `;
-    })
-    .join("");
+
+        <div>${formatCurrency(holding.usdValue)}</div>
+        <div class="${cls}">${formatPercent(change)}</div>
+        <div class="mood-${coinMood.key}">${coinMood.name}</div>
+
+        <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
+          Remove
+        </button>
+      </div>
+    `;
+  }).join("");
 
   qsa("[data-remove-bag]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -3424,7 +3408,8 @@ function shareBagMoodOnX() {
   const result = calculateBagMood();
   const mood = result.mood;
 
-  const text = `My Bag Mood is ${mood.name} (${result.score}/100)
+  const text =
+`My Bag Mood is ${mood.name} (${result.score}/100)
 
 Portfolio move: ${formatPercent(result.change)}
 Timeframe: ${bagMoodTimeframe}
@@ -3516,7 +3501,6 @@ function setupBagMoodControls() {
 
   if (resetBtn && !resetBtn.dataset.bound) {
     resetBtn.dataset.bound = "1";
-
     resetBtn.addEventListener("click", () => {
       bagMoodHoldings = [];
       localStorage.removeItem(BAG_STORAGE_KEY);
