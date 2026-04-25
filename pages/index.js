@@ -711,6 +711,126 @@ export default function Home({ ogImageUrl }) {
                 </div>
               </div>
             </section>
+			
+			{/* ===============================
+   BAG MOOD MODULE
+================================ */}
+<section className="bag-mood-section card" id="bagMoodSection">
+  <div className="section-head">
+    <div>
+      <h3>BAG MOOD</h3>
+      <span className="muted">Track the emotion of your bags.</span>
+    </div>
+
+    <div className="bag-style-control">
+      <label htmlFor="bagStyleSelector">Bag Style</label>
+      <select id="bagStyleSelector" defaultValue="classic">
+        <option value="classic">Classic</option>
+        <option value="synth">Synth</option>
+        <option value="boyak">Boyak</option>
+        <option value="minimal">Minimal</option>
+      </select>
+    </div>
+  </div>
+
+  <div className="bag-mood-grid">
+    {/* LEFT VISUAL */}
+    <div className="bag-mood-visual">
+      <div className="bag-mood-stage">
+        <img
+          id="bagMoodHeroImg"
+          className="bag-mood-hero-img anim-float"
+          src="/assets/hero/classic/neutral.png"
+          alt="Bag Mood"
+        />
+      </div>
+
+      <div className="bag-mood-result">
+        <span>Portfolio Mood</span>
+        <strong id="bagMoodTitle" className="mood-neutral">
+          Neutral
+        </strong>
+
+        <div className="bag-mood-score-row">
+          <div>
+            <span>Score</span>
+            <strong id="bagMoodScore">50/100</strong>
+          </div>
+
+          <div>
+            <span>Change</span>
+            <strong id="bagMoodChange" className="neutral">
+              +0.00%
+            </strong>
+          </div>
+
+          <div>
+            <span>Timeframe</span>
+            <strong id="bagMoodTimeframe">24h</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT SIDE */}
+    <div className="bag-mood-main">
+      <div className="bag-mode-tabs">
+        <button type="button" className="active" data-bag-mode="portfolio">
+          Portfolio Mood
+        </button>
+        <button type="button" data-bag-mode="single">
+          Single Coin Mood
+        </button>
+      </div>
+
+      <div className="timeframes bag-timeframes">
+        <button type="button" data-bag-timeframe="1h">1h</button>
+        <button type="button" data-bag-timeframe="4h">4h</button>
+        <button type="button" data-bag-timeframe="24h" className="active">24h</button>
+        <button type="button" data-bag-timeframe="7d">7d</button>
+        <button type="button" data-bag-timeframe="30d">30d</button>
+      </div>
+
+      <div className="bag-search-box">
+        <input
+          id="bagSearchInput"
+          type="text"
+          placeholder="Search BTC, SOL, MOOD or paste contract address..."
+          autoComplete="off"
+        />
+
+        <input
+          id="bagValueInput"
+          type="number"
+          min="0"
+          placeholder="USD value"
+        />
+
+        <button id="bagSearchBtn" type="button" className="action-btn">
+          Add
+        </button>
+      </div>
+
+      <div id="bagSearchResults" className="bag-search-results"></div>
+
+      <div id="bagMoodList" className="bag-mood-list">
+        <div className="bag-empty">
+          Build your bag to see what it feels like.
+        </div>
+      </div>
+
+      <div className="bag-actions">
+        <button id="bagShareBtn" type="button" className="action-btn share-x-btn">
+          Share Bag Mood
+        </button>
+
+        <button id="bagResetBtn" type="button" className="action-btn">
+          Reset Bag
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
 
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
