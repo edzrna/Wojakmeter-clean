@@ -3145,7 +3145,7 @@ async function searchBagCoins(query) {
   const localResults = local ? [{ ...normalizeBagCoin(local), source: "WojakMeter" }] : [];
 
   const remote = await fetchJson(
-    /api/bag-search?q=${encodeURIComponent(clean)},
+    `/api/bag-search?q=${encodeURIComponent(clean)}`,
     { results: [] }
   );
 
@@ -3158,7 +3158,7 @@ async function searchBagCoins(query) {
 
   return merged
     .filter((coin) => {
-      const key = ${coin.source}-${coin.id}-${coin.contract}-${coin.symbol};
+      const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -3312,10 +3312,10 @@ function renderBagMood() {
   const title = byId("bagMoodTitle");
   if (title) {
     title.textContent = mood.name;
-    title.className = mood-${mood.key};
+    title.className = `mood-${mood.key}`;
   }
 
-  setText("bagMoodScore", ${result.score}/100);
+  setText("bagMoodScore", `${result.score}/100`);
   setText("bagMoodChange", formatPercent(result.change));
   setText("bagMoodTimeframe", bagMoodTimeframe);
 
@@ -3324,7 +3324,7 @@ function renderBagMood() {
 
   const heroImg = byId("bagMoodHeroImg");
   if (heroImg) {
-    heroImg.className = bag-mood-hero-img ${mood.anim};
+    heroImg.className = `bag-mood-hero-img ${mood.anim}`;
     setImage(
       heroImg,
       getHeroImagePath(bagStyle, mood.key),
@@ -3349,7 +3349,7 @@ function renderBagMood() {
   if (!list) return;
 
   if (!bagMoodHoldings.length) {
-    list.innerHTML = <div class="bag-empty">Build your bag to see what it feels like.</div>;
+    list.innerHTML = `<div class="bag-empty">Build your bag to see what it feels like.</div>`;
     return;
   }
 
