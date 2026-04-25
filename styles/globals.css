@@ -3505,4 +3505,285 @@ pre.studio-output {
   .mood-trades-feed {
     max-height: 150px;
   }
+
+/* ===============================
+   BAG MOOD SECTION
+================================ */
+
+.bag-mood-section {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 24px;
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+/* HEADER */
+
+.bag-style-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bag-style-control select {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+/* GRID */
+
+.bag-mood-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+/* ===============================
+   LEFT VISUAL
+================================ */
+
+.bag-mood-visual {
+  background: var(--panel-2);
+  border-radius: var(--radius);
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bag-mood-stage {
+  background: radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 70%);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bag-mood-hero-img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+}
+
+/* RESULT */
+
+.bag-mood-result span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bag-mood-result strong {
+  display: block;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.bag-mood-score-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  gap: 10px;
+}
+
+.bag-mood-score-row div {
+  flex: 1;
+  background: var(--panel-3);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.bag-mood-score-row span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bag-mood-score-row strong {
+  font-size: 14px;
+}
+
+/* ===============================
+   RIGHT SIDE
+================================ */
+
+.bag-mood-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* MODE TABS */
+
+.bag-mode-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.bag-mode-tabs button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.bag-mode-tabs button.active {
+  background: var(--panel-3);
+  border-color: var(--green);
+}
+
+/* SEARCH */
+
+.bag-search-box {
+  display: flex;
+  gap: 10px;
+}
+
+.bag-search-box input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+/* RESULTS */
+
+.bag-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bag-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-2);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-soft);
+}
+
+.bag-coin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bag-coin img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.bag-coin strong {
+  font-size: 13px;
+}
+
+.bag-coin span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bag-add-btn {
+  background: var(--green);
+  color: #000;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ===============================
+   LIST
+================================ */
+
+.bag-mood-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bag-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background: var(--panel-2);
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+
+.bag-row .positive {
+  color: var(--green);
+}
+
+.bag-row .negative {
+  color: var(--red);
+}
+
+.bag-row .neutral {
+  color: var(--gray);
+}
+
+.bag-remove-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bag-remove-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* EMPTY */
+[24/04/2026 05:57 p. m.] Ed Zrna: .bag-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ACTIONS */
+
+.bag-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 900px) {
+  .bag-mood-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bag-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
 }
