@@ -3052,6 +3052,472 @@ async function initMoodToken() {
   startMoodPolling();
 }
 
+// BAG MOOD MODULE
+// ===============================
+const BAG_STORAGE_KEY = "wojakBagMoodHoldings";
+const BAG_STYLE_STORAGE_KEY = "wojakBagMoodStyle";
+
+let bagMoodHoldings = [];
+let bagMoodTimeframe = "24h";
+let bagMoodMode = "portfolio";
+let bagMoodStyle = DEFAULT_STYLE;
+let bagSearchResults = [];
+
+function getAllowedBagStyles() {
+  return ["classic", "synth", "boyak", "minimal"];
+}
+
+function getBagMoodStyle() {
+  return getAllowedBagStyles().includes(bagMoodStyle) ? bagMoodStyle : DEFAULT_STYLE;
+}
+
+function saveBagMoodStyle(style) {
+  try {
+    localStorage.setItem(BAG_STYLE_STORAGE_KEY, style);
+  } catch {}
+}
+
+function loadBagMoodStyle() {
+  try {
+    const saved = localStorage.getItem(BAG_STYLE_STORAGE_KEY);
+    if (getAllowedBagStyles().includes(saved)) return saved;
+    return getCurrentStyle();
+  } catch {
+    return getCurrentStyle();
+  }
+}
+
+function saveBagMoodHoldings() {
+  try {
+    localStorage.setItem(BAG_STORAGE_KEY, JSON.stringify(bagMoodHoldings));
+  } catch {}
+}
+
+function loadBagMoodHoldings() {
+  try {
+    const saved = localStorage.getItem(BAG_STORAGE_KEY);
+    bagMoodHoldings = saved ? JSON.parse(saved) : [];
+    if (!Array.isArray(bagMoodHoldings)) bagMoodHoldings = [];
+  } catch {
+    bagMoodHoldings = [];
+  }
+}
+
+function findLocalBagCoin(query) {
+  const q = String(query || "").toLowerCase();
+
+  return (
+    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
+    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
+    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q  c.name?.toLowerCase?.() === q) 
+    null
+  );
+}
+
+function normalizeBagCoin(item) {
+  if (!item) return null;
+
+  return {
+    id: item.id  item.coinId  item.address || "",
+    symbol: String(item.symbol || "---").toUpperCase(),
+    name: item.name  item.symbol  "Unknown",
+    image: item.image  item.thumb  item.large || "/assets/logo/wojakmeter_logo.png",
+    source: item.source || "local",
+    network: item.network  item.chain  "",
+    contract: item.contract  item.address  "",
+    current_price: item.current_price ?? item.price ?? null,
+    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
+    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
+  };
+}
+
+async function searchBagCoins(query) {
+  const clean = String(query || "").trim();
+  if (!clean) return [];
+
+  const local = findLocalBagCoin(clean);
+
+  const localResults = local
+    ? [{
+        ...normalizeBagCoin(local),
+        source: "WojakMeter"
+      }]
+    : [];
+
+  const remote = await fetchJson(/api/bag-search?q=${encodeURIComponent(clean)}, { results: [] });
+
+  const remoteResults = Array.isArray(remote?.results)
+    ? remote.results.map(normalizeBagCoin).filter(Boolean)
+    : [];
+
+  const merged = [...localResults, ...remoteResults];
+
+  const seen = new Set();
+
+  return merged
+    .filter((coin) => {
+      const key = ${coin.source}-${coin.id}-${coin.contract}-${coin.symbol};
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+function getHoldingChange(holding) {
+  const localCoin = getCoinBySymbol(holding.symbol);
+
+  if (localCoin) {
+    return getCoinChangeForTimeframe(localCoin, bagMoodTimeframe);
+  }
+
+  const h1 = Number(holding.price_change_percentage_1h_in_currency || 0);
+  const h24 = Number(holding.price_change_percentage_24h_in_currency || 0);
+  const d7 = Number(holding.price_change_percentage_7d_in_currency || 0);
+
+  switch (bagMoodTimeframe) {
+    case "1h": return h1;
+    case "4h": return h24 / 6;
+    case "24h": return h24;
+    case "7d": return d7;
+    case "30d": return d7 * 2.8;
+    default: return h24;
+  }
+}
+[24/04/2026 05:41 p. m.] Ed Zrna: function calculateBagMood() {
+  if (!bagMoodHoldings.length) {
+    const mood = getMoodByScore(50);
+    return { change: 0, score: 50, mood };
+  }
+
+  if (bagMoodMode === "single") {
+    const selected = bagMoodHoldings[0];
+    const change = selected ? getHoldingChange(selected) : 0;
+    const score = roundScore(normalizeChangeToScore(change, 10));
+    return { change, score, mood: getMoodByScore(score) };
+  }
+
+  const totalUsd = bagMoodHoldings.reduce((sum, h) => sum + Number(h.usdValue || 0), 0);
+
+  if (totalUsd <= 0) {
+    const mood = getMoodByScore(50);
+    return { change: 0, score: 50, mood };
+  }
+
+  let weightedChange = 0;
+
+  bagMoodHoldings.forEach((holding) => {
+    const weight = Number(holding.usdValue || 0) / totalUsd;
+    weightedChange += getHoldingChange(holding) * weight;
+  });
+
+  const score = roundScore(normalizeChangeToScore(weightedChange, 10));
+
+  return {
+    change: weightedChange,
+    score,
+    mood: getMoodByScore(score)
+  };
+}
+
+function renderBagSearchResults() {
+  const box = byId("bagSearchResults");
+  const usdValue = Number(byId("bagValueInput")?.value || 0);
+
+  if (!box) return;
+
+  if (!bagSearchResults.length) {
+    box.innerHTML = "";
+    return;
+  }
+
+  box.innerHTML = bagSearchResults.map((coin, index) => {
+    return 
+      <div class="bag-result">
+        <div class="bag-coin">
+          <img src="${escapeHtml(coin.image)}" alt="${escapeHtml(coin.symbol)}">
+          <div>
+            <strong>${escapeHtml(coin.symbol)}</strong>
+            <span>${escapeHtml(coin.name)}${coin.network ? " • " + escapeHtml(coin.network) : ""}</span>
+          </div>
+        </div>
+
+        <span>${escapeHtml(coin.source || "source")}</span>
+
+        <button class="bag-add-btn" type="button" data-bag-result-index="${index}">
+          Add
+        </button>
+      </div>
+    ;
+  }).join("");
+
+  qsa("[data-bag-result-index]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.bagResultIndex);
+      const coin = bagSearchResults[index];
+      if (!coin) return;
+
+      addBagHolding(coin, usdValue > 0 ? usdValue : 100);
+
+      bagSearchResults = [];
+      renderBagSearchResults();
+
+      const searchInput = byId("bagSearchInput");
+      const valueInput = byId("bagValueInput");
+
+      if (searchInput) searchInput.value = "";
+      if (valueInput) valueInput.value = "";
+    });
+  });
+}
+
+function addBagHolding(coin, usdValue) {
+  const normalized = normalizeBagCoin(coin);
+  if (!normalized) return;
+
+  const value = Number(usdValue || 0);
+  if (!Number.isFinite(value) || value <= 0) return;
+
+  const existing = bagMoodHoldings.find((h) => {
+    if (normalized.contract && h.contract) return h.contract === normalized.contract;
+    return h.symbol === normalized.symbol;
+  });
+
+  if (existing) {
+    existing.usdValue = value;
+    Object.assign(existing, normalized);
+  } else {
+    bagMoodHoldings.push({
+      ...normalized,
+      usdValue: value
+    });
+  }
+
+  saveBagMoodHoldings();
+  renderBagMood();
+}
+
+function removeBagHolding(index) {
+  bagMoodHoldings.splice(index, 1);
+  saveBagMoodHoldings();
+  renderBagMood();
+}
+
+function renderBagMood() {
+  const section = byId("bagMoodSection");
+  if (!section) return;
+
+  const result = calculateBagMood();
+  const mood = result.mood;
+  const bagStyle = getBagMoodStyle();
+
+  const title = byId("bagMoodTitle");
+  if (title) {
+    title.textContent = mood.name;
+    title.className = mood-${mood.key};
+  }
+
+  const changeEl = byId("bagMoodChange");
+
+  setText("bagMoodScore", ${result.score}/100);
+  setText("bagMoodChange", formatPercent(result.change));
+  setText("bagMoodTimeframe", bagMoodTimeframe);
+
+  if (changeEl) {
+    applyPolarityClass(changeEl, result.change);
+  }
+
+  const heroImg = byId("bagMoodHeroImg");
+  if (heroImg) {
+    heroImg.className = bag-mood-hero-img ${mood.anim};
+    setImage(
+      heroImg,
+      getHeroImagePath(bagStyle, mood.key),
+      getHeroImagePath(DEFAULT_STYLE, mood.key)
+    );
+  }
+[24/04/2026 05:41 p. m.] Ed Zrna: qsa("[data-bag-mode]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.bagMode === bagMoodMode);
+  });
+
+  qsa("[data-bag-timeframe]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.bagTimeframe === bagMoodTimeframe);
+  });
+
+  const selector = byId("bagStyleSelector");
+  if (selector && selector.value !== bagStyle) {
+    selector.value = bagStyle;
+  }
+
+  const list = byId("bagMoodList");
+  if (!list) return;
+
+  if (!bagMoodHoldings.length) {
+    list.innerHTML = 
+      <div class="bag-empty">
+        Build your bag to see what it feels like.
+      </div>
+    ;
+    return;
+  }
+
+  list.innerHTML = bagMoodHoldings.map((holding, index) => {
+    const change = getHoldingChange(holding);
+    const score = roundScore(normalizeChangeToScore(change, 10));
+    const coinMood = getMoodByScore(score);
+    const cls = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
+
+    return 
+      <div class="bag-row">
+        <div class="bag-coin">
+          <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
+          <div>
+            <strong>${escapeHtml(holding.symbol)}</strong>
+            <span>${escapeHtml(holding.name || "")}</span>
+          </div>
+        </div>
+
+        <div>${formatCurrency(holding.usdValue)}</div>
+        <div class="${cls}">${formatPercent(change)}</div>
+        <div class="mood-${coinMood.key}">${coinMood.name}</div>
+
+        <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
+          Remove
+        </button>
+      </div>
+    ;
+  }).join("");
+
+  qsa("[data-remove-bag]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      removeBagHolding(Number(btn.dataset.removeBag));
+    });
+  });
+}
+
+function shareBagMoodOnX() {
+  const result = calculateBagMood();
+  const mood = result.mood;
+
+  const text =
+My Bag Mood is ${mood.name} (${result.score}/100)
+
+Portfolio move: ${formatPercent(result.change)}
+Timeframe: ${bagMoodTimeframe}
+
+Track the emotion of your bags 👇;
+
+  const tweetUrl = new URL("https://twitter.com/intent/tweet");
+  tweetUrl.searchParams.set("text", text);
+  tweetUrl.searchParams.set("url", "https://wojakmeter.com");
+
+  const href = tweetUrl.toString();
+
+  try {
+    const win = window.open(href, "_blank", "noopener,noreferrer");
+    if (!win  win.closed  typeof win.closed === "undefined") {
+      window.location.href = href;
+    }
+  } catch {
+    window.location.href = href;
+  }
+}
+
+function setupBagMoodControls() {
+  const searchBtn = byId("bagSearchBtn");
+  const searchInput = byId("bagSearchInput");
+
+  if (searchBtn && searchInput && !searchBtn.dataset.bound) {
+    searchBtn.dataset.bound = "1";
+
+    searchBtn.addEventListener("click", async () => {
+      const q = String(searchInput.value || "").trim();
+      if (!q) return;
+
+      const oldText = searchBtn.textContent;
+      searchBtn.textContent = "Searching...";
+
+      bagSearchResults = await searchBagCoins(q);
+
+      searchBtn.textContent = oldText || "Add";
+
+      renderBagSearchResults();
+    });
+
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        searchBtn.click();
+      }
+    });
+  }
+
+  qsa("[data-bag-mode]").forEach((btn) => {
+    if (btn.dataset.boundBagMode) return;
+    btn.dataset.boundBagMode = "1";
+
+    btn.addEventListener("click", () => {
+      bagMoodMode = btn.dataset.bagMode || "portfolio";
+      renderBagMood();
+    });
+  });
+
+  qsa("[data-bag-timeframe]").forEach((btn) => {
+    if (btn.dataset.boundBagTf) return;
+    btn.dataset.boundBagTf = "1";
+
+    btn.addEventListener("click", () => {
+      bagMoodTimeframe = btn.dataset.bagTimeframe || "24h";
+      renderBagMood();
+    });
+  });
+
+  const styleSelector = byId("bagStyleSelector");
+
+  if (styleSelector && !styleSelector.dataset.bound) {
+    styleSelector.dataset.bound = "1";
+    styleSelector.value = getBagMoodStyle();
+[24/04/2026 05:41 p. m.] Ed Zrna: styleSelector.addEventListener("change", () => {
+      const selected = String(styleSelector.value || "").toLowerCase();
+      if (!getAllowedBagStyles().includes(selected)) return;
+
+      bagMoodStyle = selected;
+      saveBagMoodStyle(selected);
+      renderBagMood();
+    });
+  }
+
+  const resetBtn = byId("bagResetBtn");
+
+  if (resetBtn && !resetBtn.dataset.bound) {
+    resetBtn.dataset.bound = "1";
+    resetBtn.addEventListener("click", () => {
+      bagMoodHoldings = [];
+      localStorage.removeItem(BAG_STORAGE_KEY);
+      renderBagMood();
+    });
+  }
+
+  const shareBtn = byId("bagShareBtn");
+
+  if (shareBtn && !shareBtn.dataset.bound) {
+    shareBtn.dataset.bound = "1";
+    shareBtn.addEventListener("click", shareBagMoodOnX);
+  }
+}
+
+function initBagMood() {
+  const section = byId("bagMoodSection");
+  if (!section) return;
+
+  bagMoodStyle = loadBagMoodStyle();
+  loadBagMoodHoldings();
+  setupBagMoodControls();
+  renderBagMood();
+}
+
+
 // ===============================
 // SCALE
 // ===============================
@@ -3235,6 +3701,7 @@ function setupButtons() {
     await loadGlobalMarket();
     updateMoodHero(moodLiveMood, moodLiveScore);
     drawMoodBackdrop();
+	renderBagMood();
   });
 
   byId("shareMoodBtn")?.addEventListener("click", shareMoodOnX);
@@ -3311,8 +3778,11 @@ async function boot() {
   setupPulsePanel();
 
   await initMoodToken();
-  await loadAll();
-  startAutoRefresh();
+await loadAll();
+
+initBagMood();
+
+startAutoRefresh();
 }
 
 if (document.readyState === "loading") {
