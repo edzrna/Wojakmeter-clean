@@ -295,13 +295,13 @@ function applyPolarityClass(el, value, neutralZero = true) {
 // MOODS
 // ===============================
 function getMoodByScore(score) {
-  if (score >= 85) return { key: "euphoria", name: "Euphoria", anim: "anim-pulse", range: "85–100" };
-  if (score >= 70) return { key: "content", name: "Content", anim: "anim-float", range: "70–84" };
-  if (score >= 60) return { key: "optimism", name: "Optimism", anim: "anim-float", range: "60–69" };
-  if (score >= 45) return { key: "neutral", name: "Neutral", anim: "anim-blink", range: "45–59" };
-  if (score >= 35) return { key: "doubt", name: "Doubt", anim: "anim-tilt", range: "35–44" };
-  if (score >= 20) return { key: "concern", name: "Concern", anim: "anim-shake", range: "20–34" };
-  return { key: "frustration", name: "Frustration", anim: "anim-shake", range: "0–19" };
+  if (score >= 85) return { key: "euphoria", name: "Euphoria", anim: "anim-pulse", range: "85â€“100" };
+  if (score >= 70) return { key: "content", name: "Content", anim: "anim-float", range: "70â€“84" };
+  if (score >= 60) return { key: "optimism", name: "Optimism", anim: "anim-float", range: "60â€“69" };
+  if (score >= 45) return { key: "neutral", name: "Neutral", anim: "anim-blink", range: "45â€“59" };
+  if (score >= 35) return { key: "doubt", name: "Doubt", anim: "anim-tilt", range: "35â€“44" };
+  if (score >= 20) return { key: "concern", name: "Concern", anim: "anim-shake", range: "20â€“34" };
+  return { key: "frustration", name: "Frustration", anim: "anim-shake", range: "0â€“19" };
 }
 
 function normalizeChangeToScore(changePct, sensitivity = 10) {
@@ -1873,7 +1873,7 @@ function buildMemeScene(ctx) {
   return `
 <strong>Scene:</strong> A ${getCurrentStyle()} Wojak hero reacts to a ${ctx.globalMood.toLowerCase()} market while ${ctx.activeCoin} leads the visual focus. The dashboard shows ${ctx.coinPerformance} on the ${ctx.coinTimeframe} chart, and the market atmosphere is influenced by ${ctx.macroLabel.toLowerCase()}.
 
-<strong>Signal mix:</strong> Market ${ctx.marketScore}/100 • Social ${ctx.socialScore}/100 • Driver ${ctx.driverScore}/100 • Pulse ${ctx.pulseScore}/100
+<strong>Signal mix:</strong> Market ${ctx.marketScore}/100 â€¢ Social ${ctx.socialScore}/100 â€¢ Driver ${ctx.driverScore}/100 â€¢ Pulse ${ctx.pulseScore}/100
 
 <strong>Visual tone:</strong> The image should feel premium, dramatic and native to crypto X, with clear emotional readability and a strong meme format.
   `.trim();
@@ -1883,7 +1883,7 @@ function buildDailyMeme(ctx) {
   return `
 <strong>Today's market setup:</strong> The crypto market is sitting in <strong>${ctx.globalMood}</strong> on the <strong>${ctx.globalTimeframe}</strong> view, with overall market performance at <strong>${formatPercent(ctx.globalChange)}</strong>.
 
-<strong>Signal blend:</strong> Market <strong>${ctx.marketScore}</strong> • Social <strong>${ctx.socialScore}</strong> • Driver <strong>${ctx.driverScore}</strong> • Pulse <strong>${ctx.pulseScore}</strong>
+<strong>Signal blend:</strong> Market <strong>${ctx.marketScore}</strong> â€¢ Social <strong>${ctx.socialScore}</strong> â€¢ Driver <strong>${ctx.driverScore}</strong> â€¢ Pulse <strong>${ctx.pulseScore}</strong>
 
 <strong>Daily meme angle:</strong> Focus on ${ctx.activeCoin} as the emotional anchor, use ${ctx.macroLabel.toLowerCase()} as the macro backdrop, and make the reaction feel instantly understandable for crypto traders scrolling X.
   `.trim();
@@ -1963,28 +1963,28 @@ async function copyStudioTarget(targetId) {
 function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
   const moodIconMap = {
-    Euphoria: "🤩",
-    Content: "😌",
-    Optimism: "🙂",
-    Neutral: "😐",
-    Doubt: "🤨",
-    Concern: "😟",
-    Frustration: "😤"
+    Euphoria: "ðŸ¤©",
+    Content: "ðŸ˜Œ",
+    Optimism: "ðŸ™‚",
+    Neutral: "ðŸ˜",
+    Doubt: "ðŸ¤¨",
+    Concern: "ðŸ˜Ÿ",
+    Frustration: "ðŸ˜¤"
   };
 
-  const moodIcon = moodIconMap[ctx.globalMood] || "🧠";
+  const moodIcon = moodIconMap[ctx.globalMood] || "ðŸ§ ";
 
   const text =
 `${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
 
-📊 Macro: ${ctx.macroLabel}
-⏱️ Timeframe: ${ctx.globalTimeframe}
-📉 Move: ${formatPercent(ctx.globalChange)}
-💰 Volume: ${ctx.globalVolume}
+ðŸ“Š Macro: ${ctx.macroLabel}
+â±ï¸ Timeframe: ${ctx.globalTimeframe}
+ðŸ“‰ Move: ${formatPercent(ctx.globalChange)}
+ðŸ’° Volume: ${ctx.globalVolume}
 
 ${moodIcon} ${ctx.macroNarrative}
 
-Track the market mood live 👇`;
+Track the market mood live ðŸ‘‡`;
 
   const shareUrl =
     "https://twitter.com/intent/tweet?text=" +
@@ -3004,7 +3004,7 @@ function setupMoodTokenControls() {
     els.loadMoodBtn.dataset.bound = "1";
     els.loadMoodBtn.addEventListener("click", async () => {
       if (!MOOD_MAIN_CA) {
-        alert("MOOD token launching soon 🚀");
+        alert("MOOD token launching soon ðŸš€");
         return;
       }
 
@@ -3192,7 +3192,6 @@ function renderBagMood() {
   });
 }
 
-
 // ===============================
 // SCALE
 // ===============================
@@ -3376,7 +3375,6 @@ function setupButtons() {
     await loadGlobalMarket();
     updateMoodHero(moodLiveMood, moodLiveScore);
     drawMoodBackdrop();
-	renderBagMood();
   });
 
   byId("shareMoodBtn")?.addEventListener("click", shareMoodOnX);
@@ -3455,9 +3453,9 @@ async function boot() {
   await initMoodToken();
   await loadAll();
 
-  initBagMood();
+   initBagMood();
 
-  startAutoRefresh();
+   startAutoRefresh();
 }
 
 if (document.readyState === "loading") {
