@@ -3236,7 +3236,16 @@ function getLiveBagCoin(holding) {
 
 function getHoldingLivePrice(holding) {
   const live = getLiveBagCoin(holding);
-  return Number(live.current_price || holding.current_price || 0);
+
+  const livePrice = Number(live.current_price || 0);
+  const storedPrice = Number(holding.current_price || 0);
+  const entryPrice = Number(holding.entryPrice || 0);
+
+  if (livePrice > 0) return livePrice;
+  if (storedPrice > 0) return storedPrice;
+  if (entryPrice > 0) return entryPrice;
+
+  return 0;
 }
 
 function getHoldingTokens(holding) {
@@ -3248,11 +3257,12 @@ function getHoldingTokens(holding) {
 }
 
 function getHoldingCurrentValue(holding) {
+  const invested = Number(holding.usdValue || 0);
   const tokens = getHoldingTokens(holding);
   const livePrice = getHoldingLivePrice(holding);
 
   if (tokens > 0 && livePrice > 0) return tokens * livePrice;
-  return Number(holding.usdValue || 0);
+  return invested;
 }
 
 function getHoldingPnl(holding) {
@@ -3420,14 +3430,7 @@ function renderBagSearchResults() {
 
       bagSearchResults = [];
       renderBagSearchResults();
-
-      const searchInput = byId("bagSearchInput");
-      const valueInput = byId("bagValueInput");
-      const entryInput = byId("bagEntryPriceInput");
-
-      if (searchInput) searchInput.value = "";
-      if (valueInput) valueInput.value = "";
-      if (entryInput) entryInput.value = "";
+      clearBagInputs();
     });
   });
 }
