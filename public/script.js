@@ -3105,11 +3105,29 @@ function loadBagMoodHoldings() {
 }
 
 function ensureBagMoodVisualMarkup() {
-  byId("bagSelectedCoinBadge")?.remove();
-  byId("bagMoodIconBadge")?.remove();
-  byId("bagMoodIconImg")?.remove();
-  byId("bagSelectedCoinImg")?.remove();
-  byId("bagSelectedCoinSymbol")?.remove();
+  const stage = qs(".bag-mood-stage");
+  if (!stage) return;
+
+  if (!byId("bagSelectedCoinBadge")) {
+    const coinBadge = document.createElement("div");
+    coinBadge.id = "bagSelectedCoinBadge";
+    coinBadge.className = "bag-selected-coin-badge hidden";
+    coinBadge.innerHTML = `
+      <img id="bagSelectedCoinImg" src="/assets/logo/wojakmeter_logo.png" alt="Selected coin">
+      <span id="bagSelectedCoinSymbol">---</span>
+    `;
+    stage.appendChild(coinBadge);
+  }
+
+  if (!byId("bagMoodIconBadge")) {
+    const moodBadge = document.createElement("div");
+    moodBadge.id = "bagMoodIconBadge";
+    moodBadge.className = "bag-mood-icon-badge";
+    moodBadge.innerHTML = `
+      <img id="bagMoodIconImg" src="/assets/icons/classic/neutral.png" alt="Bag mood icon">
+    `;
+    stage.appendChild(moodBadge);
+  }
 }
 
 function findLocalBagCoin(query) {
@@ -3137,6 +3155,9 @@ function normalizeBagCoin(item) {
     network: item.network || item.chain || "",
     contract: item.contract || item.address || "",
     current_price: Number.isFinite(price) ? price : 0,
+    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
+    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0,
     volatilityType: item.volatilityType || item.category || ""
   };
 }
@@ -3160,12 +3181,14 @@ async function searchBagCoins(query) {
   const merged = [...localResults, ...remoteResults];
   const seen = new Set();
 
-  return merged.filter((coin) => {
-    const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 12);
+  return merged
+    .filter((coin) => {
+      const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
 }
 
 function getLiveBagCoin(holding) {
@@ -3181,6 +3204,7 @@ function getHoldingLivePrice(holding) {
 function getHoldingTokens(holding) {
   const entryPrice = Number(holding.entryPrice || 0);
   const invested = Number(holding.usdValue || 0);
+
   if (entryPrice > 0 && invested > 0) return invested / entryPrice;
   return 0;
 }
@@ -3188,12 +3212,15 @@ function getHoldingTokens(holding) {
 function getHoldingCurrentValue(holding) {
   const tokens = getHoldingTokens(holding);
   const livePrice = getHoldingLivePrice(holding);
+
   if (tokens > 0 && livePrice > 0) return tokens * livePrice;
   return Number(holding.usdValue || 0);
 }
 
 function getHoldingPnl(holding) {
-  return getHoldingCurrentValue(holding) - Number(holding.usdValue || 0);
+  const invested = Number(holding.usdValue || 0);
+  const value = getHoldingCurrentValue(holding);
+  return value - invested;
 }
 
 function getHoldingPnlPercent(holding) {
@@ -3244,6 +3271,7 @@ function scoreBagPnlPercent(pnlPercent, holding = null) {
 function calculateBagMood() {
   if (!bagMoodHoldings.length) {
     return {
+      change: 0,
       score: 50,
       mood: getMoodByScore(50),
       portfolioValue: 0,
@@ -3267,6 +3295,7 @@ function calculateBagMood() {
     const score = roundScore(scoreBagPnlPercent(pnlPercent, selected));
 
     return {
+      change: pnlPercent,
       score,
       mood: getMoodByScore(score),
       portfolioValue: value,
@@ -3282,16 +3311,19 @@ function calculateBagMood() {
   const pnl = portfolioValue - totalInvested;
   const pnlPercent = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
 
-  const weightedScore = totalInvested > 0
-    ? bagMoodHoldings.reduce((sum, holding) => {
-        const weight = Number(holding.usdValue || 0) / totalInvested;
-        return sum + scoreBagPnlPercent(getHoldingPnlPercent(holding), holding) * weight;
-      }, 0)
-    : 50;
+  let weightedScore = 50;
+
+  if (totalInvested > 0) {
+    weightedScore = bagMoodHoldings.reduce((sum, holding) => {
+      const weight = Number(holding.usdValue || 0) / totalInvested;
+      return sum + scoreBagPnlPercent(getHoldingPnlPercent(holding), holding) * weight;
+    }, 0);
+  }
 
   const score = roundScore(weightedScore);
 
   return {
+    change: pnlPercent,
     score,
     mood: getMoodByScore(score),
     portfolioValue,
@@ -3334,7 +3366,8 @@ function renderBagSearchResults() {
 
   qsa("[data-bag-result-index]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const coin = bagSearchResults[Number(btn.dataset.bagResultIndex)];
+      const index = Number(btn.dataset.bagResultIndex);
+      const coin = bagSearchResults[index];
       if (!coin) return;
 
       addBagHolding(coin, usdValue > 0 ? usdValue : 100, entryPrice);
@@ -3342,9 +3375,13 @@ function renderBagSearchResults() {
       bagSearchResults = [];
       renderBagSearchResults();
 
-      if (byId("bagSearchInput")) byId("bagSearchInput").value = "";
-      if (byId("bagValueInput")) byId("bagValueInput").value = "";
-      if (byId("bagEntryPriceInput")) byId("bagEntryPriceInput").value = "";
+      const searchInput = byId("bagSearchInput");
+      const valueInput = byId("bagValueInput");
+      const entryInput = byId("bagEntryPriceInput");
+
+      if (searchInput) searchInput.value = "";
+      if (valueInput) valueInput.value = "";
+      if (entryInput) entryInput.value = "";
     });
   });
 }
@@ -3369,10 +3406,9 @@ function addBagHolding(coin, usdValue, entryPrice = 0) {
   });
 
   if (existing) {
-    Object.assign(existing, normalized, {
-      usdValue: value,
-      entryPrice: finalEntryPrice
-    });
+    existing.usdValue = value;
+    existing.entryPrice = finalEntryPrice;
+    Object.assign(existing, normalized);
   } else {
     bagMoodHoldings.push({
       ...normalized,
@@ -3400,6 +3436,9 @@ function removeBagHolding(index) {
 function renderBagVisual(result) {
   const mood = result.mood;
   const bagStyle = getBagMoodStyle();
+  const selected = bagMoodMode === "single"
+    ? (result.selected || bagMoodHoldings[bagSelectedIndex])
+    : null;
 
   const heroImg = byId("bagMoodHeroImg");
   if (heroImg) {
@@ -3410,6 +3449,33 @@ function renderBagVisual(result) {
       getHeroImagePath(DEFAULT_STYLE, mood.key)
     );
   }
+
+  const moodIcon = byId("bagMoodIconImg");
+  if (moodIcon) {
+    setImage(
+      moodIcon,
+      getIconImagePath(SHARED_ICON_STYLE, mood.key),
+      getIconImagePath(DEFAULT_STYLE, mood.key)
+    );
+    moodIcon.alt = `${mood.name} icon`;
+  }
+
+  const coinBadge = byId("bagSelectedCoinBadge");
+  const coinImg = byId("bagSelectedCoinImg");
+  const coinSymbol = byId("bagSelectedCoinSymbol");
+
+  if (coinBadge) {
+    coinBadge.classList.toggle("hidden", !selected);
+  }
+
+  if (selected && coinImg) {
+    coinImg.src = selected.image || "/assets/logo/wojakmeter_logo.png";
+    coinImg.alt = `${selected.symbol} selected`;
+  }
+
+  if (selected && coinSymbol) {
+    coinSymbol.textContent = selected.symbol || "---";
+  }
 }
 
 function updateBagSummary(result) {
@@ -3418,8 +3484,10 @@ function updateBagSummary(result) {
   setText("bagPortfolioPnl", formatCurrency(result.pnl));
   setText("bagPortfolioPnlPercent", formatPercent(result.pnlPercent));
 
-  applyPolarityClass(byId("bagPortfolioPnl"), result.pnl);
-  applyPolarityClass(byId("bagPortfolioPnlPercent"), result.pnlPercent);
+  const pnlEl = byId("bagPortfolioPnl");
+  const pnlPercentEl = byId("bagPortfolioPnlPercent");
+  if (pnlEl) applyPolarityClass(pnlEl, result.pnl);
+  if (pnlPercentEl) applyPolarityClass(pnlPercentEl, result.pnlPercent);
 }
 
 function renderBagMood() {
@@ -3434,7 +3502,9 @@ function renderBagMood() {
 
   const title = byId("bagMoodTitle");
   if (title) {
-    title.textContent = mood.name;
+    title.innerHTML = `
+      <img class="bag-title-mood-icon" src="${escapeHtml(getIconImagePath(SHARED_ICON_STYLE, mood.key))}" alt="${escapeHtml(mood.name)}">
+    `;
     title.className = `mood-${mood.key}`;
   }
 
@@ -3448,7 +3518,8 @@ function renderBagMood() {
   const moodLabel = qs(".bag-mood-result > span");
   if (moodLabel) moodLabel.textContent = modeLabel;
 
-  applyPolarityClass(byId("bagMoodChange"), result.pnlPercent);
+  const changeEl = byId("bagMoodChange");
+  if (changeEl) applyPolarityClass(changeEl, result.pnlPercent);
 
   updateBagSummary(result);
   renderBagVisual(result);
@@ -3476,6 +3547,8 @@ function renderBagMood() {
     const currentValue = getHoldingCurrentValue(holding);
     const pnl = getHoldingPnl(holding);
     const pnlPercent = getHoldingPnlPercent(holding);
+    const score = roundScore(scoreBagPnlPercent(pnlPercent, holding));
+    const coinMood = getMoodByScore(score);
     const cls = pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral";
     const isActive = bagMoodMode === "single" && bagSelectedIndex === index ? "active-bag-row" : "";
 
@@ -3512,6 +3585,11 @@ function renderBagMood() {
         <div class="${cls}">
           <span class="bag-row-label">PNL</span>
           <strong>${formatPercent(pnlPercent)}</strong>
+        </div>
+
+        <div class="bag-row-mood">
+          <span class="bag-row-label">Mood</span>
+          <img src="${escapeHtml(getIconImagePath(SHARED_ICON_STYLE, coinMood.key))}" alt="${escapeHtml(coinMood.name)}">
         </div>
 
         <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
@@ -3579,12 +3657,7 @@ function setupBagMoodControls() {
       if (bagSearchResults.length === 1) {
         const usdValue = Number(byId("bagValueInput")?.value || 0);
         const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
-
-        addBagHolding(
-          bagSearchResults[0],
-          usdValue > 0 ? usdValue : 100,
-          entryPrice
-        );
+        addBagHolding(bagSearchResults[0], usdValue > 0 ? usdValue : 100, entryPrice);
 
         bagSearchResults = [];
         renderBagSearchResults();
