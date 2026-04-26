@@ -3069,7 +3069,9 @@ function getAllowedBagStyles() {
 }
 
 function getBagMoodStyle() {
-  return getAllowedBagStyles().includes(bagMoodStyle) ? bagMoodStyle : DEFAULT_STYLE;
+  return getAllowedBagStyles().includes(bagMoodStyle)
+    ? bagMoodStyle
+    : DEFAULT_STYLE;
 }
 
 function saveBagMoodStyle(style) {
@@ -3090,7 +3092,10 @@ function loadBagMoodStyle() {
 
 function saveBagMoodHoldings() {
   try {
-    localStorage.setItem(BAG_STORAGE_KEY, JSON.stringify(bagMoodHoldings));
+    localStorage.setItem(
+      BAG_STORAGE_KEY,
+      JSON.stringify(bagMoodHoldings)
+    );
   } catch {}
 }
 
@@ -3098,76 +3103,42 @@ function loadBagMoodHoldings() {
   try {
     const saved = localStorage.getItem(BAG_STORAGE_KEY);
     bagMoodHoldings = saved ? JSON.parse(saved) : [];
-    if (!Array.isArray(bagMoodHoldings)) bagMoodHoldings = [];
+
+    if (!Array.isArray(bagMoodHoldings)) {
+      bagMoodHoldings = [];
+    }
   } catch {
     bagMoodHoldings = [];
   }
 }
 
+/* =====================================
+   CLEANUP EXTRA ICONS (IMPORTANT FIX)
+===================================== */
 function ensureBagMoodVisualMarkup() {
-  const stage = qs(".bag-mood-stage");
-  if (!stage) return;
+  const coinBadge = byId("bagSelectedCoinBadge");
+  const moodBadge = byId("bagMoodIconBadge");
 
-  if (!byId("bagSelectedCoinBadge")) {
-    const coinBadge = document.createElement("div");
-    coinBadge.id = "bagSelectedCoinBadge";
-    coinBadge.className = "bag-selected-coin-badge hidden";
-    coinBadge.innerHTML = `
-      <img id="bagSelectedCoinImg" src="/assets/logo/wojakmeter_logo.png" alt="Selected coin">
-      <span id="bagSelectedCoinSymbol">---</span>
-    `;
-    stage.appendChild(coinBadge);
-  }
-
-  if (!byId("bagMoodIconBadge")) {
-    const moodBadge = document.createElement("div");
-    moodBadge.id = "bagMoodIconBadge";
-    moodBadge.className = "bag-mood-icon-badge";
-    moodBadge.innerHTML = `
-      <img id="bagMoodIconImg" src="/assets/icons/classic/neutral.png" alt="Bag mood icon">
-    `;
-    stage.appendChild(moodBadge);
-  }
+  if (coinBadge) coinBadge.remove();
+  if (moodBadge) moodBadge.remove();
 }
 
-function findLocalBagCoin(query) {
-  const q = String(query || "").toLowerCase();
-
-  return (
-    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    null
-  );
-}
-
-function normalizeBagCoin(item) {
-  if (!item) return null;
-
-  const price = Number(item.current_price ?? item.price ?? 0);
-
-  return {
-    id: item.id || item.coinId || item.address || "",
-    symbol: String(item.symbol || "---").toUpperCase(),
-    name: item.name || item.symbol || "Unknown",
-    image: item.image || item.thumb || item.large || "/assets/logo/wojakmeter_logo.png",
-    source: item.source || "local",
-    network: item.network || item.chain || "",
-    contract: item.contract || item.address || "",
-    current_price: Number.isFinite(price) ? price : 0,
-    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
-    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0,
-    volatilityType: item.volatilityType || item.category || ""
-  };
-}
-
+/* =====================================
+   SEARCH
+===================================== */
 async function searchBagCoins(query) {
   const clean = String(query || "").trim();
+
   if (!clean) return [];
 
-  const local = findLocalBagCoin(clean);
-  const localResults = local ? [{ ...normalizeBagCoin(local), source: "WojakMeter" }] : [];
+  const localCoin = getCoinBySymbol(clean);
+
+  const localResults = localCoin
+    ? [{
+        ...localCoin,
+        source: "WojakMeter"
+      }]
+    : [];
 
   const remote = await fetchJson(
     `/api/bag-search?q=${encodeURIComponent(clean)}`,
@@ -3175,561 +3146,387 @@ async function searchBagCoins(query) {
   );
 
   const remoteResults = Array.isArray(remote?.results)
-    ? remote.results.map(normalizeBagCoin).filter(Boolean)
+    ? remote.results
     : [];
 
-  const merged = [...localResults, ...remoteResults];
-  const seen = new Set();
-
-  return merged
-    .filter((coin) => {
-      const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, 12);
+  return [...localResults, ...remoteResults];
 }
 
-function getLiveBagCoin(holding) {
-  const localCoin = getCoinBySymbol(holding.symbol);
-  return localCoin ? normalizeBagCoin(localCoin) : holding;
-}
+/* =====================================
+   HOLDING CALCULATIONS
+===================================== */
+function getHoldingCurrentValue(holding) {
+  const liveCoin = getCoinBySymbol(holding.symbol);
 
-function getHoldingLivePrice(holding) {
-  const live = getLiveBagCoin(holding);
-  return Number(live.current_price || holding.current_price || 0);
-}
+  const currentPrice =
+    liveCoin?.current_price ||
+    holding.current_price ||
+    0;
 
-function getHoldingTokens(holding) {
   const entryPrice = Number(holding.entryPrice || 0);
   const invested = Number(holding.usdValue || 0);
 
-  if (entryPrice > 0 && invested > 0) return invested / entryPrice;
-  return 0;
-}
+  if (!entryPrice || !invested) return invested;
 
-function getHoldingCurrentValue(holding) {
-  const tokens = getHoldingTokens(holding);
-  const livePrice = getHoldingLivePrice(holding);
+  const tokens = invested / entryPrice;
 
-  if (tokens > 0 && livePrice > 0) return tokens * livePrice;
-  return Number(holding.usdValue || 0);
+  return tokens * currentPrice;
 }
 
 function getHoldingPnl(holding) {
-  const invested = Number(holding.usdValue || 0);
-  const value = getHoldingCurrentValue(holding);
-  return value - invested;
+  return (
+    getHoldingCurrentValue(holding) -
+    Number(holding.usdValue || 0)
+  );
 }
 
 function getHoldingPnlPercent(holding) {
   const invested = Number(holding.usdValue || 0);
-  if (invested <= 0) return 0;
+
+  if (!invested) return 0;
+
   return (getHoldingPnl(holding) / invested) * 100;
 }
 
-function isLikelyMemeCoin(holding) {
-  const text = `${holding.name || ""} ${holding.symbol || ""} ${holding.source || ""} ${holding.network || ""} ${holding.volatilityType || ""}`.toLowerCase();
-
-  return (
-    text.includes("meme") ||
-    text.includes("pump") ||
-    text.includes("bonk") ||
-    text.includes("pepe") ||
-    text.includes("doge") ||
-    text.includes("shib") ||
-    text.includes("wif") ||
-    text.includes("floki")
-  );
+function scoreBagPnlPercent(pnlPercent) {
+  if (pnlPercent >= 35) return 95;
+  if (pnlPercent >= 18) return 85;
+  if (pnlPercent >= 8) return 75;
+  if (pnlPercent >= 2) return 65;
+  if (pnlPercent > -2) return 50;
+  if (pnlPercent > -10) return 38;
+  if (pnlPercent > -20) return 25;
+  return 12;
 }
 
-function scoreBagPnlPercent(pnlPercent, holding = null) {
-  const value = Number(pnlPercent || 0);
-
-  if (holding && isLikelyMemeCoin(holding)) {
-    if (value >= 120) return 95;
-    if (value >= 60) return 88;
-    if (value >= 30) return 76;
-    if (value >= 12) return 64;
-    if (value > -12) return 50;
-    if (value > -30) return 40;
-    if (value > -55) return 28;
-    return 14;
-  }
-
-  if (value >= 35) return 95;
-  if (value >= 18) return 88;
-  if (value >= 8) return 76;
-  if (value >= 3) return 64;
-  if (value > -3) return 50;
-  if (value > -8) return 40;
-  if (value > -18) return 28;
-  return 14;
-}
-
+/* =====================================
+   CALCULATE PORTFOLIO MOOD
+===================================== */
 function calculateBagMood() {
   if (!bagMoodHoldings.length) {
     return {
-      change: 0,
       score: 50,
       mood: getMoodByScore(50),
       portfolioValue: 0,
       totalInvested: 0,
       pnl: 0,
-      pnlPercent: 0,
-      selected: null
+      pnlPercent: 0
     };
   }
 
-  if (bagSelectedIndex >= bagMoodHoldings.length) {
-    bagSelectedIndex = Math.max(0, bagMoodHoldings.length - 1);
-  }
+  const totalInvested = bagMoodHoldings.reduce(
+    (sum, h) => sum + Number(h.usdValue || 0),
+    0
+  );
 
-  if (bagMoodMode === "single") {
-    const selected = bagMoodHoldings[bagSelectedIndex] || bagMoodHoldings[0];
-    const value = getHoldingCurrentValue(selected);
-    const invested = Number(selected.usdValue || 0);
-    const pnl = value - invested;
-    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    const score = roundScore(scoreBagPnlPercent(pnlPercent, selected));
+  const portfolioValue = bagMoodHoldings.reduce(
+    (sum, h) => sum + getHoldingCurrentValue(h),
+    0
+  );
 
-    return {
-      change: pnlPercent,
-      score,
-      mood: getMoodByScore(score),
-      portfolioValue: value,
-      totalInvested: invested,
-      pnl,
-      pnlPercent,
-      selected
-    };
-  }
-
-  const totalInvested = bagMoodHoldings.reduce((sum, h) => sum + Number(h.usdValue || 0), 0);
-  const portfolioValue = bagMoodHoldings.reduce((sum, h) => sum + getHoldingCurrentValue(h), 0);
   const pnl = portfolioValue - totalInvested;
-  const pnlPercent = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
 
-  let weightedScore = 50;
+  const pnlPercent =
+    totalInvested > 0
+      ? (pnl / totalInvested) * 100
+      : 0;
 
-  if (totalInvested > 0) {
-    weightedScore = bagMoodHoldings.reduce((sum, holding) => {
-      const weight = Number(holding.usdValue || 0) / totalInvested;
-      return sum + scoreBagPnlPercent(getHoldingPnlPercent(holding), holding) * weight;
-    }, 0);
-  }
-
-  const score = roundScore(weightedScore);
+  const score = roundScore(
+    scoreBagPnlPercent(pnlPercent)
+  );
 
   return {
-    change: pnlPercent,
     score,
     mood: getMoodByScore(score),
     portfolioValue,
     totalInvested,
     pnl,
-    pnlPercent,
-    selected: null
+    pnlPercent
   };
 }
 
-function renderBagSearchResults() {
-  const box = byId("bagSearchResults");
-  const usdValue = Number(byId("bagValueInput")?.value || 0);
-  const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
-
-  if (!box) return;
-
-  if (!bagSearchResults.length) {
-    box.innerHTML = "";
-    return;
-  }
-
-  box.innerHTML = bagSearchResults.map((coin, index) => `
-    <div class="bag-result">
-      <div class="bag-coin">
-        <img src="${escapeHtml(coin.image)}" alt="${escapeHtml(coin.symbol)}">
-        <div>
-          <strong>${escapeHtml(coin.symbol)}</strong>
-          <span>${escapeHtml(coin.name)}${coin.network ? " • " + escapeHtml(coin.network) : ""}</span>
-        </div>
-      </div>
-
-      <span>${escapeHtml(coin.source || "source")}</span>
-
-      <button class="bag-add-btn" type="button" data-bag-result-index="${index}">
-        Add
-      </button>
-    </div>
-  `).join("");
-
-  qsa("[data-bag-result-index]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = Number(btn.dataset.bagResultIndex);
-      const coin = bagSearchResults[index];
-      if (!coin) return;
-
-      addBagHolding(coin, usdValue > 0 ? usdValue : 100, entryPrice);
-
-      bagSearchResults = [];
-      renderBagSearchResults();
-
-      const searchInput = byId("bagSearchInput");
-      const valueInput = byId("bagValueInput");
-      const entryInput = byId("bagEntryPriceInput");
-
-      if (searchInput) searchInput.value = "";
-      if (valueInput) valueInput.value = "";
-      if (entryInput) entryInput.value = "";
-    });
-  });
-}
-
-function addBagHolding(coin, usdValue, entryPrice = 0) {
-  const normalized = normalizeBagCoin(coin);
-  if (!normalized) return;
-
-  const value = Number(usdValue || 0);
-  const entry = Number(entryPrice || 0);
-
-  if (!Number.isFinite(value) || value <= 0) return;
-
-  const finalEntryPrice =
-    Number.isFinite(entry) && entry > 0
-      ? entry
-      : Number(normalized.current_price || 0);
-
-  const existing = bagMoodHoldings.find((h) => {
-    if (normalized.contract && h.contract) return h.contract === normalized.contract;
-    return h.symbol === normalized.symbol;
-  });
-
-  if (existing) {
-    existing.usdValue = value;
-    existing.entryPrice = finalEntryPrice;
-    Object.assign(existing, normalized);
-  } else {
-    bagMoodHoldings.push({
-      ...normalized,
-      usdValue: value,
-      entryPrice: finalEntryPrice
-    });
-    bagSelectedIndex = bagMoodHoldings.length - 1;
-  }
-
-  saveBagMoodHoldings();
-  renderBagMood();
-}
-
-function removeBagHolding(index) {
-  bagMoodHoldings.splice(index, 1);
-
-  if (bagSelectedIndex >= bagMoodHoldings.length) {
-    bagSelectedIndex = Math.max(0, bagMoodHoldings.length - 1);
-  }
-
-  saveBagMoodHoldings();
-  renderBagMood();
-}
-
+/* =====================================
+   HERO VISUAL ONLY
+===================================== */
 function renderBagVisual(result) {
   const mood = result.mood;
-  const bagStyle = getBagMoodStyle();
-  const selected = bagMoodMode === "single"
-    ? (result.selected || bagMoodHoldings[bagSelectedIndex])
-    : null;
+  const style = getBagMoodStyle();
 
   const heroImg = byId("bagMoodHeroImg");
-  if (heroImg) {
-    heroImg.className = `bag-mood-hero-img ${mood.anim}`;
-    setImage(
-      heroImg,
-      getHeroImagePath(bagStyle, mood.key),
-      getHeroImagePath(DEFAULT_STYLE, mood.key)
-    );
-  }
 
-  const moodIcon = byId("bagMoodIconImg");
-  if (moodIcon) {
-    setImage(
-      moodIcon,
-      getIconImagePath(SHARED_ICON_STYLE, mood.key),
-      getIconImagePath(DEFAULT_STYLE, mood.key)
-    );
-    moodIcon.alt = `${mood.name} icon`;
-  }
+  if (!heroImg) return;
 
-  const coinBadge = byId("bagSelectedCoinBadge");
-  const coinImg = byId("bagSelectedCoinImg");
-  const coinSymbol = byId("bagSelectedCoinSymbol");
+  heroImg.className = `bag-mood-hero-img ${mood.anim}`;
 
-  if (coinBadge) {
-    coinBadge.classList.toggle("hidden", !selected);
-  }
-
-  if (selected && coinImg) {
-    coinImg.src = selected.image || "/assets/logo/wojakmeter_logo.png";
-    coinImg.alt = `${selected.symbol} selected`;
-  }
-
-  if (selected && coinSymbol) {
-    coinSymbol.textContent = selected.symbol || "---";
-  }
+  setImage(
+    heroImg,
+    getHeroImagePath(style, mood.key),
+    getHeroImagePath(DEFAULT_STYLE, mood.key)
+  );
 }
 
-function updateBagSummary(result) {
-  setText("bagPortfolioValue", formatCurrency(result.portfolioValue));
-  setText("bagTotalInvested", formatCurrency(result.totalInvested));
-  setText("bagPortfolioPnl", formatCurrency(result.pnl));
-  setText("bagPortfolioPnlPercent", formatPercent(result.pnlPercent));
-
-  const pnlEl = byId("bagPortfolioPnl");
-  const pnlPercentEl = byId("bagPortfolioPnlPercent");
-  if (pnlEl) applyPolarityClass(pnlEl, result.pnl);
-  if (pnlPercentEl) applyPolarityClass(pnlPercentEl, result.pnlPercent);
-}
-
+/* =====================================
+   RENDER SUMMARY
+===================================== */
 function renderBagMood() {
   const section = byId("bagMoodSection");
+
   if (!section) return;
 
   ensureBagMoodVisualMarkup();
 
   const result = calculateBagMood();
-  const mood = result.mood;
-  const selected = result.selected;
 
-  const title = byId("bagMoodTitle");
-  if (title) {
-    title.innerHTML = `
-      <img class="bag-title-mood-icon" src="${escapeHtml(getIconImagePath(SHARED_ICON_STYLE, mood.key))}" alt="${escapeHtml(mood.name)}">
-    `;
-    title.className = `mood-${mood.key}`;
-  }
-
-  setText("bagMoodScore", `${result.score}/100`);
-  setText("bagMoodChange", formatPercent(result.pnlPercent));
-
-  const modeLabel = bagMoodMode === "single" && selected
-    ? `${selected.symbol} Mood`
-    : "Portfolio Mood";
-
-  const moodLabel = qs(".bag-mood-result > span");
-  if (moodLabel) moodLabel.textContent = modeLabel;
-
-  const changeEl = byId("bagMoodChange");
-  if (changeEl) applyPolarityClass(changeEl, result.pnlPercent);
-
-  updateBagSummary(result);
   renderBagVisual(result);
 
-  qsa("[data-bag-mode]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.bagMode === bagMoodMode);
-  });
+  setText(
+    "bagMoodScore",
+    `${result.score}/100`
+  );
 
-  const selector = byId("bagStyleSelector");
-  const bagStyle = getBagMoodStyle();
-  if (selector && selector.value !== bagStyle) {
-    selector.value = bagStyle;
-  }
+  setText(
+    "bagMoodChange",
+    formatPercent(result.pnlPercent)
+  );
+
+  setText(
+    "bagPortfolioValue",
+    formatCurrency(result.portfolioValue)
+  );
+
+  setText(
+    "bagTotalInvested",
+    formatCurrency(result.totalInvested)
+  );
+
+  setText(
+    "bagPortfolioPnl",
+    formatCurrency(result.pnl)
+  );
+
+  setText(
+    "bagPortfolioPnlPercent",
+    formatPercent(result.pnlPercent)
+  );
+
+  const pnlEl = byId("bagPortfolioPnl");
+  const pnlPercentEl = byId("bagPortfolioPnlPercent");
+
+  applyPolarityClass(pnlEl, result.pnl);
+  applyPolarityClass(
+    pnlPercentEl,
+    result.pnlPercent
+  );
 
   const list = byId("bagMoodList");
+
   if (!list) return;
 
   if (!bagMoodHoldings.length) {
-    list.innerHTML = `<div class="bag-empty">Build your bag to see what it feels like.</div>`;
+    list.innerHTML = `
+      <div class="bag-empty">
+        Build your bag to see what it feels like.
+      </div>
+    `;
     return;
   }
 
-  list.innerHTML = bagMoodHoldings.map((holding, index) => {
-    const livePrice = getHoldingLivePrice(holding);
-    const currentValue = getHoldingCurrentValue(holding);
-    const pnl = getHoldingPnl(holding);
-    const pnlPercent = getHoldingPnlPercent(holding);
-    const score = roundScore(scoreBagPnlPercent(pnlPercent, holding));
-    const coinMood = getMoodByScore(score);
-    const cls = pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral";
-    const isActive = bagMoodMode === "single" && bagSelectedIndex === index ? "active-bag-row" : "";
+  list.innerHTML = bagMoodHoldings
+    .map((holding, index) => {
+      const pnlPercent =
+        getHoldingPnlPercent(holding);
 
-    return `
-      <div class="bag-row ${isActive}" data-select-bag="${index}">
-        <div class="bag-coin">
-          <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
-          <div>
-            <strong>${escapeHtml(holding.symbol)}</strong>
-            <span>${escapeHtml(holding.name || "")}${isLikelyMemeCoin(holding) ? " • Meme" : " • Major"}</span>
+      return `
+        <div class="bag-row">
+          <div class="bag-coin">
+            <img src="${holding.image}" alt="${holding.symbol}">
+            <div>
+              <strong>${holding.symbol}</strong>
+              <span>${holding.name}</span>
+            </div>
           </div>
+
+          <div>
+            <strong>${formatCurrency(
+              holding.usdValue
+            )}</strong>
+          </div>
+
+          <div>
+            <strong class="${
+              pnlPercent >= 0
+                ? "positive"
+                : "negative"
+            }">
+              ${formatPercent(pnlPercent)}
+            </strong>
+          </div>
+
+          <button
+            class="bag-remove-btn"
+            data-remove-bag="${index}"
+          >
+            Remove
+          </button>
         </div>
+      `;
+    })
+    .join("");
 
-        <div>
-          <span class="bag-row-label">Invested</span>
-          <strong>${formatCurrency(holding.usdValue)}</strong>
-        </div>
+  qsa("[data-remove-bag]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(
+        btn.dataset.removeBag
+      );
 
-        <div>
-          <span class="bag-row-label">Value</span>
-          <strong>${formatCurrency(currentValue)}</strong>
-        </div>
+      bagMoodHoldings.splice(index, 1);
 
-        <div>
-          <span class="bag-row-label">Entry</span>
-          <strong>${formatCurrency(holding.entryPrice || 0)}</strong>
-        </div>
-
-        <div>
-          <span class="bag-row-label">Now</span>
-          <strong>${formatCurrency(livePrice)}</strong>
-        </div>
-
-        <div class="${cls}">
-          <span class="bag-row-label">PNL</span>
-          <strong>${formatPercent(pnlPercent)}</strong>
-        </div>
-
-        <div class="bag-row-mood">
-          <span class="bag-row-label">Mood</span>
-          <img src="${escapeHtml(getIconImagePath(SHARED_ICON_STYLE, coinMood.key))}" alt="${escapeHtml(coinMood.name)}">
-        </div>
-
-        <button class="bag-remove-btn" type="button" data-remove-bag="${index}">
-          Remove
-        </button>
-      </div>
-    `;
-  }).join("");
-
-  qsa("[data-select-bag]").forEach((row) => {
-    row.addEventListener("click", () => {
-      if (bagMoodMode !== "single") return;
-      bagSelectedIndex = Number(row.dataset.selectBag);
+      saveBagMoodHoldings();
       renderBagMood();
     });
   });
+}
 
-  qsa("[data-remove-bag]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      removeBagHolding(Number(btn.dataset.removeBag));
-    });
+/* =====================================
+   ADD HOLDING
+===================================== */
+function addBagHolding(
+  coin,
+  usdValue,
+  entryPrice = 0
+) {
+  if (!coin) return;
+
+  bagMoodHoldings.push({
+    ...coin,
+    usdValue,
+    entryPrice:
+      entryPrice || coin.current_price
   });
+
+  saveBagMoodHoldings();
+  renderBagMood();
 }
 
-function shareBagMoodOnX() {
-  const result = calculateBagMood();
-  const mood = result.mood;
-
-  const text =
-`My Bag Mood is ${mood.name} (${result.score}/100)
-
-Portfolio Value: ${formatCurrency(result.portfolioValue)}
-Invested: ${formatCurrency(result.totalInvested)}
-PNL: ${formatCurrency(result.pnl)} (${formatPercent(result.pnlPercent)})
-
-Track the emotion of your bags 👇`;
-
-  const tweetUrl = new URL("https://twitter.com/intent/tweet");
-  tweetUrl.searchParams.set("text", text);
-  tweetUrl.searchParams.set("url", "https://wojakmeter.com");
-
-  window.open(tweetUrl.toString(), "_blank", "noopener,noreferrer");
-}
-
+/* =====================================
+   CONTROLS
+===================================== */
 function setupBagMoodControls() {
   const searchBtn = byId("bagSearchBtn");
   const searchInput = byId("bagSearchInput");
 
-  if (searchBtn && searchInput && !searchBtn.dataset.bound) {
+  if (searchBtn && !searchBtn.dataset.bound) {
     searchBtn.dataset.bound = "1";
 
-    searchBtn.addEventListener("click", async () => {
-      const q = String(searchInput.value || "").trim();
-      if (!q) return;
+    searchBtn.addEventListener(
+      "click",
+      async () => {
+        const query = searchInput.value;
 
-      const oldText = searchBtn.textContent;
-      searchBtn.textContent = "Searching...";
+        if (!query) return;
 
-      bagSearchResults = await searchBagCoins(q);
+        const results =
+          await searchBagCoins(query);
 
-      searchBtn.textContent = oldText || "Add";
-      renderBagSearchResults();
+        if (!results.length) return;
 
-      if (bagSearchResults.length === 1) {
-        const usdValue = Number(byId("bagValueInput")?.value || 0);
-        const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
-        addBagHolding(bagSearchResults[0], usdValue > 0 ? usdValue : 100, entryPrice);
+        const coin = results[0];
 
-        bagSearchResults = [];
-        renderBagSearchResults();
+        const usdValue =
+          Number(
+            byId("bagValueInput")?.value
+          ) || 100;
+
+        const entryPrice =
+          Number(
+            byId("bagEntryPriceInput")
+              ?.value
+          ) || coin.current_price;
+
+        addBagHolding(
+          coin,
+          usdValue,
+          entryPrice
+        );
 
         searchInput.value = "";
-        if (byId("bagValueInput")) byId("bagValueInput").value = "";
-        if (byId("bagEntryPriceInput")) byId("bagEntryPriceInput").value = "";
-      }
-    });
 
-    searchInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        searchBtn.click();
+        if (byId("bagValueInput")) {
+          byId(
+            "bagValueInput"
+          ).value = "";
+        }
+
+        if (byId("bagEntryPriceInput")) {
+          byId(
+            "bagEntryPriceInput"
+          ).value = "";
+        }
       }
-    });
+    );
   }
 
-  qsa("[data-bag-mode]").forEach((btn) => {
-    if (btn.dataset.boundBagMode) return;
-    btn.dataset.boundBagMode = "1";
+  const styleSelector =
+    byId("bagStyleSelector");
 
-    btn.addEventListener("click", () => {
-      bagMoodMode = btn.dataset.bagMode || "portfolio";
-      renderBagMood();
-    });
-  });
-
-  const styleSelector = byId("bagStyleSelector");
-
-  if (styleSelector && !styleSelector.dataset.bound) {
+  if (
+    styleSelector &&
+    !styleSelector.dataset.bound
+  ) {
     styleSelector.dataset.bound = "1";
-    styleSelector.value = getBagMoodStyle();
 
-    styleSelector.addEventListener("change", () => {
-      const selected = String(styleSelector.value || "").toLowerCase();
-      if (!getAllowedBagStyles().includes(selected)) return;
+    styleSelector.value =
+      getBagMoodStyle();
 
-      bagMoodStyle = selected;
-      saveBagMoodStyle(selected);
-      renderBagMood();
-    });
+    styleSelector.addEventListener(
+      "change",
+      () => {
+        bagMoodStyle =
+          styleSelector.value;
+
+        saveBagMoodStyle(
+          bagMoodStyle
+        );
+
+        renderBagMood();
+      }
+    );
   }
 
   const resetBtn = byId("bagResetBtn");
 
   if (resetBtn && !resetBtn.dataset.bound) {
     resetBtn.dataset.bound = "1";
-    resetBtn.addEventListener("click", () => {
-      bagMoodHoldings = [];
-      bagSelectedIndex = 0;
-      localStorage.removeItem(BAG_STORAGE_KEY);
-      renderBagMood();
-    });
-  }
 
-  const shareBtn = byId("bagShareBtn");
-
-  if (shareBtn && !shareBtn.dataset.bound) {
-    shareBtn.dataset.bound = "1";
-    shareBtn.addEventListener("click", shareBagMoodOnX);
+    resetBtn.addEventListener(
+      "click",
+      () => {
+        bagMoodHoldings = [];
+        saveBagMoodHoldings();
+        renderBagMood();
+      }
+    );
   }
 }
 
+/* =====================================
+   INIT
+===================================== */
 function initBagMood() {
-  const section = byId("bagMoodSection");
+  const section =
+    byId("bagMoodSection");
+
   if (!section) return;
 
-  bagMoodStyle = loadBagMoodStyle();
+  bagMoodStyle =
+    loadBagMoodStyle();
+
   loadBagMoodHoldings();
+
   ensureBagMoodVisualMarkup();
+
   setupBagMoodControls();
+
   renderBagMood();
 }
 
