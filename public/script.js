@@ -3063,13 +3063,15 @@ let bagMoodMode = "portfolio";
 let bagMoodStyle = DEFAULT_STYLE;
 let bagSearchResults = [];
 let bagSelectedIndex = 0;
+let bagSearchLoading = false;
 
 function getAllowedBagStyles() {
   return ["classic", "synth", "boyak", "minimal"];
 }
 
 function getBagMoodStyle() {
-  return getAllowedBagStyles().includes(bagMoodStyle) ? bagMoodStyle : DEFAULT_STYLE;
+  const style = String(bagMoodStyle || "").toLowerCase();
+  return getAllowedBagStyles().includes(style) ? style : DEFAULT_STYLE;
 }
 
 function saveBagMoodStyle(style) {
@@ -3080,11 +3082,15 @@ function saveBagMoodStyle(style) {
 
 function loadBagMoodStyle() {
   try {
-    const saved = localStorage.getItem(BAG_STYLE_STORAGE_KEY);
+    const saved = String(localStorage.getItem(BAG_STYLE_STORAGE_KEY) || "").toLowerCase();
     if (getAllowedBagStyles().includes(saved)) return saved;
-    return getCurrentStyle();
+
+    const current = String(getCurrentStyle?.() || DEFAULT_STYLE).toLowerCase();
+    if (getAllowedBagStyles().includes(current)) return current;
+
+    return DEFAULT_STYLE;
   } catch {
-    return getCurrentStyle();
+    return DEFAULT_STYLE;
   }
 }
 
@@ -3097,8 +3103,8 @@ function saveBagMoodHoldings() {
 function loadBagMoodHoldings() {
   try {
     const saved = localStorage.getItem(BAG_STORAGE_KEY);
-    bagMoodHoldings = saved ? JSON.parse(saved) : [];
-    if (!Array.isArray(bagMoodHoldings)) bagMoodHoldings = [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    bagMoodHoldings = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
   } catch {
     bagMoodHoldings = [];
   }
@@ -3131,23 +3137,31 @@ function ensureBagMoodVisualMarkup() {
 }
 
 function findLocalBagCoin(query) {
-  const q = String(query || "").toLowerCase();
+  const q = String(query || "").toLowerCase().trim();
+  if (!q) return null;
+
+  const pools = [
+    ...(Array.isArray(topCoinsData) ? topCoinsData : []),
+    ...(Array.isArray(trendingCoinsData) ? trendingCoinsData : []),
+    ...(Array.isArray(topMemesData) ? topMemesData : [])
+  ];
 
   return (
-    topCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    trendingCoinsData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    topMemesData.find((c) => c.symbol?.toLowerCase?.() === q || c.name?.toLowerCase?.() === q) ||
-    null
+    pools.find((c) => {
+      const symbol = String(c?.symbol || "").toLowerCase();
+      const name = String(c?.name || "").toLowerCase();
+      return symbol === q || name === q;
+    }) || null
   );
 }
 
 function normalizeBagCoin(item) {
   if (!item) return null;
 
-  const price = Number(item.current_price ?? item.price ?? 0);
+  const price = Number(item.current_price ?? item.price ?? item.usdPrice ?? 0);
 
   return {
-    id: item.id || item.coinId || item.address || "",
+    id: item.id || item.coinId || item.address || item.contract || "",
     symbol: String(item.symbol || "---").toUpperCase(),
     name: item.name || item.symbol || "Unknown",
     image: item.image || item.thumb || item.large || "/assets/logo/wojakmeter_logo.png",
@@ -3155,9 +3169,12 @@ function normalizeBagCoin(item) {
     network: item.network || item.chain || "",
     contract: item.contract || item.address || "",
     current_price: Number.isFinite(price) ? price : 0,
-    price_change_percentage_1h_in_currency: item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency: item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
-    price_change_percentage_7d_in_currency: item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0,
+    price_change_percentage_1h_in_currency:
+      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
+    price_change_percentage_24h_in_currency:
+      item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
+    price_change_percentage_7d_in_currency:
+      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0,
     volatilityType: item.volatilityType || item.category || ""
   };
 }
@@ -3169,21 +3186,33 @@ async function searchBagCoins(query) {
   const local = findLocalBagCoin(clean);
   const localResults = local ? [{ ...normalizeBagCoin(local), source: "WojakMeter" }] : [];
 
-  const remote = await fetchJson(
-    `/api/bag-search?q=${encodeURIComponent(clean)}`,
-    { results: [] }
-  );
+  let remoteResults = [];
 
-  const remoteResults = Array.isArray(remote?.results)
-    ? remote.results.map(normalizeBagCoin).filter(Boolean)
-    : [];
+  try {
+    const remote = await fetchJson(
+      `/api/bag-search?q=${encodeURIComponent(clean)}`,
+      { results: [] }
+    );
+
+    remoteResults = Array.isArray(remote?.results)
+      ? remote.results.map(normalizeBagCoin).filter(Boolean)
+      : [];
+  } catch {
+    remoteResults = [];
+  }
 
   const merged = [...localResults, ...remoteResults];
   const seen = new Set();
 
   return merged
     .filter((coin) => {
-      const key = `${coin.source}-${coin.id}-${coin.contract}-${coin.symbol}`;
+      const key = [
+        String(coin.contract || "").toLowerCase(),
+        String(coin.id || "").toLowerCase(),
+        String(coin.symbol || "").toLowerCase(),
+        String(coin.network || "").toLowerCase()
+      ].join("|");
+
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -3192,8 +3221,17 @@ async function searchBagCoins(query) {
 }
 
 function getLiveBagCoin(holding) {
-  const localCoin = getCoinBySymbol(holding.symbol);
-  return localCoin ? normalizeBagCoin(localCoin) : holding;
+  const localCoin = getCoinBySymbol?.(holding.symbol);
+  const normalizedLive = localCoin ? normalizeBagCoin(localCoin) : null;
+
+  return normalizedLive
+    ? {
+        ...holding,
+        ...normalizedLive,
+        usdValue: holding.usdValue,
+        entryPrice: holding.entryPrice
+      }
+    : holding;
 }
 
 function getHoldingLivePrice(holding) {
@@ -3306,8 +3344,16 @@ function calculateBagMood() {
     };
   }
 
-  const totalInvested = bagMoodHoldings.reduce((sum, h) => sum + Number(h.usdValue || 0), 0);
-  const portfolioValue = bagMoodHoldings.reduce((sum, h) => sum + getHoldingCurrentValue(h), 0);
+  const totalInvested = bagMoodHoldings.reduce(
+    (sum, h) => sum + Number(h.usdValue || 0),
+    0
+  );
+
+  const portfolioValue = bagMoodHoldings.reduce(
+    (sum, h) => sum + getHoldingCurrentValue(h),
+    0
+  );
+
   const pnl = portfolioValue - totalInvested;
   const pnlPercent = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
 
@@ -3401,20 +3447,28 @@ function addBagHolding(coin, usdValue, entryPrice = 0) {
       : Number(normalized.current_price || 0);
 
   const existing = bagMoodHoldings.find((h) => {
-    if (normalized.contract && h.contract) return h.contract === normalized.contract;
-    return h.symbol === normalized.symbol;
+    if (normalized.contract && h.contract) {
+      return String(h.contract).toLowerCase() === String(normalized.contract).toLowerCase();
+    }
+
+    return (
+      String(h.symbol || "").toLowerCase() === String(normalized.symbol || "").toLowerCase() &&
+      String(h.network || "").toLowerCase() === String(normalized.network || "").toLowerCase()
+    );
   });
 
   if (existing) {
-    existing.usdValue = value;
-    existing.entryPrice = finalEntryPrice;
-    Object.assign(existing, normalized);
+    Object.assign(existing, normalized, {
+      usdValue: value,
+      entryPrice: finalEntryPrice
+    });
   } else {
     bagMoodHoldings.push({
       ...normalized,
       usdValue: value,
       entryPrice: finalEntryPrice
     });
+
     bagSelectedIndex = bagMoodHoldings.length - 1;
   }
 
@@ -3436,13 +3490,16 @@ function removeBagHolding(index) {
 function renderBagVisual(result) {
   const mood = result.mood;
   const bagStyle = getBagMoodStyle();
-  const selected = bagMoodMode === "single"
-    ? (result.selected || bagMoodHoldings[bagSelectedIndex])
-    : null;
+
+  const selected =
+    bagMoodMode === "single"
+      ? result.selected || bagMoodHoldings[bagSelectedIndex]
+      : null;
 
   const heroImg = byId("bagMoodHeroImg");
+
   if (heroImg) {
-    heroImg.className = `bag-mood-hero-img ${mood.anim}`;
+    heroImg.className = `bag-mood-hero-img ${mood.anim || ""}`;
     setImage(
       heroImg,
       getHeroImagePath(bagStyle, mood.key),
@@ -3451,12 +3508,14 @@ function renderBagVisual(result) {
   }
 
   const moodIcon = byId("bagMoodIconImg");
+
   if (moodIcon) {
     setImage(
       moodIcon,
       getIconImagePath(SHARED_ICON_STYLE, mood.key),
       getIconImagePath(DEFAULT_STYLE, mood.key)
     );
+
     moodIcon.alt = `${mood.name} icon`;
   }
 
@@ -3486,6 +3545,7 @@ function updateBagSummary(result) {
 
   const pnlEl = byId("bagPortfolioPnl");
   const pnlPercentEl = byId("bagPortfolioPnlPercent");
+
   if (pnlEl) applyPolarityClass(pnlEl, result.pnl);
   if (pnlPercentEl) applyPolarityClass(pnlPercentEl, result.pnlPercent);
 }
@@ -3501,6 +3561,7 @@ function renderBagMood() {
   const selected = result.selected;
 
   const title = byId("bagMoodTitle");
+
   if (title) {
     title.innerHTML = `
       <img class="bag-title-mood-icon" src="${escapeHtml(getIconImagePath(SHARED_ICON_STYLE, mood.key))}" alt="${escapeHtml(mood.name)}">
@@ -3511,9 +3572,10 @@ function renderBagMood() {
   setText("bagMoodScore", `${result.score}/100`);
   setText("bagMoodChange", formatPercent(result.pnlPercent));
 
-  const modeLabel = bagMoodMode === "single" && selected
-    ? `${selected.symbol} Mood`
-    : "Portfolio Mood";
+  const modeLabel =
+    bagMoodMode === "single" && selected
+      ? `${selected.symbol} Mood`
+      : "Portfolio Mood";
 
   const moodLabel = qs(".bag-mood-result > span");
   if (moodLabel) moodLabel.textContent = modeLabel;
@@ -3530,6 +3592,7 @@ function renderBagMood() {
 
   const selector = byId("bagStyleSelector");
   const bagStyle = getBagMoodStyle();
+
   if (selector && selector.value !== bagStyle) {
     selector.value = bagStyle;
   }
@@ -3550,7 +3613,10 @@ function renderBagMood() {
     const score = roundScore(scoreBagPnlPercent(pnlPercent, holding));
     const coinMood = getMoodByScore(score);
     const cls = pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral";
-    const isActive = bagMoodMode === "single" && bagSelectedIndex === index ? "active-bag-row" : "";
+    const isActive =
+      bagMoodMode === "single" && bagSelectedIndex === index
+        ? "active-bag-row"
+        : "";
 
     return `
       <div class="bag-row ${isActive}" data-select-bag="${index}">
@@ -3600,8 +3666,10 @@ function renderBagMood() {
   }).join("");
 
   qsa("[data-select-bag]").forEach((row) => {
-    row.addEventListener("click", () => {
+    row.addEventListener("click", (e) => {
+      if (e.target.closest("[data-remove-bag]")) return;
       if (bagMoodMode !== "single") return;
+
       bagSelectedIndex = Number(row.dataset.selectBag);
       renderBagMood();
     });
@@ -3635,6 +3703,16 @@ Track the emotion of your bags 👇`;
   window.open(tweetUrl.toString(), "_blank", "noopener,noreferrer");
 }
 
+function clearBagInputs() {
+  const searchInput = byId("bagSearchInput");
+  const valueInput = byId("bagValueInput");
+  const entryInput = byId("bagEntryPriceInput");
+
+  if (searchInput) searchInput.value = "";
+  if (valueInput) valueInput.value = "";
+  if (entryInput) entryInput.value = "";
+}
+
 function setupBagMoodControls() {
   const searchBtn = byId("bagSearchBtn");
   const searchInput = byId("bagSearchInput");
@@ -3643,28 +3721,42 @@ function setupBagMoodControls() {
     searchBtn.dataset.bound = "1";
 
     searchBtn.addEventListener("click", async () => {
+      if (bagSearchLoading) return;
+
       const q = String(searchInput.value || "").trim();
       if (!q) return;
 
-      const oldText = searchBtn.textContent;
+      const oldText = searchBtn.textContent || "Add";
+
+      bagSearchLoading = true;
+      searchBtn.disabled = true;
       searchBtn.textContent = "Searching...";
 
-      bagSearchResults = await searchBagCoins(q);
-
-      searchBtn.textContent = oldText || "Add";
-      renderBagSearchResults();
-
-      if (bagSearchResults.length === 1) {
-        const usdValue = Number(byId("bagValueInput")?.value || 0);
-        const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
-        addBagHolding(bagSearchResults[0], usdValue > 0 ? usdValue : 100, entryPrice);
-
-        bagSearchResults = [];
+      try {
+        bagSearchResults = await searchBagCoins(q);
         renderBagSearchResults();
 
-        searchInput.value = "";
-        if (byId("bagValueInput")) byId("bagValueInput").value = "";
-        if (byId("bagEntryPriceInput")) byId("bagEntryPriceInput").value = "";
+        if (bagSearchResults.length === 1) {
+          const usdValue = Number(byId("bagValueInput")?.value || 0);
+          const entryPrice = Number(byId("bagEntryPriceInput")?.value || 0);
+
+          addBagHolding(
+            bagSearchResults[0],
+            usdValue > 0 ? usdValue : 100,
+            entryPrice
+          );
+
+          bagSearchResults = [];
+          renderBagSearchResults();
+          clearBagInputs();
+        }
+      } catch {
+        bagSearchResults = [];
+        renderBagSearchResults();
+      } finally {
+        bagSearchLoading = false;
+        searchBtn.disabled = false;
+        searchBtn.textContent = oldText;
       }
     });
 
@@ -3678,10 +3770,16 @@ function setupBagMoodControls() {
 
   qsa("[data-bag-mode]").forEach((btn) => {
     if (btn.dataset.boundBagMode) return;
+
     btn.dataset.boundBagMode = "1";
 
     btn.addEventListener("click", () => {
       bagMoodMode = btn.dataset.bagMode || "portfolio";
+
+      if (bagMoodMode === "single" && !bagMoodHoldings[bagSelectedIndex]) {
+        bagSelectedIndex = 0;
+      }
+
       renderBagMood();
     });
   });
@@ -3694,6 +3792,7 @@ function setupBagMoodControls() {
 
     styleSelector.addEventListener("change", () => {
       const selected = String(styleSelector.value || "").toLowerCase();
+
       if (!getAllowedBagStyles().includes(selected)) return;
 
       bagMoodStyle = selected;
@@ -3706,10 +3805,16 @@ function setupBagMoodControls() {
 
   if (resetBtn && !resetBtn.dataset.bound) {
     resetBtn.dataset.bound = "1";
+
     resetBtn.addEventListener("click", () => {
       bagMoodHoldings = [];
       bagSelectedIndex = 0;
-      localStorage.removeItem(BAG_STORAGE_KEY);
+      bagMoodMode = "portfolio";
+
+      try {
+        localStorage.removeItem(BAG_STORAGE_KEY);
+      } catch {}
+
       renderBagMood();
     });
   }
@@ -3727,6 +3832,7 @@ function initBagMood() {
   if (!section) return;
 
   bagMoodStyle = loadBagMoodStyle();
+
   loadBagMoodHoldings();
   ensureBagMoodVisualMarkup();
   setupBagMoodControls();
