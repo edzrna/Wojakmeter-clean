@@ -758,15 +758,17 @@ export default function Home({ ogImageUrl }) {
           </div>
 
           <div>
-            <span>Change</span>
+            <span>PNL %</span>
             <strong id="bagMoodChange" className="neutral">
               +0.00%
             </strong>
           </div>
 
           <div>
-            <span>Timeframe</span>
-            <strong id="bagMoodTimeframe">24h</strong>
+            <span>PNL</span>
+            <strong id="bagMoodPnlUsd" className="neutral">
+              $0.00
+            </strong>
           </div>
         </div>
       </div>
@@ -777,27 +779,16 @@ export default function Home({ ogImageUrl }) {
         <button type="button" className="active" data-bag-mode="portfolio">
           Portfolio Mood
         </button>
+
         <button type="button" data-bag-mode="single">
           Single Coin Mood
         </button>
       </div>
 
-      <div className="timeframes bag-timeframes">
-        <button type="button" data-bag-timeframe="1h">
-          1h
-        </button>
-        <button type="button" data-bag-timeframe="4h">
-          4h
-        </button>
-        <button type="button" data-bag-timeframe="24h" className="active">
-          24h
-        </button>
-        <button type="button" data-bag-timeframe="7d">
-          7d
-        </button>
-        <button type="button" data-bag-timeframe="30d">
-          30d
-        </button>
+      <div className="bag-position-note">
+        <span>
+          Your mood is calculated from your real entry price vs live market price.
+        </span>
       </div>
 
       <div className="bag-search-box">
@@ -876,7 +867,6 @@ export default function Home({ ogImageUrl }) {
   </div>
 </section>
 			                             
-
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
                 <h3>MARKET SECTIONS</h3>
