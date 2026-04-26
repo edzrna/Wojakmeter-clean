@@ -736,10 +736,9 @@ export default function Home({ ogImageUrl }) {
 
   <div className="bag-mood-grid">
 
-    {/* LEFT SIDE */}
+    {/* LEFT HERO */}
     <div className="bag-mood-visual">
 
-      {/* HERO */}
       <div className="bag-mood-stage">
         <img
           id="bagMoodHeroImg"
@@ -747,21 +746,8 @@ export default function Home({ ogImageUrl }) {
           src="/assets/hero/classic/neutral.png"
           alt="Bag Mood Hero"
         />
-
-        {/* Selected coin badge only */}
-        <div
-          id="bagSelectedCoinBadge"
-          className="bag-selected-coin-badge hidden"
-        >
-          <img
-            id="bagSelectedCoinImg"
-            src="/assets/logo/wojakmeter_logo.png"
-            alt="Selected Coin"
-          />
-        </div>
       </div>
 
-      {/* RESULT */}
       <div className="bag-mood-result">
         <span id="bagMoodModeLabel">
           Portfolio Mood
@@ -836,7 +822,7 @@ export default function Home({ ogImageUrl }) {
         Your mood is calculated from your real entry price vs live market price.
       </div>
 
-      {/* SEARCH */}
+      {/* Search */}
       <div className="bag-search-box">
         <input
           id="bagSearchInput"
@@ -875,7 +861,7 @@ export default function Home({ ogImageUrl }) {
         className="bag-search-results"
       ></div>
 
-      {/* HOLDINGS */}
+      {/* Holdings */}
       <div
         id="bagMoodList"
         className="bag-mood-list"
@@ -885,7 +871,7 @@ export default function Home({ ogImageUrl }) {
         </div>
       </div>
 
-      {/* ACTIONS */}
+      {/* Actions */}
       <div className="bag-actions">
         <button
           id="bagShareBtn"
