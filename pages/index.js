@@ -711,8 +711,7 @@ export default function Home({ ogImageUrl }) {
                 </div>
               </div>
             </section>
-
-			{/* ===============================
+{/* ===============================
    BAG MOOD MODULE
 ================================ */}
 <section className="bag-mood-section card" id="bagMoodSection">
@@ -720,7 +719,7 @@ export default function Home({ ogImageUrl }) {
     <div>
       <h3>BAG MOOD</h3>
       <span className="muted">
-        Track your portfolio value, PNL and emotional state.
+        Track your portfolio value, P&L and emotional state.
       </span>
     </div>
 
@@ -737,10 +736,10 @@ export default function Home({ ogImageUrl }) {
 
   <div className="bag-mood-grid">
 
-    {/* LEFT SIDE */}
+    {/* LEFT HERO */}
     <div className="bag-mood-visual">
-      <div className="bag-mood-stage">
 
+      <div className="bag-mood-stage">
         <img
           id="bagMoodHeroImg"
           className="bag-mood-hero-img anim-float"
@@ -748,7 +747,7 @@ export default function Home({ ogImageUrl }) {
           alt="Bag Mood Hero"
         />
 
-        {/* Selected coin badge */}
+        {/* Selected coin floating badge */}
         <div
           id="bagSelectedCoinBadge"
           className="bag-selected-coin-badge hidden"
@@ -758,47 +757,48 @@ export default function Home({ ogImageUrl }) {
             src="/assets/logo/wojakmeter_logo.png"
             alt="Selected Coin"
           />
-          <span id="bagSelectedCoinSymbol">BTC</span>
-        </div>
-
-        {/* Mood icon badge */}
-        <div className="bag-mood-icon-badge">
-          <img
-            id="bagMoodIconImg"
-            src="/assets/icons/classic/neutral.png"
-            alt="Bag Mood Icon"
-          />
         </div>
       </div>
 
+      {/* ONLY ONE mood icon */}
       <div className="bag-mood-result">
-        <span id="bagModeLabel">Portfolio Mood</span>
 
-        <strong id="bagMoodTitle">
+        <div className="bag-single-mood-icon-wrap">
           <img
-            id="bagMoodTitleIcon"
+            id="bagMoodIconImg"
             className="bag-title-mood-icon"
             src="/assets/icons/classic/neutral.png"
             alt="Mood Icon"
           />
-        </strong>
+        </div>
 
         <div className="bag-mood-score-row">
           <div>
-            <span>Score</span>
-            <strong id="bagMoodScore">50/100</strong>
+            <span>Portfolio Value</span>
+            <strong id="bagPortfolioValue">$0.00</strong>
+          </div>
+
+          <div>
+            <span>Total Invested</span>
+            <strong id="bagTotalInvested">$0.00</strong>
           </div>
 
           <div>
             <span>PNL %</span>
-            <strong id="bagMoodChange" className="neutral">
+            <strong
+              id="bagPortfolioPnlPercent"
+              className="neutral"
+            >
               +0.00%
             </strong>
           </div>
 
           <div>
             <span>PNL</span>
-            <strong id="bagMoodPnlUsd" className="neutral">
+            <strong
+              id="bagPortfolioPnl"
+              className="neutral"
+            >
               $0.00
             </strong>
           </div>
@@ -830,12 +830,12 @@ export default function Home({ ogImageUrl }) {
         Your mood is calculated from your real entry price vs live market price.
       </div>
 
-      {/* Search */}
+      {/* Search Inputs */}
       <div className="bag-search-box">
         <input
           id="bagSearchInput"
           type="text"
-          placeholder="Search BTC, SOL, MOOD or paste contract address..."
+          placeholder="Search BTC, SOL, MOOD or paste contract..."
           autoComplete="off"
         />
 
@@ -869,40 +869,7 @@ export default function Home({ ogImageUrl }) {
         className="bag-search-results"
       ></div>
 
-      {/* Portfolio Summary */}
-      <div className="bag-portfolio-summary">
-        <div>
-          <span>Portfolio Value</span>
-          <strong id="bagPortfolioValue">$0.00</strong>
-        </div>
-
-        <div>
-          <span>Total Invested</span>
-          <strong id="bagTotalInvested">$0.00</strong>
-        </div>
-
-        <div>
-          <span>PNL</span>
-          <strong
-            id="bagPortfolioPnl"
-            className="neutral"
-          >
-            $0.00
-          </strong>
-        </div>
-
-        <div>
-          <span>PNL %</span>
-          <strong
-            id="bagPortfolioPnlPercent"
-            className="neutral"
-          >
-            +0.00%
-          </strong>
-        </div>
-      </div>
-
-      {/* Holdings */}
+      {/* Holdings list */}
       <div
         id="bagMoodList"
         className="bag-mood-list"
@@ -933,6 +900,7 @@ export default function Home({ ogImageUrl }) {
     </div>
   </div>
 </section>
+			
 			                             
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
