@@ -3265,34 +3265,19 @@ function calculateBagMood() {
     };
   }
 
+  // SINGLE COIN MODE
   if (bagMoodMode === "single") {
-    const selected = bagMoodHoldings[bagSelectedIndex] || bagMoodHoldings[0];
+    const selected =
+      bagMoodHoldings[bagSelectedIndex] ||
+      bagMoodHoldings[0];
+
     const data = getHoldingPnlData(selected);
-    const mood = getBagMoodByPnlPercent(data.pnlPercent, selected);
 
-    return {
-      ...data,
-      value: data.currentValue,
-      score: roundScore(
-        mood.key === "euphoria" ? 90 :
-        mood.key === "content" ? 75 :
-        mood.key === "optimism" ? 64 :
-        mood.key === "neutral" ? 50 :
-        mood.key === "doubt" ? 40 :
-        mood.key === "concern" ? 25 : 10
-      ),
-      mood,
+    const mood = getBagMoodByPnlPercent(
+      data.pnlPercent,
       selected
-    };
-  }
+    );
 
-  let totalInvested = 0;
-  let totalValue = 0;
-  let weightedScore = 0;
-
-  bagMoodHoldings.forEach((holding) => {
-    const data = getHoldingPnlData(holding);
-    const mood = getBagMoodByPnlPercent(data.pnlPercent, holding);
     const score =
       mood.key === "euphoria" ? 90 :
       mood.key === "content" ? 75 :
@@ -3301,22 +3286,51 @@ function calculateBagMood() {
       mood.key === "doubt" ? 40 :
       mood.key === "concern" ? 25 : 10;
 
+    return {
+      ...data,
+      value: data.currentValue,
+      score: roundScore(score),
+      mood,
+      selected
+    };
+  }
+
+  // PORTFOLIO MODE
+  let totalInvested = 0;
+  let totalValue = 0;
+
+  bagMoodHoldings.forEach((holding) => {
+    const data = getHoldingPnlData(holding);
+
     totalInvested += data.invested;
     totalValue += data.currentValue;
-    weightedScore += score * data.invested;
   });
 
   const pnlUsd = totalValue - totalInvested;
-  const pnlPercent = totalInvested > 0 ? (pnlUsd / totalInvested) * 100 : 0;
-  const finalScore = totalInvested > 0 ? roundScore(weightedScore / totalInvested) : 50;
+
+  const pnlPercent =
+    totalInvested > 0
+      ? (pnlUsd / totalInvested) * 100
+      : 0;
+
+  const portfolioMood =
+    getBagMoodByPnlPercent(pnlPercent);
+
+  const finalScore =
+    portfolioMood.key === "euphoria" ? 90 :
+    portfolioMood.key === "content" ? 75 :
+    portfolioMood.key === "optimism" ? 64 :
+    portfolioMood.key === "neutral" ? 50 :
+    portfolioMood.key === "doubt" ? 40 :
+    portfolioMood.key === "concern" ? 25 : 10;
 
   return {
     invested: totalInvested,
     value: totalValue,
     pnlUsd,
     pnlPercent,
-    score: finalScore,
-    mood: getMoodByScore(finalScore),
+    score: roundScore(finalScore),
+    mood: portfolioMood,
     selected: null
   };
 }
