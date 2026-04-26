@@ -3059,11 +3059,15 @@ const BAG_STORAGE_KEY = "wojakBagMoodHoldings";
 const BAG_STYLE_STORAGE_KEY = "wojakBagMoodStyle";
 
 let bagMoodHoldings = [];
-let bagMoodTimeframe = "24h";
 let bagMoodMode = "portfolio";
 let bagMoodStyle = DEFAULT_STYLE;
 let bagSearchResults = [];
 let bagSelectedIndex = 0;
+
+const BAG_MAJORS = [
+  "BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "AVAX", "LINK",
+  "DOGE", "TRX", "DOT", "MATIC", "POL", "LTC", "BCH"
+];
 
 function getAllowedBagStyles() {
   return ["classic", "synth", "boyak", "minimal"];
@@ -3127,13 +3131,8 @@ function normalizeBagCoin(item) {
     source: item.source || "local",
     network: item.network || item.chain || "",
     contract: item.contract || item.address || "",
-    current_price: item.current_price ?? item.price ?? null,
-    price_change_percentage_1h_in_currency:
-      item.price_change_percentage_1h_in_currency ?? item.change_1h ?? 0,
-    price_change_percentage_24h_in_currency:
-      item.price_change_percentage_24h_in_currency ?? item.change_24h ?? 0,
-    price_change_percentage_7d_in_currency:
-      item.price_change_percentage_7d_in_currency ?? item.change_7d ?? 0
+    current_price: Number(item.current_price ?? item.price ?? 0),
+    market_cap: Number(item.market_cap ?? item.marketCap ?? 0)
   };
 }
 
@@ -3166,143 +3165,159 @@ async function searchBagCoins(query) {
     .slice(0, 12);
 }
 
-function getHoldingLiveCoin(holding) {
-  return getCoinBySymbol(holding.symbol) || holding;
-}
+function getBagCurrentPrice(holding) {
+  const localCoin = getCoinBySymbol(holding.symbol);
+  const localPrice = Number(localCoin?.current_price || 0);
+  const holdingPrice = Number(holding.current_price || 0);
 
-function getHoldingCurrentPrice(holding) {
-  const liveCoin = getHoldingLiveCoin(holding);
-  return Number(liveCoin.current_price || holding.current_price || 0);
-}
-
-function getHoldingTokenAmount(holding) {
-  const entryPrice = Number(holding.entryPrice || 0);
-  const invested = Number(holding.usdValue || 0);
-
-  if (entryPrice > 0 && invested > 0) {
-    return invested / entryPrice;
-  }
+  if (Number.isFinite(localPrice) && localPrice > 0) return localPrice;
+  if (Number.isFinite(holdingPrice) && holdingPrice > 0) return holdingPrice;
 
   return 0;
 }
 
-function getHoldingCurrentValue(holding) {
-  const amount = getHoldingTokenAmount(holding);
-  const currentPrice = getHoldingCurrentPrice(holding);
+function isVolatileBagCoin(holding) {
+  const symbol = String(holding.symbol || "").toUpperCase();
+  const name = String(holding.name || "").toLowerCase();
+  const source = String(holding.source || "").toLowerCase();
+  const marketCap = Number(holding.market_cap || 0);
 
-  if (amount > 0 && currentPrice > 0) {
-    return amount * currentPrice;
-  }
+  if (topMemesData.some((c) => c.symbol?.toUpperCase?.() === symbol)) return true;
+  if (source.includes("pump") || source.includes("meme")) return true;
+  if (name.includes("meme") || name.includes("inu") || name.includes("pepe") || name.includes("dog")) return true;
+  if (!BAG_MAJORS.includes(symbol)) return true;
+  if (marketCap > 0 && marketCap < 1000000000) return true;
 
-  return Number(holding.usdValue || 0);
+  return false;
 }
 
-function getHoldingPnl(holding) {
+function getBagMoodByPnlPercent(pnlPercent, holding = null) {
+  const pct = Number(pnlPercent || 0);
+  const volatile = holding ? isVolatileBagCoin(holding) : false;
+
+  if (volatile) {
+    if (pct >= 80) return getMoodByScore(90);
+    if (pct >= 35) return getMoodByScore(75);
+    if (pct >= 12) return getMoodByScore(64);
+    if (pct > -8) return getMoodByScore(50);
+    if (pct > -20) return getMoodByScore(40);
+    if (pct > -40) return getMoodByScore(25);
+    return getMoodByScore(10);
+  }
+
+  if (pct >= 18) return getMoodByScore(90);
+  if (pct >= 9) return getMoodByScore(75);
+  if (pct >= 3) return getMoodByScore(64);
+  if (pct > -3) return getMoodByScore(50);
+  if (pct > -7) return getMoodByScore(40);
+  if (pct > -12) return getMoodByScore(25);
+  return getMoodByScore(10);
+}
+
+function getHoldingUnits(holding) {
   const invested = Number(holding.usdValue || 0);
-  const currentValue = getHoldingCurrentValue(holding);
-  const pnl = currentValue - invested;
-  const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+  const entryPrice = Number(holding.entryPrice || 0);
+
+  if (!Number.isFinite(invested) || invested <= 0) return 0;
+  if (!Number.isFinite(entryPrice) || entryPrice <= 0) return 0;
+
+  return invested / entryPrice;
+}
+
+function getHoldingValue(holding) {
+  const units = getHoldingUnits(holding);
+  const currentPrice = getBagCurrentPrice(holding);
+
+  if (units <= 0 || currentPrice <= 0) return 0;
+  return units * currentPrice;
+}
+
+function getHoldingPnlData(holding) {
+  const invested = Number(holding.usdValue || 0);
+  const entryPrice = Number(holding.entryPrice || 0);
+  const currentPrice = getBagCurrentPrice(holding);
+  const currentValue = getHoldingValue(holding);
+  const pnlUsd = currentValue - invested;
+  const pnlPercent = entryPrice > 0 && currentPrice > 0
+    ? ((currentPrice - entryPrice) / entryPrice) * 100
+    : 0;
 
   return {
     invested,
+    entryPrice,
+    currentPrice,
     currentValue,
-    pnl,
+    pnlUsd,
     pnlPercent
   };
 }
 
-function getHoldingChange(holding) {
-  const pnlData = getHoldingPnl(holding);
-
-  if (Number(holding.entryPrice || 0) > 0) {
-    return pnlData.pnlPercent;
-  }
-
-  const localCoin = getCoinBySymbol(holding.symbol);
-
-  if (localCoin) {
-    return getCoinChangeForTimeframe(localCoin, bagMoodTimeframe);
-  }
-
-  const h1 = Number(holding.price_change_percentage_1h_in_currency || 0);
-  const h24 = Number(holding.price_change_percentage_24h_in_currency || 0);
-  const d7 = Number(holding.price_change_percentage_7d_in_currency || 0);
-
-  switch (bagMoodTimeframe) {
-    case "1h": return h1;
-    case "4h": return h24 / 6;
-    case "24h": return h24;
-    case "7d": return d7;
-    case "30d": return d7 * 2.8;
-    default: return h24;
-  }
-}
-
-function getBagPortfolioTotals() {
-  return bagMoodHoldings.reduce(
-    (totals, holding) => {
-      const data = getHoldingPnl(holding);
-
-      totals.invested += data.invested;
-      totals.currentValue += data.currentValue;
-      totals.pnl += data.pnl;
-
-      return totals;
-    },
-    {
-      invested: 0,
-      currentValue: 0,
-      pnl: 0
-    }
-  );
-}
-
-function updateBagPortfolioSummary() {
-  const totals = getBagPortfolioTotals();
-  const pnlPercent = totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0;
-
-  setText("bagPortfolioValue", formatCurrency(totals.currentValue));
-  setText("bagTotalInvested", formatCurrency(totals.invested));
-  setText("bagPortfolioPnl", formatCurrency(totals.pnl));
-  setText("bagPortfolioPnlPercent", formatPercent(pnlPercent));
-
-  const pnlEl = byId("bagPortfolioPnl");
-  const pnlPercentEl = byId("bagPortfolioPnlPercent");
-
-  if (pnlEl) applyPolarityClass(pnlEl, totals.pnl);
-  if (pnlPercentEl) applyPolarityClass(pnlPercentEl, pnlPercent);
-}
-
 function calculateBagMood() {
   if (!bagMoodHoldings.length) {
-    return { change: 0, score: 50, mood: getMoodByScore(50) };
+    return {
+      invested: 0,
+      value: 0,
+      pnlUsd: 0,
+      pnlPercent: 0,
+      score: 50,
+      mood: getMoodByScore(50),
+      selected: null
+    };
   }
 
   if (bagMoodMode === "single") {
     const selected = bagMoodHoldings[bagSelectedIndex] || bagMoodHoldings[0];
-    const change = selected ? getHoldingChange(selected) : 0;
-    const score = roundScore(normalizeChangeToScore(change, 10));
+    const data = getHoldingPnlData(selected);
+    const mood = getBagMoodByPnlPercent(data.pnlPercent, selected);
 
     return {
-      change,
-      score,
-      mood: getMoodByScore(score)
+      ...data,
+      value: data.currentValue,
+      score: roundScore(
+        mood.key === "euphoria" ? 90 :
+        mood.key === "content" ? 75 :
+        mood.key === "optimism" ? 64 :
+        mood.key === "neutral" ? 50 :
+        mood.key === "doubt" ? 40 :
+        mood.key === "concern" ? 25 : 10
+      ),
+      mood,
+      selected
     };
   }
 
-  const totals = getBagPortfolioTotals();
+  let totalInvested = 0;
+  let totalValue = 0;
+  let weightedScore = 0;
 
-  if (totals.invested <= 0) {
-    return { change: 0, score: 50, mood: getMoodByScore(50) };
-  }
+  bagMoodHoldings.forEach((holding) => {
+    const data = getHoldingPnlData(holding);
+    const mood = getBagMoodByPnlPercent(data.pnlPercent, holding);
+    const score =
+      mood.key === "euphoria" ? 90 :
+      mood.key === "content" ? 75 :
+      mood.key === "optimism" ? 64 :
+      mood.key === "neutral" ? 50 :
+      mood.key === "doubt" ? 40 :
+      mood.key === "concern" ? 25 : 10;
 
-  const weightedChange = (totals.pnl / totals.invested) * 100;
-  const score = roundScore(normalizeChangeToScore(weightedChange, 10));
+    totalInvested += data.invested;
+    totalValue += data.currentValue;
+    weightedScore += score * data.invested;
+  });
+
+  const pnlUsd = totalValue - totalInvested;
+  const pnlPercent = totalInvested > 0 ? (pnlUsd / totalInvested) * 100 : 0;
+  const finalScore = totalInvested > 0 ? roundScore(weightedScore / totalInvested) : 50;
 
   return {
-    change: weightedChange,
-    score,
-    mood: getMoodByScore(score)
+    invested: totalInvested,
+    value: totalValue,
+    pnlUsd,
+    pnlPercent,
+    score: finalScore,
+    mood: getMoodByScore(finalScore),
+    selected: null
   };
 }
 
@@ -3363,13 +3378,10 @@ function addBagHolding(coin, usdValue, entryPrice = 0) {
   if (!normalized) return;
 
   const value = Number(usdValue || 0);
-  if (!Number.isFinite(value) || value <= 0) return;
+  const entry = Number(entryPrice || 0) || Number(normalized.current_price || 0);
 
-  const cleanEntryPrice = Number(entryPrice || 0);
-  const finalEntryPrice =
-    Number.isFinite(cleanEntryPrice) && cleanEntryPrice > 0
-      ? cleanEntryPrice
-      : Number(normalized.current_price || 0);
+  if (!Number.isFinite(value) || value <= 0) return;
+  if (!Number.isFinite(entry) || entry <= 0) return;
 
   const existing = bagMoodHoldings.find((h) => {
     if (normalized.contract && h.contract) return h.contract === normalized.contract;
@@ -3377,16 +3389,16 @@ function addBagHolding(coin, usdValue, entryPrice = 0) {
   });
 
   if (existing) {
-    existing.usdValue = value;
-    existing.entryPrice = finalEntryPrice;
-    Object.assign(existing, normalized);
+    Object.assign(existing, normalized, {
+      usdValue: value,
+      entryPrice: entry
+    });
   } else {
     bagMoodHoldings.push({
       ...normalized,
       usdValue: value,
-      entryPrice: finalEntryPrice
+      entryPrice: entry
     });
-
     bagSelectedIndex = bagMoodHoldings.length - 1;
   }
 
@@ -3420,11 +3432,24 @@ function renderBagMood() {
   }
 
   setText("bagMoodScore", `${result.score}/100`);
-  setText("bagMoodChange", formatPercent(result.change));
-  setText("bagMoodTimeframe", bagMoodTimeframe);
+  setText("bagMoodChange", formatPercent(result.pnlPercent));
+
+  const timeframeEl = byId("bagMoodTimeframe");
+  if (timeframeEl) timeframeEl.textContent = "Entry";
 
   const changeEl = byId("bagMoodChange");
-  if (changeEl) applyPolarityClass(changeEl, result.change);
+  if (changeEl) applyPolarityClass(changeEl, result.pnlPercent);
+
+  setText("bagPortfolioValue", formatCurrency(result.value));
+  setText("bagTotalInvested", formatCurrency(result.invested));
+  setText("bagPortfolioPnl", formatCurrency(result.pnlUsd));
+  setText("bagPortfolioPnlPercent", formatPercent(result.pnlPercent));
+
+  const pnlEl = byId("bagPortfolioPnl");
+  const pnlPctEl = byId("bagPortfolioPnlPercent");
+
+  if (pnlEl) applyPolarityClass(pnlEl, result.pnlUsd);
+  if (pnlPctEl) applyPolarityClass(pnlPctEl, result.pnlPercent);
 
   const heroImg = byId("bagMoodHeroImg");
   if (heroImg) {
@@ -3436,14 +3461,8 @@ function renderBagMood() {
     );
   }
 
-  updateBagPortfolioSummary();
-
   qsa("[data-bag-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.bagMode === bagMoodMode);
-  });
-
-  qsa("[data-bag-timeframe]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.bagTimeframe === bagMoodTimeframe);
   });
 
   const selector = byId("bagStyleSelector");
@@ -3460,13 +3479,11 @@ function renderBagMood() {
   }
 
   list.innerHTML = bagMoodHoldings.map((holding, index) => {
-    const change = getHoldingChange(holding);
-    const score = roundScore(normalizeChangeToScore(change, 10));
-    const coinMood = getMoodByScore(score);
-    const pnlData = getHoldingPnl(holding);
-    const currentPrice = getHoldingCurrentPrice(holding);
-    const cls = pnlData.pnl > 0 ? "positive" : pnlData.pnl < 0 ? "negative" : "neutral";
+    const data = getHoldingPnlData(holding);
+    const coinMood = getBagMoodByPnlPercent(data.pnlPercent, holding);
+    const cls = data.pnlPercent > 0 ? "positive" : data.pnlPercent < 0 ? "negative" : "neutral";
     const isActive = bagMoodMode === "single" && bagSelectedIndex === index ? "active-bag-row" : "";
+    const volatilityLabel = isVolatileBagCoin(holding) ? "Volatile" : "Major";
 
     return `
       <div class="bag-row ${isActive}" data-select-bag="${index}">
@@ -3474,33 +3491,33 @@ function renderBagMood() {
           <img src="${escapeHtml(holding.image || "/assets/logo/wojakmeter_logo.png")}" alt="${escapeHtml(holding.symbol)}">
           <div>
             <strong>${escapeHtml(holding.symbol)}</strong>
-            <span>${escapeHtml(holding.name || "")}</span>
+            <span>${escapeHtml(holding.name || "")} • ${volatilityLabel}</span>
           </div>
         </div>
 
         <div>
           <span class="bag-row-label">Invested</span>
-          <strong>${formatCurrency(pnlData.invested)}</strong>
-        </div>
-
-        <div>
-          <span class="bag-row-label">Entry</span>
-          <strong>${formatCurrency(holding.entryPrice || 0)}</strong>
-        </div>
-
-        <div>
-          <span class="bag-row-label">Now</span>
-          <strong>${formatCurrency(currentPrice)}</strong>
+          <strong>${formatCurrency(data.invested)}</strong>
         </div>
 
         <div>
           <span class="bag-row-label">Value</span>
-          <strong>${formatCurrency(pnlData.currentValue)}</strong>
+          <strong>${formatCurrency(data.currentValue)}</strong>
+        </div>
+
+        <div>
+          <span class="bag-row-label">Entry</span>
+          <strong>${formatCurrency(data.entryPrice)}</strong>
+        </div>
+
+        <div>
+          <span class="bag-row-label">Now</span>
+          <strong>${formatCurrency(data.currentPrice)}</strong>
         </div>
 
         <div class="${cls}">
           <span class="bag-row-label">PNL</span>
-          <strong>${formatCurrency(pnlData.pnl)} / ${formatPercent(pnlData.pnlPercent)}</strong>
+          <strong>${formatPercent(data.pnlPercent)}</strong>
         </div>
 
         <div class="mood-${coinMood.key}">
@@ -3534,14 +3551,12 @@ function renderBagMood() {
 function shareBagMoodOnX() {
   const result = calculateBagMood();
   const mood = result.mood;
-  const totals = getBagPortfolioTotals();
-  const pnlPercent = totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0;
 
   const text = `My Bag Mood is ${mood.name} (${result.score}/100)
 
-Portfolio Value: ${formatCurrency(totals.currentValue)}
-Invested: ${formatCurrency(totals.invested)}
-PNL: ${formatCurrency(totals.pnl)} (${formatPercent(pnlPercent)})
+Portfolio Value: ${formatCurrency(result.value)}
+Invested: ${formatCurrency(result.invested)}
+PNL: ${formatCurrency(result.pnlUsd)} (${formatPercent(result.pnlPercent)})
 
 Track the emotion of your bags 👇`;
 
@@ -3590,16 +3605,6 @@ function setupBagMoodControls() {
     });
   });
 
-  qsa("[data-bag-timeframe]").forEach((btn) => {
-    if (btn.dataset.boundBagTf) return;
-    btn.dataset.boundBagTf = "1";
-
-    btn.addEventListener("click", () => {
-      bagMoodTimeframe = btn.dataset.bagTimeframe || "24h";
-      renderBagMood();
-    });
-  });
-
   const styleSelector = byId("bagStyleSelector");
 
   if (styleSelector && !styleSelector.dataset.bound) {
@@ -3636,6 +3641,40 @@ function setupBagMoodControls() {
   }
 }
 
+function refreshBagMoodPricesFromMarket() {
+  if (!bagMoodHoldings.length) return;
+
+  let changed = false;
+
+  bagMoodHoldings = bagMoodHoldings.map((holding) => {
+    const localCoin = getCoinBySymbol(holding.symbol);
+    if (!localCoin?.current_price) return holding;
+
+    changed = true;
+
+    return {
+      ...holding,
+      current_price: Number(localCoin.current_price || holding.current_price || 0),
+      market_cap: Number(localCoin.market_cap || holding.market_cap || 0),
+      image: localCoin.image || holding.image,
+      name: localCoin.name || holding.name
+    };
+  });
+
+  if (changed) {
+    saveBagMoodHoldings();
+    renderBagMood();
+  }
+}
+
+function startBagMoodLiveRefresh() {
+  clearInterval(window.__wmBagMoodTimer);
+
+  window.__wmBagMoodTimer = setInterval(() => {
+    refreshBagMoodPricesFromMarket();
+  }, 10000);
+}
+
 function initBagMood() {
   const section = byId("bagMoodSection");
   if (!section) return;
@@ -3644,6 +3683,7 @@ function initBagMood() {
   loadBagMoodHoldings();
   setupBagMoodControls();
   renderBagMood();
+  startBagMoodLiveRefresh();
 }
 
 // ===============================
