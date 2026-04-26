@@ -711,6 +711,7 @@ export default function Home({ ogImageUrl }) {
                 </div>
               </div>
             </section>
+
 			{/* ===============================
    BAG MOOD MODULE
 ================================ */}
@@ -735,20 +736,51 @@ export default function Home({ ogImageUrl }) {
   </div>
 
   <div className="bag-mood-grid">
+
+    {/* LEFT SIDE */}
     <div className="bag-mood-visual">
       <div className="bag-mood-stage">
+
         <img
           id="bagMoodHeroImg"
           className="bag-mood-hero-img anim-float"
           src="/assets/hero/classic/neutral.png"
-          alt="Bag Mood"
+          alt="Bag Mood Hero"
         />
+
+        {/* Selected coin badge */}
+        <div
+          id="bagSelectedCoinBadge"
+          className="bag-selected-coin-badge hidden"
+        >
+          <img
+            id="bagSelectedCoinImg"
+            src="/assets/logo/wojakmeter_logo.png"
+            alt="Selected Coin"
+          />
+          <span id="bagSelectedCoinSymbol">BTC</span>
+        </div>
+
+        {/* Mood icon badge */}
+        <div className="bag-mood-icon-badge">
+          <img
+            id="bagMoodIconImg"
+            src="/assets/icons/classic/neutral.png"
+            alt="Bag Mood Icon"
+          />
+        </div>
       </div>
 
       <div className="bag-mood-result">
-        <span>Portfolio Mood</span>
-        <strong id="bagMoodTitle" className="mood-neutral">
-          Neutral
+        <span id="bagModeLabel">Portfolio Mood</span>
+
+        <strong id="bagMoodTitle">
+          <img
+            id="bagMoodTitleIcon"
+            className="bag-title-mood-icon"
+            src="/assets/icons/classic/neutral.png"
+            alt="Mood Icon"
+          />
         </strong>
 
         <div className="bag-mood-score-row">
@@ -774,23 +806,31 @@ export default function Home({ ogImageUrl }) {
       </div>
     </div>
 
+    {/* RIGHT SIDE */}
     <div className="bag-mood-main">
+
       <div className="bag-mode-tabs">
-        <button type="button" className="active" data-bag-mode="portfolio">
+        <button
+          type="button"
+          className="active"
+          data-bag-mode="portfolio"
+        >
           Portfolio Mood
         </button>
 
-        <button type="button" data-bag-mode="single">
+        <button
+          type="button"
+          data-bag-mode="single"
+        >
           Single Coin Mood
         </button>
       </div>
 
       <div className="bag-position-note">
-        <span>
-          Your mood is calculated from your real entry price vs live market price.
-        </span>
+        Your mood is calculated from your real entry price vs live market price.
       </div>
 
+      {/* Search */}
       <div className="bag-search-box">
         <input
           id="bagSearchInput"
@@ -815,13 +855,21 @@ export default function Home({ ogImageUrl }) {
           placeholder="Entry price"
         />
 
-        <button id="bagSearchBtn" type="button" className="action-btn">
+        <button
+          id="bagSearchBtn"
+          type="button"
+          className="action-btn"
+        >
           Add
         </button>
       </div>
 
-      <div id="bagSearchResults" className="bag-search-results"></div>
+      <div
+        id="bagSearchResults"
+        className="bag-search-results"
+      ></div>
 
+      {/* Portfolio Summary */}
       <div className="bag-portfolio-summary">
         <div>
           <span>Portfolio Value</span>
@@ -835,31 +883,50 @@ export default function Home({ ogImageUrl }) {
 
         <div>
           <span>PNL</span>
-          <strong id="bagPortfolioPnl" className="neutral">
+          <strong
+            id="bagPortfolioPnl"
+            className="neutral"
+          >
             $0.00
           </strong>
         </div>
 
         <div>
           <span>PNL %</span>
-          <strong id="bagPortfolioPnlPercent" className="neutral">
+          <strong
+            id="bagPortfolioPnlPercent"
+            className="neutral"
+          >
             +0.00%
           </strong>
         </div>
       </div>
 
-      <div id="bagMoodList" className="bag-mood-list">
+      {/* Holdings */}
+      <div
+        id="bagMoodList"
+        className="bag-mood-list"
+      >
         <div className="bag-empty">
           Build your bag to see what it feels like.
         </div>
       </div>
 
+      {/* Actions */}
       <div className="bag-actions">
-        <button id="bagShareBtn" type="button" className="action-btn share-x-btn">
+        <button
+          id="bagShareBtn"
+          type="button"
+          className="action-btn share-x-btn"
+        >
           Share Bag Mood
         </button>
 
-        <button id="bagResetBtn" type="button" className="action-btn">
+        <button
+          id="bagResetBtn"
+          type="button"
+          className="action-btn"
+        >
           Reset Bag
         </button>
       </div>
