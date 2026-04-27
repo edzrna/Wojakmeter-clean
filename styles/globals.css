@@ -3902,3 +3902,105 @@ pre.studio-output {
     height: 360px;
   }
 }
+
+#bagSearchResults{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:14px;
+  max-height:420px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+
+.bag-result{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.05);
+}
+
+.bag-coin{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex:1;
+  min-width:0;
+}
+
+.bag-coin img{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  object-fit:cover;
+  flex-shrink:0;
+}
+
+.bag-coin div{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.bag-coin strong{
+  font-size:15px;
+  font-weight:700;
+  color:#fff;
+}
+
+.bag-coin span{
+  font-size:12px;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.bag-result span{
+  font-size:12px;
+  color:var(--muted);
+  flex-shrink:0;
+}
+
+.bag-add-btn{
+  height:42px;
+  padding:0 18px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(
+    135deg,
+    #4dff88,
+    #21c45d
+  );
+  color:#071018;
+  font-weight:700;
+  cursor:pointer;
+  flex-shrink:0;
+}
+
+.bag-add-btn:hover{
+  transform:translateY(-1px);
+}
+
+@media (max-width:768px){
+
+  .bag-result{
+    padding:12px;
+    gap:10px;
+  }
+
+  .bag-coin img{
+    width:38px;
+    height:38px;
+  }
+
+  .bag-add-btn{
+    height:38px;
+    padding:0 14px;
+    font-size:13px;
+  }
+}
