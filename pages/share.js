@@ -20,7 +20,7 @@ export async function getServerSideProps({ query, req }) {
   const {
     mood = "Neutral",
     score = "50",
-    tf = "1h",
+    tf = "24h",
     change = "0",
     volume = "--",
     driver = "Market flow / price action",
@@ -39,7 +39,7 @@ export async function getServerSideProps({ query, req }) {
   const safePayload = {
     mood: safeText(mood, "Neutral"),
     score: String(safeScore(score)),
-    tf: safeText(tf, "1h"),
+    tf: safeText(tf, "24h"),
     change: String(safeChange(change)),
     volume: safeText(volume, "--"),
     driver: safeText(driver, "Market flow / price action"),
@@ -86,10 +86,12 @@ export default function SharePage({
 
   const title =
     coin === "MARKET" || coin === "GLOBAL"
-      ? `WojakMeter | Crypto Market Mood: ${mood}`
-      : `WojakMeter | ${coin} Mood: ${mood}`;
+      ? `WojakMeter | Crypto Market Mood: ${mood} (${numericScore}/100)`
+      : `WojakMeter | ${coin} Mood: ${mood} (${numericScore}/100)`;
 
   const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
+
+  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100 on WojakMeter`;
 
   return (
     <>
@@ -101,6 +103,10 @@ export default function SharePage({
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={ogUrl} />
+        <meta property="og:image:secure_url" content={ogUrl} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={imageAlt} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={shareUrl} />
         <meta property="og:site_name" content="WojakMeter" />
@@ -109,7 +115,9 @@ export default function SharePage({
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content={ogUrl} />
-        <meta name="twitter:site" content="@WojakMeter" />
+        <meta name="twitter:image:alt" content={imageAlt} />
+        <meta name="twitter:site" content="@wojakmeterx" />
+        <meta name="twitter:creator" content="@wojakmeterx" />
       </Head>
 
       <main
@@ -169,7 +177,7 @@ export default function SharePage({
 
             <img
               src={ogUrl}
-              alt={`${headline} ${mood} share card`}
+              alt={imageAlt}
               style={{
                 width: "100%",
                 borderRadius: 20,
