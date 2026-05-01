@@ -4441,7 +4441,7 @@ html {
 
 @media (max-width: 640px) {
   .mood-stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px;
   }
 
@@ -4476,50 +4476,63 @@ html {
 
 @media (max-width: 640px) {
 
-  /* GRID 2 COLUMNAS */
+  /* GRID */
   .coins-grid {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 14px; /* más aire entre cards */
   }
 
-  /* CARD MÁS COMPACTA */
+  /* CARD */
   .coin-card {
-    padding: 12px 10px;
-    border-radius: 16px;
-    min-height: 90px;
+    padding: 14px 12px;
+    border-radius: 18px;
+    min-height: 110px; /* más espacio vertical */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
-  /* TOP ROW (ICON + PRICE) */
+  /* TOP ROW */
   .coin-card-top {
+    display: flex;
+    align-items: center;
     gap: 8px;
   }
 
   .coin-card img {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
-  /* TEXTO */
+  /* PRICE */
   .coin-card strong {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    line-height: 1.2;
   }
 
+  /* SYMBOL */
   .coin-card span {
     font-size: 0.75rem;
+    opacity: 0.85;
+    margin-top: 4px;
   }
 
-  /* MOOD + % MÁS CHICO */
+  /* RIGHT SIDE (MOOD + %) */
   .coin-card-right {
-    gap: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
   }
 
   .coin-card-right img {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
   .coin-card-change {
     font-size: 0.8rem;
+    font-weight: 600;
   }
 }
