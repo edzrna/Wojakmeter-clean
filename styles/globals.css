@@ -4010,6 +4010,30 @@ pre.studio-output {
    Subemotion glow + motion fallback
 ================================ */
 
+.hero-subtitle {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(207, 215, 227, 0.75); /* tu neutral */
+  margin-top: 6px;
+  margin-bottom: 6px;
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
+.hero-subtitle.strong {
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+.hero-subtitle-bullish {
+  color: #7cffaa;
+}
+
+.hero-subtitle-bearish {
+  color: #ff6c79;
+}
+
 .wojak-stage,
 .hero-stage,
 .hero-visual {
