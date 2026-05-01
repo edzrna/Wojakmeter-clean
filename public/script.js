@@ -1968,12 +1968,14 @@ function shareMoodOnX() {
   const score = roundScore(ctx.globalScore);
 
   const subtitle =
-    ctx.emotionSubtitle ||
     byId("heroSubtitle")?.textContent ||
+    byId("heroMoodSubtitle")?.textContent ||
+    byId("moodSubtitle")?.textContent ||
     ctx.macroNarrative ||
     "Market emotion is updating in real time.";
 
-  const shiftLevel = ctx.emotionShiftLevel || getShiftLevel?.() || "low";
+  const shiftLevel =
+    typeof getShiftLevel === "function" ? getShiftLevel() : "low";
 
   const emojiMap = {
     Euphoria: "🚀",
@@ -2001,11 +2003,26 @@ function shareMoodOnX() {
 
 Track the emotion 👇`;
 
+  const params = new URLSearchParams({
+    mood,
+    score: String(score),
+    tf: ctx.globalTimeframe || "24h",
+    change: String(Number(ctx.globalChange || 0)),
+    volume: ctx.globalVolume || "--",
+    driver: ctx.macroLabel || "Market flow / price action",
+    risk: currentRiskTone || getRiskToneFromMood(currentGlobalMood?.key || "neutral"),
+    coin: "MARKET",
+    style: getCurrentStyle(),
+    v: String(Date.now())
+  });
+
+  const finalShareUrl = `https://wojakmeter.com/share?${params.toString()}`;
+
   const shareUrl =
     "https://twitter.com/intent/tweet?text=" +
     encodeURIComponent(text) +
     "&url=" +
-    encodeURIComponent("https://wojakmeter.com");
+    encodeURIComponent(finalShareUrl);
 
   window.open(shareUrl, "_blank", "noopener,noreferrer");
 }
