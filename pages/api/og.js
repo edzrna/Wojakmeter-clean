@@ -1,8 +1,10 @@
-import { ImageResponse } from "next/og";
+import { ImageResponse } from "@vercel/og";
 
-export const runtime = "edge";
+export const config = {
+  runtime: "edge",
+};
 
-export async function GET() {
+export default function handler(req) {
   return new ImageResponse(
     (
       <div
@@ -15,7 +17,7 @@ export async function GET() {
           background: "#071018",
           color: "#4dff88",
           fontSize: "80px",
-          fontWeight: 800
+          fontWeight: 800,
         }}
       >
         WOJAKMETER OG TEST
@@ -23,7 +25,7 @@ export async function GET() {
     ),
     {
       width: 1200,
-      height: 630
+      height: 630,
     }
   );
 }
