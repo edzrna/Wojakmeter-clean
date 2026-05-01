@@ -50,13 +50,15 @@ export async function getServerSideProps({ query, req }) {
 
   const params = new URLSearchParams(safePayload);
 
-  const ogUrl = `${baseUrl}/api/og?${params.toString()}`;
-  const shareUrl = `${baseUrl}/share?${params.toString()}`;
+  // 🔥 CACHE BUSTER
+  const version = Date.now();
+
+  const ogUrl = `${baseUrl}/api/og?${params.toString()}&v=${version}`;
+  const shareUrl = `${baseUrl}/share?${params.toString()}&v=${version}`;
 
   return {
     props: {
       ...safePayload,
-      baseUrl,
       ogUrl,
       shareUrl
     }
@@ -91,7 +93,7 @@ export default function SharePage({
 
   const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
 
-  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100 on WojakMeter`;
+  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100`;
 
   return (
     <>
@@ -100,6 +102,7 @@ export default function SharePage({
         <meta name="description" content={description} />
         <link rel="canonical" href={shareUrl} />
 
+        {/* OPEN GRAPH */}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={ogUrl} />
@@ -111,6 +114,7 @@ export default function SharePage({
         <meta property="og:url" content={shareUrl} />
         <meta property="og:site_name" content="WojakMeter" />
 
+        {/* TWITTER */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
@@ -123,140 +127,36 @@ export default function SharePage({
       <main
         style={{
           minHeight: "100vh",
-          margin: 0,
           padding: "32px 18px",
-          fontFamily: "Inter, Arial, sans-serif",
+          fontFamily: "Inter, Arial",
           color: "#f5f7fb",
           background:
-            "radial-gradient(circle at top center, rgba(102,184,255,.08), transparent 24%), radial-gradient(circle at 20% 20%, rgba(77,255,136,.05), transparent 18%), linear-gradient(180deg, #071018 0%, #0b1622 100%)"
+            "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
         }}
       >
         <div
           style={{
-            maxWidth: 980,
+            maxWidth: 900,
             margin: "0 auto",
             borderRadius: 24,
             border: "1px solid rgba(255,255,255,.08)",
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), linear-gradient(180deg, #132235 0%, #101c2b 100%)",
-            boxShadow: "0 16px 40px rgba(0,0,0,.35)",
-            overflow: "hidden"
+            background: "#101c2b",
+            padding: 28
           }}
         >
-          <div style={{ padding: 28 }}>
-            <div
-              style={{
-                fontSize: 14,
-                letterSpacing: ".12em",
-                color: "#9eacbf",
-                marginBottom: 10
-              }}
-            >
-              WOJAKMETER SHARE CARD
-            </div>
+          <h1 style={{ fontSize: 42 }}>{mood}</h1>
+          <p>{headline} · Score {numericScore}/100</p>
 
-            <div
-              style={{
-                fontSize: 42,
-                fontWeight: 800,
-                marginBottom: 8
-              }}
-            >
-              {mood}
-            </div>
-
-            <div
-              style={{
-                fontSize: 18,
-                color: "#cfd7e3",
-                marginBottom: 22
-              }}
-            >
-              {headline} · {tf} · Score {numericScore}/100
-            </div>
-
-            <img
-              src={ogUrl}
-              alt={imageAlt}
-              style={{
-                width: "100%",
-                borderRadius: 20,
-                border: "1px solid rgba(255,255,255,.08)",
-                display: "block"
-              }}
-            />
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: 12,
-                marginTop: 18
-              }}
-            >
-              <div style={boxStyle}>
-                <span style={labelStyle}>Mood</span>
-                <strong style={valueStyle}>{mood}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Score</span>
-                <strong style={valueStyle}>{numericScore}/100</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Timeframe</span>
-                <strong style={valueStyle}>{tf}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Move</span>
-                <strong style={valueStyle}>{formattedChange}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Volume</span>
-                <strong style={valueStyle}>{volume}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Driver</span>
-                <strong style={valueStyle}>{driver}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Risk Tone</span>
-                <strong style={valueStyle}>{risk}</strong>
-              </div>
-
-              <div style={boxStyle}>
-                <span style={labelStyle}>Scope</span>
-                <strong style={valueStyle}>{headline}</strong>
-              </div>
-            </div>
-          </div>
+          <img
+            src={ogUrl}
+            style={{
+              width: "100%",
+              borderRadius: 20,
+              marginTop: 20
+            }}
+          />
         </div>
       </main>
     </>
   );
 }
-
-const boxStyle = {
-  padding: 14,
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#101c2b",
-  display: "flex",
-  flexDirection: "column",
-  gap: 6
-};
-
-const labelStyle = {
-  color: "#9eacbf",
-  fontSize: 12
-};
-
-const valueStyle = {
-  color: "#ffffff",
-  fontSize: 15
-};
