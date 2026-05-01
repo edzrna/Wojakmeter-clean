@@ -4,27 +4,22 @@ export const config = {
   runtime: "edge"
 };
 
+// 🎨 COLOR POR EMOCIÓN
 function moodColor(mood) {
   const map = {
     Frustration: "#ff3b4d",
     Concern: "#ff6c79",
     Doubt: "#ff9da6",
-    Neutral: "#ffffff",
+    Neutral: "#cfd7e3",
     Optimism: "#a6ffc4",
     Content: "#7cffaa",
     Euphoria: "#4dff88"
   };
 
-  return map[mood] || "#ffffff";
+  return map[mood] || "#cfd7e3";
 }
 
-function styleLabel(style) {
-  if (style === "3d") return "3D";
-  if (style === "anime") return "Anime";
-  if (style === "minimal") return "Minimal";
-  return "Classic";
-}
-
+// 🧠 NORMALIZAR MOOD
 function normalizeMood(value) {
   const raw = String(value || "Neutral").trim().toLowerCase();
 
@@ -41,12 +36,22 @@ function normalizeMood(value) {
   return map[raw] || "Neutral";
 }
 
+// 🎨 NORMALIZAR STYLE
 function normalizeStyle(value) {
   const raw = String(value || "classic").trim().toLowerCase();
-  const allowed = ["classic", "3d", "anime", "minimal"];
+  const allowed = ["classic", "synth", "boyak", "minimal"];
   return allowed.includes(raw) ? raw : "classic";
 }
 
+// 🎨 LABEL STYLE
+function styleLabel(style) {
+  if (style === "synth") return "Synth";
+  if (style === "boyak") return "Boyak";
+  if (style === "minimal") return "Minimal";
+  return "Classic";
+}
+
+// 🛡 SAFE VALUES
 function safeText(value, fallback = "--") {
   const text = String(value ?? "").trim();
   return text || fallback;
@@ -63,6 +68,7 @@ function safeScore(value) {
   return Math.max(0, Math.min(100, Math.round(num)));
 }
 
+// 🚀 HANDLER
 export default async function handler(req) {
   try {
     const url = new URL(req.url);
@@ -70,7 +76,7 @@ export default async function handler(req) {
 
     const mood = normalizeMood(searchParams.get("mood"));
     const score = safeScore(searchParams.get("score"));
-    const tf = safeText(searchParams.get("tf"), "1h");
+    const tf = safeText(searchParams.get("tf"), "24h");
     const coin = safeText(searchParams.get("coin"), "MARKET");
     const volume = safeText(searchParams.get("volume"), "--");
     const driver = safeText(
@@ -89,6 +95,7 @@ export default async function handler(req) {
     const origin = `${protocol}://${host}`;
 
     const accent = moodColor(mood);
+
     const heroSrc = `${origin}/assets/hero/${style}/${mood.toLowerCase()}.png`;
 
     const headline =
@@ -125,6 +132,7 @@ export default async function handler(req) {
               padding: "34px"
             }}
           >
+            {/* LEFT */}
             <div
               style={{
                 width: "44%",
@@ -134,15 +142,9 @@ export default async function handler(req) {
                 paddingRight: "24px"
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column"
-                }}
-              >
+              <div>
                 <div
                   style={{
-                    display: "flex",
                     fontSize: "18px",
                     letterSpacing: "0.18em",
                     color: "#9eacbf",
@@ -154,7 +156,6 @@ export default async function handler(req) {
 
                 <div
                   style={{
-                    display: "flex",
                     fontSize: "28px",
                     color: "#cfd7e3",
                     marginBottom: "10px"
@@ -165,7 +166,6 @@ export default async function handler(req) {
 
                 <div
                   style={{
-                    display: "flex",
                     fontSize: "72px",
                     fontWeight: 800,
                     lineHeight: 1,
@@ -178,7 +178,6 @@ export default async function handler(req) {
 
                 <div
                   style={{
-                    display: "flex",
                     fontSize: "28px",
                     color: "#ffffff",
                     marginBottom: "26px"
@@ -187,13 +186,7 @@ export default async function handler(req) {
                   Score {score}/100
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "12px"
-                  }}
-                >
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <div style={pillStyle}>
                     <div style={pillLabel}>Timeframe</div>
                     <div style={pillValue}>{tf}</div>
@@ -211,51 +204,29 @@ export default async function handler(req) {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px"
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: "16px",
-                    color: "#9eacbf"
-                  }}
-                >
+              <div>
+                <div style={{ fontSize: "16px", color: "#9eacbf" }}>
                   Driver
                 </div>
 
                 <div
                   style={{
-                    display: "flex",
-                    fontSize: "25px",
+                    fontSize: "24px",
                     color: "#ffffff",
-                    lineHeight: 1.2,
-                    marginBottom: "6px"
+                    marginBottom: "8px"
                   }}
                 >
                   {driver}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: "16px",
-                    color: "#9eacbf"
-                  }}
-                >
+                <div style={{ fontSize: "16px", color: "#9eacbf" }}>
                   Risk Tone
                 </div>
 
                 <div
                   style={{
-                    display: "flex",
                     fontSize: "22px",
-                    color: accent,
-                    lineHeight: 1.2
+                    color: accent
                   }}
                 >
                   {risk}
@@ -263,7 +234,6 @@ export default async function handler(req) {
 
                 <div
                   style={{
-                    display: "flex",
                     marginTop: "14px",
                     fontSize: "18px",
                     color: "#9eacbf"
@@ -274,6 +244,7 @@ export default async function handler(req) {
               </div>
             </div>
 
+            {/* RIGHT */}
             <div
               style={{
                 width: "56%",
@@ -289,14 +260,12 @@ export default async function handler(req) {
                   width: "460px",
                   height: "460px",
                   borderRadius: "50%",
-                  display: "flex",
                   background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`
                 }}
               />
 
               <img
                 src={heroSrc}
-                alt={`${mood} hero`}
                 width="430"
                 height="430"
                 style={{
@@ -314,19 +283,13 @@ export default async function handler(req) {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({
-        error: error?.message || "Unknown error"
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
+      JSON.stringify({ error: error?.message || "OG Error" }),
+      { status: 500 }
     );
   }
 }
 
+// UI STYLES
 const pillStyle = {
   display: "flex",
   flexDirection: "column",
@@ -338,13 +301,11 @@ const pillStyle = {
 };
 
 const pillLabel = {
-  display: "flex",
   fontSize: "12px",
   color: "#9eacbf"
 };
 
 const pillValue = {
-  display: "flex",
   fontSize: "22px",
   color: "#ffffff"
 };
