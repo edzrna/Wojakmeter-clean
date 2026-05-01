@@ -49,9 +49,7 @@ export async function getServerSideProps({ query, req }) {
   };
 
   const params = new URLSearchParams(safePayload);
-
-  // 🔥 CACHE BUSTER
-  const version = Date.now();
+  const version = safeText(query.v, String(Date.now()));
 
   const ogUrl = `${baseUrl}/api/og?${params.toString()}&v=${version}`;
   const shareUrl = `${baseUrl}/share?${params.toString()}&v=${version}`;
@@ -92,8 +90,7 @@ export default function SharePage({
       : `WojakMeter | ${coin} Mood: ${mood} (${numericScore}/100)`;
 
   const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
-
-  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100`;
+  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100 on WojakMeter`;
 
   return (
     <>
@@ -102,11 +99,11 @@ export default function SharePage({
         <meta name="description" content={description} />
         <link rel="canonical" href={shareUrl} />
 
-        {/* OPEN GRAPH */}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={ogUrl} />
         <meta property="og:image:secure_url" content={ogUrl} />
+        <meta property="og:image:type" content="image/svg+xml" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={imageAlt} />
@@ -114,7 +111,6 @@ export default function SharePage({
         <meta property="og:url" content={shareUrl} />
         <meta property="og:site_name" content="WojakMeter" />
 
-        {/* TWITTER */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
@@ -128,7 +124,7 @@ export default function SharePage({
         style={{
           minHeight: "100vh",
           padding: "32px 18px",
-          fontFamily: "Inter, Arial",
+          fontFamily: "Inter, Arial, sans-serif",
           color: "#f5f7fb",
           background:
             "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
@@ -136,7 +132,7 @@ export default function SharePage({
       >
         <div
           style={{
-            maxWidth: 900,
+            maxWidth: 980,
             margin: "0 auto",
             borderRadius: 24,
             border: "1px solid rgba(255,255,255,.08)",
@@ -144,19 +140,72 @@ export default function SharePage({
             padding: 28
           }}
         >
-          <h1 style={{ fontSize: 42 }}>{mood}</h1>
-          <p>{headline} · Score {numericScore}/100</p>
+          <div
+            style={{
+              fontSize: 14,
+              letterSpacing: ".12em",
+              color: "#9eacbf",
+              marginBottom: 10
+            }}
+          >
+            WOJAKMETER SHARE CARD
+          </div>
+
+          <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>{mood}</h1>
+
+          <p style={{ color: "#cfd7e3", marginBottom: 22 }}>
+            {headline} · {tf} · Score {numericScore}/100
+          </p>
 
           <img
             src={ogUrl}
+            alt={imageAlt}
             style={{
               width: "100%",
               borderRadius: 20,
-              marginTop: 20
+              border: "1px solid rgba(255,255,255,.08)",
+              display: "block"
             }}
           />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+              marginTop: 18
+            }}
+          >
+            <InfoBox label="Mood" value={mood} />
+            <InfoBox label="Score" value={`${numericScore}/100`} />
+            <InfoBox label="Timeframe" value={tf} />
+            <InfoBox label="Move" value={formattedChange} />
+            <InfoBox label="Volume" value={volume} />
+            <InfoBox label="Driver" value={driver} />
+            <InfoBox label="Risk Tone" value={risk} />
+            <InfoBox label="Scope" value={headline} />
+          </div>
         </div>
       </main>
     </>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,.08)",
+        background: "#0b1622",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
+      }}
+    >
+      <span style={{ color: "#9eacbf", fontSize: 12 }}>{label}</span>
+      <strong style={{ color: "#ffffff", fontSize: 15 }}>{value}</strong>
+    </div>
   );
 }
