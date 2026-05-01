@@ -4306,6 +4306,34 @@ html {
     /* evita bugs de render en mobile */
     will-change: backdrop-filter;
   }
+
+.wm-sticky-header {
+  transition:
+    padding 0.32s ease,
+    background 0.32s ease,
+    box-shadow 0.32s ease,
+    backdrop-filter 0.32s ease;
+}
+
+.logo-img {
+  transition:
+    height 0.32s ease,
+    max-width 0.32s ease,
+    transform 0.32s ease;
+}
+
+.wm-header-content {
+  max-height: 120px;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: hidden;
+  transition:
+    max-height 0.32s ease,
+    opacity 0.24s ease,
+    transform 0.32s ease,
+    margin-top 0.32s ease;
+}
+
 }
 
   /* BOTÓN MENÚ */
@@ -4388,8 +4416,13 @@ html {
 
   /* OCULTA INFO AL SCROLL */
   body.header-scrolled .wm-header-content {
-    display: none;
-  }
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  margin-top: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 
   /* ===============================
      MOBILE MENU
