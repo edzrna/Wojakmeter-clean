@@ -102,53 +102,66 @@ export default function Home({ ogImageUrl }) {
 
       <div className="style-classic">
         <div className="app-shell">
-          <header className="topbar cardless" id="market">
-            <div className="topbar-left">
-              <img
-                src="/assets/logo/wojakmeter_logo.png"
-                alt="WojakMeter Logo"
-                className="logo-img"
-              />
-            </div>
+          
+<header className="topbar cardless wm-sticky-header" id="market">
+  <button
+    type="button"
+    className="wm-menu-toggle"
+    id="wmMenuToggle"
+    aria-label="Open navigation menu"
+  >
+    ☰
+  </button>
 
-            <div className="topbar-right-group">
-              <div className="topbar-center">
-                <div className="market-stat">
-                  BTC.D <strong id="btcDominance">--</strong>
-                </div>
-                <div className="market-stat">
-                  Market Cap <strong id="headerMarketCap">--</strong>
-                </div>
-                <div className="market-stat">
-                  24H Volume <strong id="headerVolume">--</strong>
-                </div>
-              </div>
+  <div className="topbar-left wm-logo-wrap">
+    <a href="#market" className="wm-logo-link">
+      <img
+        src="/assets/logo/wojakmeter_logo.png"
+        alt="WojakMeter Logo"
+        className="logo-img"
+      />
+    </a>
+  </div>
 
-              <div className="topbar-right">
-                <a
-                  href="#moodSection"
-                  className="topbar-mood-link mood-logo-link"
-                  aria-label="Go to MOOD section"
-                >
-                  <img
-                    src="/moodlogo.png"
-                    alt="MOOD Logo"
-                    className="mood-nav-logo"
-                  />
-                </a>
+  <div className="topbar-right-group wm-header-content">
+    <div className="topbar-center">
+      <div className="market-stat">
+        BTC.D <strong id="btcDominance">--</strong>
+      </div>
+      <div className="market-stat">
+        Market Cap <strong id="headerMarketCap">--</strong>
+      </div>
+      <div className="market-stat">
+        24H Volume <strong id="headerVolume">--</strong>
+      </div>
+    </div>
 
-                <label className="style-label" htmlFor="styleSelector">
-                  Wojak Style
-                </label>
-                <select id="styleSelector" defaultValue="classic">
-                  <option value="classic">Classic</option>
-                  <option value="synth">Synth</option>
-                  <option value="boyak">Boyak</option>
-                  <option value="minimal">Minimal</option>
-                </select>
-              </div>
-            </div>
-          </header>
+    <div className="topbar-right">
+      <label className="style-label" htmlFor="styleSelector">
+        Wojak Style
+      </label>
+
+      <select id="styleSelector" defaultValue="classic">
+        <option value="classic">Classic</option>
+        <option value="synth">Synth</option>
+        <option value="boyak">Boyak</option>
+        <option value="minimal">Minimal</option>
+      </select>
+    </div>
+  </div>
+
+  <nav className="wm-mobile-menu" id="wmMobileMenu">
+    <a href="#market">Market Mood</a>
+    <a href="#moodSection">MOOD</a>
+    <a href="#bagMoodSection">Bag Mood</a>
+    <a href="#top-coins">Market Sections</a>
+    <a href="#wojak-studio">Wojak Studio</a>
+    <a href="#about">About</a>
+    <a href="/terms">Terms</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/disclaimer">Disclaimer</a>
+  </nav>
+</header>
 
           <div className="ticker-bar" id="tickerBar">
             <span>Loading market...</span>
