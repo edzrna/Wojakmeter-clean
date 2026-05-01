@@ -4,83 +4,47 @@ export const config = {
   runtime: "edge",
 };
 
-function moodColor(mood) {
-  const map = {
-    frustration: "#ff3b4d",
-    concern: "#ff6c79",
-    doubt: "#ff9da6",
-    neutral: "#cfd7e3",
-    optimism: "#a6ffc4",
-    content: "#7cffaa",
-    euphoria: "#4dff88",
-  };
-  return map[String(mood || "").toLowerCase()] || "#cfd7e3";
-}
-
-function normalize(value, fallback) {
-  const text = String(value ?? "").trim();
-  return text || fallback;
-}
-
 export default function handler(req) {
-  try {
-    const url = new URL(req.url);
+  const url = new URL(req.url);
 
-    const mood = normalize(url.searchParams.get("mood"), "Neutral");
-    const score = Math.max(
-      0,
-      Math.min(100, Number(url.searchParams.get("score") || 50))
-    );
-    const tf = normalize(url.searchParams.get("tf"), "24h");
-    const change = Number(url.searchParams.get("change") || 0);
-    const driver = normalize(
-      url.searchParams.get("driver"),
-      "Market flow"
-    );
+  const mood = url.searchParams.get("mood") || "Content";
+  const score = url.searchParams.get("score") || "70";
+  const tf = url.searchParams.get("tf") || "24h";
+  const change = url.searchParams.get("change") || "+2.05";
 
-    const accent = moodColor(mood);
-
-    const formattedChange = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
-
-    const protocol =
-      req.headers.get("x-forwarded-proto") ||
-      (url.hostname.includes("localhost") ? "http" : "https");
-
-    const host = req.headers.get("host") || url.host;
-    const origin = `${protocol}://${host}`;
-
-    const hero = `${origin}/assets/hero/classic/${mood.toLowerCase()}.png`;
-
-    return new ImageResponse(
-      (
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "1200px",
+          height: "630px",
+          display: "flex",
+          background: "linear-gradient(180deg,#071018,#0b1622)",
+          color: "white",
+          fontFamily: "Arial",
+          padding: "60px",
+        }}
+      >
         <div
           style={{
-            width: "1200px",
-            height: "630px",
+            width: "100%",
+            height: "100%",
+            borderRadius: "34px",
+            border: "1px solid rgba(255,255,255,.12)",
+            background: "#101c2b",
             display: "flex",
-            position: "relative",
-            background:
-              "radial-gradient(circle at 20% 20%, rgba(77,255,136,0.15), transparent 25%), radial-gradient(circle at 80% 30%, rgba(255,80,80,0.12), transparent 25%), linear-gradient(180deg, #071018, #0b1622)",
-            color: "white",
-            fontFamily: "Arial",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "60px",
           }}
         >
-          {/* LEFT */}
-          <div
-            style={{
-              width: "55%",
-              padding: "60px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column" }}>
             <div
               style={{
-                fontSize: "18px",
-                letterSpacing: "0.2em",
+                fontSize: "22px",
+                letterSpacing: ".18em",
                 color: "#9eacbf",
-                marginBottom: "20px",
+                marginBottom: "24px",
               }}
             >
               WOJAKMETER
@@ -88,11 +52,10 @@ export default function handler(req) {
 
             <div
               style={{
-                fontSize: "82px",
+                fontSize: "86px",
                 fontWeight: 900,
-                color: accent,
+                color: "#7cffaa",
                 lineHeight: 1,
-                marginBottom: "16px",
               }}
             >
               {mood}
@@ -100,9 +63,9 @@ export default function handler(req) {
 
             <div
               style={{
-                fontSize: "28px",
-                color: "#cfd7e3",
-                marginBottom: "26px",
+                fontSize: "36px",
+                marginTop: "22px",
+                color: "#ffffff",
               }}
             >
               Score {score}/100 · {tf}
@@ -110,62 +73,48 @@ export default function handler(req) {
 
             <div
               style={{
-                fontSize: "26px",
-                color: "#ffffff",
-                marginBottom: "14px",
+                fontSize: "28px",
+                marginTop: "20px",
+                color: "#cfd7e3",
               }}
             >
-              Move: {formattedChange}
+              Move: {change}%
             </div>
 
             <div
               style={{
-                fontSize: "22px",
+                fontSize: "24px",
+                marginTop: "36px",
                 color: "#9eacbf",
               }}
             >
-              {driver}
+              wojakmeter.com
             </div>
           </div>
 
-          {/* RIGHT */}
           <div
             style={{
-              width: "45%",
+              width: "340px",
+              height: "340px",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(124,255,170,.55), transparent 70%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              position: "relative",
+              fontSize: "120px",
+              fontWeight: 900,
+              color: "#7cffaa",
             }}
           >
-            {/* Glow */}
-            <div
-              style={{
-                position: "absolute",
-                width: "420px",
-                height: "420px",
-                borderRadius: "50%",
-                background: `radial-gradient(circle, ${accent}55, transparent 70%)`,
-              }}
-            />
-
-            <img
-              src={hero}
-              width="420"
-              height="420"
-              style={{
-                objectFit: "contain",
-              }}
-            />
+            {score}
           </div>
         </div>
-      ),
-      {
-        width: 1200,
-        height: 630,
-      }
-    );
-  } catch (e) {
-    return new Response("OG ERROR: " + e.message, { status: 500 });
-  }
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+    }
+  );
 }
