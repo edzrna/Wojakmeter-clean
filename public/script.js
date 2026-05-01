@@ -3889,6 +3889,330 @@ function setupButtons() {
 }
 
 // ===============================
+// WOJAKMETER CORE v1.0 PATCH
+// Subemotions + Narrative + Heartbeat + FX State
+// ===============================
+
+const WM_SUBEMOTION_NARRATIVES = {
+  frustration: "The market feels exhausted after heavy emotional pressure.",
+  frustration_capitulation: "Traders are giving up faster than price is stabilizing.",
+  frustration_panic: "Panic selling is dominating the emotional flow.",
+  frustration_exhaustion: "Fear may be reaching emotional exhaustion.",
+
+  concern: "Fear is spreading through the market.",
+  concern_pressure: "Defensive pressure is building across the market.",
+  concern_fear_spike: "Fear is accelerating faster than price decline.",
+  concern_breakdown: "Confidence is breaking down under heavy pressure.",
+
+  doubt: "The market is unsure and hesitation is spreading.",
+  doubt_confusion: "Mixed signals are creating emotional confusion.",
+  doubt_hesitation: "Traders are waiting before committing direction.",
+  doubt_fake_recovery: "The bounce feels weak and emotionally fragile.",
+
+  neutral: "Market emotion is balanced for now.",
+  neutral_compression: "Emotion is compressed and waiting for direction.",
+  neutral_pressure_building: "Market is calm, but pressure is building.",
+  neutral_waiting: "Traders are watching without strong conviction.",
+
+  optimism: "Positive sentiment is forming.",
+  optimism_building: "Optimism is building before full confirmation.",
+  optimism_confident: "Confidence is strengthening across the market.",
+  optimism_pullback: "Optimism remains, but momentum is cooling.",
+
+  content: "The market feels confident and constructive.",
+  content_strength: "Strength is spreading across market sentiment.",
+  content_confidence: "Crowd confidence is steady and controlled.",
+  content_overextended: "Confidence is strong, but may be getting stretched.",
+
+  euphoria: "Crowd confidence is reaching extreme levels.",
+  euphoria_breakout: "Euphoria is expanding with breakout energy.",
+  euphoria_overheat: "The crowd is overheating into dangerous confidence.",
+  euphoria_weakening: "Euphoria is weakening despite elevated sentiment."
+};
+
+const WM_HEARTBEAT_CORE = {
+  frustration: { speed: 1.65, intensity: 0.95, waveform: "chaotic" },
+  concern: { speed: 1.45, intensity: 0.82, waveform: "irregular" },
+  doubt: { speed: 1.15, intensity: 0.55, waveform: "unstable" },
+  neutral: { speed: 0.85, intensity: 0.35, waveform: "smooth" },
+  optimism: { speed: 1.05, intensity: 0.55, waveform: "rising" },
+  content: { speed: 1.15, intensity: 0.68, waveform: "strong" },
+  euphoria: { speed: 1.55, intensity: 1, waveform: "explosive" }
+};
+
+function getEmotionShiftScore() {
+  const market = roundScore(currentMarketScore);
+  const social = roundScore(currentSocialScore);
+  const driver = roundScore(currentDriverScore);
+  const pulse = roundScore(currentPulseScore);
+  const volume = roundScore(getVolumeImpulseScore(currentHeaderVolumeValue));
+  const trending = roundScore(getTrendingMomentumScore());
+
+  return roundScore(
+    Math.abs(social - market) * 0.24 +
+    Math.abs(driver - 50) * 0.24 +
+    Math.abs(pulse - market) * 0.16 +
+    Math.abs(volume - 50) * 0.18 +
+    Math.abs(trending - 50) * 0.18
+  );
+}
+
+function getShiftLevel(shiftScore = getEmotionShiftScore()) {
+  const s = roundScore(shiftScore);
+  if (s >= 30) return "extreme";
+  if (s >= 22) return "high";
+  if (s >= 14) return "mid";
+  return "low";
+}
+
+function detectSubemotion(moodKey, score) {
+  const shift = getEmotionShiftScore();
+  const market = roundScore(currentMarketScore);
+  const social = roundScore(currentSocialScore);
+  const driver = roundScore(currentDriverScore);
+  const volume = roundScore(getVolumeImpulseScore(currentHeaderVolumeValue));
+  const trending = roundScore(getTrendingMomentumScore());
+
+  if (moodKey === "frustration") {
+    if (shift >= 26 && social < market) return "frustration_panic";
+    if (score <= 10) return "frustration_capitulation";
+    if (shift <= 10) return "frustration_exhaustion";
+  }
+
+  if (moodKey === "concern") {
+    if (shift >= 24 && social < market) return "concern_fear_spike";
+    if (driver <= 30 || volume >= 62) return "concern_breakdown";
+    if (shift >= 14) return "concern_pressure";
+  }
+
+  if (moodKey === "doubt") {
+    if (shift >= 20) return "doubt_confusion";
+    if (market > 50 && social < 45) return "doubt_fake_recovery";
+    return "doubt_hesitation";
+  }
+
+  if (moodKey === "neutral") {
+    if (shift >= 18) return "neutral_pressure_building";
+    if (volume <= 46) return "neutral_compression";
+    return "neutral_waiting";
+  }
+
+  if (moodKey === "optimism") {
+    if (market < social && social >= 64) return "optimism_building";
+    if (market >= 64 && social >= 60) return "optimism_confident";
+    if (market < 58 || trending < 50) return "optimism_pullback";
+  }
+
+  if (moodKey === "content") {
+    if (score >= 80 && shift >= 18) return "content_overextended";
+    if (market >= 70 && social >= 70) return "content_confidence";
+    return "content_strength";
+  }
+
+  if (moodKey === "euphoria") {
+    if (score >= 92 && shift >= 18) return "euphoria_overheat";
+    if (market >= 85 && social >= 85) return "euphoria_breakout";
+    if (market < social || trending < 60) return "euphoria_weakening";
+  }
+
+  return moodKey;
+}
+
+function getWojakCoreState(score, mood, style = getCurrentStyle()) {
+  const moodKey = mood?.key || "neutral";
+  const supportsOverlay = style === "classic";
+  const subemotion = detectSubemotion(moodKey, score);
+  const shiftScore = getEmotionShiftScore();
+  const shiftLevel = getShiftLevel(shiftScore);
+  const heartbeat = WM_HEARTBEAT_CORE[moodKey] || WM_HEARTBEAT_CORE.neutral;
+
+  return {
+    score: roundScore(score),
+    mood,
+    moodKey,
+    style,
+    subemotion,
+    subtitle: WM_SUBEMOTION_NARRATIVES[subemotion] || WM_SUBEMOTION_NARRATIVES[moodKey] || "",
+    shiftScore,
+    shiftLevel,
+    heartbeat,
+    visual: {
+      base: getHeroImagePath(style, moodKey),
+      overlay: supportsOverlay && subemotion !== moodKey
+        ? `/assets/overlays/classic/${subemotion}.png`
+        : "",
+      fallback: getHeroImagePath(DEFAULT_STYLE, moodKey)
+    }
+  };
+}
+
+function getCoreSubtitleById() {
+  return byId("heroSubtitle") || byId("heroMoodSubtitle") || byId("moodSubtitle");
+}
+
+function heartbeatPathForMood(moodKey) {
+  const paths = {
+    frustration: "M0 28 L28 28 L40 10 L56 46 L72 8 L86 50 L104 16 L126 28 L150 28 L170 12 L188 44 L206 8 L224 48 L244 20 L268 28 L320 28",
+    frustration_capitulation: "M0 30 L34 30 L46 8 L60 52 L76 10 L92 50 L110 18 L132 30 L160 30 L178 14 L194 46 L214 12 L236 50 L258 22 L284 30 L320 30",
+    frustration_panic: "M0 30 L20 30 L30 6 L42 54 L56 4 L70 56 L84 8 L100 52 L118 18 L142 30 L158 8 L174 54 L192 6 L210 52 L230 14 L252 48 L276 30 L320 30",
+    frustration_exhaustion: "M0 28 L50 28 L62 22 L74 34 L90 24 L108 30 L140 28 L178 28 L196 24 L214 32 L238 28 L320 28",
+
+    concern: "M0 28 L40 28 L56 18 L72 40 L88 14 L102 38 L124 28 L160 28 L176 18 L192 38 L208 16 L224 36 L248 28 L320 28",
+    concern_pressure: "M0 28 L34 28 L48 16 L64 42 L82 14 L98 40 L118 28 L154 28 L172 16 L190 40 L208 14 L226 38 L250 28 L320 28",
+    concern_fear_spike: "M0 28 L24 28 L38 12 L52 46 L66 8 L80 50 L98 14 L116 44 L138 28 L164 28 L180 12 L198 48 L214 10 L232 42 L258 28 L320 28",
+    concern_breakdown: "M0 28 L38 28 L54 18 L70 42 L88 16 L108 46 L126 34 L146 36 L166 44 L188 30 L210 42 L232 24 L254 36 L320 36",
+
+    doubt: "M0 28 L36 28 L52 22 L66 34 L82 20 L98 32 L120 28 L150 28 L168 22 L186 34 L202 24 L218 30 L250 28 L320 28",
+    doubt_confusion: "M0 28 L32 28 L48 20 L62 36 L78 18 L96 34 L118 26 L144 30 L166 22 L184 36 L204 24 L224 32 L250 27 L320 28",
+    doubt_hesitation: "M0 28 L48 28 L62 24 L76 32 L96 26 L120 28 L160 28 L180 24 L198 32 L220 27 L320 28",
+    doubt_fake_recovery: "M0 30 L36 30 L54 24 L72 20 L90 34 L110 28 L142 28 L164 22 L184 18 L204 36 L224 30 L320 30",
+
+    neutral: "M0 28 L44 28 L56 24 L68 32 L82 24 L96 30 L120 28 L160 28 L180 26 L196 30 L214 26 L234 28 L320 28",
+    neutral_compression: "M0 28 L56 28 L70 26 L84 30 L104 27 L132 28 L172 28 L194 27 L214 29 L240 28 L320 28",
+    neutral_pressure_building: "M0 28 L42 28 L56 24 L70 34 L86 22 L102 32 L128 28 L160 28 L178 22 L196 34 L214 20 L234 32 L260 28 L320 28",
+    neutral_waiting: "M0 28 L60 28 L76 26 L92 30 L120 28 L180 28 L202 26 L224 30 L260 28 L320 28",
+
+    optimism: "M0 28 L36 28 L52 24 L66 20 L82 34 L98 16 L114 30 L138 28 L160 28 L178 22 L194 18 L210 30 L226 20 L246 28 L320 28",
+    optimism_building: "M0 30 L40 30 L56 26 L72 22 L88 34 L106 18 L124 30 L150 28 L176 24 L194 18 L214 30 L234 20 L258 28 L320 28",
+    optimism_confident: "M0 28 L34 28 L50 22 L66 18 L84 34 L102 14 L122 30 L150 28 L176 20 L194 16 L214 32 L234 18 L260 28 L320 28",
+    optimism_pullback: "M0 26 L36 26 L54 20 L72 18 L90 34 L110 28 L140 30 L170 30 L190 24 L210 22 L232 32 L254 28 L320 28",
+
+    content: "M0 28 L32 28 L46 20 L60 34 L74 12 L88 30 L104 18 L126 28 L150 28 L168 20 L184 34 L198 14 L214 28 L232 18 L254 28 L320 28",
+    content_strength: "M0 28 L30 28 L46 18 L62 36 L78 12 L96 30 L116 16 L140 28 L166 28 L184 18 L202 36 L218 12 L238 28 L260 18 L286 28 L320 28",
+    content_confidence: "M0 28 L36 28 L52 20 L68 34 L84 14 L102 30 L124 18 L150 28 L178 28 L196 20 L214 34 L232 14 L252 28 L276 20 L320 28",
+    content_overextended: "M0 28 L26 28 L42 16 L58 40 L74 8 L90 34 L108 14 L132 30 L160 28 L178 16 L196 42 L214 10 L234 32 L258 20 L286 28 L320 28",
+
+    euphoria: "M0 28 L28 28 L40 16 L52 40 L66 8 L78 46 L94 6 L108 42 L126 18 L148 28 L166 12 L182 44 L198 8 L214 42 L232 14 L252 28 L320 28",
+    euphoria_breakout: "M0 28 L26 28 L38 14 L52 42 L68 6 L82 48 L100 4 L116 44 L136 16 L160 28 L178 10 L196 46 L214 6 L232 44 L254 12 L278 28 L320 28",
+    euphoria_overheat: "M0 30 L20 30 L32 10 L44 48 L58 4 L70 54 L84 2 L98 52 L112 8 L128 46 L148 18 L170 30 L186 8 L202 50 L218 4 L236 48 L256 12 L280 30 L320 30",
+    euphoria_weakening: "M0 28 L34 28 L48 16 L62 38 L78 12 L94 36 L112 20 L136 30 L160 30 L178 18 L194 36 L212 20 L232 32 L256 28 L320 28"
+  };
+
+  return paths[moodKey] || paths.neutral;
+}
+
+function updateHero(score, mood, options = {}) {
+  const { pulseMode = false } = options;
+  const style = getCurrentStyle();
+  const coreState = getWojakCoreState(score, mood, style);
+
+  const heroMood = byId("heroMood");
+  const heroScoreWrap = byId("heroScoreWrap");
+  const heroFaceImg = byId("heroFaceImg");
+  const heroOverlayImg = byId("heroFaceOverlayImg");
+  const emotionPointer = byId("emotionPointer");
+  const emotionPointerImg = byId("emotionPointerImg");
+  const heartbeatWrap = byId("heartbeatWrap");
+  const heartbeatPath = byId("heartbeatPath");
+
+  const heroStage =
+    byId("heroStage") ||
+    qs(".hero-stage") ||
+    qs(".hero-visual") ||
+    heroFaceImg?.parentElement;
+
+  if (heroStage) {
+    heroStage.classList.remove(
+      "wm-shift-low",
+      "wm-shift-mid",
+      "wm-shift-high",
+      "wm-shift-extreme"
+    );
+
+    heroStage.dataset.mood = coreState.moodKey;
+    heroStage.dataset.subemotion = coreState.subemotion;
+    heroStage.dataset.style = style;
+    heroStage.dataset.shift = coreState.shiftLevel;
+    heroStage.classList.add(`wm-shift-${coreState.shiftLevel}`);
+  }
+
+  if (document.body) {
+    document.body.dataset.mood = coreState.moodKey;
+    document.body.dataset.subemotion = coreState.subemotion;
+    document.body.dataset.style = style;
+    document.body.dataset.shift = coreState.shiftLevel;
+    document.body.style.setProperty("--heartbeat-speed", `${coreState.heartbeat.speed}s`);
+    document.body.style.setProperty("--heartbeat-intensity", String(coreState.heartbeat.intensity));
+  }
+
+  const subtitleEl = getCoreSubtitleById();
+  if (subtitleEl) subtitleEl.textContent = coreState.subtitle;
+
+  if (heroMood) {
+    heroMood.textContent = mood.name;
+    heroMood.className = `hero-mood mood-${mood.key}`;
+  }
+
+  if (heroScoreWrap) {
+    heroScoreWrap.innerHTML = `
+      <span class="score-label">Score</span><span class="score-colon">:</span>
+      <span id="heroScore" class="mood-${mood.key}">${roundScore(score)}</span>
+      <span class="score-divider">/</span>
+      <span class="score-max">100</span>
+    `;
+  }
+
+  if (heroFaceImg) {
+    heroFaceImg.className = `hero-face-img ${mood.anim}`;
+
+    if (pulseMode) {
+      heroFaceImg.classList.add("hero-face-pulse");
+      clearTimeout(heroFaceImg.__pulseTimer);
+      heroFaceImg.__pulseTimer = setTimeout(() => {
+        heroFaceImg.classList.remove("hero-face-pulse");
+      }, 700);
+    }
+
+    setImage(
+      heroFaceImg,
+      coreState.visual.base,
+      coreState.visual.fallback
+    );
+  }
+
+  if (heroOverlayImg) {
+    if (coreState.visual.overlay) {
+      heroOverlayImg.classList.remove("hidden");
+      heroOverlayImg.style.display = "block";
+
+      heroOverlayImg.onerror = () => {
+        heroOverlayImg.onerror = null;
+        heroOverlayImg.classList.add("hidden");
+        heroOverlayImg.style.display = "none";
+        heroOverlayImg.removeAttribute("src");
+      };
+
+      heroOverlayImg.src = coreState.visual.overlay;
+    } else {
+      heroOverlayImg.onerror = null;
+      heroOverlayImg.classList.add("hidden");
+      heroOverlayImg.style.display = "none";
+      heroOverlayImg.removeAttribute("src");
+    }
+  }
+
+  if (emotionPointer) {
+    emotionPointer.style.left = `${clamp(roundScore(score), 0, 100)}%`;
+  }
+
+  if (emotionPointerImg) {
+    setImage(
+      emotionPointerImg,
+      getIconImagePath(style, mood.key),
+      getIconImagePath(DEFAULT_STYLE, mood.key)
+    );
+  }
+
+  if (heartbeatWrap && heartbeatPath) {
+    heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key} heartbeat-wave-${coreState.heartbeat.waveform}`;
+    heartbeatPath.setAttribute("d", heartbeatPathForMood(coreState.subemotion || mood.key));
+  }
+
+  updateGauge(score, mood);
+}
+
+
+// ===============================
 // LOAD ALL
 // ===============================
 async function loadAll() {
