@@ -164,20 +164,14 @@ export default function Home({ ogImageUrl }) {
 
   <div className="hero-grid hero-grid-single">
     <div className="hero-main">
+
       <div className="wojak-stage">
 
-        <div className="sweat hidden" id="sweatFx">
-          💧
-        </div>
+        <div className="sweat hidden" id="sweatFx">💧</div>
 
-        {/* SOCIAL BADGE */}
+        {/* SOCIAL */}
         <div className="hero-social-wrapper" id="socialWrapper">
-          <div
-            className="hero-social-badge social-neutral"
-            id="socialBubble"
-            role="button"
-            tabIndex={0}
-          >
+          <div className="hero-social-badge social-neutral" id="socialBubble">
             <div className="hero-social-badge-label">𝕏</div>
 
             <div className="hero-social-badge-icon">
@@ -185,7 +179,6 @@ export default function Home({ ogImageUrl }) {
                 id="socialIconImg"
                 className="mood-icon-img anim-float"
                 src="/assets/icons/classic/neutral.png"
-                alt="Social mood icon"
               />
             </div>
 
@@ -194,75 +187,27 @@ export default function Home({ ogImageUrl }) {
               <strong id="socialScoreMini">50</strong>
             </div>
           </div>
-
-          <div className="social-expand hidden" id="socialExpand">
-            <div className="social-expand-content">
-
-              <div className="social-expand-row">
-                <strong>Social Mood</strong>
-                <span id="socialExpandMood">Neutral</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Social Score</strong>
-                <span id="socialExpandScore">50</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Interactions</strong>
-                <span id="socialExpandEngagement">--</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Bullish</strong>
-                <span id="socialExpandBullish">--</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Bearish</strong>
-                <span id="socialExpandBearish">--</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Neutral</strong>
-                <span id="socialExpandNeutral">--</span>
-              </div>
-
-              <div className="social-expand-row">
-                <strong>Window</strong>
-                <span id="socialExpandWindow">24h</span>
-              </div>
-
-              <div className="social-expand-note">
-                Social mood is derived from aggregated sentiment across X and trending coins.
-              </div>
-
-            </div>
-          </div>
         </div>
 
         {/* BACKDROP */}
         <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
-          <svg viewBox="0 0 900 280" preserveAspectRatio="none">
-            <path id="heroTimelineArea" d=""></path>
-            <path id="heroTimelineLine" d=""></path>
+          <svg viewBox="0 0 900 280">
+            <path id="heroTimelineArea"></path>
+            <path id="heroTimelineLine"></path>
           </svg>
         </div>
 
-        {/* MAIN HERO */}
+        {/* HERO IMAGE */}
         <img
           id="heroFaceImg"
           className="hero-face-img anim-float"
           src="/assets/hero/classic/neutral.png"
-          alt="Global market mood"
         />
 
-        {/* 🔥 NUEVO: OVERLAY */}
         <img
           id="heroFaceOverlayImg"
           className="hidden"
           src=""
-          alt=""
         />
 
       </div>
@@ -272,13 +217,13 @@ export default function Home({ ogImageUrl }) {
         Neutral
       </div>
 
-      {/* 🔥 NUEVO: SUBEMOTION */}
+      {/* SUB EMOTION */}
       <div className="hero-subtitle" id="heroSubtitle">
         Market emotion is balanced for now.
       </div>
 
       {/* SCORE */}
-      <div className="hero-score" id="heroScoreWrap">
+      <div className="hero-score">
         Score: <span id="heroScore">50</span> / 100
       </div>
 
@@ -289,12 +234,10 @@ export default function Home({ ogImageUrl }) {
 
             <div className="emotion-pointer" id="emotionPointer">
               <div className="emotion-pointer-arrow"></div>
-
               <div className="emotion-pointer-face">
                 <img
                   id="emotionPointerImg"
                   src="/assets/icons/classic/neutral.png"
-                  alt="Current emotional state"
                 />
               </div>
             </div>
@@ -304,14 +247,11 @@ export default function Home({ ogImageUrl }) {
       </section>
 
       {/* HEARTBEAT */}
-      <div className="heartbeat-wrap" id="heartbeatWrap">
+      <div className="heartbeat-wrap">
         <div className="heartbeat-heart">❤</div>
-
-        <div className="heartbeat-chart">
-          <svg viewBox="0 0 320 56">
-            <path id="heartbeatPath" d=""></path>
-          </svg>
-        </div>
+        <svg viewBox="0 0 320 56">
+          <path id="heartbeatPath"></path>
+        </svg>
       </div>
 
       {/* SHARE */}
@@ -330,49 +270,121 @@ export default function Home({ ogImageUrl }) {
         <button data-timeframe="30d">30d</button>
       </div>
 
+      {/* HERO MODES */}
+      <div className="hero-modes" id="heroModes">
+        <button className="hero-mode-btn active" data-hero-mode="raw">
+          Raw Market
+        </button>
+        <button className="hero-mode-btn" data-hero-mode="composite">
+          Composite
+        </button>
+        <button className="hero-mode-btn" data-hero-mode="custom">
+          Custom Layers
+        </button>
+      </div>
+
+      {/* 🔥 WOJAKMETER ENGINE */}
+      <section className="wm-gauge-shell" id="wmGaugeShell">
+        <div className="wm-gauge-head">
+          <div className="wm-gauge-title">WojakMeter Engine</div>
+          <div className="wm-gauge-score">
+            Final Score <strong id="gaugeScoreHead">50</strong>/100
+          </div>
+        </div>
+
+        <div className="wm-gauge-wrap">
+          <svg className="wm-gauge-svg" viewBox="0 0 300 190">
+            <path className="gauge-track" d="M30 150 A120 120 0 0 1 270 150"></path>
+            <path id="gaugeFill" d="M30 150 A120 120 0 0 1 270 150"></path>
+          </svg>
+
+          <div className="gauge-needle-wrap">
+            <div className="gauge-needle" id="gaugeNeedle"></div>
+          </div>
+
+          <div className="gauge-score-center">
+            <div id="gaugeScore">50</div>
+            <div id="gaugeMood">Neutral</div>
+          </div>
+        </div>
+      </section>
+
+      {/* LAYERS */}
+      <section className="wm-layers" id="wmLayers">
+        <div className="layer-buttons">
+          <button className="layer-btn active">Market</button>
+          <button className="layer-btn">Social</button>
+          <button className="layer-btn">Driver</button>
+          <button className="layer-btn">Pulse</button>
+        </div>
+
+        <div className="layer-grid">
+          <div className="layer-card">
+            <span>Market</span>
+            <strong id="layerScoreMarket">50</strong>
+          </div>
+
+          <div className="layer-card">
+            <span>Social</span>
+            <strong id="layerScoreSocial">50</strong>
+          </div>
+
+          <div className="layer-card">
+            <span>Driver</span>
+            <strong id="layerScoreDriver">50</strong>
+          </div>
+
+          <div className="layer-card">
+            <span>Pulse</span>
+            <strong id="layerScorePulse">50</strong>
+          </div>
+        </div>
+      </section>
+
+      {/* MARKET LINE */}
+      <div className="hero-market-line">
+        <div>
+          <span>Market Change</span>
+          <strong id="globalMarketChange">--</strong>
+        </div>
+
+        <div>
+          <span>Volume</span>
+          <strong id="globalMarketVolume">--</strong>
+        </div>
+
+        <div>
+          <span>Timeframe</span>
+          <strong id="globalMarketTimeframe">24h</strong>
+        </div>
+      </div>
+
     </div>
 
     {/* DRIVERS */}
     <section className="drivers-card card">
-      <div className="section-head">
-        <h3>MARKET DRIVERS</h3>
+      <h3>MARKET DRIVERS</h3>
+
+      <select id="macroDriver">
+        <option value="market_flow">Market flow / price action</option>
+        <option value="etf_adoption">ETF / institutional adoption</option>
+        <option value="rate_hike">Rate hike fears</option>
+        <option value="rate_cut">Rate cut hopes</option>
+      </select>
+
+      <div className="driver-item">
+        <span>Macro Driver</span>
+        <strong id="driverMacro">Market flow</strong>
       </div>
 
-      <div className="drivers-controls">
-        <select id="macroDriver" defaultValue="market_flow">
-          <option value="market_flow">Market flow / price action</option>
-          <option value="etf_adoption">ETF / institutional adoption</option>
-          <option value="rate_hike">Rate hike fears</option>
-          <option value="rate_cut">Rate cut hopes</option>
-          <option value="regulation_crackdown">Regulation crackdown</option>
-          <option value="crypto_hack">Crypto hack / insolvency</option>
-          <option value="war_escalation">War escalation</option>
-          <option value="neutral_macro">Neutral macro</option>
-        </select>
+      <div className="driver-item">
+        <span>Main Narrative</span>
+        <strong id="driverNarrative">Waiting for live data</strong>
       </div>
 
-      <div className="driver-list">
-
-        <div className="driver-item">
-          <span>Macro Driver</span>
-          <strong id="driverMacro">Market flow / price action</strong>
-        </div>
-
-        <div className="driver-item">
-          <span>Main Narrative</span>
-          <strong id="driverNarrative">Waiting for live data...</strong>
-        </div>
-
-        <div className="driver-item">
-          <span>Timeframe Reaction</span>
-          <strong id="driverTimeframeReaction">Balanced</strong>
-        </div>
-
-        <div className="driver-item">
-          <span>Risk Tone</span>
-          <strong id="driverRiskTone">Neutral</strong>
-        </div>
-
+      <div className="driver-item">
+        <span>Risk Tone</span>
+        <strong id="driverRiskTone">Neutral</strong>
       </div>
     </section>
 
