@@ -1,5 +1,3 @@
-import Head from "next/head";
-
 function safeText(value, fallback = "--") {
   const text = String(value ?? "").trim();
   return text || fallback;
@@ -16,196 +14,159 @@ function safeChange(value) {
   return Number.isFinite(num) ? num : 0;
 }
 
-export async function getServerSideProps({ query, req }) {
-  const {
-    mood = "Neutral",
-    score = "50",
-    tf = "24h",
-    change = "0",
-    volume = "--",
-    driver = "Market flow / price action",
-    risk = "Balanced",
-    coin = "MARKET",
-    style = "classic"
-  } = query;
+function normalizeMood(value) {
+  const raw = String(value || "Neutral").trim().toLowerCase();
 
-  const protocol =
-    req.headers["x-forwarded-proto"] ||
-    (req.headers.host?.includes("localhost") ? "http" : "https");
-
-  const host = req.headers.host;
-  const baseUrl = `${protocol}://${host}`;
-
-  const safePayload = {
-    mood: safeText(mood, "Neutral"),
-    score: String(safeScore(score)),
-    tf: safeText(tf, "24h"),
-    change: String(safeChange(change)),
-    volume: safeText(volume, "--"),
-    driver: safeText(driver, "Market flow / price action"),
-    risk: safeText(risk, "Balanced"),
-    coin: safeText(coin, "MARKET"),
-    style: safeText(style, "classic")
+  const map = {
+    frustration: "Frustration",
+    concern: "Concern",
+    doubt: "Doubt",
+    neutral: "Neutral",
+    optimism: "Optimism",
+    content: "Content",
+    euphoria: "Euphoria"
   };
 
-  const params = new URLSearchParams(safePayload);
-  const version = safeText(query.v, String(Date.now()));
-
-  const ogUrl = `${baseUrl}/api/og?${params.toString()}&v=${version}`;
-  const shareUrl = `${baseUrl}/share?${params.toString()}&v=${version}`;
-
-  return {
-    props: {
-      ...safePayload,
-      ogUrl,
-      shareUrl
-    }
-  };
+  return map[raw] || "Neutral";
 }
 
-export default function SharePage({
-  mood,
-  score,
-  tf,
-  change,
-  volume,
-  driver,
-  risk,
-  coin,
-  ogUrl,
-  shareUrl
-}) {
-  const numericScore = safeScore(score);
-  const numericChange = safeChange(change);
-  const formattedChange = `${numericChange >= 0 ? "+" : ""}${numericChange.toFixed(2)}%`;
+function moodColor(mood) {
+  const map = {
+    Frustration: "#ff3b4d",
+    Concern: "#ff6c79",
+    Doubt: "#ff9da6",
+    Neutral: "#cfd7e3",
+    Optimism: "#a6ffc4",
+    Content: "#7cffaa",
+    Euphoria: "#4dff88"
+  };
+
+  return map[mood] || "#cfd7e3";
+}
+
+function escapeXml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export default function handler(req, res) {
+  const { query } = req;
+
+  const mood = normalizeMood(query.mood);
+  const score = safeScore(query.score);
+  const tf = safeText(query.tf, "24h");
+  const change = safeChange(query.change);
+  const volume = safeText(query.volume, "--");
+  const driver = safeText(query.driver, "Market flow / price action");
+  const risk = safeText(query.risk, "Balanced");
+  const coin = safeText(query.coin, "MARKET");
+
+  const accent = moodColor(mood);
+  const formattedChange = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
 
   const headline =
     coin === "MARKET" || coin === "GLOBAL"
       ? "Crypto Market Mood"
       : `${coin} Mood`;
 
-  const title =
-    coin === "MARKET" || coin === "GLOBAL"
-      ? `WojakMeter | Crypto Market Mood: ${mood} (${numericScore}/100)`
-      : `WojakMeter | ${coin} Mood: ${mood} (${numericScore}/100)`;
+  const subtitle =
+    mood === "Euphoria"
+      ? "Crowd confidence is reaching dangerous levels."
+      : mood === "Content"
+      ? "Strength is spreading across market sentiment."
+      : mood === "Optimism"
+      ? "Momentum is building, but confirmation still matters."
+      : mood === "Neutral"
+      ? "Market is calm, but pressure is building."
+      : mood === "Doubt"
+      ? "Conviction is fragile across the market."
+      : mood === "Concern"
+      ? "Fear is spreading faster than confidence."
+      : "Traders are exhausted and emotion is breaking down.";
 
-  const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
-  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100 on WojakMeter`;
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Cache-Control", "public, max-age=0, s-maxage=0, must-revalidate");
 
-  return (
-    <>
-      <Head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <link rel="canonical" href={shareUrl} />
+  res.status(200).send(`
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#071018"/>
+      <stop offset="100%" stop-color="#0b1622"/>
+    </linearGradient>
 
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={ogUrl} />
-        <meta property="og:image:secure_url" content={ogUrl} />
-        <meta property="og:image:type" content="image/svg+xml" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={imageAlt} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={shareUrl} />
-        <meta property="og:site_name" content="WojakMeter" />
+    <radialGradient id="glow" cx="72%" cy="48%" r="45%">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.45"/>
+      <stop offset="70%" stop-color="${accent}" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
+    </radialGradient>
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={ogUrl} />
-        <meta name="twitter:image:alt" content={imageAlt} />
-        <meta name="twitter:site" content="@wojakmeterx" />
-        <meta name="twitter:creator" content="@wojakmeterx" />
-      </Head>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
 
-      <main
-        style={{
-          minHeight: "100vh",
-          padding: "32px 18px",
-          fontFamily: "Inter, Arial, sans-serif",
-          color: "#f5f7fb",
-          background:
-            "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 980,
-            margin: "0 auto",
-            borderRadius: 24,
-            border: "1px solid rgba(255,255,255,.08)",
-            background: "#101c2b",
-            padding: 28
-          }}
-        >
-          <div
-            style={{
-              fontSize: 14,
-              letterSpacing: ".12em",
-              color: "#9eacbf",
-              marginBottom: 10
-            }}
-          >
-            WOJAKMETER SHARE CARD
-          </div>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
 
-          <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>{mood}</h1>
+  <rect x="44" y="44" width="1112" height="542" rx="34" fill="#101c2b" stroke="rgba(255,255,255,0.12)"/>
 
-          <p style={{ color: "#cfd7e3", marginBottom: 22 }}>
-            {headline} · {tf} · Score {numericScore}/100
-          </p>
+  <text x="84" y="104" fill="#9eacbf" font-family="Arial, Helvetica, sans-serif" font-size="20" letter-spacing="5">
+    WOJAKMETER
+  </text>
 
-          <img
-            src={ogUrl}
-            alt={imageAlt}
-            style={{
-              width: "100%",
-              borderRadius: 20,
-              border: "1px solid rgba(255,255,255,.08)",
-              display: "block"
-            }}
-          />
+  <text x="84" y="154" fill="#cfd7e3" font-family="Arial, Helvetica, sans-serif" font-size="34">
+    ${escapeXml(headline)}
+  </text>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-              marginTop: 18
-            }}
-          >
-            <InfoBox label="Mood" value={mood} />
-            <InfoBox label="Score" value={`${numericScore}/100`} />
-            <InfoBox label="Timeframe" value={tf} />
-            <InfoBox label="Move" value={formattedChange} />
-            <InfoBox label="Volume" value={volume} />
-            <InfoBox label="Driver" value={driver} />
-            <InfoBox label="Risk Tone" value={risk} />
-            <InfoBox label="Scope" value={headline} />
-          </div>
-        </div>
-      </main>
-    </>
-  );
-}
+  <text x="84" y="255" fill="${accent}" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="800">
+    ${escapeXml(mood)}
+  </text>
 
-function InfoBox({ label, value }) {
-  return (
-    <div
-      style={{
-        padding: 14,
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,.08)",
-        background: "#0b1622",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6
-      }}
-    >
-      <span style={{ color: "#9eacbf", fontSize: 12 }}>{label}</span>
-      <strong style={{ color: "#ffffff", fontSize: 15 }}>{value}</strong>
-    </div>
-  );
+  <text x="84" y="315" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700">
+    Score ${score}/100 · ${escapeXml(tf)}
+  </text>
+
+  <text x="84" y="375" fill="#cfd7e3" font-family="Arial, Helvetica, sans-serif" font-size="28">
+    ${escapeXml(subtitle)}
+  </text>
+
+  <rect x="84" y="422" width="210" height="78" rx="18" fill="#0b1622" stroke="rgba(255,255,255,0.1)"/>
+  <text x="106" y="452" fill="#9eacbf" font-family="Arial" font-size="17">Move</text>
+  <text x="106" y="484" fill="#ffffff" font-family="Arial" font-size="28" font-weight="700">${escapeXml(formattedChange)}</text>
+
+  <rect x="314" y="422" width="220" height="78" rx="18" fill="#0b1622" stroke="rgba(255,255,255,0.1)"/>
+  <text x="336" y="452" fill="#9eacbf" font-family="Arial" font-size="17">Volume</text>
+  <text x="336" y="484" fill="#ffffff" font-family="Arial" font-size="28" font-weight="700">${escapeXml(volume)}</text>
+
+  <rect x="554" y="422" width="300" height="78" rx="18" fill="#0b1622" stroke="rgba(255,255,255,0.1)"/>
+  <text x="576" y="452" fill="#9eacbf" font-family="Arial" font-size="17">Risk Tone</text>
+  <text x="576" y="484" fill="${accent}" font-family="Arial" font-size="28" font-weight="700">${escapeXml(risk)}</text>
+
+  <text x="84" y="545" fill="#9eacbf" font-family="Arial" font-size="22">
+    Driver: ${escapeXml(driver)}
+  </text>
+
+  <circle cx="945" cy="305" r="150" fill="${accent}" opacity="0.10"/>
+  <circle cx="945" cy="305" r="118" fill="#071018" stroke="${accent}" stroke-width="4" filter="url(#softGlow)"/>
+  <text x="945" y="334" text-anchor="middle" fill="${accent}" font-family="Arial" font-size="112" font-weight="900">
+    ${score}
+  </text>
+
+  <text x="945" y="405" text-anchor="middle" fill="#cfd7e3" font-family="Arial" font-size="26">
+    EMOTION INDEX
+  </text>
+
+  <text x="945" y="545" text-anchor="middle" fill="#9eacbf" font-family="Arial" font-size="24">
+    wojakmeter.com
+  </text>
+</svg>
+  `);
 }
