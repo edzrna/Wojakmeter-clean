@@ -1,65 +1,12 @@
 import { ImageResponse } from "@vercel/og";
 
 export const config = {
-  runtime: "edge"
+  runtime: "edge",
 };
 
-// 🎨 COLOR POR EMOCIÓN
-function moodColor(mood) {
-  const map = {
-    Frustration: "#ff3b4d",
-    Concern: "#ff6c79",
-    Doubt: "#ff9da6",
-    Neutral: "#cfd7e3",
-    Optimism: "#a6ffc4",
-    Content: "#7cffaa",
-    Euphoria: "#4dff88"
-  };
-
-  return map[mood] || "#cfd7e3";
-}
-
-// 🧠 NORMALIZAR MOOD
-function normalizeMood(value) {
-  const raw = String(value || "Neutral").trim().toLowerCase();
-
-  const map = {
-    frustration: "Frustration",
-    concern: "Concern",
-    doubt: "Doubt",
-    neutral: "Neutral",
-    optimism: "Optimism",
-    content: "Content",
-    euphoria: "Euphoria"
-  };
-
-  return map[raw] || "Neutral";
-}
-
-// 🎨 NORMALIZAR STYLE
-function normalizeStyle(value) {
-  const raw = String(value || "classic").trim().toLowerCase();
-  const allowed = ["classic", "synth", "boyak", "minimal"];
-  return allowed.includes(raw) ? raw : "classic";
-}
-
-// 🎨 LABEL STYLE
-function styleLabel(style) {
-  if (style === "synth") return "Synth";
-  if (style === "boyak") return "Boyak";
-  if (style === "minimal") return "Minimal";
-  return "Classic";
-}
-
-// 🛡 SAFE VALUES
 function safeText(value, fallback = "--") {
   const text = String(value ?? "").trim();
   return text || fallback;
-}
-
-function safeChange(value) {
-  const num = Number(value || 0);
-  return Number.isFinite(num) ? num : 0;
 }
 
 function safeScore(value) {
@@ -68,42 +15,35 @@ function safeScore(value) {
   return Math.max(0, Math.min(100, Math.round(num)));
 }
 
-// 🚀 HANDLER
+function moodColor(mood) {
+  const map = {
+    frustration: "#ff3b4d",
+    concern: "#ff6c79",
+    doubt: "#ff9da6",
+    neutral: "#cfd7e3",
+    optimism: "#a6ffc4",
+    content: "#7cffaa",
+    euphoria: "#4dff88",
+  };
+
+  return map[String(mood || "").toLowerCase()] || "#cfd7e3";
+}
+
 export default async function handler(req) {
   try {
     const url = new URL(req.url);
-    const { searchParams } = url;
-
-    const mood = normalizeMood(searchParams.get("mood"));
-    const score = safeScore(searchParams.get("score"));
-    const tf = safeText(searchParams.get("tf"), "24h");
-    const coin = safeText(searchParams.get("coin"), "MARKET");
-    const volume = safeText(searchParams.get("volume"), "--");
+    const mood = safeText(url.searchParams.get("mood"), "Neutral");
+    const score = safeScore(url.searchParams.get("score"));
+    const tf = safeText(url.searchParams.get("tf"), "24h");
+    const change = safeText(url.searchParams.get("change"), "0");
+    const volume = safeText(url.searchParams.get("volume"), "--");
     const driver = safeText(
-      searchParams.get("driver"),
+      url.searchParams.get("driver"),
       "Market flow / price action"
     );
-    const risk = safeText(searchParams.get("risk"), "Balanced");
-    const style = normalizeStyle(searchParams.get("style"));
-    const change = safeChange(searchParams.get("change"));
-
-    const protocol =
-      req.headers.get("x-forwarded-proto") ||
-      (url.hostname.includes("localhost") ? "http" : "https");
-
-    const host = req.headers.get("host") || url.host;
-    const origin = `${protocol}://${host}`;
+    const risk = safeText(url.searchParams.get("risk"), "Balanced");
 
     const accent = moodColor(mood);
-
-    const heroSrc = `${origin}/assets/hero/${style}/${mood.toLowerCase()}.png`;
-
-    const headline =
-      coin === "MARKET" || coin === "GLOBAL"
-        ? "Crypto Market Mood"
-        : `${coin} Mood`;
-
-    const formattedChange = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
 
     return new ImageResponse(
       (
@@ -112,200 +52,131 @@ export default async function handler(req) {
             width: "1200px",
             height: "630px",
             display: "flex",
-            position: "relative",
-            overflow: "hidden",
-            background:
-              "radial-gradient(circle at top center, rgba(102,184,255,.10), transparent 24%), radial-gradient(circle at 20% 20%, rgba(77,255,136,.06), transparent 18%), linear-gradient(180deg, #071018 0%, #0b1622 100%)",
-            color: "#f5f7fb",
-            fontFamily: "Arial, sans-serif"
+            background: "linear-gradient(180deg, #071018, #0b1622)",
+            color: "white",
+            fontFamily: "Arial",
+            padding: "48px",
           }}
         >
           <div
             style={{
-              position: "absolute",
-              inset: "24px",
-              borderRadius: "30px",
-              border: "1px solid rgba(255,255,255,.10)",
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), linear-gradient(180deg, #132235 0%, #101c2b 100%)",
+              width: "100%",
+              height: "100%",
               display: "flex",
-              padding: "34px"
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "32px",
+              background: "#101c2b",
+              padding: "48px",
             }}
           >
-            {/* LEFT */}
             <div
               style={{
-                width: "44%",
+                width: "58%",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
-                paddingRight: "24px"
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: "18px",
-                    letterSpacing: "0.18em",
-                    color: "#9eacbf",
-                    marginBottom: "18px"
-                  }}
-                >
-                  WOJAKMETER
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "28px",
-                    color: "#cfd7e3",
-                    marginBottom: "10px"
-                  }}
-                >
-                  {headline}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "72px",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    color: accent,
-                    marginBottom: "12px"
-                  }}
-                >
-                  {mood}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "28px",
-                    color: "#ffffff",
-                    marginBottom: "26px"
-                  }}
-                >
-                  Score {score}/100
-                </div>
-
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                  <div style={pillStyle}>
-                    <div style={pillLabel}>Timeframe</div>
-                    <div style={pillValue}>{tf}</div>
-                  </div>
-
-                  <div style={pillStyle}>
-                    <div style={pillLabel}>Move</div>
-                    <div style={pillValue}>{formattedChange}</div>
-                  </div>
-
-                  <div style={pillStyle}>
-                    <div style={pillLabel}>Volume</div>
-                    <div style={pillValue}>{volume}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: "16px", color: "#9eacbf" }}>
-                  Driver
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "24px",
-                    color: "#ffffff",
-                    marginBottom: "8px"
-                  }}
-                >
-                  {driver}
-                </div>
-
-                <div style={{ fontSize: "16px", color: "#9eacbf" }}>
-                  Risk Tone
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "22px",
-                    color: accent
-                  }}
-                >
-                  {risk}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "14px",
-                    fontSize: "18px",
-                    color: "#9eacbf"
-                  }}
-                >
-                  Style: {styleLabel(style)} · wojakmeter.com
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT */}
-            <div
-              style={{
-                width: "56%",
-                display: "flex",
-                alignItems: "center",
                 justifyContent: "center",
-                position: "relative"
               }}
             >
               <div
                 style={{
-                  position: "absolute",
-                  width: "460px",
-                  height: "460px",
-                  borderRadius: "50%",
-                  background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`
+                  fontSize: "22px",
+                  letterSpacing: "0.18em",
+                  color: "#9eacbf",
+                  marginBottom: "20px",
                 }}
-              />
+              >
+                WOJAKMETER
+              </div>
 
-              <img
-                src={heroSrc}
-                width="430"
-                height="430"
+              <div
                 style={{
-                  objectFit: "contain"
+                  fontSize: "34px",
+                  color: "#cfd7e3",
+                  marginBottom: "16px",
                 }}
-              />
+              >
+                Crypto Market Mood
+              </div>
+
+              <div
+                style={{
+                  fontSize: "92px",
+                  fontWeight: 800,
+                  color: accent,
+                  lineHeight: 1,
+                  marginBottom: "24px",
+                }}
+              >
+                {mood}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "42px",
+                  fontWeight: 700,
+                  marginBottom: "32px",
+                }}
+              >
+                Score {score}/100
+              </div>
+
+              <div style={{ fontSize: "26px", color: "#cfd7e3" }}>
+                Timeframe: {tf}
+              </div>
+
+              <div style={{ fontSize: "26px", color: "#cfd7e3" }}>
+                Move: {change}%
+              </div>
+
+              <div style={{ fontSize: "26px", color: "#cfd7e3" }}>
+                Volume: {volume}
+              </div>
+
+              <div style={{ fontSize: "26px", color: "#cfd7e3" }}>
+                Driver: {driver}
+              </div>
+
+              <div style={{ fontSize: "26px", color: accent }}>
+                Risk: {risk}
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: "42%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "330px",
+                  height: "330px",
+                  borderRadius: "50%",
+                  background: `radial-gradient(circle, ${accent}55, transparent 70%)`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "120px",
+                  fontWeight: 900,
+                  color: accent,
+                }}
+              >
+                {score}
+              </div>
             </div>
           </div>
         </div>
       ),
       {
         width: 1200,
-        height: 630
+        height: 630,
       }
     );
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error?.message || "OG Error" }),
-      { status: 500 }
-    );
+    return new Response(error?.message || "OG error", {
+      status: 500,
+    });
   }
 }
-
-// UI STYLES
-const pillStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "4px",
-  padding: "12px 14px",
-  borderRadius: "16px",
-  border: "1px solid rgba(255,255,255,.08)",
-  background: "#101c2b"
-};
-
-const pillLabel = {
-  fontSize: "12px",
-  color: "#9eacbf"
-};
-
-const pillValue = {
-  fontSize: "22px",
-  color: "#ffffff"
-};
