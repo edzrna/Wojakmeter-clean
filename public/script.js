@@ -1962,29 +1962,40 @@ async function copyStudioTarget(targetId) {
 
 function shareMoodOnX() {
   const ctx = getGlobalMarketContext();
-  const moodIconMap = {
-    Euphoria: "ðŸ¤©",
-    Content: "ðŸ˜Œ",
-    Optimism: "ðŸ™‚",
-    Neutral: "ðŸ˜",
-    Doubt: "ðŸ¤¨",
-    Concern: "ðŸ˜Ÿ",
-    Frustration: "ðŸ˜¤"
+
+  const mood = String(ctx.globalMood || "Neutral").toUpperCase();
+  const score = roundScore(ctx.globalScore);
+  const subemotion = String(ctx.subemotion || "").replaceAll("_", " ");
+  const subtitle = ctx.emotionSubtitle || ctx.macroNarrative || "";
+  const shiftLevel = ctx.emotionShiftLevel || "low";
+
+  // Emoji dinámico por mood
+  const moodEmojiMap = {
+    EUPHORIA: "🚀",
+    CONTENT: "😌",
+    OPTIMISM: "🙂",
+    NEUTRAL: "😐",
+    DOUBT: "🤔",
+    CONCERN: "😟",
+    FRUSTRATION: "😤"
   };
 
-  const moodIcon = moodIconMap[ctx.globalMood] || "ðŸ§ ";
+  const moodEmoji = moodEmojiMap[mood] || "🧠";
 
   const text =
-`${moodIcon} MARKET MOOD: ${ctx.globalMood.toUpperCase()} (${ctx.globalScore}/100)
+`${moodEmoji} MARKET MOOD: ${mood} (${score}/100)
 
-ðŸ“Š Macro: ${ctx.macroLabel}
-â±ï¸ Timeframe: ${ctx.globalTimeframe}
-ðŸ“‰ Move: ${formatPercent(ctx.globalChange)}
-ðŸ’° Volume: ${ctx.globalVolume}
+🧠 Subemotion: ${subemotion}
+📡 Signal: ${subtitle}
 
-${moodIcon} ${ctx.macroNarrative}
+🌍 Macro: ${ctx.macroLabel}
+⏱ Timeframe: ${ctx.globalTimeframe}
+📈 Move: ${formatPercent(ctx.globalChange)}
+💰 Volume: ${ctx.globalVolume}
 
-Track the market mood live ðŸ‘‡`;
+⚡ Emotion Shift: ${shiftLevel.toUpperCase()}
+
+Track the market’s emotion 👇`;
 
   const shareUrl =
     "https://twitter.com/intent/tweet?text=" +
