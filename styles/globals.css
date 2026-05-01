@@ -4004,3 +4004,230 @@ pre.studio-output {
     font-size:13px;
   }
 }
+
+/* ===============================
+   WOJAKMETER CORE v1.0 FX
+   Subemotion glow + motion fallback
+================================ */
+
+.wojak-stage,
+.hero-stage,
+.hero-visual {
+  position: relative;
+}
+
+.wojak-stage::after,
+.hero-stage::after,
+.hero-visual::after {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.45;
+  filter: blur(34px);
+  transform: scale(0.95);
+  animation: wmGlowBreath 3s ease-in-out infinite;
+  z-index: 0;
+}
+
+#heroFaceOverlayImg {
+  position: absolute;
+  z-index: 4;
+  width: min(450px, 82%);
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* mood glow */
+
+body[data-mood="frustration"] .wojak-stage::after,
+body[data-mood="frustration"] .hero-stage::after,
+body[data-mood="frustration"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(255,59,77,.55), transparent 62%);
+}
+
+body[data-mood="concern"] .wojak-stage::after,
+body[data-mood="concern"] .hero-stage::after,
+body[data-mood="concern"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(255,108,121,.5), transparent 62%);
+}
+
+body[data-mood="doubt"] .wojak-stage::after,
+body[data-mood="doubt"] .hero-stage::after,
+body[data-mood="doubt"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(255,157,166,.38), transparent 62%);
+}
+
+body[data-mood="neutral"] .wojak-stage::after,
+body[data-mood="neutral"] .hero-stage::after,
+body[data-mood="neutral"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(207,215,227,.28), transparent 62%);
+}
+
+body[data-mood="optimism"] .wojak-stage::after,
+body[data-mood="optimism"] .hero-stage::after,
+body[data-mood="optimism"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(166,255,196,.38), transparent 62%);
+}
+
+body[data-mood="content"] .wojak-stage::after,
+body[data-mood="content"] .hero-stage::after,
+body[data-mood="content"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(124,255,170,.44), transparent 62%);
+}
+
+body[data-mood="euphoria"] .wojak-stage::after,
+body[data-mood="euphoria"] .hero-stage::after,
+body[data-mood="euphoria"] .hero-visual::after {
+  background: radial-gradient(circle, rgba(77,255,136,.58), transparent 62%);
+}
+
+/* shift intensity */
+
+.wm-shift-mid::after {
+  opacity: .55;
+  animation-duration: 2s;
+}
+
+.wm-shift-high::after {
+  opacity: .68;
+  animation-duration: 1.35s;
+}
+
+.wm-shift-extreme::after {
+  opacity: .82;
+  animation-duration: .75s;
+}
+
+/* subemotion motion */
+
+body[data-subemotion*="panic"] .hero-face-img,
+body[data-subemotion*="fear_spike"] .hero-face-img {
+  animation: wmFearShake .28s infinite linear;
+  filter: drop-shadow(0 0 28px rgba(255,59,77,.42));
+}
+
+body[data-subemotion*="breakdown"] .hero-face-img {
+  animation: wmBreakdown 1.2s infinite ease-in-out;
+  filter: drop-shadow(0 0 26px rgba(255,108,121,.35));
+}
+
+body[data-subemotion*="pressure"] .hero-face-img,
+body[data-subemotion*="pressure_building"] .hero-face-img {
+  animation: wmPressure 1.1s infinite ease-in-out;
+}
+
+body[data-subemotion*="compression"] .hero-face-img {
+  animation: wmCompression 1.6s infinite ease-in-out;
+}
+
+body[data-subemotion*="building"] .hero-face-img {
+  animation: wmBuilding 1.4s infinite ease-in-out;
+}
+
+body[data-subemotion*="confident"] .hero-face-img,
+body[data-subemotion*="confidence"] .hero-face-img {
+  animation: wmConfident 2.1s infinite ease-in-out;
+  filter: drop-shadow(0 0 28px rgba(124,255,170,.32));
+}
+
+body[data-subemotion*="overheat"] .hero-face-img {
+  animation: wmOverheat .52s infinite ease-in-out;
+  filter: drop-shadow(0 0 34px rgba(77,255,136,.48));
+}
+
+body[data-subemotion*="weakening"] .hero-face-img,
+body[data-subemotion*="pullback"] .hero-face-img {
+  animation: wmWeakening 1.8s infinite ease-in-out;
+  opacity: .92;
+}
+
+/* heartbeat enhancement */
+
+.heartbeat-wrap {
+  --hb-speed: var(--heartbeat-speed, 1.3s);
+}
+
+.heartbeat-heart {
+  animation-duration: var(--hb-speed) !important;
+}
+
+.heartbeat-wave-chaotic #heartbeatPath,
+.heartbeat-wave-irregular #heartbeatPath,
+.heartbeat-wave-explosive #heartbeatPath {
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.heartbeat-wave-explosive #heartbeatPath {
+  stroke-width: 4.5;
+}
+
+.heartbeat-wave-smooth #heartbeatPath {
+  stroke-width: 2.8;
+  opacity: .85;
+}
+
+/* animations */
+
+@keyframes wmGlowBreath {
+  0%, 100% {
+    transform: scale(.94);
+    opacity: .38;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: .7;
+  }
+}
+
+@keyframes wmFearShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2px, 1px) rotate(-1deg); }
+  50% { transform: translate(2px, -1px) rotate(1deg); }
+  75% { transform: translate(-1px, -1px) rotate(.5deg); }
+}
+
+@keyframes wmBreakdown {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  35% { transform: translateY(5px) rotate(-1deg) scale(.985); }
+  70% { transform: translateY(-2px) rotate(1deg) scale(1.01); }
+}
+
+@keyframes wmPressure {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.035) translateY(-3px); }
+}
+
+@keyframes wmCompression {
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  50% { transform: scaleX(.985) scaleY(1.025); }
+}
+
+@keyframes wmBuilding {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.035); }
+}
+
+@keyframes wmConfident {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.018); }
+}
+
+@keyframes wmOverheat {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  30% { transform: scale(1.045) rotate(-1deg); }
+  65% { transform: scale(1.02) rotate(1deg); }
+}
+
+@keyframes wmWeakening {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+  50% {
+    transform: translateY(3px) scale(.985);
+    filter: saturate(.78);
+  }
+}
