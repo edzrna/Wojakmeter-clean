@@ -4438,3 +4438,38 @@ html {
     border-color: rgba(77,255,136,.2);
   }
 }
+
+@media (max-width: 640px) {
+  .mood-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+  }
+
+  .mood-stat-box {
+    padding: 10px 8px;
+    border-radius: 14px;
+    min-height: 92px;
+  }
+
+  .mood-stat-box span {
+    font-size: 10px;
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+
+  .mood-stat-box strong {
+    font-size: 0.95rem;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .mood-token-main {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mood-stat-box strong {
+    font-size: clamp(0.75rem, 3vw, 0.95rem);
+  }
+}
