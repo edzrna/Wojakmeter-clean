@@ -165,51 +165,16 @@ export default function Home({ ogImageUrl }) {
   <div className="hero-grid hero-grid-single">
     <div className="hero-main">
 
+      {/* HERO VISUAL */}
       <div className="wojak-stage">
-
         <div className="sweat hidden" id="sweatFx">💧</div>
 
-        {/* SOCIAL */}
-        <div className="hero-social-wrapper" id="socialWrapper">
-          <div className="hero-social-badge social-neutral" id="socialBubble">
-            <div className="hero-social-badge-label">𝕏</div>
-
-            <div className="hero-social-badge-icon">
-              <img
-                id="socialIconImg"
-                className="mood-icon-img anim-float"
-                src="/assets/icons/classic/neutral.png"
-              />
-            </div>
-
-            <div className="hero-social-badge-text">
-              <span id="socialMoodMini">Neutral</span>
-              <strong id="socialScoreMini">50</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* BACKDROP */}
-        <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
-          <svg viewBox="0 0 900 280">
-            <path id="heroTimelineArea"></path>
-            <path id="heroTimelineLine"></path>
-          </svg>
-        </div>
-
-        {/* HERO IMAGE */}
         <img
           id="heroFaceImg"
           className="hero-face-img anim-float"
           src="/assets/hero/classic/neutral.png"
+          alt="Global market mood"
         />
-
-        <img
-          id="heroFaceOverlayImg"
-          className="hidden"
-          src=""
-        />
-
       </div>
 
       {/* MOOD */}
@@ -217,21 +182,15 @@ export default function Home({ ogImageUrl }) {
         Neutral
       </div>
 
-      {/* SUB EMOTION */}
-      <div className="hero-subtitle" id="heroSubtitle">
-        Market emotion is balanced for now.
-      </div>
-
       {/* SCORE */}
-      <div className="hero-score">
+      <div className="hero-score" id="heroScoreWrap">
         Score: <span id="heroScore">50</span> / 100
       </div>
 
-      {/* BAR */}
+      {/* EMOTION BAR */}
       <section className="emotion-bar-inline emotion-bar-inline-minimal">
         <div className="emotion-track-wrap">
           <div className="emotion-track emotion-track-gradient" id="emotionTrack">
-
             <div className="emotion-pointer" id="emotionPointer">
               <div className="emotion-pointer-arrow"></div>
               <div className="emotion-pointer-face">
@@ -241,17 +200,18 @@ export default function Home({ ogImageUrl }) {
                 />
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* HEARTBEAT */}
-      <div className="heartbeat-wrap">
-        <div className="heartbeat-heart">❤</div>
-        <svg viewBox="0 0 320 56">
-          <path id="heartbeatPath"></path>
-        </svg>
+      <div className="heartbeat-wrap" id="heartbeatWrap">
+        <div className="heartbeat-heart" id="heartbeatHeart">❤</div>
+        <div className="heartbeat-chart">
+          <svg viewBox="0 0 320 56" preserveAspectRatio="none">
+            <path id="heartbeatPath" d=""></path>
+          </svg>
+        </div>
       </div>
 
       {/* SHARE */}
@@ -270,7 +230,7 @@ export default function Home({ ogImageUrl }) {
         <button data-timeframe="30d">30d</button>
       </div>
 
-      {/* HERO MODES */}
+      {/* MODES */}
       <div className="hero-modes" id="heroModes">
         <button className="hero-mode-btn active" data-hero-mode="raw">
           Raw Market
@@ -283,7 +243,7 @@ export default function Home({ ogImageUrl }) {
         </button>
       </div>
 
-      {/* 🔥 WOJAKMETER ENGINE */}
+      {/* WOJAKMETER ENGINE */}
       <section className="wm-gauge-shell" id="wmGaugeShell">
         <div className="wm-gauge-head">
           <div className="wm-gauge-title">WojakMeter Engine</div>
@@ -293,7 +253,7 @@ export default function Home({ ogImageUrl }) {
         </div>
 
         <div className="wm-gauge-wrap">
-          <svg className="wm-gauge-svg" viewBox="0 0 300 190">
+          <svg viewBox="0 0 300 190">
             <path className="gauge-track" d="M30 150 A120 120 0 0 1 270 150"></path>
             <path id="gaugeFill" d="M30 150 A120 120 0 0 1 270 150"></path>
           </svg>
@@ -301,6 +261,8 @@ export default function Home({ ogImageUrl }) {
           <div className="gauge-needle-wrap">
             <div className="gauge-needle" id="gaugeNeedle"></div>
           </div>
+
+          <div className="gauge-center-cap"></div>
 
           <div className="gauge-score-center">
             <div id="gaugeScore">50</div>
@@ -310,12 +272,20 @@ export default function Home({ ogImageUrl }) {
       </section>
 
       {/* LAYERS */}
-      <section className="wm-layers" id="wmLayers">
-        <div className="layer-buttons">
-          <button className="layer-btn active">Market</button>
-          <button className="layer-btn">Social</button>
-          <button className="layer-btn">Driver</button>
-          <button className="layer-btn">Pulse</button>
+      <section className="wm-layers disabled-layers" id="wmLayers">
+        <div className="layer-buttons" id="layerButtons">
+          <button className="layer-btn active" data-layer="market" id="toggleLayerMarket">
+            Market
+          </button>
+          <button className="layer-btn" data-layer="social" id="toggleLayerSocial">
+            Social
+          </button>
+          <button className="layer-btn" data-layer="driver" id="toggleLayerDriver">
+            Driver
+          </button>
+          <button className="layer-btn" data-layer="pulse" id="toggleLayerPulse">
+            Pulse
+          </button>
         </div>
 
         <div className="layer-grid">
@@ -344,21 +314,15 @@ export default function Home({ ogImageUrl }) {
       {/* MARKET LINE */}
       <div className="hero-market-line">
         <div>
-          <span>Market Change</span>
-          <strong id="globalMarketChange">--</strong>
+          Market Change <strong id="globalMarketChange">--</strong>
         </div>
-
         <div>
-          <span>Volume</span>
-          <strong id="globalMarketVolume">--</strong>
+          Volume <strong id="globalMarketVolume">--</strong>
         </div>
-
         <div>
-          <span>Timeframe</span>
-          <strong id="globalMarketTimeframe">24h</strong>
+          Timeframe <strong id="globalMarketTimeframe">24h</strong>
         </div>
       </div>
-
     </div>
 
     {/* DRIVERS */}
@@ -374,12 +338,17 @@ export default function Home({ ogImageUrl }) {
 
       <div className="driver-item">
         <span>Macro Driver</span>
-        <strong id="driverMacro">Market flow</strong>
+        <strong id="driverMacro">Market flow / price action</strong>
       </div>
 
       <div className="driver-item">
         <span>Main Narrative</span>
-        <strong id="driverNarrative">Waiting for live data</strong>
+        <strong id="driverNarrative">Waiting for data...</strong>
+      </div>
+
+      <div className="driver-item">
+        <span>Timeframe Reaction</span>
+        <strong id="driverTimeframeReaction">Balanced</strong>
       </div>
 
       <div className="driver-item">
