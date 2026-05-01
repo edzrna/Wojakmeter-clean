@@ -4226,6 +4226,38 @@ function updateHero(score, mood, options = {}) {
   updateGauge(score, mood);
 }
 
+function setupStickyHeaderNav() {
+  const toggle = byId("wmMenuToggle");
+  const menu = byId("wmMobileMenu");
+
+  function updateHeaderScrollState() {
+    document.body.classList.toggle("header-scrolled", window.scrollY > 40);
+  }
+
+  window.addEventListener("scroll", updateHeaderScrollState, { passive: true });
+  updateHeaderScrollState();
+
+  if (toggle && menu && !toggle.dataset.bound) {
+    toggle.dataset.bound = "1";
+
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("open");
+    });
+
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        menu.classList.remove("open");
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+        menu.classList.remove("open");
+      }
+    });
+  }
+}
 
 // ===============================
 // LOAD ALL
