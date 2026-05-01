@@ -1,56 +1,211 @@
-export default function handler(req, res) {
-  res.setHeader("Content-Type", "image/svg+xml");
+import Head from "next/head";
 
-  res.status(200).send(`
-    <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-      
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#071018"/>
-          <stop offset="100%" stop-color="#0b1622"/>
-        </linearGradient>
-      </defs>
+function safeText(value, fallback = "--") {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
 
-      <!-- Background -->
-      <rect width="1200" height="630" fill="url(#bg)" />
+function safeScore(value) {
+  const num = Number(value || 50);
+  if (!Number.isFinite(num)) return 50;
+  return Math.max(0, Math.min(100, Math.round(num)));
+}
 
-      <!-- Title -->
-      <text 
-        x="600" 
-        y="260" 
-        text-anchor="middle" 
-        fill="#4dff88" 
-        font-size="90" 
-        font-family="Arial" 
-        font-weight="800"
+function safeChange(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num : 0;
+}
+
+export async function getServerSideProps({ query, req }) {
+  const {
+    mood = "Neutral",
+    score = "50",
+    tf = "24h",
+    change = "0",
+    volume = "--",
+    driver = "Market flow / price action",
+    risk = "Balanced",
+    coin = "MARKET",
+    style = "classic"
+  } = query;
+
+  const protocol =
+    req.headers["x-forwarded-proto"] ||
+    (req.headers.host?.includes("localhost") ? "http" : "https");
+
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+
+  const safePayload = {
+    mood: safeText(mood, "Neutral"),
+    score: String(safeScore(score)),
+    tf: safeText(tf, "24h"),
+    change: String(safeChange(change)),
+    volume: safeText(volume, "--"),
+    driver: safeText(driver, "Market flow / price action"),
+    risk: safeText(risk, "Balanced"),
+    coin: safeText(coin, "MARKET"),
+    style: safeText(style, "classic")
+  };
+
+  const params = new URLSearchParams(safePayload);
+  const version = safeText(query.v, String(Date.now()));
+
+  const ogUrl = `${baseUrl}/api/og?${params.toString()}&v=${version}`;
+  const shareUrl = `${baseUrl}/share?${params.toString()}&v=${version}`;
+
+  return {
+    props: {
+      ...safePayload,
+      ogUrl,
+      shareUrl
+    }
+  };
+}
+
+export default function SharePage({
+  mood,
+  score,
+  tf,
+  change,
+  volume,
+  driver,
+  risk,
+  coin,
+  ogUrl,
+  shareUrl
+}) {
+  const numericScore = safeScore(score);
+  const numericChange = safeChange(change);
+  const formattedChange = `${numericChange >= 0 ? "+" : ""}${numericChange.toFixed(2)}%`;
+
+  const headline =
+    coin === "MARKET" || coin === "GLOBAL"
+      ? "Crypto Market Mood"
+      : `${coin} Mood`;
+
+  const title =
+    coin === "MARKET" || coin === "GLOBAL"
+      ? `WojakMeter | Crypto Market Mood: ${mood} (${numericScore}/100)`
+      : `WojakMeter | ${coin} Mood: ${mood} (${numericScore}/100)`;
+
+  const description = `Score ${numericScore}/100 · ${tf} · Move ${formattedChange} · Driver: ${driver} · Risk: ${risk}`;
+  const imageAlt = `${headline}: ${mood} mood with score ${numericScore}/100 on WojakMeter`;
+
+  return (
+    <>
+      <Head>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={shareUrl} />
+
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={ogUrl} />
+        <meta property="og:image:secure_url" content={ogUrl} />
+        <meta property="og:image:type" content="image/svg+xml" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={imageAlt} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={shareUrl} />
+        <meta property="og:site_name" content="WojakMeter" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogUrl} />
+        <meta name="twitter:image:alt" content={imageAlt} />
+        <meta name="twitter:site" content="@wojakmeterx" />
+        <meta name="twitter:creator" content="@wojakmeterx" />
+      </Head>
+
+      <main
+        style={{
+          minHeight: "100vh",
+          padding: "32px 18px",
+          fontFamily: "Inter, Arial, sans-serif",
+          color: "#f5f7fb",
+          background:
+            "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
+        }}
       >
-        WOJAKMETER
-      </text>
+        <div
+          style={{
+            maxWidth: 980,
+            margin: "0 auto",
+            borderRadius: 24,
+            border: "1px solid rgba(255,255,255,.08)",
+            background: "#101c2b",
+            padding: 28
+          }}
+        >
+          <div
+            style={{
+              fontSize: 14,
+              letterSpacing: ".12em",
+              color: "#9eacbf",
+              marginBottom: 10
+            }}
+          >
+            WOJAKMETER SHARE CARD
+          </div>
 
-      <!-- Subtitle -->
-      <text 
-        x="600" 
-        y="360" 
-        text-anchor="middle" 
-        fill="#cfd7e3" 
-        font-size="40" 
-        font-family="Arial"
-      >
-        OG IMAGE TEST
-      </text>
+          <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>{mood}</h1>
 
-      <!-- Footer -->
-      <text 
-        x="600" 
-        y="480" 
-        text-anchor="middle" 
-        fill="#9eacbf" 
-        font-size="28" 
-        font-family="Arial"
-      >
-        wojakmeter.com
-      </text>
+          <p style={{ color: "#cfd7e3", marginBottom: 22 }}>
+            {headline} · {tf} · Score {numericScore}/100
+          </p>
 
-    </svg>
-  `);
+          <img
+            src={ogUrl}
+            alt={imageAlt}
+            style={{
+              width: "100%",
+              borderRadius: 20,
+              border: "1px solid rgba(255,255,255,.08)",
+              display: "block"
+            }}
+          />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+              marginTop: 18
+            }}
+          >
+            <InfoBox label="Mood" value={mood} />
+            <InfoBox label="Score" value={`${numericScore}/100`} />
+            <InfoBox label="Timeframe" value={tf} />
+            <InfoBox label="Move" value={formattedChange} />
+            <InfoBox label="Volume" value={volume} />
+            <InfoBox label="Driver" value={driver} />
+            <InfoBox label="Risk Tone" value={risk} />
+            <InfoBox label="Scope" value={headline} />
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,.08)",
+        background: "#0b1622",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
+      }}
+    >
+      <span style={{ color: "#9eacbf", fontSize: 12 }}>{label}</span>
+      <strong style={{ color: "#ffffff", fontSize: 15 }}>{value}</strong>
+    </div>
+  );
 }
