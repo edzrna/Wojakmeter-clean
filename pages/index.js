@@ -66,6 +66,13 @@ export default function Home({ ogImageUrl }) {
         <meta name="author" content="WojakMeter" />
         <meta name="theme-color" content="#071018" />
 
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+  rel="stylesheet"
+/>
+
         <link rel="canonical" href="https://wojakmeter.com" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2" />
         <link rel="shortcut icon" href="/favicon.png?v=2" />
