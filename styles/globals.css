@@ -1,4 +1,10 @@
 :root {
+
+--font-display: "Space Grotesk", sans-serif;
+--font-ui: "Rajdhani", sans-serif;
+--font-body: "Inter", sans-serif;
+
+
   --bg: #071018;
   --bg-2: #0b1622;
   --panel: #101c2b;
@@ -4478,5 +4484,105 @@ html {
     gap: 8px;
   }
     
+}
+
+/* ===============================
+   WOJAKMETER TYPOGRAPHY UPGRADE
+================================ */
+
+body {
+  font-family: var(--font-body);
+  font-feature-settings: "tnum";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+h1,
+h2,
+h3,
+.hero-mood,
+.about-title,
+.legal-title,
+.chart-coin-title-line h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+#heroTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#heroDriverLabel,
+.market-stat,
+.hero-score,
+.timeframes button,
+.action-btn,
+.tab-btn,
+.chart-mode-btn,
+.layer-btn,
+.hero-mode-btn,
+.driver-item,
+.layer-title,
+.wm-gauge-title,
+.wm-gauge-score,
+.ticker-bar,
+.coin-card,
+.mood-stat-box,
+.mood-token-score-box,
+.bag-mood-section,
+button,
+select,
+input,
+textarea {
+  font-family: var(--font-ui);
+}
+
+.hero-subtitle,
+.about-text,
+.seo-section,
+.studio-output,
+.mood-token-note,
+.social-expand-note {
+  font-family: var(--font-body);
+}
+
+.market-stat strong,
+.ticker-price,
+.ticker-symbol,
+.price,
+.symbol,
+.change,
+.coin-card strong,
+.layer-card-score,
+#gaugeScore,
+#gaugeScoreHead,
+#moodTokenPrice,
+#moodTokenMarketCap,
+#moodTokenVolume,
+#moodChange,
+#moodTokenFlow,
+#moodTokenVolatility,
+#moodTokenLastAction,
+#bagPortfolioValue,
+#bagTotalInvested,
+#bagPortfolioPnl,
+#bagPortfolioPnlPercent {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeframes button,
+.action-btn,
+.tab-btn,
+.chart-mode-btn,
+.layer-btn,
+.hero-mode-btn {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
