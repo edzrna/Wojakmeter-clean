@@ -266,19 +266,21 @@ export default function Home({ ogImageUrl }) {
           </svg>
         </div>
 
-        <img
-          id="heroFaceImg"
-          className="hero-face-img anim-float"
-          src="/assets/hero/classic/neutral.png"
-          alt="Global market mood"
-        />
+        <div className="hero-face-wrap" id="heroFaceWrap">
+  <img
+    id="heroFaceImg"
+    className="hero-face-img"
+    src="/assets/hero/classic/neutral.png"
+    alt="Global market mood"
+  />
 
-        <img
-  id="heroFaceOverlayImg"
-  className="hero-face-overlay hidden"
-  src=""
-  alt=""
-/>
+  <img
+    id="heroFaceOverlayImg"
+    className="hero-face-overlay hidden"
+    src=""
+    alt=""
+  />
+</div>
       </div>
 
       <div className="hero-mood mood-neutral" id="heroMood">
