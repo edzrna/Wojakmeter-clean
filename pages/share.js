@@ -72,12 +72,20 @@ export default function SharePage({
   driver,
   risk,
   coin,
+  style,
   ogUrl,
   shareUrl
 }) {
   const numericScore = safeScore(score);
   const numericChange = safeChange(change);
   const formattedChange = `${numericChange >= 0 ? "+" : ""}${numericChange.toFixed(2)}%`;
+
+  const moodKey = String(mood || "neutral").toLowerCase();
+  const styleKey = String(style || "classic").toLowerCase();
+
+  const heroImageUrl = `/assets/hero/${styleKey}/${moodKey}.png`;
+  const fallbackHeroImageUrl = `/assets/hero/classic/neutral.png`;
+  const logoUrl = "/assets/logo/wojakmeter_logo.png";
 
   const headline =
     coin === "MARKET" || coin === "GLOBAL"
@@ -141,15 +149,21 @@ export default function SharePage({
         >
           <div
             style={{
-              fontFamily: "var(--font-ui, Rajdhani, sans-serif)",
-              fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: ".12em",
-              color: "#9eacbf",
-              marginBottom: 10
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 18
             }}
           >
-            WOJAKMETER SHARE CARD
+            <img
+              src={logoUrl}
+              alt="WojakMeter Logo"
+              style={{
+                height: 54,
+                width: "auto",
+                objectFit: "contain"
+              }}
+            />
           </div>
 
           <h1
@@ -157,22 +171,50 @@ export default function SharePage({
               fontFamily: "var(--font-display, Space Grotesk, sans-serif)",
               fontSize: 42,
               letterSpacing: "-0.03em",
-              margin: "0 0 8px"
+              textAlign: "center",
+              margin: "0 0 14px"
             }}
           >
             {mood}
           </h1>
 
-          <p
+          <div
             style={{
-              fontFamily: "var(--font-ui, Rajdhani, sans-serif)",
-              color: "#cfd7e3",
-              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 14,
               marginBottom: 22
             }}
           >
-            {headline} · {tf} · Score {numericScore}/100
-          </p>
+            <img
+              src={heroImageUrl}
+              alt={`${mood} Wojak`}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = fallbackHeroImageUrl;
+              }}
+              style={{
+                width: 68,
+                height: 68,
+                objectFit: "contain",
+                borderRadius: 18,
+                background: "rgba(255,255,255,.04)",
+                border: "1px solid rgba(255,255,255,.08)"
+              }}
+            />
+
+            <p
+              style={{
+                fontFamily: "var(--font-ui, Rajdhani, sans-serif)",
+                color: "#cfd7e3",
+                fontWeight: 700,
+                margin: 0
+              }}
+            >
+              {headline} · {tf} · {formattedChange}
+            </p>
+          </div>
 
           <img
             src={ogUrl}
