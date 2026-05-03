@@ -740,13 +740,32 @@ function updateLayerUI() {
   });
 }
 
+// ===============================
+// UPDATED updateHero FUNCTION
+// ===============================
+
 function updateHero(score, mood, options = {}) {
   const { pulseMode = false } = options;
   const style = getCurrentStyle();
+  const coreState =
+    typeof getWojakCoreState === "function"
+      ? getWojakCoreState(score, mood, style)
+      : {
+          visual: {
+            base: getHeroImagePath(style, mood.key),
+            overlay: "",
+            fallback: getHeroImagePath(DEFAULT_STYLE, mood.key)
+          },
+          subemotion: mood.key,
+          shiftLevel: "low",
+          heartbeat: { waveform: mood.key }
+        };
 
   const heroMood = byId("heroMood");
   const heroScoreWrap = byId("heroScoreWrap");
+  const heroFaceWrap = byId("heroFaceWrap");
   const heroFaceImg = byId("heroFaceImg");
+  const heroOverlayImg = byId("heroFaceOverlayImg");
   const emotionPointer = byId("emotionPointer");
   const emotionPointerImg = byId("emotionPointerImg");
   const heartbeatWrap = byId("heartbeatWrap");
@@ -766,22 +785,60 @@ function updateHero(score, mood, options = {}) {
     `;
   }
 
-  if (heroFaceImg) {
-    heroFaceImg.className = `hero-face-img ${mood.anim}`;
+  if (heroFaceWrap) {
+    heroFaceWrap.className = `hero-face-wrap ${mood.anim}`;
+    heroFaceWrap.dataset.mood = mood.key;
+    heroFaceWrap.dataset.subemotion = coreState.subemotion || mood.key;
+    heroFaceWrap.dataset.shift = coreState.shiftLevel || "low";
 
     if (pulseMode) {
-      heroFaceImg.classList.add("hero-face-pulse");
-      clearTimeout(heroFaceImg.__pulseTimer);
-      heroFaceImg.__pulseTimer = setTimeout(() => {
-        heroFaceImg.classList.remove("hero-face-pulse");
+      heroFaceWrap.classList.add("hero-face-pulse");
+      clearTimeout(heroFaceWrap.__pulseTimer);
+      heroFaceWrap.__pulseTimer = setTimeout(() => {
+        heroFaceWrap.classList.remove("hero-face-pulse");
       }, 700);
     }
+  }
+
+  if (heroFaceImg) {
+    heroFaceImg.className = "hero-face-img";
 
     setImage(
       heroFaceImg,
-      getHeroImagePath(style, mood.key),
-      getHeroImagePath(DEFAULT_STYLE, mood.key)
+      coreState.visual?.base || getHeroImagePath(style, mood.key),
+      coreState.visual?.fallback || getHeroImagePath(DEFAULT_STYLE, mood.key)
     );
+  }
+
+  if (heroOverlayImg) {
+    const overlaySrc = coreState.visual?.overlay || "";
+
+    if (overlaySrc) {
+      heroOverlayImg.onerror = () => {
+        heroOverlayImg.onerror = null;
+        heroOverlayImg.classList.add("hidden");
+        heroOverlayImg.style.display = "none";
+        heroOverlayImg.removeAttribute("src");
+      };
+
+      heroOverlayImg.className = "hero-face-overlay";
+      heroOverlayImg.style.display = "block";
+      heroOverlayImg.src = overlaySrc;
+    } else {
+      heroOverlayImg.onerror = null;
+      heroOverlayImg.className = "hero-face-overlay hidden";
+      heroOverlayImg.style.display = "none";
+      heroOverlayImg.removeAttribute("src");
+    }
+  }
+
+  const subtitleEl =
+    byId("heroSubtitle") ||
+    byId("heroMoodSubtitle") ||
+    byId("moodSubtitle");
+
+  if (subtitleEl && coreState.subtitle) {
+    subtitleEl.textContent = coreState.subtitle;
   }
 
   if (emotionPointer) {
@@ -797,12 +854,18 @@ function updateHero(score, mood, options = {}) {
   }
 
   if (heartbeatWrap && heartbeatPath) {
-    heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key}`;
-    heartbeatPath.setAttribute("d", heartbeatPathForMood(mood.key));
+    const wave = coreState.heartbeat?.waveform || mood.key;
+
+    heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key} heartbeat-wave-${wave}`;
+    heartbeatPath.setAttribute(
+      "d",
+      heartbeatPathForMood(coreState.subemotion || mood.key)
+    );
   }
 
   updateGauge(score, mood);
 }
+
 
 function updateSocialPanel(score, socialMood) {
   const roundedScore = roundScore(score);
