@@ -274,11 +274,11 @@ export default function Home({ ogImageUrl }) {
         />
 
         <img
-          id="heroFaceOverlayImg"
-          className="hidden"
-          src=""
-          alt=""
-        />
+  id="heroFaceOverlayImg"
+  className="hero-face-overlay hidden"
+  src=""
+  alt=""
+/>
       </div>
 
       <div className="hero-mood mood-neutral" id="heroMood">
