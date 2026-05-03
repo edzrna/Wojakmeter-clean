@@ -111,18 +111,14 @@ export default function handler(req, res) {
       <stop offset="100%" stop-color="#0b1622"/>
     </linearGradient>
 
-    <radialGradient id="glow" cx="74%" cy="48%" r="46%">
-      <stop offset="0%" stop-color="${accent}" stop-opacity="0.42"/>
-      <stop offset="68%" stop-color="${accent}" stop-opacity="0.08"/>
+    <radialGradient id="glow" cx="76%" cy="48%" r="46%">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.45"/>
+      <stop offset="62%" stop-color="${accent}" stop-opacity="0.12"/>
       <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
     </radialGradient>
 
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="18" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <filter id="heroShadow">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="${accent}" flood-opacity="0.22"/>
     </filter>
   </defs>
 
@@ -172,20 +168,20 @@ export default function handler(req, res) {
     Driver: ${escapeXml(driver)}
   </text>
 
-  <circle cx="945" cy="305" r="168" fill="${accent}" opacity="0.10"/>
-  <circle cx="945" cy="305" r="132" fill="#071018" stroke="${accent}" stroke-width="4" filter="url(#softGlow)"/>
+  <ellipse cx="945" cy="330" rx="210" ry="185" fill="${accent}" opacity="0.13"/>
 
   <image
     href="${escapeXml(heroImageUrl)}"
-    x="745"
-    y="105"
-    width="400"
-    height="400"
+    x="710"
+    y="70"
+    width="470"
+    height="470"
     preserveAspectRatio="xMidYMid meet"
+    filter="url(#heroShadow)"
   />
 
-  <rect x="825" y="448" width="240" height="58" rx="18" fill="#0b1622" stroke="${accent}" stroke-opacity="0.45"/>
-  <text x="945" y="486" text-anchor="middle" fill="${accent}" font-family="Rajdhani, Arial, Helvetica, sans-serif" font-size="30" font-weight="800">
+  <rect x="820" y="462" width="250" height="58" rx="18" fill="#0b1622" stroke="${accent}" stroke-opacity="0.42"/>
+  <text x="945" y="500" text-anchor="middle" fill="${accent}" font-family="Rajdhani, Arial, Helvetica, sans-serif" font-size="30" font-weight="800">
     ${score}/100 EMOTION
   </text>
 
