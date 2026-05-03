@@ -4586,3 +4586,58 @@ textarea {
   text-transform: uppercase;
 }
 
+/* ===============================
+   HERO FACE BASE + OVERLAY
+================================ */
+
+.wojak-stage {
+  position: relative;
+}
+
+.hero-face-wrap {
+  position: relative;
+  width: min(420px, 80vw);
+  margin: 0 auto;
+  z-index: 2;
+}
+
+.hero-face-img {
+  position: relative;
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.hero-face-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hero-face-overlay.hidden {
+  display: none !important;
+}
+
+/* Pulse effect now applies to the full group */
+.hero-face-wrap.hero-face-pulse {
+  animation: heroFacePulse 0.7s ease-in-out;
+}
+
+@keyframes heroFacePulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
