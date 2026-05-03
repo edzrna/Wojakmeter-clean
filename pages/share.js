@@ -124,10 +124,9 @@ export default function SharePage({
         style={{
           minHeight: "100vh",
           padding: "32px 18px",
-          fontFamily: "Inter, Arial, sans-serif",
+          fontFamily: "var(--font-body, Inter, Arial, sans-serif)",
           color: "#f5f7fb",
-          background:
-            "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
+          background: "linear-gradient(180deg, #071018 0%, #0b1622 100%)"
         }}
       >
         <div
@@ -142,7 +141,9 @@ export default function SharePage({
         >
           <div
             style={{
+              fontFamily: "var(--font-ui, Rajdhani, sans-serif)",
               fontSize: 14,
+              fontWeight: 700,
               letterSpacing: ".12em",
               color: "#9eacbf",
               marginBottom: 10
@@ -151,9 +152,25 @@ export default function SharePage({
             WOJAKMETER SHARE CARD
           </div>
 
-          <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>{mood}</h1>
+          <h1
+            style={{
+              fontFamily: "var(--font-display, Space Grotesk, sans-serif)",
+              fontSize: 42,
+              letterSpacing: "-0.03em",
+              margin: "0 0 8px"
+            }}
+          >
+            {mood}
+          </h1>
 
-          <p style={{ color: "#cfd7e3", marginBottom: 22 }}>
+          <p
+            style={{
+              fontFamily: "var(--font-ui, Rajdhani, sans-serif)",
+              color: "#cfd7e3",
+              fontWeight: 700,
+              marginBottom: 22
+            }}
+          >
             {headline} · {tf} · Score {numericScore}/100
           </p>
 
@@ -167,45 +184,8 @@ export default function SharePage({
               display: "block"
             }}
           />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-              marginTop: 18
-            }}
-          >
-            <InfoBox label="Mood" value={mood} />
-            <InfoBox label="Score" value={`${numericScore}/100`} />
-            <InfoBox label="Timeframe" value={tf} />
-            <InfoBox label="Move" value={formattedChange} />
-            <InfoBox label="Volume" value={volume} />
-            <InfoBox label="Driver" value={driver} />
-            <InfoBox label="Risk Tone" value={risk} />
-            <InfoBox label="Scope" value={headline} />
-          </div>
         </div>
       </main>
     </>
-  );
-}
-
-function InfoBox({ label, value }) {
-  return (
-    <div
-      style={{
-        padding: 14,
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,.08)",
-        background: "#0b1622",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6
-      }}
-    >
-      <span style={{ color: "#9eacbf", fontSize: 12 }}>{label}</span>
-      <strong style={{ color: "#ffffff", fontSize: 15 }}>{value}</strong>
-    </div>
   );
 }
