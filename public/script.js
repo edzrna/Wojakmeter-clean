@@ -651,8 +651,9 @@ function getEffectiveHeroScore() {
 }
 
 // ===============================
-// MAIN HERO UI
+// MAIN HERO UI / MARKET MOOD
 // ===============================
+
 function updateGauge(score, mood) {
   const fill = byId("gaugeFill");
   const needle = byId("gaugeNeedle");
@@ -676,6 +677,7 @@ function updateGauge(score, mood) {
 
   if (scoreEl) scoreEl.textContent = String(clamped);
   if (scoreHead) scoreHead.textContent = String(clamped);
+
   if (moodEl) {
     moodEl.textContent = mood.name;
     moodEl.className = `mood-${mood.key}`;
@@ -699,9 +701,14 @@ function setLayerCard(scoreId, barId, impactId, score, impactText, moodKey) {
   if (impactEl) {
     impactEl.textContent = impactText;
     impactEl.className = "layer-impact";
-    if (impactText.startsWith("+")) impactEl.classList.add("positive");
-    else if (impactText.startsWith("-")) impactEl.classList.add("negative");
-    else impactEl.classList.add("neutral");
+
+    if (impactText.startsWith("+")) {
+      impactEl.classList.add("positive");
+    } else if (impactText.startsWith("-")) {
+      impactEl.classList.add("negative");
+    } else {
+      impactEl.classList.add("neutral");
+    }
   }
 }
 
@@ -711,20 +718,57 @@ function updateLayerUI() {
   const pulseDiff = Math.abs(roundScore(currentPulseScore) - roundScore(currentMarketScore));
 
   const marketImpact = "Base";
-  const socialImpact = activeLayers.social || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentSocialScore >= currentMarketScore ? "+" : "-"}${socialDiff}`
-    : "+0";
-  const driverImpact = activeLayers.driver || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentDriverScore >= currentMarketScore ? "+" : "-"}${driverDiff}`
-    : "+0";
-  const pulseImpact = activeLayers.pulse || heroMode === HERO_MODE_COMPOSITE
-    ? `${currentPulseScore >= currentMarketScore ? "+" : "-"}${pulseDiff}`
-    : "+0";
 
-  setLayerCard("layerScoreMarket", "layerBarMarket", "layerImpactMarket", currentMarketScore, marketImpact, getMoodByScore(currentMarketScore).key);
-  setLayerCard("layerScoreSocial", "layerBarSocial", "layerImpactSocial", currentSocialScore, socialImpact, getMoodByScore(currentSocialScore).key);
-  setLayerCard("layerScoreDriver", "layerBarDriver", "layerImpactDriver", currentDriverScore, driverImpact, getMoodByScore(currentDriverScore).key);
-  setLayerCard("layerScorePulse", "layerBarPulse", "layerImpactPulse", currentPulseScore, pulseImpact, getMoodByScore(currentPulseScore).key);
+  const socialImpact =
+    activeLayers.social || heroMode === HERO_MODE_COMPOSITE
+      ? `${currentSocialScore >= currentMarketScore ? "+" : "-"}${socialDiff}`
+      : "+0";
+
+  const driverImpact =
+    activeLayers.driver || heroMode === HERO_MODE_COMPOSITE
+      ? `${currentDriverScore >= currentMarketScore ? "+" : "-"}${driverDiff}`
+      : "+0";
+
+  const pulseImpact =
+    activeLayers.pulse || heroMode === HERO_MODE_COMPOSITE
+      ? `${currentPulseScore >= currentMarketScore ? "+" : "-"}${pulseDiff}`
+      : "+0";
+
+  setLayerCard(
+    "layerScoreMarket",
+    "layerBarMarket",
+    "layerImpactMarket",
+    currentMarketScore,
+    marketImpact,
+    getMoodByScore(currentMarketScore).key
+  );
+
+  setLayerCard(
+    "layerScoreSocial",
+    "layerBarSocial",
+    "layerImpactSocial",
+    currentSocialScore,
+    socialImpact,
+    getMoodByScore(currentSocialScore).key
+  );
+
+  setLayerCard(
+    "layerScoreDriver",
+    "layerBarDriver",
+    "layerImpactDriver",
+    currentDriverScore,
+    driverImpact,
+    getMoodByScore(currentDriverScore).key
+  );
+
+  setLayerCard(
+    "layerScorePulse",
+    "layerBarPulse",
+    "layerImpactPulse",
+    currentPulseScore,
+    pulseImpact,
+    getMoodByScore(currentPulseScore).key
+  );
 
   const shell = byId("wmLayers");
   if (shell) shell.classList.toggle("disabled-layers", heroMode !== HERO_MODE_CUSTOM);
@@ -740,17 +784,129 @@ function updateLayerUI() {
   });
 }
 
+function resetHeroFaceWrapAnimation(el) {
+  if (!el) return;
+
+  el.classList.remove(
+    "anim-float",
+    "anim-blink",
+    "anim-shake",
+    "anim-tilt",
+    "anim-pulse",
+    "hero-face-pulse"
+  );
+}
+
+function setHeroOverlayImage(overlayImg, overlaySrc) {
+  if (!overlayImg) return;
+
+  overlayImg.onload = null;
+  overlayImg.onerror = null;
+
+  overlayImg.classList.add("hidden");
+  overlayImg.style.display = "none";
+  overlayImg.removeAttribute("src");
+
+  if (!overlaySrc) return;
+
+  overlayImg.onload = () => {
+    overlayImg.classList.remove("hidden");
+    overlayImg.style.display = "block";
+  };
+
+  overlayImg.onerror = () => {
+    overlayImg.onload = null;
+    overlayImg.onerror = null;
+    overlayImg.classList.add("hidden");
+    overlayImg.style.display = "none";
+    overlayImg.removeAttribute("src");
+  };
+
+  overlayImg.src = overlaySrc;
+}
+
 function updateHero(score, mood, options = {}) {
   const { pulseMode = false } = options;
   const style = getCurrentStyle();
 
+  const coreState =
+    typeof getWojakCoreState === "function"
+      ? getWojakCoreState(score, mood, style)
+      : {
+          score: roundScore(score),
+          mood,
+          moodKey: mood.key,
+          style,
+          subemotion: mood.key,
+          subtitle: "",
+          shiftLevel: "low",
+          heartbeat: {
+            speed: 1,
+            intensity: 0.5,
+            waveform: "smooth"
+          },
+          visual: {
+            base: getHeroImagePath(style, mood.key),
+            overlay: "",
+            fallback: getHeroImagePath(DEFAULT_STYLE, mood.key)
+          }
+        };
+
   const heroMood = byId("heroMood");
   const heroScoreWrap = byId("heroScoreWrap");
+
+  const heroFaceWrap = byId("heroFaceWrap");
   const heroFaceImg = byId("heroFaceImg");
+  const heroOverlayImg = byId("heroFaceOverlayImg");
+
   const emotionPointer = byId("emotionPointer");
   const emotionPointerImg = byId("emotionPointerImg");
+
   const heartbeatWrap = byId("heartbeatWrap");
   const heartbeatPath = byId("heartbeatPath");
+
+  const heroStage =
+    byId("heroStage") ||
+    qs(".hero-stage") ||
+    qs(".hero-visual") ||
+    heroFaceWrap ||
+    heroFaceImg?.parentElement;
+
+  if (heroStage) {
+    heroStage.classList.remove(
+      "wm-shift-low",
+      "wm-shift-mid",
+      "wm-shift-high",
+      "wm-shift-extreme"
+    );
+
+    heroStage.dataset.mood = coreState.moodKey;
+    heroStage.dataset.subemotion = coreState.subemotion;
+    heroStage.dataset.style = style;
+    heroStage.dataset.shift = coreState.shiftLevel;
+    heroStage.classList.add(`wm-shift-${coreState.shiftLevel}`);
+  }
+
+  if (document.body) {
+    document.body.dataset.mood = coreState.moodKey;
+    document.body.dataset.subemotion = coreState.subemotion;
+    document.body.dataset.style = style;
+    document.body.dataset.shift = coreState.shiftLevel;
+
+    if (coreState.heartbeat) {
+      document.body.style.setProperty("--heartbeat-speed", `${coreState.heartbeat.speed}s`);
+      document.body.style.setProperty("--heartbeat-intensity", String(coreState.heartbeat.intensity));
+    }
+  }
+
+  const subtitleEl =
+    typeof getCoreSubtitleById === "function"
+      ? getCoreSubtitleById()
+      : byId("heroSubtitle");
+
+  if (subtitleEl && coreState.subtitle) {
+    subtitleEl.textContent = coreState.subtitle;
+  }
 
   if (heroMood) {
     heroMood.textContent = mood.name;
@@ -766,23 +922,34 @@ function updateHero(score, mood, options = {}) {
     `;
   }
 
-  if (heroFaceImg) {
-    heroFaceImg.className = `hero-face-img ${mood.anim}`;
+  if (heroFaceWrap) {
+    resetHeroFaceWrapAnimation(heroFaceWrap);
+
+    if (mood.anim) {
+      heroFaceWrap.classList.add(mood.anim);
+    }
 
     if (pulseMode) {
-      heroFaceImg.classList.add("hero-face-pulse");
-      clearTimeout(heroFaceImg.__pulseTimer);
-      heroFaceImg.__pulseTimer = setTimeout(() => {
-        heroFaceImg.classList.remove("hero-face-pulse");
+      heroFaceWrap.classList.add("hero-face-pulse");
+
+      clearTimeout(heroFaceWrap.__pulseTimer);
+      heroFaceWrap.__pulseTimer = setTimeout(() => {
+        heroFaceWrap.classList.remove("hero-face-pulse");
       }, 700);
     }
+  }
+
+  if (heroFaceImg) {
+    heroFaceImg.className = "hero-face-img";
 
     setImage(
       heroFaceImg,
-      getHeroImagePath(style, mood.key),
-      getHeroImagePath(DEFAULT_STYLE, mood.key)
+      coreState.visual.base,
+      coreState.visual.fallback
     );
   }
+
+  setHeroOverlayImage(heroOverlayImg, coreState.visual.overlay);
 
   if (emotionPointer) {
     emotionPointer.style.left = `${clamp(roundScore(score), 0, 100)}%`;
@@ -797,100 +964,19 @@ function updateHero(score, mood, options = {}) {
   }
 
   if (heartbeatWrap && heartbeatPath) {
-    heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key}`;
-    heartbeatPath.setAttribute("d", heartbeatPathForMood(mood.key));
+    const waveform = coreState.heartbeat?.waveform || "smooth";
+
+    heartbeatWrap.className =
+      `heartbeat-wrap heartbeat-${mood.key} heartbeat-wave-${waveform}`;
+
+    heartbeatPath.setAttribute(
+      "d",
+      heartbeatPathForMood(coreState.subemotion || mood.key)
+    );
   }
 
   updateGauge(score, mood);
 }
-
-
-function updateSocialPanel(score, socialMood) {
-  const roundedScore = roundScore(score);
-
-  const interactions = Math.max(
-    1200,
-    Math.round(
-      3500 +
-      Math.abs(currentGlobalChange) * 2200 +
-      average(trendingCoinsData.map((c) => Number(c.price_change_percentage_24h_in_currency || 0))) * 180
-    )
-  );
-
-  const bullish = clamp(Math.round(roundedScore * 0.82), 0, 100);
-  const bearish = clamp(Math.round((100 - roundedScore) * 0.82), 0, 100);
-  const neutral = clamp(100 - Math.round((bullish + bearish) * 0.55), 0, 100);
-
-  if (byId("socialExpandMood")) {
-    byId("socialExpandMood").textContent = socialMood.name;
-    byId("socialExpandMood").className = `mood-${socialMood.key}`;
-  }
-
-  setText("socialExpandScore", String(roundedScore));
-  setText("socialExpandEngagement", interactions.toLocaleString("en-US"));
-
-  const bullishEl = byId("socialExpandBullish");
-  const bearishEl = byId("socialExpandBearish");
-  const neutralEl = byId("socialExpandNeutral");
-
-  if (bullishEl) {
-    bullishEl.textContent = `${bullish}%`;
-    bullishEl.className = "positive";
-  }
-
-  if (bearishEl) {
-    bearishEl.textContent = `${bearish}%`;
-    bearishEl.className = "negative";
-  }
-
-  if (neutralEl) {
-    neutralEl.textContent = `${neutral}%`;
-    neutralEl.className = "neutral";
-  }
-
-  setText("socialExpandWindow", globalTimeframe);
-}
-
-function updateSocial(socialScore) {
-  const style = getCurrentStyle();
-  const socialMood = getMoodByScore(socialScore);
-
-  const socialMoodMini = byId("socialMoodMini");
-  const socialScoreMini = byId("socialScoreMini");
-  const socialBadge = byId("socialBubble");
-  const socialIconImg = byId("socialIconImg");
-
-  if (socialMoodMini) {
-    socialMoodMini.textContent = socialMood.name;
-    socialMoodMini.className = `mood-${socialMood.key}`;
-  }
-
-  if (socialScoreMini) {
-    socialScoreMini.textContent = String(roundScore(socialScore));
-    socialScoreMini.className = `mood-${socialMood.key}`;
-  }
-
-  if (socialBadge) {
-    socialBadge.classList.remove(
-      "social-euphoria",
-      "social-content",
-      "social-optimism",
-      "social-neutral",
-      "social-doubt",
-      "social-concern",
-      "social-frustration"
-    );
-    socialBadge.classList.add(`social-${socialMood.key}`);
-  }
-
-  if (socialIconImg) {
-    socialIconImg.className = `mood-icon-img ${socialMood.anim}`;
-    setImage(
-      socialIconImg,
-      getIconImagePath(style, socialMood.key),
-      getIconImagePath(DEFAULT_STYLE, socialMood.key)
-    );
-  }
 
   updateSocialPanel(socialScore, socialMood);
   return socialMood;
