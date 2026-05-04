@@ -4361,3 +4361,173 @@ if (document.readyState === "loading") {
 } else {
   boot();
 }
+
+// ===============================
+// HERO OVERLAY + WRAPPER PATCH
+// ===============================
+
+(function () {
+  const originalUpdateHero = updateHero;
+
+  updateHero = function (score, mood, options = {}) {
+    const { pulseMode = false } = options;
+    const style = getCurrentStyle();
+    const coreState = getWojakCoreState(score, mood, style);
+
+    const heroMood = byId("heroMood");
+    const heroScoreWrap = byId("heroScoreWrap");
+
+    const heroFaceWrap =
+      byId("heroFaceWrap") ||
+      qs(".hero-face-wrap") ||
+      byId("heroFaceImg")?.parentElement;
+
+    const heroFaceImg = byId("heroFaceImg");
+    const heroOverlayImg = byId("heroFaceOverlayImg");
+
+    const emotionPointer = byId("emotionPointer");
+    const emotionPointerImg = byId("emotionPointerImg");
+    const heartbeatWrap = byId("heartbeatWrap");
+    const heartbeatPath = byId("heartbeatPath");
+
+    const heroStage =
+      byId("heroStage") ||
+      qs(".hero-stage") ||
+      qs(".hero-visual") ||
+      heroFaceWrap ||
+      heroFaceImg?.parentElement;
+
+    // ===============================
+    // STATE / DATASETS
+    // ===============================
+    if (heroStage) {
+      heroStage.classList.remove(
+        "wm-shift-low",
+        "wm-shift-mid",
+        "wm-shift-high",
+        "wm-shift-extreme"
+      );
+
+      heroStage.dataset.mood = coreState.moodKey;
+      heroStage.dataset.subemotion = coreState.subemotion;
+      heroStage.dataset.style = style;
+      heroStage.dataset.shift = coreState.shiftLevel;
+      heroStage.classList.add(`wm-shift-${coreState.shiftLevel}`);
+    }
+
+    if (document.body) {
+      document.body.dataset.mood = coreState.moodKey;
+      document.body.dataset.subemotion = coreState.subemotion;
+      document.body.dataset.style = style;
+      document.body.dataset.shift = coreState.shiftLevel;
+      document.body.style.setProperty("--heartbeat-speed", `${coreState.heartbeat.speed}s`);
+      document.body.style.setProperty("--heartbeat-intensity", String(coreState.heartbeat.intensity));
+    }
+
+    // ===============================
+    // SUBTITLE
+    // ===============================
+    const subtitleEl = getCoreSubtitleById();
+    if (subtitleEl) subtitleEl.textContent = coreState.subtitle;
+
+    // ===============================
+    // HEADER TEXT
+    // ===============================
+    if (heroMood) {
+      heroMood.textContent = mood.name;
+      heroMood.className = `hero-mood mood-${mood.key}`;
+    }
+
+    if (heroScoreWrap) {
+      heroScoreWrap.innerHTML = `
+        <span class="score-label">Score</span><span class="score-colon">:</span>
+        <span id="heroScore" class="mood-${mood.key}">${roundScore(score)}</span>
+        <span class="score-divider">/</span>
+        <span class="score-max">100</span>
+      `;
+    }
+
+    // ===============================
+    // 🔥 WRAPPER ANIMATION (FIX CLAVE)
+    // ===============================
+    if (heroFaceWrap) {
+      heroFaceWrap.className = "hero-face-wrap";
+
+      if (mood.anim) {
+        heroFaceWrap.classList.add(mood.anim);
+      }
+
+      if (pulseMode) {
+        heroFaceWrap.classList.add("hero-face-pulse");
+        clearTimeout(heroFaceWrap.__pulseTimer);
+        heroFaceWrap.__pulseTimer = setTimeout(() => {
+          heroFaceWrap.classList.remove("hero-face-pulse");
+        }, 700);
+      }
+    }
+
+    // ===============================
+    // BASE IMAGE (SIN ANIMACIÓN)
+    // ===============================
+    if (heroFaceImg) {
+      heroFaceImg.className = "hero-face-img";
+
+      setImage(
+        heroFaceImg,
+        coreState.visual.base,
+        coreState.visual.fallback
+      );
+    }
+
+    // ===============================
+    // OVERLAY (SUBEMOTION)
+    // ===============================
+    if (heroOverlayImg) {
+      heroOverlayImg.className = "hero-face-overlay hidden";
+      heroOverlayImg.style.display = "none";
+      heroOverlayImg.onerror = null;
+      heroOverlayImg.onload = null;
+      heroOverlayImg.removeAttribute("src");
+
+      if (style === "classic" && coreState.visual.overlay) {
+        heroOverlayImg.onload = () => {
+          heroOverlayImg.classList.remove("hidden");
+          heroOverlayImg.style.display = "block";
+        };
+
+        heroOverlayImg.onerror = () => {
+          heroOverlayImg.classList.add("hidden");
+          heroOverlayImg.style.display = "none";
+          heroOverlayImg.removeAttribute("src");
+        };
+
+        heroOverlayImg.src = coreState.visual.overlay;
+      }
+    }
+
+    // ===============================
+    // POINTER
+    // ===============================
+    if (emotionPointer) {
+      emotionPointer.style.left = `${clamp(roundScore(score), 0, 100)}%`;
+    }
+
+    if (emotionPointerImg) {
+      setImage(
+        emotionPointerImg,
+        getIconImagePath(style, mood.key),
+        getIconImagePath(DEFAULT_STYLE, mood.key)
+      );
+    }
+
+    // ===============================
+    // HEARTBEAT
+    // ===============================
+    if (heartbeatWrap && heartbeatPath) {
+      heartbeatWrap.className = `heartbeat-wrap heartbeat-${mood.key} heartbeat-wave-${coreState.heartbeat.waveform}`;
+      heartbeatPath.setAttribute("d", heartbeatPathForMood(coreState.subemotion || mood.key));
+    }
+
+    updateGauge(score, mood);
+  };
+})();
