@@ -4586,3 +4586,144 @@ textarea {
   text-transform: uppercase;
 }
 
+
+/* ===============================
+   HERO FACE WRAPPER + SUBEMOTION OVERLAY FIX
+   Base + overlay move together
+================================ */
+
+.hero-face-wrap {
+  position: relative;
+  z-index: 3;
+  width: min(450px, 82%);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform, opacity, filter;
+}
+
+.hero-face-img,
+.hero-face-overlay {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  transform: none !important;
+  animation: none !important;
+}
+
+.hero-face-img {
+  position: relative;
+  z-index: 3;
+}
+
+.hero-face-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+.hero-face-overlay.hidden {
+  display: none !important;
+}
+
+/* Important: old direct overlay rule reset */
+#heroFaceOverlayImg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+}
+
+/* Pulse now applies to wrapper */
+.hero-face-wrap.hero-face-pulse {
+  animation: heroPulse 0.7s ease;
+}
+
+/* Style effects should affect the whole wrapper */
+.style-classic .hero-face-wrap,
+.style-synth .hero-face-wrap,
+.style-boyak .hero-face-wrap,
+.style-minimal .hero-face-wrap {
+  transition: transform 0.28s ease, opacity 0.28s ease, filter 0.28s ease;
+}
+
+.style-minimal .hero-face-wrap {
+  filter: grayscale(0.06) brightness(1.02);
+}
+
+/* Subemotion effects now apply to wrapper, NOT img */
+body[data-subemotion*="panic"] .hero-face-wrap,
+body[data-subemotion*="fear_spike"] .hero-face-wrap {
+  animation: wmFearShake .28s infinite linear;
+  filter: drop-shadow(0 0 28px rgba(255,59,77,.42));
+}
+
+body[data-subemotion*="breakdown"] .hero-face-wrap {
+  animation: wmBreakdown 1.2s infinite ease-in-out;
+  filter: drop-shadow(0 0 26px rgba(255,108,121,.35));
+}
+
+body[data-subemotion*="pressure"] .hero-face-wrap,
+body[data-subemotion*="pressure_building"] .hero-face-wrap {
+  animation: wmPressure 1.1s infinite ease-in-out;
+}
+
+body[data-subemotion*="compression"] .hero-face-wrap {
+  animation: wmCompression 1.6s infinite ease-in-out;
+}
+
+body[data-subemotion*="building"] .hero-face-wrap {
+  animation: wmBuilding 1.4s infinite ease-in-out;
+}
+
+body[data-subemotion*="confident"] .hero-face-wrap,
+body[data-subemotion*="confidence"] .hero-face-wrap {
+  animation: wmConfident 2.1s infinite ease-in-out;
+  filter: drop-shadow(0 0 28px rgba(124,255,170,.32));
+}
+
+body[data-subemotion*="overheat"] .hero-face-wrap {
+  animation: wmOverheat .52s infinite ease-in-out;
+  filter: drop-shadow(0 0 34px rgba(77,255,136,.48));
+}
+
+body[data-subemotion*="weakening"] .hero-face-wrap,
+body[data-subemotion*="pullback"] .hero-face-wrap {
+  animation: wmWeakening 1.8s infinite ease-in-out;
+  opacity: .92;
+}
+
+/* Prevent old img animation rules from separating overlay */
+body[data-subemotion*="panic"] .hero-face-img,
+body[data-subemotion*="fear_spike"] .hero-face-img,
+body[data-subemotion*="breakdown"] .hero-face-img,
+body[data-subemotion*="pressure"] .hero-face-img,
+body[data-subemotion*="pressure_building"] .hero-face-img,
+body[data-subemotion*="compression"] .hero-face-img,
+body[data-subemotion*="building"] .hero-face-img,
+body[data-subemotion*="confident"] .hero-face-img,
+body[data-subemotion*="confidence"] .hero-face-img,
+body[data-subemotion*="overheat"] .hero-face-img,
+body[data-subemotion*="weakening"] .hero-face-img,
+body[data-subemotion*="pullback"] .hero-face-img {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Mobile size */
+@media (max-width: 560px) {
+  .hero-face-wrap {
+    width: min(220px, 80%);
+  }
+
+  .hero-face-img {
+    width: 100%;
+  }
+}
+
