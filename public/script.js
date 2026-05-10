@@ -4347,6 +4347,7 @@ async function boot() {
   setupStickyHeaderNav();
   setupSocialExpand();
   setupPulsePanel();
+  initEmotionRadar();
 
   await initMoodToken();
   await loadAll();
@@ -4531,3 +4532,233 @@ if (document.readyState === "loading") {
     updateGauge(score, mood);
   };
 })();
+
+
+// ===============================
+// INTERNET EMOTION RADAR
+// ===============================
+function analyzeEmotionRadarText(text) {
+  const raw = String(text || "").trim();
+  const lower = raw.toLowerCase();
+
+  if (!raw) {
+    return {
+      score: 50,
+      mood: getMoodByScore(50),
+      modifier: "Waiting",
+      intensity: 0,
+      momentum: "Idle",
+      interpretation: "Paste a narrative to translate its emotional temperature."
+    };
+  }
+
+  let score = 50;
+  let modifier = "Mixed Signal";
+  let momentum = "Stable";
+
+  const positiveWords = [
+    "approved", "approval", "bullish", "pump", "pumping", "breakout",
+    "ath", "all time high", "adoption", "partnership", "rate cut",
+    "etf approved", "accumulation", "strong", "recovery", "green",
+    "send it", "moon", "rally", "surge"
+  ];
+
+  const negativeWords = [
+    "delayed", "delay", "hack", "hacked", "exploit", "scam",
+    "crash", "dump", "dumping", "lawsuit", "sec", "ban",
+    "outage", "liquidation", "collapse", "bankrupt", "red",
+    "fear", "panic", "rug", "dead", "selloff"
+  ];
+
+  const sarcasmWords = [
+    "lol", "lmao", "clown", "🤡", "😂", "yeah right", "sure",
+    "again", "classic", "nothing burger", "cope"
+  ];
+
+  const hopiumWords = [
+    "moon", "send", "send it", "100x", "million", "rocket",
+    "🚀", "diamond hands", "wagmi", "supercycle"
+  ];
+
+  const exhaustionWords = [
+    "again", "tired", "exhausted", "same thing", "waiting",
+    "delayed again", "not again", "fatigue"
+  ];
+
+  const chaosWords = [
+    "war", "breaking", "emergency", "panic", "massive",
+    "urgent", "insane", "crazy", "wild"
+  ];
+
+  const positiveHits = positiveWords.filter((w) => lower.includes(w)).length;
+  const negativeHits = negativeWords.filter((w) => lower.includes(w)).length;
+  const sarcasmHits = sarcasmWords.filter((w) => lower.includes(w)).length;
+  const hopiumHits = hopiumWords.filter((w) => lower.includes(w)).length;
+  const exhaustionHits = exhaustionWords.filter((w) => lower.includes(w)).length;
+  const chaosHits = chaosWords.filter((w) => lower.includes(w)).length;
+
+  score += positiveHits * 9;
+  score -= negativeHits * 9;
+
+  if (hopiumHits >= 2) score += 12;
+  if (sarcasmHits >= 2 && negativeHits > 0) score -= 6;
+  if (chaosHits >= 2) score -= 8;
+
+  score = roundScore(score);
+  const mood = getMoodByScore(score);
+
+  const intensity = clamp(
+    Math.round(
+      Math.abs(score - 50) * 1.45 +
+      (positiveHits + negativeHits + sarcasmHits + hopiumHits + chaosHits) * 6
+    ),
+    12,
+    100
+  );
+
+  if (sarcasmHits > 0 && negativeHits > 0) modifier = "Sarcastic Disbelief";
+  else if (exhaustionHits > 0 && negativeHits > 0) modifier = "Emotional Fatigue";
+  else if (hopiumHits > 0 && score >= 60) modifier = "Hopium Spike";
+  else if (chaosHits > 0) modifier = "Chaos Pressure";
+  else if (score >= 85) modifier = "Overheated Confidence";
+  else if (score >= 70) modifier = "Strong Conviction";
+  else if (score >= 60) modifier = "Building Optimism";
+  else if (score >= 45) modifier = "Narrative Balance";
+  else if (score >= 35) modifier = "Hesitation";
+  else if (score >= 20) modifier = "Defensive Pressure";
+  else modifier = "Panic Stress";
+
+  if (intensity >= 80) momentum = "Explosive";
+  else if (intensity >= 62) momentum = "Accelerating";
+  else if (intensity >= 40) momentum = "Building";
+  else momentum = "Soft";
+
+  const interpretationMap = {
+    euphoria: "The crowd is emotionally chasing the narrative. Confidence is high, but the reaction may be overheating.",
+    content: "The crowd feels confident and constructive. The narrative has strength without looking fully irrational yet.",
+    optimism: "The crowd is leaning positive. Conviction is building, but people are still waiting for stronger confirmation.",
+    neutral: "The crowd is undecided. The narrative is being watched, but emotion has not fully committed in either direction.",
+    doubt: "The crowd is hesitant. People are questioning the narrative and waiting before fully believing it.",
+    concern: "The crowd is turning defensive. Confidence is weakening and the reaction feels more cautious than aggressive.",
+    frustration: "The crowd is emotionally stressed. The narrative feels heavy, reactive and close to panic or exhaustion."
+  };
+
+  let interpretation = interpretationMap[mood.key] || interpretationMap.neutral;
+
+  if (modifier === "Sarcastic Disbelief") {
+    interpretation = "The crowd is not reacting seriously anymore. The dominant response is sarcasm, mockery and disbelief.";
+  }
+
+  if (modifier === "Emotional Fatigue") {
+    interpretation = "The crowd feels tired of the same narrative repeating. This is less about panic and more about emotional exhaustion.";
+  }
+
+  if (modifier === "Hopium Spike") {
+    interpretation = "The crowd is emotionally leaning into hope. People are projecting upside faster than certainty is forming.";
+  }
+
+  return {
+    score,
+    mood,
+    modifier,
+    intensity,
+    momentum,
+    interpretation
+  };
+}
+
+function updateEmotionRadarUI(result) {
+  const style = typeof getCurrentStyle === "function" ? getCurrentStyle() : "classic";
+
+  const card = byId("emotionRadarResult");
+  const img = byId("radarMoodImg");
+  const label = byId("radarMoodLabel");
+  const score = byId("radarScore");
+  const fill = byId("radarMeterFill");
+  const modifier = byId("radarModifier");
+  const intensity = byId("radarIntensity");
+  const momentum = byId("radarMomentum");
+  const interpretation = byId("radarInterpretation");
+
+  if (card) card.dataset.mood = result.mood.key;
+
+  if (img) {
+    img.className = result.mood.anim || "";
+    setImage(
+      img,
+      getHeroImagePath(style, result.mood.key),
+      getHeroImagePath(DEFAULT_STYLE, result.mood.key)
+    );
+  }
+
+  if (label) {
+    label.textContent = result.mood.name;
+    label.className = `mood-${result.mood.key}`;
+  }
+
+  if (score) score.textContent = String(result.score);
+
+  if (fill) {
+    fill.style.width = `${result.score}%`;
+    fill.style.background = getMoodColor(result.mood.key);
+    fill.style.boxShadow = `0 0 18px ${getMoodColor(result.mood.key)}88`;
+  }
+
+  if (modifier) modifier.textContent = result.modifier;
+  if (intensity) intensity.textContent = `${result.intensity}%`;
+  if (momentum) momentum.textContent = result.momentum;
+  if (interpretation) interpretation.textContent = result.interpretation;
+}
+
+function translateEmotionRadar() {
+  const input = byId("emotionRadarInput");
+  const result = analyzeEmotionRadarText(input?.value || "");
+  updateEmotionRadarUI(result);
+}
+
+function clearEmotionRadar() {
+  const input = byId("emotionRadarInput");
+  if (input) input.value = "";
+  updateEmotionRadarUI(analyzeEmotionRadarText(""));
+}
+
+function initEmotionRadar() {
+  const section = byId("emotionRadarSection");
+  if (!section) return;
+
+  const translateBtn = byId("translateEmotionBtn");
+  const clearBtn = byId("clearEmotionRadarBtn");
+  const input = byId("emotionRadarInput");
+
+  if (translateBtn && !translateBtn.dataset.bound) {
+    translateBtn.dataset.bound = "1";
+    translateBtn.addEventListener("click", translateEmotionRadar);
+  }
+
+  if (clearBtn && !clearBtn.dataset.bound) {
+    clearBtn.dataset.bound = "1";
+    clearBtn.addEventListener("click", clearEmotionRadar);
+  }
+
+  if (input && !input.dataset.boundRadar) {
+    input.dataset.boundRadar = "1";
+    input.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        translateEmotionRadar();
+      }
+    });
+  }
+
+  qsa("[data-radar-example]").forEach((btn) => {
+    if (btn.dataset.boundRadarExample) return;
+    btn.dataset.boundRadarExample = "1";
+
+    btn.addEventListener("click", () => {
+      if (input) input.value = btn.dataset.radarExample || "";
+      translateEmotionRadar();
+    });
+  });
+
+  updateEmotionRadarUI(analyzeEmotionRadarText(""));
+}
