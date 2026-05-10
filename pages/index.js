@@ -598,6 +598,106 @@ export default function Home({ ogImageUrl }) {
   </div>
 </section>
 
+<section className="emotion-radar card" id="emotionRadarSection">
+  <div className="emotion-radar-head">
+    <span className="section-kicker">LIVE NARRATIVE PULSE</span>
+
+    <h2>Internet Emotion Radar</h2>
+
+    <p>
+      Paste any headline, tweet or narrative. WojakMeter translates how the
+      internet feels about it.
+    </p>
+  </div>
+
+  <div className="emotion-radar-grid">
+    <div className="emotion-radar-input-card">
+      <label htmlFor="emotionRadarInput">News, tweet or narrative</label>
+
+      <textarea
+        id="emotionRadarInput"
+        placeholder="Example: Bitcoin ETF delayed again..."
+        rows={7}
+      ></textarea>
+
+      <div className="emotion-radar-actions">
+        <button id="translateEmotionBtn" className="action-btn" type="button">
+          Translate Emotion
+        </button>
+
+        <button id="clearEmotionRadarBtn" className="ghost-btn" type="button">
+          Clear
+        </button>
+      </div>
+
+      <div className="emotion-radar-examples">
+        <button type="button" data-radar-example="Bitcoin ETF delayed again">
+          ETF delay
+        </button>
+        <button type="button" data-radar-example="Solana network outage">
+          Solana outage
+        </button>
+        <button type="button" data-radar-example="AI coins are pumping hard">
+          AI coins
+        </button>
+        <button type="button" data-radar-example="Memecoin season is back">
+          Memecoin season
+        </button>
+      </div>
+    </div>
+
+    <div className="emotion-radar-result-card" id="emotionRadarResult">
+      <div className="radar-result-top">
+        <div className="radar-face-wrap">
+          <img
+            id="radarMoodImg"
+            src="/assets/hero/classic/neutral.png"
+            alt="Narrative emotion"
+          />
+        </div>
+
+        <div>
+          <span className="radar-label">Detected Emotion</span>
+          <h3 id="radarMoodLabel" className="mood-neutral">
+            Neutral
+          </h3>
+          <div className="radar-score">
+            Score: <strong id="radarScore">50</strong>/100
+          </div>
+        </div>
+      </div>
+
+      <div className="radar-meter">
+        <div id="radarMeterFill"></div>
+      </div>
+
+      <div className="radar-output-grid">
+        <div>
+          <span>Modifier</span>
+          <strong id="radarModifier">Waiting</strong>
+        </div>
+
+        <div>
+          <span>Intensity</span>
+          <strong id="radarIntensity">0%</strong>
+        </div>
+
+        <div>
+          <span>Momentum</span>
+          <strong id="radarMomentum">Idle</strong>
+        </div>
+      </div>
+
+      <div className="radar-interpretation">
+        <span>Crowd Interpretation</span>
+        <p id="radarInterpretation">
+          Paste a narrative to translate its emotional temperature.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
             <section className="mood-token-card card" id="moodSection">
               <div className="section-head">
                 <div className="mood-section-logo-wrap">
