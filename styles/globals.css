@@ -4728,84 +4728,67 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 /* ===============================
-   INTERNET EMOTION RADAR
+   INTERNET EMOTION RADAR - FIX
 =============================== */
 
 .emotion-radar {
   position: relative;
   overflow: hidden;
-  margin-top: 28px;
-}
-
-.emotion-radar::before {
-  content: "";
-  position: absolute;
-  inset: -40%;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(77, 255, 136, 0.12), transparent 28%),
-    radial-gradient(circle at 80% 10%, rgba(255, 108, 121, 0.10), transparent 30%),
-    radial-gradient(circle at 50% 100%, rgba(166, 255, 196, 0.08), transparent 35%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.emotion-radar > * {
-  position: relative;
-  z-index: 1;
+  margin-top: 34px;
+  padding: 18px;
+  border-radius: 28px;
 }
 
 .emotion-radar-head {
   max-width: 760px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
-.section-kicker {
+.emotion-radar-head .section-kicker {
   display: inline-flex;
   margin-bottom: 8px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--green);
 }
 
 .emotion-radar-head h2 {
   margin: 0 0 8px;
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  line-height: 1;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 0.95;
 }
 
 .emotion-radar-head p {
   margin: 0;
+  max-width: 640px;
   color: var(--muted);
-  font-size: 1rem;
-  max-width: 620px;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .emotion-radar-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  grid-template-columns: 1fr 0.95fr;
   gap: 18px;
-  align-items: stretch;
 }
 
 .emotion-radar-input-card,
 .emotion-radar-result-card {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(5, 8, 15, 0.72);
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(18px);
+  min-width: 0;
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(5, 8, 15, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .emotion-radar-input-card label {
   display: block;
   margin-bottom: 10px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -4813,26 +4796,49 @@ body[data-subemotion*="pullback"] .hero-face-img {
   width: 100%;
   min-height: 170px;
   resize: vertical;
+  border-radius: 18px;
+  padding: 15px;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.26);
   border: 1px solid rgba(255, 255, 255, 0.12);
   outline: none;
-  border-radius: 18px;
-  padding: 16px;
-  color: var(--text);
-  background: rgba(0, 0, 0, 0.28);
   font: inherit;
   line-height: 1.45;
 }
 
 #emotionRadarInput:focus {
-  border-color: rgba(77, 255, 136, 0.55);
+  border-color: rgba(77, 255, 136, 0.5);
   box-shadow: 0 0 0 4px rgba(77, 255, 136, 0.08);
 }
 
 .emotion-radar-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-top: 14px;
+}
+
+#translateEmotionBtn,
+#clearEmotionRadarBtn {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 16px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#translateEmotionBtn {
+  border: 1px solid rgba(77, 255, 136, 0.28);
+}
+
+#clearEmotionRadarBtn {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .emotion-radar-examples {
@@ -4843,96 +4849,87 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 .emotion-radar-examples button {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--muted);
   border-radius: 999px;
   padding: 8px 11px;
-  font-size: 0.78rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.72rem;
   cursor: pointer;
-  transition: 0.18s ease;
 }
 
 .emotion-radar-examples button:hover {
   color: var(--text);
-  border-color: rgba(77, 255, 136, 0.35);
   background: rgba(77, 255, 136, 0.08);
+  border-color: rgba(77, 255, 136, 0.35);
 }
 
 .emotion-radar-result-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .radar-result-top {
   display: flex;
-  gap: 16px;
   align-items: center;
+  gap: 14px;
 }
 
 .radar-face-wrap {
-  width: 98px;
-  height: 98px;
-  flex: 0 0 98px;
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
   display: grid;
   place-items: center;
-  border-radius: 26px;
-  background:
-    radial-gradient(circle, rgba(77, 255, 136, 0.15), transparent 60%),
-    rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.10);
   overflow: hidden;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .radar-face-wrap img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 18px rgba(77, 255, 136, 0.18));
 }
 
 .radar-label {
   display: block;
+  margin-bottom: 4px;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 #radarMoodLabel {
-  margin: 4px 0 6px;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  line-height: 1;
+  margin: 0 0 4px;
+  font-size: clamp(2rem, 5vw, 2.7rem);
+  line-height: 0.95;
 }
 
 .radar-score {
   color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.radar-score strong {
-  color: var(--text);
+  font-size: 0.9rem;
 }
 
 .radar-meter {
-  height: 12px;
   width: 100%;
-  overflow: hidden;
+  height: 12px;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      #ff3b4d 0%,
-      #ff6c79 22%,
-      #ff9da6 40%,
-      #cfd7e3 50%,
-      #a6ffc4 64%,
-      #7cffaa 78%,
-      #4dff88 100%
-    );
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    #ff3b4d 0%,
+    #ff6c79 22%,
+    #ff9da6 40%,
+    #cfd7e3 50%,
+    #a6ffc4 64%,
+    #7cffaa 78%,
+    #4dff88 100%
+  );
 }
 
 #radarMeterFill {
@@ -4940,18 +4937,17 @@ body[data-subemotion*="pullback"] .hero-face-img {
   width: 50%;
   border-radius: inherit;
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.55);
-  transform-origin: left center;
 }
 
 .radar-output-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.radar-output-grid > div {
-  min-height: 74px;
+.radar-output-grid > div,
+.radar-interpretation {
+  min-width: 0;
   border-radius: 18px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.045);
@@ -4963,66 +4959,90 @@ body[data-subemotion*="pullback"] .hero-face-img {
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .radar-output-grid strong {
+  display: block;
   color: var(--text);
-  font-size: 0.98rem;
+  font-size: 0.9rem;
   line-height: 1.2;
-}
-
-.radar-interpretation {
-  flex: 1;
-  border-radius: 20px;
-  padding: 14px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: normal;
 }
 
 .radar-interpretation p {
   margin: 0;
   color: var(--text);
   line-height: 1.5;
+  font-size: 0.92rem;
 }
 
-.emotion-radar-result-card[data-mood="frustration"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(255, 59, 77, 0.18), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="concern"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(255, 108, 121, 0.18), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="doubt"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(255, 157, 166, 0.18), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="neutral"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(207, 215, 227, 0.16), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="optimism"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(166, 255, 196, 0.18), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="content"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(124, 255, 170, 0.18), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-.emotion-radar-result-card[data-mood="euphoria"] .radar-face-wrap {
-  background: radial-gradient(circle, rgba(77, 255, 136, 0.22), transparent 62%), rgba(255, 255, 255, 0.04);
-}
-
-@media (max-width: 860px) {
+/* Tablet / mobile fix */
+@media (max-width: 1100px) {
   .emotion-radar-grid {
     grid-template-columns: 1fr;
   }
 
+  .emotion-radar {
+    padding: 16px;
+  }
+
+  #emotionRadarInput {
+    min-height: 150px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 560px) {
+  .emotion-radar {
+    padding: 14px;
+    border-radius: 24px;
+  }
+
+  .emotion-radar-head h2 {
+    font-size: 2rem;
+  }
+
+  .emotion-radar-head p {
+    font-size: 0.88rem;
+  }
+
+  .emotion-radar-input-card,
+  .emotion-radar-result-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .radar-result-top {
+    align-items: flex-start;
+  }
+
+  .radar-face-wrap {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+    border-radius: 20px;
+  }
+
+  #radarMoodLabel {
+    font-size: 2rem;
+  }
+
   .radar-output-grid {
     grid-template-columns: 1fr;
+  }
+
+  .emotion-radar-actions {
+    display: grid;
+    grid-template-columns: 1fr 0.45fr;
+  }
+
+  #translateEmotionBtn,
+  #clearEmotionRadarBtn {
+    width: 100%;
+    padding: 0 12px;
   }
 }
