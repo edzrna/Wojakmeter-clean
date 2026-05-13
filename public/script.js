@@ -4710,10 +4710,61 @@ function updateEmotionRadarUI(result) {
   if (interpretation) interpretation.textContent = result.interpretation;
 }
 
-function translateEmotionRadar() {
+async function translateEmotionRadar() {
   const input = byId("emotionRadarInput");
-  const result = analyzeEmotionRadarText(input?.value || "");
-  updateEmotionRadarUI(result);
+  const btn = byId("translateEmotionBtn");
+
+  const text = String(input?.value || "").trim();
+
+  if (!text) {
+    updateEmotionRadarUI(analyzeEmotionRadarText(""));
+    return;
+  }
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Analyzing...";
+    }
+
+    const response = await fetch("/api/emotion-radar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text })
+    });
+
+    const data = await response.json();
+
+    if (!data?.ok) {
+      throw new Error(data?.error || "Emotion Radar failed");
+    }
+
+    const result = {
+      score: data.score,
+      mood: getMoodByScore(data.score),
+      modifier: data.modifier,
+      intensity: data.intensity,
+      momentum: data.momentum,
+      interpretation: data.interpretation
+    };
+
+    updateEmotionRadarUI(result);
+  } catch (error) {
+    console.error("Emotion Radar error:", error);
+
+    const fallback = analyzeEmotionRadarText(text);
+    fallback.interpretation =
+      "Real-time sources are unavailable right now, so this reading is based on the local emotion engine.";
+
+    updateEmotionRadarUI(fallback);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Translate Emotion";
+    }
+  }
 }
 
 function clearEmotionRadar() {
