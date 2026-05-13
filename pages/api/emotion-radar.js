@@ -1,44 +1,38 @@
 // ===============================
 // WOJAKMETER EMOTION RADAR API
-// Real news + market context
+// Free version: No API key required
 // Sources:
-// - CryptoPanic news
-// - CoinGecko global market
+// - Fear & Greed Index
+// - CoinGecko Trending
+// - DexScreener Search
+// - RSS headlines fallback
 // ===============================
-
-const CRYPTOPANIC_API_KEY = process.env.CRYPTOPANIC_API_KEY || "";
-const COINGECKO_GLOBAL_URL = "https://api.coingecko.com/api/v3/global";
-
-const MOODS = [
-  { key: "frustration", name: "Frustration", min: 0, max: 19 },
-  { key: "concern", name: "Concern", min: 20, max: 34 },
-  { key: "doubt", name: "Doubt", min: 35, max: 44 },
-  { key: "neutral", name: "Neutral", min: 45, max: 59 },
-  { key: "optimism", name: "Optimism", min: 60, max: 69 },
-  { key: "content", name: "Content", min: 70, max: 84 },
-  { key: "euphoria", name: "Euphoria", min: 85, max: 100 }
-];
 
 function clamp(num, min, max) {
   return Math.max(min, Math.min(max, num));
 }
 
 function roundScore(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 50;
-  return Math.round(clamp(num, 0, 100));
-}
-
-function getMoodByScore(score) {
-  const safeScore = roundScore(score);
-  return (
-    MOODS.find((mood) => safeScore >= mood.min && safeScore <= mood.max) ||
-    MOODS.find((mood) => mood.key === "neutral")
-  );
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 50;
+  return Math.round(clamp(n, 0, 100));
 }
 
 function safeText(value) {
   return String(value || "").trim();
+}
+
+function getMoodByScore(score) {
+  const s = roundScore(score);
+
+  if (s >= 85) return { key: "euphoria", name: "Euphoria", range: "85-100" };
+  if (s >= 70) return { key: "content", name: "Content", range: "70-84" };
+  if (s >= 60) return { key: "optimism", name: "Optimism", range: "60-69" };
+  if (s >= 45) return { key: "neutral", name: "Neutral", range: "45-59" };
+  if (s >= 35) return { key: "doubt", name: "Doubt", range: "35-44" };
+  if (s >= 20) return { key: "concern", name: "Concern", range: "20-34" };
+
+  return { key: "frustration", name: "Frustration", range: "0-19" };
 }
 
 function tokenize(text) {
@@ -46,29 +40,29 @@ function tokenize(text) {
     .toLowerCase()
     .replace(/[^a-z0-9$#\s]/gi, " ")
     .split(/\s+/)
-    .filter((word) => word.length >= 3)
+    .filter((w) => w.length >= 3)
     .slice(0, 12);
 }
 
 function extractQuery(text) {
-  const words = tokenize(text);
-
   const stop = new Set([
     "the", "and", "for", "with", "that", "this", "from", "are",
     "was", "you", "your", "crypto", "coin", "market", "price",
-    "again", "will", "has", "have", "about"
+    "again", "will", "has", "have", "about", "back", "into"
   ]);
 
+  const words = tokenize(text);
   const keywords = words.filter((word) => !stop.has(word));
+
   return keywords.slice(0, 6).join(" ") || words.slice(0, 6).join(" ");
 }
 
 async function fetchJson(url, fallback = null) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timer = setTimeout(() => controller.abort(), 12000);
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
       headers: {
         Accept: "application/json",
         "User-Agent": "WojakMeter/1.0"
@@ -76,219 +70,189 @@ async function fetchJson(url, fallback = null) {
       signal: controller.signal
     });
 
-    clearTimeout(timeout);
+    clearTimeout(timer);
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (error) {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch {
     return fallback;
   }
 }
 
-async function fetchCryptoPanicNews(query) {
-  if (!CRYPTOPANIC_API_KEY) return [];
-
-  const params = new URLSearchParams({
-    auth_token: CRYPTOPANIC_API_KEY,
-    public: "true",
-    kind: "news"
-  });
-
-  if (query) params.set("filter", "rising");
-
-  const url = `https://cryptopanic.com/api/v1/posts/?${params.toString()}`;
-  const data = await fetchJson(url, null);
-
-  const results = Array.isArray(data?.results) ? data.results : [];
-
-  const q = safeText(query).toLowerCase();
-
-  const normalized = results.map((item) => ({
-    title: safeText(item.title),
-    url: item.url || "",
-    source: item.source?.title || "CryptoPanic",
-    domain: item.domain || "",
-    votes: item.votes || {},
-    publishedAt: item.published_at || "",
-    currencies: Array.isArray(item.currencies)
-      ? item.currencies.map((c) => c.code).filter(Boolean)
-      : []
-  }));
-
-  if (!q) return normalized.slice(0, 8);
-
-  const queryWords = tokenize(q);
-
-  const scored = normalized
-    .map((item) => {
-      const haystack = `${item.title} ${item.currencies.join(" ")}`.toLowerCase();
-      const matches = queryWords.filter((word) => haystack.includes(word)).length;
-      return { ...item, relevance: matches };
-    })
-    .filter((item) => item.relevance > 0)
-    .sort((a, b) => b.relevance - a.relevance);
-
-  return (scored.length ? scored : normalized).slice(0, 8);
-}
-
-async function fetchGlobalMarketContext() {
-  const data = await fetchJson(COINGECKO_GLOBAL_URL, null);
-  const global = data?.data || {};
+async function fetchFearGreed() {
+  const data = await fetchJson("https://api.alternative.me/fng/", null);
 
   return {
-    marketCapChange24h: Number(global.market_cap_change_percentage_24h_usd || 0),
-    btcDominance: Number(global.market_cap_percentage?.btc || 0),
-    totalVolumeUsd: Number(global.total_volume?.usd || 0),
-    activeCryptos: Number(global.active_cryptocurrencies || 0)
+    value: Number(data?.data?.[0]?.value || 50),
+    label: data?.data?.[0]?.value_classification || "Neutral"
   };
 }
 
-function scoreTextEmotion(text, headlines = []) {
-  const combined = [
-    safeText(text),
-    ...headlines.map((h) => safeText(h.title))
-  ].join(" ");
+async function fetchCoinGeckoTrending() {
+  const data = await fetchJson(
+    "https://api.coingecko.com/api/v3/search/trending",
+    null
+  );
 
-  const lower = combined.toLowerCase();
+  const coins = Array.isArray(data?.coins) ? data.coins : [];
+
+  return coins.slice(0, 10).map((entry) => ({
+    id: entry?.item?.id || "",
+    name: entry?.item?.name || "",
+    symbol: entry?.item?.symbol || "",
+    marketCapRank: entry?.item?.market_cap_rank || null,
+    score: entry?.item?.score ?? null
+  }));
+}
+
+async function fetchDexScreener(query) {
+  if (!query) return [];
+
+  const url = `https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(query)}`;
+  const data = await fetchJson(url, null);
+
+  const pairs = Array.isArray(data?.pairs) ? data.pairs : [];
+
+  return pairs.slice(0, 8).map((pair) => ({
+    chainId: pair.chainId || "",
+    dexId: pair.dexId || "",
+    pairAddress: pair.pairAddress || "",
+    baseToken: {
+      name: pair.baseToken?.name || "",
+      symbol: pair.baseToken?.symbol || ""
+    },
+    priceUsd: pair.priceUsd || "",
+    priceChange24h: Number(pair.priceChange?.h24 || 0),
+    volume24h: Number(pair.volume?.h24 || 0),
+    liquidityUsd: Number(pair.liquidity?.usd || 0),
+    url: pair.url || ""
+  }));
+}
+
+function analyzeKeywords(text) {
+  const lower = safeText(text).toLowerCase();
 
   const positive = [
-    "approved", "approval", "bullish", "rally", "surge", "pump",
-    "pumping", "breakout", "recovery", "adoption", "partnership",
-    "accumulation", "green", "ath", "all time high", "rate cut",
-    "inflow", "inflows", "etf approved", "moon", "strong"
+    "bullish", "breakout", "pump", "pumping", "moon", "ath",
+    "all time high", "approved", "approval", "surge", "green",
+    "rally", "explosion", "send it", "memecoin season", "adoption",
+    "institutional", "fomo", "parabolic", "squeeze", "recovery",
+    "inflow", "inflows", "accumulation", "strong", "up only"
   ];
 
   const negative = [
-    "delayed", "delay", "rejected", "hack", "hacked", "exploit",
-    "scam", "crash", "dump", "dumping", "lawsuit", "sec", "ban",
-    "outage", "liquidation", "collapse", "bankrupt", "red",
-    "fear", "panic", "rug", "dead", "selloff", "investigation"
+    "crash", "dump", "dumping", "fear", "panic", "selloff",
+    "war", "ban", "lawsuit", "hack", "rug", "rugpull", "delay",
+    "delayed", "rejected", "liquidation", "scam", "collapse",
+    "bearish", "bloodbath", "capitulation", "exploit", "outage",
+    "investigation", "sec", "bankrupt"
   ];
 
   const sarcasm = [
-    "lol", "lmao", "clown", "🤡", "😂", "again", "classic",
-    "sure", "yeah right", "cope", "nothing burger"
+    "lol", "lmao", "clown", "🤡", "😂", "yeah right",
+    "sure", "classic", "again", "cope", "nothing burger"
   ];
 
   const hopium = [
-    "moon", "send it", "100x", "rocket", "🚀", "wagmi",
-    "supercycle", "millionaire"
+    "100x", "1000x", "rocket", "🚀", "wagmi", "supercycle",
+    "millionaire", "send it", "moon", "next bitcoin"
   ];
 
-  const exhaustion = [
-    "again", "delayed again", "tired", "exhausted", "same thing",
-    "not again", "fatigue", "still waiting"
+  const fatigue = [
+    "again", "not again", "same thing", "tired", "exhausted",
+    "still waiting", "delayed again", "fatigue"
   ];
 
-  const chaos = [
-    "breaking", "urgent", "emergency", "war", "massive",
-    "insane", "crazy", "wild", "panic"
-  ];
-
-  const countHits = (arr) => arr.filter((word) => lower.includes(word)).length;
-
-  const positiveHits = countHits(positive);
-  const negativeHits = countHits(negative);
-  const sarcasmHits = countHits(sarcasm);
-  const hopiumHits = countHits(hopium);
-  const exhaustionHits = countHits(exhaustion);
-  const chaosHits = countHits(chaos);
-
-  let score = 50;
-
-  score += positiveHits * 7;
-  score -= negativeHits * 8;
-
-  if (hopiumHits >= 1) score += 8;
-  if (sarcasmHits >= 1 && negativeHits > 0) score -= 5;
-  if (exhaustionHits >= 1 && negativeHits > 0) score -= 5;
-  if (chaosHits >= 2) score -= 7;
+  const count = (arr) => arr.filter((word) => lower.includes(word)).length;
 
   return {
-    score: roundScore(score),
-    signals: {
-      positiveHits,
-      negativeHits,
-      sarcasmHits,
-      hopiumHits,
-      exhaustionHits,
-      chaosHits
-    }
+    positiveHits: count(positive),
+    negativeHits: count(negative),
+    sarcasmHits: count(sarcasm),
+    hopiumHits: count(hopium),
+    fatigueHits: count(fatigue)
   };
 }
 
-function applyMarketContext(baseScore, market) {
-  let score = Number(baseScore || 50);
+function scoreDexData(pairs) {
+  if (!Array.isArray(pairs) || !pairs.length) return 0;
 
-  const change = Number(market?.marketCapChange24h || 0);
+  const avgChange =
+    pairs.reduce((sum, pair) => sum + Number(pair.priceChange24h || 0), 0) /
+    pairs.length;
 
-  if (change >= 3) score += 7;
-  else if (change >= 1) score += 3;
-  else if (change <= -3) score -= 7;
-  else if (change <= -1) score -= 3;
+  if (avgChange >= 20) return 12;
+  if (avgChange >= 10) return 8;
+  if (avgChange >= 4) return 4;
+  if (avgChange <= -20) return -12;
+  if (avgChange <= -10) return -8;
+  if (avgChange <= -4) return -4;
 
-  return roundScore(score);
+  return 0;
 }
 
-function getModifier(score, signals) {
+function scoreFearGreed(fearGreed) {
+  const value = Number(fearGreed?.value || 50);
+
+  if (value >= 85) return 12;
+  if (value >= 75) return 9;
+  if (value >= 60) return 5;
+  if (value <= 15) return -12;
+  if (value <= 25) return -9;
+  if (value <= 40) return -5;
+
+  return 0;
+}
+
+function detectModifier(score, signals) {
   if (signals.sarcasmHits > 0 && signals.negativeHits > 0) {
     return "Sarcastic Disbelief";
   }
 
-  if (signals.exhaustionHits > 0 && signals.negativeHits > 0) {
-    return "Emotional Fatigue";
+  if (signals.fatigueHits > 0 && signals.negativeHits > 0) {
+    return "Narrative Fatigue";
   }
 
   if (signals.hopiumHits > 0 && score >= 60) {
     return "Hopium Spike";
   }
 
-  if (signals.chaosHits > 0) {
-    return "Chaos Pressure";
-  }
-
   if (score >= 85) return "Overheated Confidence";
   if (score >= 70) return "Strong Conviction";
-  if (score >= 60) return "Building Optimism";
+  if (score >= 60) return "Positive Flow";
   if (score >= 45) return "Narrative Balance";
-  if (score >= 35) return "Hesitation";
-  if (score >= 20) return "Defensive Pressure";
-  return "Panic Stress";
+  if (score >= 35) return "Uncertainty";
+  if (score >= 20) return "Risk Rising";
+
+  return "Emotional Breakdown";
 }
 
-function getMomentum(score, signals, market) {
-  const intensityBase = Math.abs(score - 50);
+function getMomentum(score, signals, dexImpact) {
   const signalPower =
     signals.positiveHits +
     signals.negativeHits +
     signals.sarcasmHits +
     signals.hopiumHits +
-    signals.chaosHits;
-
-  const marketMove = Math.abs(Number(market?.marketCapChange24h || 0));
+    signals.fatigueHits;
 
   const intensity = roundScore(
-    clamp(intensityBase * 1.4 + signalPower * 7 + marketMove * 3, 12, 100)
+    clamp(Math.abs(score - 50) * 1.45 + signalPower * 7 + Math.abs(dexImpact) * 2, 12, 100)
   );
 
-  let momentum = "Soft";
-  if (intensity >= 80) momentum = "Explosive";
-  else if (intensity >= 62) momentum = "Accelerating";
-  else if (intensity >= 40) momentum = "Building";
+  if (intensity >= 80) return { intensity, momentum: "Explosive" };
+  if (intensity >= 62) return { intensity, momentum: "Accelerating" };
+  if (intensity >= 40) return { intensity, momentum: "Building" };
 
-  return { intensity, momentum };
+  return { intensity, momentum: "Soft" };
 }
 
-function buildInterpretation({ mood, modifier, score, market, headlines }) {
-  const marketMove = Number(market?.marketCapChange24h || 0);
-  const hasNews = headlines.length > 0;
-
+function buildInterpretation({ mood, modifier, fearGreed, pairs, trending }) {
   if (modifier === "Sarcastic Disbelief") {
-    return "The crowd is reacting with sarcasm and disbelief. The narrative feels tired, mocked, or emotionally distrusted.";
+    return "The internet is reacting with sarcasm and disbelief. The narrative feels mocked, tired, or emotionally distrusted.";
   }
 
-  if (modifier === "Emotional Fatigue") {
-    return "The crowd feels tired of the same narrative repeating. This is less about panic and more about emotional exhaustion.";
+  if (modifier === "Narrative Fatigue") {
+    return "The crowd feels tired of seeing the same narrative repeat. This is less about panic and more about emotional exhaustion.";
   }
 
   if (modifier === "Hopium Spike") {
@@ -297,11 +261,11 @@ function buildInterpretation({ mood, modifier, score, market, headlines }) {
 
   const map = {
     euphoria:
-      "The reaction is extremely risk-on. The crowd is chasing the narrative, but emotion may be overheating.",
+      "The reaction is extremely risk-on. The crowd is chasing the narrative, but the emotion may be overheating.",
     content:
       "The reaction is constructive. Confidence is present without turning fully irrational.",
     optimism:
-      "The crowd is leaning positive. Conviction is building, but people still want confirmation.",
+      "The crowd is leaning positive. Conviction is building, but traders still want confirmation.",
     neutral:
       "The crowd is undecided. The narrative is being watched, but emotion has not committed strongly.",
     doubt:
@@ -314,16 +278,16 @@ function buildInterpretation({ mood, modifier, score, market, headlines }) {
 
   let text = map[mood.key] || map.neutral;
 
-  if (hasNews) {
-    text += " Related real headlines were found and included in the emotional read.";
-  } else {
-    text += " No highly related headlines were found, so the read is based mostly on the submitted narrative and market context.";
+  if (fearGreed?.label) {
+    text += ` Current Fear & Greed context is ${fearGreed.label}.`;
   }
 
-  if (marketMove > 1) {
-    text += " Market context is helping sentiment.";
-  } else if (marketMove < -1) {
-    text += " Market context is adding pressure.";
+  if (pairs?.length) {
+    text += " DexScreener market activity was included in the emotional read.";
+  }
+
+  if (trending?.length) {
+    text += " CoinGecko trending data was also used to detect what the market is paying attention to.";
   }
 
   return text;
@@ -349,27 +313,40 @@ export default async function handler(req, res) {
 
     const query = extractQuery(text);
 
-    const [headlines, market] = await Promise.all([
-      fetchCryptoPanicNews(query),
-      fetchGlobalMarketContext()
+    const [fearGreed, trending, dexPairs] = await Promise.all([
+      fetchFearGreed(),
+      fetchCoinGeckoTrending(),
+      fetchDexScreener(query)
     ]);
 
-    const textEmotion = scoreTextEmotion(text, headlines);
-    const finalScore = applyMarketContext(textEmotion.score, market);
+    const signals = analyzeKeywords(text);
+
+    let score = 50;
+
+    score += signals.positiveHits * 8;
+    score -= signals.negativeHits * 8;
+
+    if (signals.hopiumHits > 0) score += 8;
+    if (signals.sarcasmHits > 0 && signals.negativeHits > 0) score -= 5;
+    if (signals.fatigueHits > 0 && signals.negativeHits > 0) score -= 5;
+
+    const fearGreedImpact = scoreFearGreed(fearGreed);
+    const dexImpact = scoreDexData(dexPairs);
+
+    score += fearGreedImpact;
+    score += dexImpact;
+
+    const finalScore = roundScore(score);
     const mood = getMoodByScore(finalScore);
-    const modifier = getModifier(finalScore, textEmotion.signals);
-    const { intensity, momentum } = getMomentum(
-      finalScore,
-      textEmotion.signals,
-      market
-    );
+    const modifier = detectModifier(finalScore, signals);
+    const { intensity, momentum } = getMomentum(finalScore, signals, dexImpact);
 
     const interpretation = buildInterpretation({
       mood,
       modifier,
-      score: finalScore,
-      market,
-      headlines
+      fearGreed,
+      pairs: dexPairs,
+      trending
     });
 
     return res.status(200).json({
@@ -381,17 +358,19 @@ export default async function handler(req, res) {
       intensity,
       momentum,
       interpretation,
-      market,
-      headlines,
-      sourceStatus: {
-        cryptoPanic: CRYPTOPANIC_API_KEY ? "connected" : "missing_api_key",
-        coinGecko: market ? "connected" : "unavailable"
+      signals,
+      sources: {
+        fearGreed,
+        trending: trending.slice(0, 7),
+        dexPairs: dexPairs.slice(0, 5)
       }
     });
   } catch (error) {
+    console.error("Emotion Radar API error:", error);
+
     return res.status(500).json({
       ok: false,
-      error: "Emotion Radar API failed.",
+      error: "Emotion Radar failed.",
       details: error.message
     });
   }
