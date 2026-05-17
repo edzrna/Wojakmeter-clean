@@ -5214,88 +5214,102 @@ body[data-subemotion*="pullback"] .hero-face-img {
 .exchange-card{
   position:relative;
   overflow:hidden;
+  padding:18px;
 }
 
 .exchange-card::before{
   content:"";
   position:absolute;
   inset:0;
-  background:
-    radial-gradient(circle at top right,
-    rgba(77,255,136,.06),
-    transparent 38%);
+  background:radial-gradient(circle at top right, rgba(77,255,136,.07), transparent 42%);
   pointer-events:none;
 }
 
 .exchange-card-head{
+  position:relative;
+  z-index:1;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:14px;
-  margin-bottom:18px;
+  margin-bottom:14px;
 }
 
 .exchange-card-head h3{
   margin:4px 0 0;
-  font-size:1.05rem;
+  font-size:1rem;
   font-weight:900;
-  letter-spacing:-0.03em;
+  letter-spacing:-.03em;
+}
+
+.exchange-card-head .muted{
+  max-width:180px;
+  text-align:right;
+  white-space:normal;
+  line-height:1.25;
 }
 
 .exchange-list{
+  position:relative;
+  z-index:1;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:9px;
+  max-height:560px;
+  overflow:auto;
+  padding-right:4px;
+}
+
+.exchange-list::-webkit-scrollbar{
+  width:6px;
+}
+
+.exchange-list::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.12);
+  border-radius:999px;
 }
 
 .exchange-loading{
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:140px;
+  min-height:130px;
   border-radius:18px;
   border:1px dashed rgba(255,255,255,.08);
   color:rgba(223,231,255,.42);
-  font-size:.82rem;
-  font-weight:700;
+  font-size:.78rem;
+  font-weight:800;
 }
 
 .exchange-item{
-  display:flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
-  justify-content:space-between;
   gap:12px;
-  padding:12px;
-  border-radius:18px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(11,22,40,.92),
-      rgba(7,14,28,.95)
-    );
+  padding:11px;
+  border-radius:17px;
+  background:linear-gradient(180deg, rgba(11,22,40,.94), rgba(6,13,26,.96));
   border:1px solid rgba(255,255,255,.06);
   transition:.18s ease;
 }
 
 .exchange-item:hover{
   transform:translateY(-2px);
-  border-color:rgba(77,255,136,.22);
-  box-shadow:
-    0 8px 30px rgba(0,0,0,.24),
-    0 0 20px rgba(77,255,136,.06);
+  border-color:rgba(77,255,136,.24);
+  box-shadow:0 8px 30px rgba(0,0,0,.24), 0 0 20px rgba(77,255,136,.06);
 }
 
 .exchange-left{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:11px;
   min-width:0;
 }
 
 .exchange-logo{
-  width:42px;
-  height:42px;
-  border-radius:12px;
+  width:40px;
+  height:40px;
+  border-radius:13px;
   object-fit:cover;
   background:#0f1728;
   border:1px solid rgba(255,255,255,.08);
@@ -5307,40 +5321,48 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 .exchange-name{
-  font-size:.86rem;
+  font-size:.82rem;
   font-weight:900;
   color:#f4f7ff;
-  line-height:1.1;
+  line-height:1.12;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:210px;
 }
 
 .exchange-pair{
   margin-top:4px;
-  font-size:.72rem;
-  color:rgba(223,231,255,.54);
-  font-weight:700;
+  font-size:.68rem;
+  color:rgba(223,231,255,.55);
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .exchange-meta{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:7px;
   flex-wrap:wrap;
   margin-top:6px;
 }
 
 .exchange-volume{
-  font-size:.7rem;
+  font-size:.66rem;
   color:rgba(223,231,255,.48);
-  font-weight:700;
+  font-weight:800;
 }
 
 .exchange-trust{
-  font-size:.68rem;
-  font-weight:800;
-  padding:4px 8px;
+  font-size:.62rem;
+  font-weight:900;
+  padding:3px 7px;
   border-radius:999px;
-  background:rgba(77,255,136,.08);
+  background:rgba(77,255,136,.09);
   color:#7cffaa;
+  white-space:nowrap;
 }
 
 .exchange-right{
@@ -5353,12 +5375,12 @@ body[data-subemotion*="pullback"] .hero-face-img {
 .exchange-mood{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:7px;
 }
 
 .exchange-mood img{
-  width:28px;
-  height:28px;
+  width:24px;
+  height:24px;
   object-fit:contain;
 }
 
@@ -5370,32 +5392,29 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 .exchange-mood-label strong{
-  font-size:.74rem;
+  font-size:.68rem;
   font-weight:900;
+  white-space:nowrap;
 }
 
 .exchange-score{
-  font-size:.64rem;
-  color:rgba(223,231,255,.44);
+  font-size:.6rem;
+  color:rgba(223,231,255,.42);
   margin-top:4px;
-  font-weight:700;
+  font-weight:800;
 }
 
 .exchange-trade-btn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:9px 12px;
+  min-width:52px;
+  padding:8px 10px;
   border-radius:12px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(77,255,136,.18),
-      rgba(77,255,136,.08)
-    );
+  background:linear-gradient(180deg, rgba(77,255,136,.18), rgba(77,255,136,.08));
   border:1px solid rgba(77,255,136,.22);
   color:#a6ffc4;
-  font-size:.72rem;
+  font-size:.68rem;
   font-weight:900;
   text-decoration:none;
   transition:.18s ease;
@@ -5403,56 +5422,88 @@ body[data-subemotion*="pullback"] .hero-face-img {
 
 .exchange-trade-btn:hover{
   transform:translateY(-1px);
-  border-color:rgba(77,255,136,.4);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(77,255,136,.24),
-      rgba(77,255,136,.12)
-    );
+  border-color:rgba(77,255,136,.42);
+  background:linear-gradient(180deg, rgba(77,255,136,.25), rgba(77,255,136,.12));
+}
+
+/* mood borders */
+.exchange-item[data-mood="frustration"]{
+  border-color:rgba(255,59,77,.25);
+  box-shadow:0 0 18px rgba(255,59,77,.08);
+}
+
+.exchange-item[data-mood="concern"]{
+  border-color:rgba(255,108,121,.2);
+}
+
+.exchange-item[data-mood="doubt"]{
+  border-color:rgba(255,157,166,.18);
+}
+
+.exchange-item[data-mood="neutral"]{
+  border-color:rgba(207,215,227,.1);
+}
+
+.exchange-item[data-mood="optimism"]{
+  border-color:rgba(166,255,196,.2);
+}
+
+.exchange-item[data-mood="content"]{
+  border-color:rgba(124,255,170,.22);
+}
+
+.exchange-item[data-mood="euphoria"]{
+  border-color:rgba(77,255,136,.26);
+  box-shadow:0 0 20px rgba(77,255,136,.08);
 }
 
 @media (max-width:980px){
-
   .market-exchange-layout{
     grid-template-columns:1fr;
   }
 
+  .exchange-list{
+    max-height:520px;
+  }
 }
 
 @media (max-width:640px){
-
-  .exchange-item{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-
-  .exchange-right{
-    width:100%;
-    justify-content:space-between;
+  .exchange-card{
+    padding:15px;
   }
 
   .exchange-card-head{
     flex-direction:column;
     align-items:flex-start;
+    gap:6px;
   }
 
-}
+  .exchange-card-head .muted{
+    max-width:100%;
+    text-align:left;
+  }
 
-.exchange-item[data-mood="euphoria"]{
-  border-color:rgba(77,255,136,.22);
-  box-shadow:0 0 20px rgba(77,255,136,.08);
-}
+  .exchange-item{
+    grid-template-columns:1fr;
+    align-items:flex-start;
+  }
 
-.exchange-item[data-mood="optimism"]{
-  border-color:rgba(166,255,196,.18);
-}
+  .exchange-name{
+    max-width:220px;
+  }
 
-.exchange-item[data-mood="concern"]{
-  border-color:rgba(255,108,121,.18);
-}
+  .exchange-right{
+    width:100%;
+    justify-content:space-between;
+    padding-top:4px;
+  }
 
-.exchange-item[data-mood="frustration"]{
-  border-color:rgba(255,59,77,.22);
-  box-shadow:0 0 18px rgba(255,59,77,.08);
+  .exchange-mood img{
+    width:22px;
+    height:22px;
+  }
+
+  .exchange-trade-btn{
+    min-width:58px;
+  }
 }
