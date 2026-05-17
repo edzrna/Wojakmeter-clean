@@ -5046,3 +5046,156 @@ body[data-subemotion*="pullback"] .hero-face-img {
     padding: 0 12px;
   }
 }
+
+/* ===============================
+   MARKET SECTION CONTROLS + CARDS
+================================ */
+
+.market-section-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.market-section-tools .muted {
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.market-control-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    linear-gradient(180deg, rgba(16, 30, 52, 0.96), rgba(8, 16, 30, 0.96));
+  border: 1px solid rgba(166, 255, 196, 0.18);
+  color: #eaf2ff;
+  padding: 10px 36px 10px 13px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  outline: none;
+  min-width: 135px;
+  cursor: pointer;
+  box-shadow: inset 0 0 18px rgba(77, 255, 136, 0.04);
+}
+
+.market-section-tools {
+  position: relative;
+}
+
+.market-control-select:hover,
+.market-control-select:focus {
+  border-color: rgba(77, 255, 136, 0.5);
+  box-shadow:
+    0 0 0 3px rgba(77, 255, 136, 0.08),
+    inset 0 0 18px rgba(77, 255, 136, 0.05);
+}
+
+.coin-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.coin-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.coin-mood-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.coin-score {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: rgba(223, 231, 255, 0.45);
+  white-space: nowrap;
+}
+
+.coin-card[data-mood="frustration"] {
+  border-color: rgba(255, 59, 77, 0.28);
+}
+
+.coin-card[data-mood="concern"] {
+  border-color: rgba(255, 108, 121, 0.28);
+}
+
+.coin-card[data-mood="doubt"] {
+  border-color: rgba(255, 157, 166, 0.24);
+}
+
+.coin-card[data-mood="neutral"] {
+  border-color: rgba(207, 215, 227, 0.16);
+}
+
+.coin-card[data-mood="optimism"] {
+  border-color: rgba(166, 255, 196, 0.25);
+}
+
+.coin-card[data-mood="content"] {
+  border-color: rgba(124, 255, 170, 0.3);
+}
+
+.coin-card[data-mood="euphoria"] {
+  border-color: rgba(77, 255, 136, 0.35);
+}
+
+.coin-card .symbol {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.coin-card .price {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.coin-card .change {
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.coin-emoji img {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.08));
+}
+
+@media (max-width: 760px) {
+  .section-head {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .market-section-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .market-control-select {
+    flex: 1;
+    min-width: 130px;
+    font-size: 0.74rem;
+    padding: 9px 12px;
+  }
+
+  .coin-card-meta {
+    margin-top: 6px;
+  }
+
+  .coin-mood-badge {
+    font-size: 0.68rem;
+  }
+
+  .coin-score {
+    font-size: 0.64rem;
+  }
+}
