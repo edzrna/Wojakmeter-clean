@@ -1086,7 +1086,7 @@ export default function Home({ ogImageUrl }) {
 
               <div className="tabs-row" id="marketTabs">
                 <button className="tab-btn active" data-tab="coins">
-                  Top 10 Coins
+                  Top 20 Coins
                 </button>
                 <button className="tab-btn" data-tab="trending">
                   Trending Coins 🔥
