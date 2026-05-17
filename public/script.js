@@ -1342,20 +1342,26 @@ function createCoinCard(coin, isActive = false) {
   `;
 
   card.addEventListener("click", async () => {
-    if (!coin.symbol) return;
+  if (!coin.symbol) return;
 
-    activeCoinSymbol = coin.symbol.toUpperCase();
-    saveActiveCoin(activeCoinSymbol);
+  activeCoinSymbol = coin.symbol.toUpperCase();
+  saveActiveCoin(activeCoinSymbol);
 
-    renderCoinSections();
-    await loadCoinDetails();
-    renderStudio();
+  coinExchangeData = [];
+  renderCoinExchanges();
 
-    qs(".chart-card")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
+  renderCoinSections();
+
+  await loadCoinDetails();
+  await loadCoinExchanges();
+
+  renderStudio();
+
+  qs(".chart-card")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
   });
+});
 
   return card;
 }
