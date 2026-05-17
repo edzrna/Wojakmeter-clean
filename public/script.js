@@ -4477,6 +4477,7 @@ async function boot() {
   setText("globalMarketTimeframe", globalTimeframe);
 
   setupButtons();
+  setupMarketControls();
   setupStickyHeaderNav();
   setupSocialExpand();
   setupPulsePanel();
