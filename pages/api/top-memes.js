@@ -10,20 +10,30 @@ const MEME_IDS = [
   "brett",
   "mog-coin",
   "popcat",
-  "book-of-meme"
+  "book-of-meme",
+  "baby-doge-coin",
+  "turbo",
+  "cat-in-a-dogs-world",
+  "gigachad-2",
+  "apu-apustaja",
+  "peanut-the-squirrel",
+  "neiro-3",
+  "toshi",
+  "department-of-government-efficiency",
+  "fwog"
 ];
 
 export default async function handler(req, res) {
   try {
     const result = await cachedJson(
-      "top-memes",
+      "top-memes-20",
       async () => {
         return await fetchJsonWithRetry(
           cgUrl("/coins/markets", {
             vs_currency: "usd",
             ids: MEME_IDS.join(","),
             order: "market_cap_desc",
-            per_page: MEME_IDS.length,
+            per_page: 20,
             page: 1,
             sparkline: "false",
             price_change_percentage: "1h,24h,7d"
@@ -51,9 +61,12 @@ export default async function handler(req, res) {
       current_price: coin.current_price,
       market_cap: coin.market_cap,
       total_volume: coin.total_volume,
-      price_change_percentage_1h_in_currency: coin.price_change_percentage_1h_in_currency ?? 0,
-      price_change_percentage_24h_in_currency: coin.price_change_percentage_24h_in_currency ?? 0,
-      price_change_percentage_7d_in_currency: coin.price_change_percentage_7d_in_currency ?? 0
+      price_change_percentage_1h_in_currency:
+        coin.price_change_percentage_1h_in_currency ?? 0,
+      price_change_percentage_24h_in_currency:
+        coin.price_change_percentage_24h_in_currency ?? 0,
+      price_change_percentage_7d_in_currency:
+        coin.price_change_percentage_7d_in_currency ?? 0
     }));
 
     res.status(200).json(coins);
