@@ -1216,18 +1216,103 @@ async function loadGlobalMarket() {
 }
 
 // ===============================
-// COIN GRIDS
+// COIN GRIDS + TOP 20 + SORT/FILTER
 // ===============================
+
+let marketSortBy = "marketCap";
+let marketEmotionFilter = "all";
+
+const MARKET_MAX_ITEMS = 20;
+
+function getCoinEmotionData(coin) {
+  const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
+  const score = roundScore(normalizeChangeToScore(change, 6));
+  const mood = getMoodByScore(score);
+
+  return {
+    score,
+    mood,
+    change
+  };
+}
+
+function getEmotionRank(moodKey) {
+  const rank = {
+    frustration: 1,
+    concern: 2,
+    doubt: 3,
+    neutral: 4,
+    optimism: 5,
+    content: 6,
+    euphoria: 7
+  };
+
+  return rank[moodKey] || 4;
+}
+
+function prepareMarketCoins(data) {
+  if (!Array.isArray(data)) return [];
+
+  let coins = data.map((coin) => {
+    const emotion = getCoinEmotionData(coin);
+
+    return {
+      ...coin,
+      wmScore: emotion.score,
+      wmMood: emotion.mood,
+      wmChange: emotion.change
+    };
+  });
+
+  if (marketEmotionFilter !== "all") {
+    coins = coins.filter((coin) => coin.wmMood.key === marketEmotionFilter);
+  }
+
+  coins.sort((a, b) => {
+    if (marketSortBy === "name") {
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    }
+
+    if (marketSortBy === "marketCap") {
+      return Number(b.market_cap || 0) - Number(a.market_cap || 0);
+    }
+
+    if (marketSortBy === "volume") {
+      return Number(b.total_volume || 0) - Number(a.total_volume || 0);
+    }
+
+    if (marketSortBy === "change24h") {
+      return Number(b.wmChange || 0) - Number(a.wmChange || 0);
+    }
+
+    if (marketSortBy === "emotion") {
+      return getEmotionRank(b.wmMood.key) - getEmotionRank(a.wmMood.key);
+    }
+
+    if (marketSortBy === "score") {
+      return Number(b.wmScore || 0) - Number(a.wmScore || 0);
+    }
+
+    return Number(b.market_cap || 0) - Number(a.market_cap || 0);
+  });
+
+  return coins.slice(0, MARKET_MAX_ITEMS);
+}
+
 function createCoinCard(coin, isActive = false) {
   const style = getCurrentStyle();
   const symbol = coin.symbol?.toUpperCase?.() || "--";
-  const change = Number(coin.price_change_percentage_24h_in_currency ?? 0);
-  const score = normalizeChangeToScore(change, 6);
-  const mood = getMoodByScore(score);
+
+  const emotion = getCoinEmotionData(coin);
+  const change = emotion.change;
+  const score = coin.wmScore ?? emotion.score;
+  const mood = coin.wmMood ?? emotion.mood;
 
   const card = document.createElement("button");
   card.type = "button";
   card.className = `coin-card coin-card-button ${isActive ? "active-coin-card" : ""}`;
+  card.dataset.mood = mood.key;
+  card.dataset.score = String(score);
 
   card.innerHTML = `
     <div class="coin-card-top">
@@ -1236,10 +1321,21 @@ function createCoinCard(coin, isActive = false) {
         <div class="price">${escapeHtml(formatCurrency(coin.current_price))}</div>
       </div>
     </div>
+
     <div class="coin-card-bottom">
       <div class="symbol">${escapeHtml(symbol)}</div>
       <div class="change ${change >= 0 ? "positive" : "negative"}">${formatPercent(change)}</div>
     </div>
+
+    <div class="coin-card-meta">
+      <span class="coin-mood-badge mood-${mood.key}">
+        ${escapeHtml(mood.name)}
+      </span>
+      <span class="coin-score">
+        ${score}/100
+      </span>
+    </div>
+
     <div class="coin-emoji">
       <img src="${escapeHtml(getIconImagePath(style, mood.key))}" alt="${escapeHtml(symbol)} mood">
     </div>
@@ -1247,12 +1343,18 @@ function createCoinCard(coin, isActive = false) {
 
   card.addEventListener("click", async () => {
     if (!coin.symbol) return;
+
     activeCoinSymbol = coin.symbol.toUpperCase();
     saveActiveCoin(activeCoinSymbol);
+
     renderCoinSections();
     await loadCoinDetails();
     renderStudio();
-    qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    qs(".chart-card")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   });
 
   return card;
@@ -1261,17 +1363,20 @@ function createCoinCard(coin, isActive = false) {
 function createFallbackCard(title = "Unavailable") {
   const card = document.createElement("div");
   card.className = "coin-card";
+
   card.innerHTML = `
     <div class="coin-card-top">
       <div class="coin-main">
         <div class="price">--</div>
       </div>
     </div>
+
     <div class="coin-card-bottom">
       <div class="symbol">${escapeHtml(title)}</div>
       <div class="change neutral">--</div>
     </div>
   `;
+
   return card;
 }
 
@@ -1281,12 +1386,14 @@ function renderGrid(targetId, data, emptyLabel = "Unavailable") {
 
   grid.innerHTML = "";
 
-  if (!Array.isArray(data) || !data.length) {
+  const preparedCoins = prepareMarketCoins(data);
+
+  if (!preparedCoins.length) {
     grid.appendChild(createFallbackCard(emptyLabel));
     return;
   }
 
-  data.slice(0, 10).forEach((coin) => {
+  preparedCoins.forEach((coin) => {
     const isActive = activeCoinSymbol === coin.symbol?.toUpperCase?.();
     grid.appendChild(createCoinCard(coin, isActive));
   });
@@ -1296,6 +1403,31 @@ function renderCoinSections() {
   renderGrid("coinsGrid", topCoinsData, "Top coins unavailable");
   renderGrid("trendingGrid", trendingCoinsData, "Trending unavailable");
   renderGrid("memesGrid", topMemesData, "Memes unavailable");
+}
+
+function setupMarketControls() {
+  const sortSelect = byId("marketSortSelect");
+  const emotionFilter = byId("marketEmotionFilter");
+
+  if (sortSelect && !sortSelect.dataset.bound) {
+    sortSelect.dataset.bound = "1";
+    sortSelect.value = marketSortBy;
+
+    sortSelect.addEventListener("change", () => {
+      marketSortBy = sortSelect.value || "marketCap";
+      renderCoinSections();
+    });
+  }
+
+  if (emotionFilter && !emotionFilter.dataset.bound) {
+    emotionFilter.dataset.bound = "1";
+    emotionFilter.value = marketEmotionFilter;
+
+    emotionFilter.addEventListener("change", () => {
+      marketEmotionFilter = emotionFilter.value || "all";
+      renderCoinSections();
+    });
+  }
 }
 
 async function loadTopCoins() {
@@ -1309,10 +1441,11 @@ async function loadTopCoins() {
       .filter(Boolean);
 
     if (coins.length) {
-      topCoinsData = coins;
+      topCoinsData = coins.slice(0, MARKET_MAX_ITEMS);
       renderTicker(topCoinsData);
 
       const coinStillExists = getCoinBySymbol(activeCoinSymbol);
+
       if (!coinStillExists) {
         const savedCoin = loadSavedActiveCoin();
         const savedStillExists = getCoinBySymbol(savedCoin);
@@ -1345,7 +1478,7 @@ async function loadTrendingCoins() {
       .map(normalizeCoinMarketItem)
       .filter(Boolean);
 
-    trendingCoinsData = coins.slice(0, 10);
+    trendingCoinsData = coins.slice(0, MARKET_MAX_ITEMS);
     renderCoinSections();
   } finally {
     isLoadingTrending = false;
@@ -1362,7 +1495,7 @@ async function loadTopMemes() {
       .map(normalizeCoinMarketItem)
       .filter(Boolean);
 
-    topMemesData = coins.slice(0, 10);
+    topMemesData = coins.slice(0, MARKET_MAX_ITEMS);
     renderCoinSections();
   } finally {
     isLoadingMemes = false;
