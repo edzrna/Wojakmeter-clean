@@ -25,18 +25,21 @@ function scoreExchange(exchange) {
   const rank = Number(exchange.trust_score_rank || 999);
   const volume = Number(exchange.trade_volume_24h_btc || 0);
 
-  let score = 50;
+  let score = 45;
 
-  score += trust * 4;
-  if (rank <= 5) score += 15;
-  else if (rank <= 10) score += 10;
-  else if (rank <= 20) score += 5;
+  score += trust * 2.2;
+
+  if (rank <= 3) score += 10;
+  else if (rank <= 10) score += 7;
+  else if (rank <= 20) score += 4;
+  else score -= 4;
 
   if (volume >= 100000) score += 10;
-  else if (volume >= 50000) score += 6;
-  else if (volume >= 10000) score += 3;
+  else if (volume >= 50000) score += 7;
+  else if (volume >= 10000) score += 4;
+  else if (volume < 1000) score -= 5;
 
-  return roundScore(score);
+  return roundScore(Math.max(25, Math.min(88, score)));
 }
 
 export default async function handler(req, res) {
