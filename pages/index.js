@@ -1059,7 +1059,29 @@ export default function Home({ ogImageUrl }) {
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
                 <h3>MARKET SECTIONS</h3>
-                <span className="muted">Live market overview</span>
+                <div className="market-section-tools">
+  <span className="muted">Live market overview</span>
+
+  <select id="marketSortSelect" className="market-control-select" defaultValue="marketCap">
+    <option value="marketCap">Market Cap</option>
+    <option value="volume">Volume</option>
+    <option value="change24h">24H %</option>
+    <option value="emotion">Emotion</option>
+    <option value="score">Score</option>
+    <option value="name">Name</option>
+  </select>
+
+  <select id="marketEmotionFilter" className="market-control-select" defaultValue="all">
+    <option value="all">All emotions</option>
+    <option value="frustration">Frustration</option>
+    <option value="concern">Concern</option>
+    <option value="doubt">Doubt</option>
+    <option value="neutral">Neutral</option>
+    <option value="optimism">Optimism</option>
+    <option value="content">Content</option>
+    <option value="euphoria">Euphoria</option>
+  </select>
+</div>
               </div>
 
               <div className="tabs-row" id="marketTabs">
