@@ -1244,6 +1244,47 @@ export default function Home({ ogImageUrl }) {
                     <strong id="perf30d">--</strong>
                   </div>
                 </div>
+
+<div className="market-exchange-layout">
+  <section className="exchange-card card">
+    <div className="exchange-card-head">
+      <div>
+        <span className="section-kicker">LIVE MARKETS</span>
+        <h3>Where To Trade</h3>
+      </div>
+
+      <span className="muted">
+        Active pairs for selected coin
+      </span>
+    </div>
+
+    <div className="exchange-list" id="coinExchangeList">
+      <div className="exchange-loading">
+        Loading exchange pairs...
+      </div>
+    </div>
+  </section>
+
+  <section className="exchange-card card">
+    <div className="exchange-card-head">
+      <div>
+        <span className="section-kicker">EXCHANGE FLOW</span>
+        <h3>Top Exchange Mood</h3>
+      </div>
+
+      <span className="muted">
+        Global liquidity sentiment
+      </span>
+    </div>
+
+    <div className="exchange-list" id="topExchangeList">
+      <div className="exchange-loading">
+        Loading exchanges...
+      </div>
+    </div>
+  </section>
+</div>
+
               </section>
             </section>
 
