@@ -5438,3 +5438,21 @@ body[data-subemotion*="pullback"] .hero-face-img {
   }
 
 }
+
+.exchange-item[data-mood="euphoria"]{
+  border-color:rgba(77,255,136,.22);
+  box-shadow:0 0 20px rgba(77,255,136,.08);
+}
+
+.exchange-item[data-mood="optimism"]{
+  border-color:rgba(166,255,196,.18);
+}
+
+.exchange-item[data-mood="concern"]{
+  border-color:rgba(255,108,121,.18);
+}
+
+.exchange-item[data-mood="frustration"]{
+  border-color:rgba(255,59,77,.22);
+  box-shadow:0 0 18px rgba(255,59,77,.08);
+}
