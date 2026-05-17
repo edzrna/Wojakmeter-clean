@@ -20,22 +20,39 @@ function getPairMood(score) {
   return { key: "frustration", name: "Frustration" };
 }
 
+function normalizeTrustScore(trustScore) {
+  if (trustScore === "green") return 10;
+  if (trustScore === "yellow") return 6;
+  if (trustScore === "red") return 3;
+  return 5;
+}
+
 function scorePair(ticker) {
-  const trust = ticker.trust_score === "green" ? 18 : ticker.trust_score === "yellow" ? 8 : -6;
-  const volume = Number(ticker.volume || 0);
-  const bidAsk = Number(ticker.bid_ask_spread_percentage || 0);
+  const volume = Number(
+    ticker.converted_volume?.usd ||
+    ticker.volume ||
+    0
+  );
 
-  let score = 50 + trust;
+  const spread = Number(ticker.bid_ask_spread_percentage || 0);
+  const trust = normalizeTrustScore(ticker.trust_score);
 
-  if (volume >= 1000000) score += 12;
-  else if (volume >= 250000) score += 8;
-  else if (volume >= 50000) score += 4;
+  let score = 42;
 
-  if (bidAsk <= 0.1) score += 8;
-  else if (bidAsk <= 0.5) score += 4;
-  else if (bidAsk >= 2) score -= 8;
+  score += trust * 2;
 
-  return roundScore(score);
+  if (volume >= 100000000) score += 18;
+  else if (volume >= 50000000) score += 14;
+  else if (volume >= 10000000) score += 10;
+  else if (volume >= 1000000) score += 6;
+  else if (volume >= 100000) score += 3;
+  else score -= 4;
+
+  if (spread > 0 && spread <= 0.1) score += 6;
+  else if (spread > 0 && spread <= 0.5) score += 3;
+  else if (spread >= 2) score -= 6;
+
+  return roundScore(clamp(score, 20, 88));
 }
 
 export default async function handler(req, res) {
@@ -43,7 +60,7 @@ export default async function handler(req, res) {
     const coin = String(req.query.coin || "bitcoin").toLowerCase();
 
     const result = await cachedJson(
-      `coin-exchanges-${coin}`,
+      `coin-exchanges-v2-${coin}`,
       async () => {
         return await fetchJsonWithRetry(
           cgUrl(`/coins/${encodeURIComponent(coin)}/tickers`, {
@@ -63,12 +80,21 @@ export default async function handler(req, res) {
       }
     );
 
-    const tickers = Array.isArray(result.data?.tickers) ? result.data.tickers : [];
+    const tickers = Array.isArray(result.data?.tickers)
+      ? result.data.tickers
+      : [];
 
     const pairs = tickers
       .filter((t) => t.market?.name && t.trade_url)
       .slice(0, 12)
       .map((t) => {
+        const volume = Number(
+          t.converted_volume?.usd ||
+          t.volume ||
+          0
+        );
+
+        const trustScore = normalizeTrustScore(t.trust_score);
         const score = scorePair(t);
         const mood = getPairMood(score);
 
@@ -79,8 +105,9 @@ export default async function handler(req, res) {
           target: t.target || "",
           pair: `${t.base || ""}/${t.target || ""}`,
           lastPrice: t.last || null,
-          volume: t.volume || 0,
-          trustScore: t.trust_score || "unknown",
+          volume,
+          trustScore,
+          trustLabel: t.trust_score || "unknown",
           spread: t.bid_ask_spread_percentage ?? null,
           tradeUrl: t.trade_url || "",
           score,
