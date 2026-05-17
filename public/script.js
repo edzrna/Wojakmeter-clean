@@ -4418,6 +4418,7 @@ async function loadAll() {
     loadTopCoins(),
     loadTrendingCoins(),
     loadTopMemes()
+    loadTopExchanges();
   ]);
 
   currentPulseScore = getPulseScore();
@@ -4425,6 +4426,7 @@ async function loadAll() {
   await loadGlobalMarket();
   await loadSentiment();
   await loadCoinDetails();
+  await loadCoinExchanges();
 
   renderPulseStats();
   renderStudio();
@@ -4946,4 +4948,198 @@ function initEmotionRadar() {
   });
 
   updateEmotionRadarUI(analyzeEmotionRadarText(""));
+}
+
+// ===============================
+// MARKET EXCHANGES
+// ===============================
+
+let topExchangeData = [];
+let coinExchangeData = [];
+
+function getExchangeMood(score) {
+  return getMoodByScore(score || 50);
+}
+
+function createExchangeItem(exchange, type = "pair") {
+  const style = getCurrentStyle();
+
+  const mood = exchange.mood || getExchangeMood(exchange.score);
+  const score = Number(exchange.score || 50);
+
+  const logo =
+    exchange.exchangeLogo ||
+    exchange.image ||
+    "/assets/logo.png";
+
+  const tradeUrl =
+    exchange.tradeUrl ||
+    exchange.url ||
+    "#";
+
+  const pair =
+    exchange.pair ||
+    "Global Market";
+
+  const volume =
+    exchange.volume ||
+    exchange.volumeBtc24h ||
+    0;
+
+  const item = document.createElement("div");
+  item.className = "exchange-item";
+  item.dataset.mood = mood.key;
+
+  item.innerHTML = `
+    <div class="exchange-left">
+      <img
+        class="exchange-logo"
+        src="${escapeHtml(logo)}"
+        alt="${escapeHtml(exchange.name || exchange.exchange || "Exchange")}"
+      >
+
+      <div class="exchange-copy">
+        <div class="exchange-name">
+          ${escapeHtml(exchange.name || exchange.exchange || "Exchange")}
+        </div>
+
+        <div class="exchange-pair">
+          ${escapeHtml(pair)}
+        </div>
+
+        <div class="exchange-meta">
+          <span class="exchange-volume">
+            ${type === "pair" ? "24H Volume" : "Liquidity"}
+            · ${escapeHtml(formatCurrencyCompact(volume))}
+          </span>
+
+          ${
+            exchange.trustScore
+              ? `
+            <span class="exchange-trust">
+              Trust ${escapeHtml(String(exchange.trustScore))}
+            </span>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="exchange-right">
+      <div class="exchange-mood">
+        <img
+          src="${escapeHtml(
+            getIconImagePath(style, mood.key)
+          )}"
+          alt="${escapeHtml(mood.name)}"
+        >
+
+        <div class="exchange-mood-label">
+          <strong class="mood-${mood.key}">
+            ${escapeHtml(mood.name)}
+          </strong>
+
+          <span class="exchange-score">
+            ${score}/100
+          </span>
+        </div>
+      </div>
+
+      <a
+        class="exchange-trade-btn"
+        href="${escapeHtml(tradeUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Trade
+      </a>
+    </div>
+  `;
+
+  return item;
+}
+
+function renderTopExchanges() {
+  const container = byId("topExchangeList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!Array.isArray(topExchangeData) || !topExchangeData.length) {
+    container.innerHTML = `
+      <div class="exchange-loading">
+        Exchange data unavailable
+      </div>
+    `;
+    return;
+  }
+
+  topExchangeData.forEach((exchange) => {
+    container.appendChild(
+      createExchangeItem(exchange, "exchange")
+    );
+  });
+}
+
+function renderCoinExchanges() {
+  const container = byId("coinExchangeList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!Array.isArray(coinExchangeData) || !coinExchangeData.length) {
+    container.innerHTML = `
+      <div class="exchange-loading">
+        No active exchange pairs found
+      </div>
+    `;
+    return;
+  }
+
+  coinExchangeData.forEach((exchange) => {
+    container.appendChild(
+      createExchangeItem(exchange, "pair")
+    );
+  });
+}
+
+async function loadTopExchanges() {
+  try {
+    const response = await fetchJson(
+      "/api/top-exchanges",
+      []
+    );
+
+    topExchangeData = Array.isArray(response)
+      ? response
+      : [];
+
+    renderTopExchanges();
+  } catch (error) {
+    console.error("Top exchanges error:", error);
+  }
+}
+
+async function loadCoinExchanges() {
+  try {
+    const coin = getCoinBySymbol(activeCoinSymbol);
+
+    if (!coin?.id) return;
+
+    const response = await fetchJson(
+      `/api/coin-exchanges?coin=${encodeURIComponent(
+        coin.id
+      )}`,
+      []
+    );
+
+    coinExchangeData = Array.isArray(response)
+      ? response
+      : [];
+
+    renderCoinExchanges();
+  } catch (error) {
+    console.error("Coin exchanges error:", error);
+  }
 }
