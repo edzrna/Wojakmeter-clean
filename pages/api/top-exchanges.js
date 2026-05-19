@@ -54,8 +54,8 @@ export default async function handler(req, res) {
           }),
           {
             headers: cgHeaders(),
-            timeoutMs: 7000,
-            retries: 2
+            timeoutMs: 10000,
+            retries: 3
           }
         );
       },
