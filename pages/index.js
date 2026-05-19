@@ -728,7 +728,7 @@ export default function Home({ ogImageUrl }) {
                     </div>
 
                     <div className="mood-ca-row">
-                      <code id="moodContractAddress">PEGAR_ADDRESS_OFICIAL_AQUI</code>
+                      <code id="moodContractAddress">$MOOD</code>
                       <button type="button" className="action-btn" id="copyMoodCaBtn">
                         Copy CA
                       </button>
