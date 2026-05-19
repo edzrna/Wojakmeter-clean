@@ -5111,42 +5111,77 @@ function renderCoinExchanges() {
 }
 
 async function loadTopExchanges() {
+  const container = byId("topExchangeList");
+
   try {
-    const response = await fetchJson(
-      "/api/top-exchanges",
-      []
-    );
+    if (container && !topExchangeData.length) {
+      container.innerHTML = `
+        <div class="exchange-loading">
+          Loading exchanges...
+        </div>
+      `;
+    }
 
-    topExchangeData = Array.isArray(response)
-      ? response
-      : [];
+    const response = await fetchJson("/api/top-exchanges", null);
 
-    renderTopExchanges();
+    if (Array.isArray(response) && response.length) {
+      topExchangeData = response;
+      renderTopExchanges();
+      return;
+    }
+
+    // Do not erase old data if API returns empty
+    if (!topExchangeData.length) {
+      renderTopExchanges();
+    }
   } catch (error) {
     console.error("Top exchanges error:", error);
+
+    // Keep previous data if available
+    if (!topExchangeData.length) {
+      renderTopExchanges();
+    }
   }
 }
 
 async function loadCoinExchanges() {
+  const container = byId("coinExchangeList");
+
   try {
     const coin = getCoinBySymbol(activeCoinSymbol);
 
     if (!coin?.id) return;
 
+    if (container) {
+      container.innerHTML = `
+        <div class="exchange-loading">
+          Loading active pairs for ${escapeHtml(activeCoinSymbol)}...
+        </div>
+      `;
+    }
+
     const response = await fetchJson(
-      `/api/coin-exchanges?coin=${encodeURIComponent(
-        coin.id
-      )}`,
-      []
+      `/api/coin-exchanges?coin=${encodeURIComponent(coin.id)}`,
+      null
     );
 
-    coinExchangeData = Array.isArray(response)
-      ? response
-      : [];
+    if (Array.isArray(response) && response.length) {
+      coinExchangeData = response;
+      renderCoinExchanges();
+      return;
+    }
 
-    renderCoinExchanges();
+    // Do not clear old data unless this is the first load
+    if (!coinExchangeData.length) {
+      renderCoinExchanges();
+    }
   } catch (error) {
     console.error("Coin exchanges error:", error);
+
+    // Keep previous data if available
+    if (!coinExchangeData.length) {
+      renderCoinExchanges();
+    }
   }
 }
 
