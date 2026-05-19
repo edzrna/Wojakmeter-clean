@@ -5075,7 +5075,7 @@ function renderTopExchanges() {
   if (!Array.isArray(topExchangeData) || !topExchangeData.length) {
     container.innerHTML = `
       <div class="exchange-loading">
-        Exchange data unavailable
+        Exchange flow is temporarily unavailable
       </div>
     `;
     return;
@@ -5097,7 +5097,7 @@ function renderCoinExchanges() {
   if (!Array.isArray(coinExchangeData) || !coinExchangeData.length) {
     container.innerHTML = `
       <div class="exchange-loading">
-        No active exchange pairs found
+        Active pair data is temporarily unavailable
       </div>
     `;
     return;
