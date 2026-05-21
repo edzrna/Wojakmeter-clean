@@ -5509,3 +5509,24 @@ body[data-subemotion*="pullback"] .hero-face-img {
     min-width:58px;
   }
 }
+
+/* =========================
+   HEADER + FOOTER DESKTOP
+========================= */
+
+@media (min-width: 1024px) {
+
+  .wm-sticky-header {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+
+  .wm-footer {
+    background: transparent !important;
+    border-top: none !important;
+    box-shadow: none !important;
+  }
+
+}
