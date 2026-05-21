@@ -5511,22 +5511,26 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 /* =========================
-   HEADER + FOOTER DESKTOP
+   HEADER + FOOTER TABLET + PC
 ========================= */
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
 
-  .wm-sticky-header {
+  .topbar,
+  .wm-sticky-header,
+  .wm-footer {
     background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     backdrop-filter: none !important;
-    border-bottom: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
     box-shadow: none !important;
   }
 
-  .wm-footer {
-    background: transparent !important;
-    border-top: none !important;
-    box-shadow: none !important;
+  .wm-sticky-header::before,
+  .wm-footer::before {
+    display: none !important;
   }
 
 }
