@@ -5534,3 +5534,205 @@ body[data-subemotion*="pullback"] .hero-face-img {
   }
 
 }
+
+/* ===============================
+   WOJAKMETER — CSS PATCH
+   Añadir al final de global.css
+================================ */
+
+/* ===============================
+   SKELETON LOADING
+   El hero ya no muestra "--" en blanco
+================================ */
+
+@keyframes wmSkeletonPulse {
+  0%, 100% { opacity: 0.38; }
+  50%       { opacity: 0.72; }
+}
+
+.wm-skeleton {
+  position: relative;
+  overflow: hidden;
+  color: transparent !important;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: wmSkeletonSlide 1.6s ease-in-out infinite !important;
+  border-radius: 8px !important;
+  min-width: 60px;
+  min-height: 18px;
+}
+
+.wm-skeleton * {
+  visibility: hidden !important;
+}
+
+@keyframes wmSkeletonSlide {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Loading overlay suave sobre el hero */
+#wmLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(7, 16, 24, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.wm-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #4dff88;
+  border-radius: 50%;
+  animation: wmSpin 0.9s linear infinite;
+}
+
+@keyframes wmSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===============================
+   JERARQUÍA VISUAL — SECCIONES
+================================ */
+
+/* Separadores entre secciones principales */
+.wm-section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  margin: 6px 0;
+}
+
+/* Kicker label estandarizado */
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green);
+  opacity: 0.85;
+}
+
+/* Hero subtitle más prominente */
+.hero-subtitle {
+  font-size: 0.96rem !important;
+  line-height: 1.55 !important;
+  color: rgba(207, 215, 227, 0.88) !important;
+  max-width: 520px;
+  margin: 0 auto 10px !important;
+}
+
+/* ===============================
+   BAG MOOD — más protagonismo
+================================ */
+
+.bag-mood-section {
+  background:
+    radial-gradient(circle at top left, rgba(77, 255, 136, 0.07), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(255, 59, 77, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+    linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+  border-color: rgba(77, 255, 136, 0.12);
+}
+
+.bag-mood-section .section-head h3 {
+  font-size: 1.4rem;
+}
+
+/* ===============================
+   EMOTION RADAR — más visible
+================================ */
+
+.emotion-radar {
+  background:
+    radial-gradient(circle at 80% 20%, rgba(77,255,136,0.09), transparent 35%),
+    radial-gradient(circle at 20% 80%, rgba(255,59,77,0.06), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+    linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+  border-color: rgba(77, 255, 136, 0.14);
+  margin-top: 14px !important;
+}
+
+/* ===============================
+   HERO — mejoras de impacto
+================================ */
+
+/* Score más grande y prominente */
+#heroScore {
+  font-size: 1.6rem;
+  font-weight: 900;
+  transition: color 0.3s ease;
+}
+
+/* Hero mood más grande */
+.hero-mood {
+  font-size: clamp(2rem, 5.5vw, 3rem) !important;
+  text-shadow: 0 0 40px currentColor;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* ===============================
+   MARKET SECTIONS — orden visual
+================================ */
+
+/* Card de coins con más aire */
+.top-coins {
+  background:
+    radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 25%),
+    linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01)),
+    linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+}
+
+/* Tabs más limpios */
+.tabs-row {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+}
+
+/* ===============================
+   FOOTER — visible en mobile
+================================ */
+
+@media (min-width: 768px) {
+  .wm-footer {
+    background: rgba(7, 16, 24, 0.92) !important;
+    border-top: 1px solid rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+}
+
+/* ===============================
+   RESPONSIVE FIXES
+================================ */
+
+@media (max-width: 640px) {
+  .hero-mood {
+    font-size: 2rem !important;
+  }
+
+  #heroScore {
+    font-size: 1.3rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.88rem !important;
+  }
+}
