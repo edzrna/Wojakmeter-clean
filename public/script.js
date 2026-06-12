@@ -31,94 +31,6 @@ const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 
 // ===============================
-// WOJAKMETER — SCRIPT PATCH
-// Añadir estas funciones al inicio del script.js
-// justo después de las constantes de configuración
-// ===============================
-
-// ===============================
-// FAST BOOT — Pre-render del servidor
-// Lee los datos que Next.js inyectó en el HTML
-// y los aplica inmediatamente sin esperar fetch
-// ===============================
-function initHeroFromServerData() {
-  try {
-    const el = document.getElementById("wmServerData");
-    if (!el) return false;
-
-    const data = JSON.parse(el.textContent || "{}");
-    if (!data || typeof data.score !== "number") return false;
-
-    const score  = roundScore(data.score);
-    const mood   = getMoodByScore(score);
-    const change = Number(data.change || 0);
-
-    // Aplicar inmediatamente
-    currentMarketScore  = score;
-    currentGlobalScore  = score;
-    currentGlobalMood   = mood;
-    currentGlobalChange = change;
-    currentSocialScore  = score;
-    currentDriverScore  = 50;
-    currentPulseScore   = getPulseScore();
-
-    if (data.btcDom)  { currentBtcDominanceValue = Number(data.btcDom); setText("btcDominance", `${Number(data.btcDom).toFixed(1)}%`); }
-    if (data.volume)  { setText("headerVolume", data.volume); setText("globalMarketVolume", data.volume); }
-    if (data.marketCap) { setText("headerMarketCap", data.marketCap); }
-
-    // Actualizar hero con datos reales desde frame 1
-    updateHero(score, mood);
-    updateSocial(score);
-    updateGauge(score, mood);
-    updateDriverPanel();
-    updateLayerUI();
-
-    const changeEl = byId("globalMarketChange");
-    if (changeEl) {
-      changeEl.textContent = formatPercent(change);
-      changeEl.classList.remove("positive","negative","neutral");
-      if (change > 0) changeEl.classList.add("positive");
-      else if (change < 0) changeEl.classList.add("negative");
-      else changeEl.classList.add("neutral");
-    }
-
-    // Quitar skeletons
-    removeSkeleton();
-
-    console.log("[WM] Hero fast-boot desde servidor: score", score, mood.name);
-    return true;
-
-  } catch (err) {
-    console.warn("[WM] Fast-boot falló:", err.message);
-    return false;
-  }
-}
-
-// Quita la clase skeleton de todos los elementos
-function removeSkeleton() {
-  document.querySelectorAll(".wm-skeleton").forEach(el => {
-    el.classList.remove("wm-skeleton");
-  });
-  const overlay = document.getElementById("wmLoadingOverlay");
-  if (overlay) {
-    overlay.style.opacity = "0";
-    overlay.style.pointerEvents = "none";
-    setTimeout(() => overlay.remove(), 400);
-  }
-}
-
-// ===============================
-// PATCH: boot() — llamar initHeroFromServerData
-// antes de loadAll() en la función boot() existente
-// Reemplaza la línea:
-//   await loadAll();
-// por:
-//   initHeroFromServerData();
-//   await loadAll();
-// ===============================
-
-
-// ===============================
 // MOOD TOKEN CONFIG
 // ===============================
 let MOOD_CA = "4JkeVbpKKjaLEWFk6tbUV9mLzYD6xmaPPGZwgRvkpump";
@@ -4583,7 +4495,6 @@ async function boot() {
   await loadAll();
 
    initBagMood();
-initHeroFromServerData();
 
    startAutoRefresh();
 }
