@@ -4028,6 +4028,7 @@ function setupButtons() {
   initStudioTabs();
   setupHeroModes();
   setupLayerButtons();
+  setupBubbleMaps();
 
   qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -4050,6 +4051,11 @@ function setupButtons() {
       updateDriverPanel();
       recomputeHeroSystem();
       renderStudio();
+
+      if (activeHeroView === "bubble" && !isHoveringBubble) {
+  renderBubbleMaps();
+}
+      
     });
   }
 
