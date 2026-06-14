@@ -5536,52 +5536,6 @@ body[data-subemotion*="pullback"] .hero-face-img {
 }
 
 /* ===============================
-   HERO LAYOUT FIX
-   Añadir al final de global.css
-================================ */
-
-/* Grid hero más balanceado */
-.hero-grid-single {
-  grid-template-columns: 1fr 0.75fr !important;
-  gap: 24px !important;
-  align-items: start !important;
-}
-
-/* Wojak stage más grande y lleno */
-.wojak-stage {
-  width: 100% !important;
-  max-width: 100% !important;
-  aspect-ratio: 1 / 1.05 !important;
-  min-height: 360px;
-}
-
-/* Imagen del Wojak más grande dentro del stage */
-.hero-face-wrap {
-  width: min(420px, 88%) !important;
-}
-
-.hero-face-img {
-  width: 100% !important;
-}
-
-/* Drivers card se ajusta mejor en altura */
-.drivers-card {
-  align-self: start;
-  position: sticky;
-  top: 90px;
-}
-
-/* En tablet y mobile vuelven a ser columna única */
-@media (max-width: 900px) {
-  .hero-grid-single {
-    grid-template-columns: 1fr !important;
-  }
-  .drivers-card {
-    position: static;
-  }
-}
-
-/* ===============================
    INLINE CHART WRAP
 ================================ */
 
