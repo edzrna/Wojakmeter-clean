@@ -5553,3 +5553,545 @@ body[data-subemotion*="pullback"] .hero-face-img {
   border: 1px solid var(--line-soft);
   background: rgba(255,255,255,0.018);
 }
+
+/* ===============================
+   HERO VIEW TOGGLE
+================================ */
+
+.hero-view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: -4px auto 18px;
+}
+
+.hero-view-btn {
+  border: 1px solid var(--line);
+  background: var(--panel-3);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 999px;
+  transition: 0.22s ease;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero-view-btn.active {
+  background: #143022;
+  border-color: rgba(77, 255, 136, 0.32);
+  color: #dffff0;
+}
+
+/* ===============================
+   BUBBLE MAPS HERO VIEW
+================================ */
+
+.bubble-maps-view {
+  width: min(860px, 100%);
+  margin: 0 auto 18px;
+  position: relative;
+}
+
+.bubble-map-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.bubble-map-head strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  color: var(--title);
+  line-height: 1;
+}
+
+.bubble-map-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.bubble-map-eyebrow {
+  display: block;
+  color: var(--green);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.bubble-map-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.legend-item {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255,255,255,.035);
+  border: 1px solid var(--line);
+  font-family: var(--font-ui);
+}
+
+.legend-item.frustration { color: #ff3b4d; }
+.legend-item.concern { color: #ff6c79; }
+.legend-item.doubt { color: #ff9da6; }
+.legend-item.neutral { color: #cfd7e3; }
+.legend-item.optimism { color: #a6ffc4; }
+.legend-item.content { color: #7cffaa; }
+.legend-item.euphoria { color: #4dff88; }
+
+.bubble-map-info-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.bubble-map-info-row div {
+  padding: 11px;
+  border-radius: 15px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.025);
+  text-align: left;
+}
+
+.bubble-map-info-row strong {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 1.2rem;
+}
+
+.bubble-map-info-row span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-family: var(--font-ui);
+}
+
+.bubble-map-stage {
+  position: relative;
+  height: 480px;
+  border-radius: 24px;
+  overflow: visible;
+  border: 1px solid var(--line);
+  background: transparent;
+}
+
+.bubble-map-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(77,255,136,.08), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(255,59,77,.08), transparent 30%),
+    linear-gradient(180deg, rgba(77,255,136,.035), transparent 24%),
+    linear-gradient(0deg, rgba(255,59,77,.035), transparent 28%),
+    #071018;
+}
+
+.bubble-map-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  z-index: 1;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,.035);
+}
+
+.bubble-zone {
+  position: absolute;
+  left: 16px;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.14);
+  pointer-events: none;
+  font-family: var(--font-ui);
+}
+
+.bubble-zone-top {
+  top: 16px;
+}
+
+.bubble-zone-mid {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bubble-zone-bottom {
+  bottom: 16px;
+}
+
+/* ===============================
+   BUBBLE MAP EXPANDED MODE
+================================ */
+
+body.bubble-map-expanded {
+  overflow: hidden;
+}
+
+body.bubble-map-expanded #bubbleMapsView {
+  position: fixed;
+  inset: 14px;
+  z-index: 3000;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,.1);
+  background:
+    radial-gradient(circle at top, rgba(77,255,136,.08), transparent 28%),
+    radial-gradient(circle at bottom, rgba(255,59,77,.08), transparent 28%),
+    linear-gradient(180deg, #101c2b, #071018);
+  box-shadow: 0 24px 80px rgba(0,0,0,.55);
+}
+
+body.bubble-map-expanded #bubbleMapStage {
+  height: calc(100vh - 220px);
+}
+
+/* ===============================
+   BUBBLE COINS
+================================ */
+
+.bubble-coin {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) !important;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--bubble-color) 48%, white 8%);
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255,255,255,.22), transparent 22%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--bubble-color) 14%, transparent), rgba(7,16,24,.96));
+  box-shadow:
+    0 0 calc(var(--bubble-glow) * 0.52px) color-mix(in srgb, var(--bubble-color) 30%, transparent),
+    inset 0 0 14px rgba(255,255,255,.04);
+  color: white;
+  display: grid;
+  place-items: center;
+  transition:
+    left 1.1s cubic-bezier(.22,1,.36,1),
+    top 1.1s cubic-bezier(.22,1,.36,1),
+    width .8s ease,
+    height .8s ease,
+    box-shadow .5s ease,
+    border-color .5s ease,
+    background .5s ease;
+  z-index: 3;
+}
+
+.bubble-coin:hover {
+  transform: translate(-50%, -50%) !important;
+  z-index: 80;
+  border-color: color-mix(in srgb, var(--bubble-color) 70%, white 14%);
+  box-shadow:
+    0 0 calc(var(--bubble-glow) * 0.8px) color-mix(in srgb, var(--bubble-color) 38%, transparent),
+    inset 0 0 16px rgba(255,255,255,.05);
+}
+
+.bubble-motion {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.bubble-coin:hover .bubble-motion {
+  filter: brightness(1.08) saturate(1.05);
+}
+
+.bubble-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 13%;
+}
+
+.bubble-inner img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  filter:
+    drop-shadow(0 4px 8px rgba(0,0,0,.45))
+    saturate(1.08);
+}
+
+.bubble-inner strong {
+  display: none !important;
+}
+
+/* ===============================
+   BUBBLE TOOLTIP
+================================ */
+
+.bubble-tooltip {
+  position: absolute;
+  left: 50%;
+  z-index: 120;
+  min-width: 210px;
+  max-width: 240px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.016)),
+    rgba(7,16,24,.98);
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.42),
+    0 0 16px color-mix(in srgb, var(--bubble-color) 14%, transparent);
+  backdrop-filter: blur(12px);
+  will-change: opacity;
+}
+
+.bubble-tooltip.tooltip-top {
+  top: -12px;
+  bottom: auto;
+  transform: translate(-50%, -100%);
+}
+
+.bubble-tooltip.tooltip-bottom {
+  top: calc(100% + 12px);
+  bottom: auto;
+  transform: translate(-50%, 0);
+}
+
+.bubble-coin:hover .bubble-tooltip.tooltip-top {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+
+.bubble-coin:hover .bubble-tooltip.tooltip-bottom {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.tooltip-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.tooltip-head img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  flex: 0 0 auto;
+}
+
+.tooltip-head b {
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: .04em;
+}
+
+.tooltip-name {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 12px;
+}
+
+.tooltip-row span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.tooltip-row strong {
+  font-weight: 900;
+  text-align: right;
+}
+
+.tooltip-mood.mood-euphoria,
+.tooltip-score.mood-euphoria {
+  color: #4dff88;
+}
+
+.tooltip-mood.mood-content,
+.tooltip-score.mood-content {
+  color: #7cffaa;
+}
+
+.tooltip-mood.mood-optimism,
+.tooltip-score.mood-optimism {
+  color: #a6ffc4;
+}
+
+.tooltip-mood.mood-neutral,
+.tooltip-score.mood-neutral {
+  color: #cfd7e3;
+}
+
+.tooltip-mood.mood-doubt,
+.tooltip-score.mood-doubt {
+  color: #ff9da6;
+}
+
+.tooltip-mood.mood-concern,
+.tooltip-score.mood-concern {
+  color: #ff6c79;
+}
+
+.tooltip-mood.mood-frustration,
+.tooltip-score.mood-frustration {
+  color: #ff3b4d;
+}
+
+.tooltip-change.positive {
+  color: #4dff88;
+  text-shadow: 0 0 8px rgba(77,255,136,.14);
+}
+
+.tooltip-change.negative {
+  color: #ff3b4d;
+  text-shadow: 0 0 8px rgba(255,59,77,.14);
+}
+
+.tooltip-change.neutral {
+  color: #cfd7e3;
+}
+
+/* ===============================
+   BUBBLE EMOTION ANIMATIONS
+================================ */
+
+.bubble-coin.mood-euphoria .bubble-motion {
+  animation: wmBubbleEuphoria 0.95s infinite ease-in-out;
+}
+
+.bubble-coin.mood-content .bubble-motion {
+  animation: wmBubbleContent 2.8s infinite ease-in-out;
+}
+
+.bubble-coin.mood-optimism .bubble-motion {
+  animation: wmBubbleOptimism 2.2s infinite ease-in-out;
+}
+
+.bubble-coin.mood-neutral .bubble-motion {
+  animation: wmBubbleNeutral 4.6s infinite ease-in-out;
+}
+
+.bubble-coin.mood-doubt .bubble-motion {
+  animation: wmBubbleDoubt 2.1s infinite ease-in-out;
+}
+
+.bubble-coin.mood-concern .bubble-motion {
+  animation: wmBubbleConcern 0.95s infinite linear;
+}
+
+.bubble-coin.mood-frustration .bubble-motion {
+  animation: wmBubbleFrustration 0.42s infinite linear;
+}
+
+@keyframes wmBubbleEuphoria {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes wmBubbleContent {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.025); }
+}
+
+@keyframes wmBubbleOptimism {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.03); }
+}
+
+@keyframes wmBubbleNeutral {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes wmBubbleDoubt {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  35% { transform: rotate(-3deg) translateY(-2px); }
+  70% { transform: rotate(3deg) translateY(2px); }
+}
+
+@keyframes wmBubbleConcern {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-2px, 1px) scale(1.01); }
+  50% { transform: translate(2px, -1px) scale(0.99); }
+  75% { transform: translate(-1px, -1px) scale(1.01); }
+}
+
+@keyframes wmBubbleFrustration {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-2.5px, 1px) rotate(-1deg); }
+  40% { transform: translate(2.5px, -1px) rotate(1deg); }
+  60% { transform: translate(-1.5px, -1px) rotate(-.6deg); }
+  80% { transform: translate(1.5px, 1px) rotate(.6deg); }
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 720px) {
+  .bubble-map-head {
+    flex-direction: column;
+  }
+
+  .bubble-map-info-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bubble-map-stage {
+    height: 520px;
+  }
+
+  .bubble-tooltip {
+    min-width: 190px;
+  }
+}
