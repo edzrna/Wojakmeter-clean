@@ -145,6 +145,53 @@ let isHoveringBubble = false;
 let bubbleCoins = [];
 let activeBubbleSymbol = null;
 
+const MACRO_DRIVER_STORAGE_KEY = "wojakMacroDriver";
+
+const VALID_MACRO_DRIVERS = [
+  "market_flow",
+  "etf_adoption",
+  "rate_hike",
+  "rate_cut",
+  "regulation_crackdown",
+  "crypto_hack",
+  "war_escalation",
+  "neutral_macro"
+];
+
+let activeMacroDriver = loadSavedMacroDriver();
+
+function loadSavedMacroDriver() {
+  try {
+    const saved = localStorage.getItem(MACRO_DRIVER_STORAGE_KEY);
+
+    if (VALID_MACRO_DRIVERS.includes(saved)) {
+      return saved;
+    }
+  } catch {}
+
+  return "market_flow";
+}
+
+function saveMacroDriver(value) {
+  if (!VALID_MACRO_DRIVERS.includes(value)) return;
+
+  activeMacroDriver = value;
+
+  try {
+    localStorage.setItem(MACRO_DRIVER_STORAGE_KEY, value);
+  } catch {}
+}
+
+function getActiveMacroDriver() {
+  const select = document.getElementById("macroDriver");
+
+  if (select && VALID_MACRO_DRIVERS.includes(select.value)) {
+    return select.value;
+  }
+
+  return activeMacroDriver || "market_flow";
+}
+
 // ===============================
 // BASIC HELPERS
 // ===============================
@@ -903,7 +950,7 @@ function updateSocial(socialScore) {
 }
 
 function updateDriverPanel() {
-  const driverKey = currentDominantDriver || "market_flow";
+  const driverKey = getActiveMacroDriver();
   const mood = currentGlobalMood || getMoodByScore(50);
 
   const macroLabel = getDriverLabel(driverKey);
@@ -4030,6 +4077,7 @@ function setupButtons() {
   setupHeroModes();
   setupLayerButtons();
   setupBubbleMaps();
+  setupMacroDriverPersistence();
 
   qsa(".studio-copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -4932,6 +4980,33 @@ function setupBubbleMaps() {
 
     if (!clickedBubble && !clickedTooltip) {
       closeActiveBubbleTooltip();
+    }
+  });
+}
+
+function setupMacroDriverPersistence() {
+  const select = document.getElementById("macroDriver");
+  if (!select) return;
+
+  const savedDriver = loadSavedMacroDriver();
+
+  if (select.querySelector(`option[value="${savedDriver}"]`)) {
+    select.value = savedDriver;
+    activeMacroDriver = savedDriver;
+  }
+
+  if (select.dataset.macroDriverBound === "1") return;
+  select.dataset.macroDriverBound = "1";
+
+  select.addEventListener("change", () => {
+    saveMacroDriver(select.value);
+
+    if (typeof recomputeHeroSystem === "function") {
+      recomputeHeroSystem();
+    }
+
+    if (typeof renderStudio === "function") {
+      renderStudio();
     }
   });
 }
