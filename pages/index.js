@@ -125,71 +125,240 @@ export default function Home({ ogImageUrl }) {
             {/* ===========================
                 1. HERO
             =========================== */}
-            <section className="hero card">
-              <h2 id="heroTitle">
-                CRYPTO MARKET MOOD
-                <span id="heroDriverLabel"> (Market flow / price action)</span>
-              </h2>
 
-              <div className="hero-grid hero-grid-single">
-                <div className="hero-main">
-                  <div className="wojak-stage">
-                    <div className="sweat hidden" id="sweatFx">💧</div>
+        <section className="hero card">
+  <h2 id="heroTitle">
+    CRYPTO MARKET MOOD
+    <span id="heroDriverLabel"> (Market flow / price action)</span>
+  </h2>
 
-                    <div className="hero-social-wrapper" id="socialWrapper">
-                      <div className="hero-social-badge social-neutral" id="socialBubble" aria-label="Social sentiment" role="button" tabIndex={0}>
-                        <div className="hero-social-badge-label">𝕏</div>
-                        <div className="hero-social-badge-icon">
-                          <img id="socialIconImg" className="mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="Social mood icon" />
-                        </div>
-                        <div className="hero-social-badge-text">
-                          <span id="socialMoodMini">Neutral</span>
-                          <strong id="socialScoreMini">50</strong>
-                        </div>
-                      </div>
-                      <div className="social-expand hidden" id="socialExpand">
-                        <div className="social-expand-content">
-                          <div className="social-expand-row"><strong>Social Mood</strong><span id="socialExpandMood">Neutral</span></div>
-                          <div className="social-expand-row"><strong>Social Score</strong><span id="socialExpandScore">50</span></div>
-                          <div className="social-expand-row"><strong>Interactions</strong><span id="socialExpandEngagement">--</span></div>
-                          <div className="social-expand-row"><strong>Bullish</strong><span id="socialExpandBullish">--</span></div>
-                          <div className="social-expand-row"><strong>Bearish</strong><span id="socialExpandBearish">--</span></div>
-                          <div className="social-expand-row"><strong>Neutral</strong><span id="socialExpandNeutral">--</span></div>
-                          <div className="social-expand-row"><strong>Window</strong><span id="socialExpandWindow">24h</span></div>
-                          <div className="social-expand-note">Social mood is derived from aggregated market sentiment across X, trending coins and meme activity.</div>
-                        </div>
-                      </div>
-                    </div>
+  <div className="hero-grid hero-grid-single">
+    <div className="hero-main">
 
-                    <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
-                      <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="heroTimelineArea" d=""></path>
-                        <path id="heroTimelineLine" d=""></path>
-                      </svg>
-                    </div>
+      {/* HERO / BUBBLE VIEW TOGGLE */}
+      <div className="hero-view-toggle" id="heroViewToggle">
+        <button
+          type="button"
+          className="hero-view-btn active"
+          data-hero-view="mood"
+          id="heroViewMoodBtn"
+        >
+          Hero Mood
+        </button>
 
-                    <div id="heroFaceWrap" className="hero-face-wrap anim-float">
-                      <img id="heroFaceImg" className="hero-face-img" src="/assets/hero/classic/neutral.png" alt="Global market mood" />
-                      <img id="heroFaceOverlayImg" className="hero-face-overlay hidden" src="" alt="" aria-hidden="true" />
-                    </div>
-                  </div>
+        <button
+          type="button"
+          className="hero-view-btn"
+          data-hero-view="bubble"
+          id="heroViewBubbleBtn"
+        >
+          Bubble Maps
+        </button>
+      </div>
 
-                  <div className="hero-mood mood-neutral" id="heroMood">Neutral</div>
-                  <div className="hero-subtitle" id="heroSubtitle">Market emotion is balanced for now.</div>
-                  <div className="hero-score" id="heroScoreWrap">Score: <span id="heroScore">50</span> / 100</div>
+      {/* ===============================
+          HERO MOOD VIEW
+      ================================ */}
+      <div id="heroMoodView" className="hero-mood-view">
+        <div className="wojak-stage">
+          <div className="sweat hidden" id="sweatFx">
+            💧
+          </div>
 
-                  <section className="emotion-bar-inline emotion-bar-inline-minimal" id="emotionBarSection">
-                    <div className="emotion-track-wrap">
-                      <div className="emotion-track emotion-track-gradient" id="emotionTrack">
-                        <div className="emotion-pointer" id="emotionPointer" aria-label="WojakMeter indicator">
-                          <div className="emotion-pointer-arrow"></div>
-                          <div className="emotion-pointer-face">
-                            <img id="emotionPointerImg" src="/assets/icons/classic/neutral.png" alt="Current emotional state" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
+          <div className="hero-social-wrapper" id="socialWrapper">
+            <div
+              className="hero-social-badge social-neutral"
+              id="socialBubble"
+              aria-label="Social sentiment"
+              role="button"
+              tabIndex={0}
+            >
+              <div className="hero-social-badge-label">𝕏</div>
+
+              <div className="hero-social-badge-icon">
+                <img
+                  id="socialIconImg"
+                  className="mood-icon-img anim-float"
+                  src="/assets/icons/classic/neutral.png"
+                  alt="Social mood icon"
+                />
+              </div>
+
+              <div className="hero-social-badge-text">
+                <span id="socialMoodMini">Neutral</span>
+                <strong id="socialScoreMini">50</strong>
+              </div>
+            </div>
+
+            <div className="social-expand hidden" id="socialExpand">
+              <div className="social-expand-content">
+                <div className="social-expand-row">
+                  <strong>Social Mood</strong>
+                  <span id="socialExpandMood">Neutral</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Social Score</strong>
+                  <span id="socialExpandScore">50</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Interactions</strong>
+                  <span id="socialExpandEngagement">--</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Bullish</strong>
+                  <span id="socialExpandBullish">--</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Bearish</strong>
+                  <span id="socialExpandBearish">--</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Neutral</strong>
+                  <span id="socialExpandNeutral">--</span>
+                </div>
+
+                <div className="social-expand-row">
+                  <strong>Window</strong>
+                  <span id="socialExpandWindow">24h</span>
+                </div>
+
+                <div className="social-expand-note">
+                  Social mood is derived from aggregated market sentiment across X,
+                  trending coins and meme activity.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
+            <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+              <path id="heroTimelineArea" d=""></path>
+              <path id="heroTimelineLine" d=""></path>
+            </svg>
+          </div>
+
+          <div id="heroFaceWrap" className="hero-face-wrap anim-float">
+            <img
+              id="heroFaceImg"
+              className="hero-face-img"
+              src="/assets/hero/classic/neutral.png"
+              alt="Global market mood"
+            />
+
+            <img
+              id="heroFaceOverlayImg"
+              className="hero-face-overlay hidden"
+              src=""
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ===============================
+          BUBBLE MAPS VIEW
+      ================================ */}
+      <div id="bubbleMapsView" className="bubble-maps-view hidden">
+        <div className="bubble-map-head">
+          <div>
+            <span className="bubble-map-eyebrow">WOJAKMETER</span>
+            <strong>Bubble Maps</strong>
+            <p>Live emotional gravity map of the crypto market.</p>
+          </div>
+
+          <button
+            id="bubbleExpandBtn"
+            type="button"
+            className="action-btn"
+          >
+            Expand Emotion Map
+          </button>
+        </div>
+
+        <div className="bubble-map-legend">
+          <span className="legend-item frustration">Frustration</span>
+          <span className="legend-item concern">Concern</span>
+          <span className="legend-item doubt">Doubt</span>
+          <span className="legend-item neutral">Neutral</span>
+          <span className="legend-item optimism">Optimism</span>
+          <span className="legend-item content">Content</span>
+          <span className="legend-item euphoria">Euphoria</span>
+        </div>
+
+        <div className="bubble-map-info-row">
+          <div>
+            <strong id="bubbleGlobalMood">Neutral</strong>
+            <span>Global Mood</span>
+          </div>
+
+          <div>
+            <strong id="bubbleGlobalScore">50</strong>
+            <span>Emotion Score</span>
+          </div>
+
+          <div>
+            <strong id="bubbleAssetCount">Top 0</strong>
+            <span>Live Assets</span>
+          </div>
+        </div>
+
+        <div id="bubbleMapStage" className="bubble-map-stage">
+          <div className="bubble-zone bubble-zone-top">
+            Euphoria / Optimism
+          </div>
+
+          <div className="bubble-zone bubble-zone-mid">
+            Neutral / Doubt
+          </div>
+
+          <div className="bubble-zone bubble-zone-bottom">
+            Concern / Frustration
+          </div>
+        </div>
+      </div>
+
+      <div className="hero-mood mood-neutral" id="heroMood">
+        Neutral
+      </div>
+
+      <div className="hero-subtitle" id="heroSubtitle">
+        Market emotion is balanced for now.
+      </div>
+
+      <div className="hero-score" id="heroScoreWrap">
+        Score: <span id="heroScore">50</span> / 100
+      </div>
+
+      <section
+        className="emotion-bar-inline emotion-bar-inline-minimal"
+        id="emotionBarSection"
+      >
+        <div className="emotion-track-wrap">
+          <div className="emotion-track emotion-track-gradient" id="emotionTrack">
+            <div
+              className="emotion-pointer"
+              id="emotionPointer"
+              aria-label="WojakMeter indicator"
+            >
+              <div className="emotion-pointer-arrow"></div>
+
+              <div className="emotion-pointer-face">
+                <img
+                  id="emotionPointerImg"
+                  src="/assets/icons/classic/neutral.png"
+                  alt="Current emotional state"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
                   <div className="heartbeat-wrap" id="heartbeatWrap">
                     <div className="heartbeat-heart" id="heartbeatHeart">❤</div>
