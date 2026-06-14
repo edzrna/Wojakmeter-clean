@@ -73,7 +73,7 @@ export default function Home({ ogImageUrl }) {
       <Script id="wm-structured-data" type="application/ld+json" strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <Script src="/script.js?v=11" strategy="afterInteractive" />
+      <Script src="/script.js?v=12" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
