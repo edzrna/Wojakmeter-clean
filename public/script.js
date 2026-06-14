@@ -139,6 +139,11 @@ let isLoadingMemes = false;
 let isLoadingSentiment = false;
 let hasBooted = false;
 
+let activeHeroView = "mood";
+let isBubbleMapExpanded = false;
+let isHoveringBubble = false;
+let bubbleCoins = [];
+
 // ===============================
 // BASIC HELPERS
 // ===============================
@@ -1409,6 +1414,11 @@ function renderCoinSections() {
   renderGrid("coinsGrid", topCoinsData, "Top coins unavailable");
   renderGrid("trendingGrid", trendingCoinsData, "Trending unavailable");
   renderGrid("memesGrid", topMemesData, "Memes unavailable");
+
+  if (activeHeroView === "bubble" && !isHoveringBubble) {
+  renderBubbleMaps();
+  }
+  
 }
 
 function setupMarketControls() {
@@ -4448,6 +4458,426 @@ function startAutoRefresh() {
   setInterval(loadTrendingCoins, TRENDING_REFRESH_MS);
   setInterval(loadTopMemes, MEMES_REFRESH_MS);
   setInterval(loadSentiment, SENTIMENT_REFRESH_MS);
+}
+
+function getBubbleCoinScore(coin) {
+  const change = getCoinChangeForTimeframe(coin, globalTimeframe);
+  return roundScore(normalizeChangeToScore(change, 6));
+}
+
+function getBubbleSize(marketCap) {
+  const minSize = 42;
+  const maxSize = 126;
+
+  const cap = Number(marketCap || 0);
+  if (!Number.isFinite(cap) || cap <= 0) return minSize;
+
+  const minCap = 500_000_000;
+  const maxCap = 1_500_000_000_000;
+
+  const logMin = Math.log10(minCap);
+  const logMax = Math.log10(maxCap);
+  const logCap = Math.log10(Math.max(cap, minCap));
+
+  const normalized = (logCap - logMin) / (logMax - logMin);
+
+  return Math.round(minSize + clamp(normalized, 0, 1) * (maxSize - minSize));
+}
+
+function getBubbleY(score, containerHeight, size) {
+  const padding = size / 2 + 24;
+  const top = padding;
+  const bottom = containerHeight - padding;
+  const normalized = clamp(score, 0, 100) / 100;
+
+  return bottom - normalized * (bottom - top);
+}
+
+function getBubbleX(index, total, containerWidth, size, seed = 0.5) {
+  const cols = containerWidth < 700 ? 6 : 10;
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+
+  const cellWidth = containerWidth / cols;
+  const baseX = col * cellWidth + cellWidth / 2;
+  const jitter = (seed - 0.5) * cellWidth * 0.55;
+  const wave = Math.sin(Date.now() / 1400 + row + col) * 4;
+
+  return clamp(baseX + jitter + wave, size / 2 + 14, containerWidth - size / 2 - 14);
+}
+
+function getBubbleGlowFromVolume(volume) {
+  const min = 30_000_000;
+  const max = 3_000_000_000;
+  const normalized = clamp((Number(volume || 0) - min) / (max - min), 0, 1);
+  return Math.round(10 + normalized * 22);
+}
+
+function getTooltipPositionClass(coin, stageHeight) {
+  const y = Number(coin.y || 0);
+  if (y < 150) return "tooltip-bottom";
+  return "tooltip-top";
+}
+
+function resolveBubbleCollisions(items, width, height, iterations = 80) {
+  const padding = 8;
+
+  for (let i = 0; i < iterations; i++) {
+    for (let a = 0; a < items.length; a++) {
+      for (let b = a + 1; b < items.length; b++) {
+        const A = items[a];
+        const B = items[b];
+
+        const dx = B.x - A.x;
+        const dy = B.y - A.y;
+        const distance = Math.sqrt(dx * dx + dy * dy) || 0.001;
+
+        const minDistance = A.size / 2 + B.size / 2 + padding;
+
+        if (distance < minDistance) {
+          const overlap = (minDistance - distance) / 2;
+          const nx = dx / distance;
+          const ny = dy / distance;
+
+          A.x -= nx * overlap;
+          A.y -= ny * overlap;
+          B.x += nx * overlap;
+          B.y += ny * overlap;
+        }
+      }
+    }
+
+    items.forEach((item) => {
+      const r = item.size / 2 + 12;
+
+      item.x = clamp(item.x, r, width - r);
+      item.y = clamp(item.y, r, height - r);
+
+      item.y += (item.targetY - item.y) * 0.035;
+      item.x += (item.targetX - item.x) * 0.012;
+    });
+  }
+
+  return items;
+}
+
+function getBubbleSourceCoins() {
+  const merged = [
+    ...topCoinsData,
+    ...trendingCoinsData,
+    ...topMemesData
+  ];
+
+  const seen = new Set();
+
+  return merged
+    .filter((coin) => {
+      const symbol = String(coin.symbol || "").toUpperCase();
+      if (!symbol || seen.has(symbol)) return false;
+      seen.add(symbol);
+      return true;
+    })
+    .sort((a, b) => Number(b.market_cap || 0) - Number(a.market_cap || 0))
+    .slice(0, 50);
+}
+
+function createBubbleElement(coin) {
+  const symbol = coin.symbol?.toUpperCase?.() || "---";
+
+  const bubble = document.createElement("button");
+  bubble.type = "button";
+  bubble.className = "bubble-coin";
+  bubble.dataset.symbol = symbol;
+
+  bubble.innerHTML = `
+    <div class="bubble-motion">
+      <div class="bubble-inner">
+        <img src="${escapeHtml(coin.image || "")}" alt="${escapeHtml(symbol)}" onerror="this.style.display='none'">
+      </div>
+    </div>
+
+    <div class="bubble-tooltip tooltip-top">
+      <div class="tooltip-head">
+        <img src="${escapeHtml(coin.image || "")}" alt="${escapeHtml(symbol)}" onerror="this.style.display='none'">
+        <div>
+          <b>${escapeHtml(symbol)}</b>
+          <span class="tooltip-name">${escapeHtml(coin.name || symbol)}</span>
+        </div>
+      </div>
+
+      <div class="tooltip-row">
+        <span>Mood</span>
+        <strong class="tooltip-mood">--</strong>
+      </div>
+
+      <div class="tooltip-row">
+        <span>Score</span>
+        <strong class="tooltip-score">--</strong>
+      </div>
+
+      <div class="tooltip-row">
+        <span>${escapeHtml(globalTimeframe)}</span>
+        <strong class="tooltip-change">--</strong>
+      </div>
+
+      <div class="tooltip-row">
+        <span>Volume</span>
+        <strong class="tooltip-volume">--</strong>
+      </div>
+
+      <div class="tooltip-row">
+        <span>Market Cap</span>
+        <strong class="tooltip-cap">--</strong>
+      </div>
+    </div>
+  `;
+
+  bubble.addEventListener("mouseenter", () => {
+    isHoveringBubble = true;
+  });
+
+  bubble.addEventListener("mouseleave", () => {
+    isHoveringBubble = false;
+  });
+
+  bubble.addEventListener("click", async () => {
+    if (!symbol) return;
+
+    activeCoinSymbol = symbol;
+    saveActiveCoin(activeCoinSymbol);
+
+    renderCoinSections();
+    await loadCoinDetails();
+    renderStudio();
+
+    if (isBubbleMapExpanded) {
+      toggleBubbleMapExpanded(false);
+    }
+
+    qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  return bubble;
+}
+
+function ensureBubbleElements() {
+  const stage = byId("bubbleMapStage");
+  if (!stage) return;
+
+  const sourceCoins = getBubbleSourceCoins();
+
+  const existingSymbols = new Set(bubbleCoins.map((item) => item.symbol));
+  const nextSymbols = new Set(sourceCoins.map((coin) => coin.symbol?.toUpperCase?.()));
+
+  bubbleCoins = bubbleCoins.filter((item) => {
+    if (nextSymbols.has(item.symbol)) return true;
+    item.el?.remove();
+    return false;
+  });
+
+  sourceCoins.forEach((coin) => {
+    const symbol = coin.symbol?.toUpperCase?.() || "";
+    if (!symbol) return;
+
+    let item = bubbleCoins.find((entry) => entry.symbol === symbol);
+
+    if (!item) {
+      item = {
+        symbol,
+        coin,
+        el: createBubbleElement(coin),
+        xSeed: Math.random(),
+        x: 0,
+        y: 0,
+        size: 0
+      };
+
+      bubbleCoins.push(item);
+      stage.appendChild(item.el);
+    } else {
+      item.coin = coin;
+    }
+  });
+}
+
+function calculateBubbleMapPositions() {
+  const stage = byId("bubbleMapStage");
+  if (!stage || !bubbleCoins.length) return;
+
+  const rect = stage.getBoundingClientRect();
+  const width = rect.width;
+  const height = rect.height;
+
+  let layoutItems = bubbleCoins.map((item, index) => {
+    const score = getBubbleCoinScore(item.coin);
+    const size = getBubbleSize(item.coin.market_cap);
+    const targetX = getBubbleX(index, bubbleCoins.length, width, size, item.xSeed);
+    const targetY = getBubbleY(score, height, size);
+
+    return {
+      item,
+      size,
+      x: item.x || targetX,
+      y: item.y || targetY,
+      targetX,
+      targetY
+    };
+  });
+
+  layoutItems = resolveBubbleCollisions(layoutItems, width, height, 95);
+
+  layoutItems.forEach((layout) => {
+    layout.item.x = layout.x;
+    layout.item.y = layout.y;
+    layout.item.size = layout.size;
+  });
+}
+
+function renderBubbleMaps() {
+  const stage = byId("bubbleMapStage");
+  if (!stage) return;
+
+  ensureBubbleElements();
+  calculateBubbleMapPositions();
+
+  const stageRect = stage.getBoundingClientRect();
+
+  bubbleCoins.forEach((item) => {
+    const coin = item.coin;
+    const symbol = coin.symbol?.toUpperCase?.() || item.symbol;
+    const score = getBubbleCoinScore(coin);
+    const mood = getMoodByScore(score);
+    const change = getCoinChangeForTimeframe(coin, globalTimeframe);
+    const color = getMoodColor(mood.key);
+
+    const polarityClass =
+      change > 0
+        ? "positive"
+        : change < 0
+          ? "negative"
+          : "neutral";
+
+    const moodClass = `mood-${mood.key}`;
+    const tooltipPositionClass = getTooltipPositionClass(item, stageRect.height);
+
+    const el = item.el;
+    if (!el) return;
+
+    el.className = `bubble-coin ${moodClass}`;
+    el.style.width = `${item.size}px`;
+    el.style.height = `${item.size}px`;
+    el.style.left = `${item.x}px`;
+    el.style.top = `${item.y}px`;
+    el.style.setProperty("--bubble-color", color);
+    el.style.setProperty("--bubble-glow", getBubbleGlowFromVolume(coin.total_volume));
+
+    const tooltip = el.querySelector(".bubble-tooltip");
+    if (tooltip) {
+      tooltip.className = `bubble-tooltip ${moodClass} ${tooltipPositionClass}`;
+    }
+
+    const tooltipMood = el.querySelector(".tooltip-mood");
+    const tooltipScore = el.querySelector(".tooltip-score");
+    const tooltipChange = el.querySelector(".tooltip-change");
+    const tooltipVolume = el.querySelector(".tooltip-volume");
+    const tooltipCap = el.querySelector(".tooltip-cap");
+
+    if (tooltipMood) {
+      tooltipMood.textContent = mood.name;
+      tooltipMood.className = `tooltip-mood ${moodClass}`;
+    }
+
+    if (tooltipScore) {
+      tooltipScore.textContent = `${score}/100`;
+      tooltipScore.className = `tooltip-score ${moodClass}`;
+    }
+
+    if (tooltipChange) {
+      tooltipChange.textContent = formatPercent(change);
+      tooltipChange.className = `tooltip-change ${polarityClass}`;
+    }
+
+    if (tooltipVolume) tooltipVolume.textContent = formatCurrencyCompact(coin.total_volume);
+    if (tooltipCap) tooltipCap.textContent = formatCurrencyCompact(coin.market_cap);
+  });
+
+  const bubbleGlobalMood = byId("bubbleGlobalMood");
+  const bubbleGlobalScore = byId("bubbleGlobalScore");
+  const bubbleAssetCount = byId("bubbleAssetCount");
+
+  if (bubbleGlobalMood) {
+    bubbleGlobalMood.textContent = currentGlobalMood?.name || "Neutral";
+    bubbleGlobalMood.className = `mood-${currentGlobalMood?.key || "neutral"}`;
+  }
+
+  if (bubbleGlobalScore) {
+    bubbleGlobalScore.textContent = String(roundScore(currentGlobalScore));
+  }
+
+  if (bubbleAssetCount) {
+    bubbleAssetCount.textContent = `Top ${bubbleCoins.length || 0}`;
+  }
+}
+
+function setHeroView(view) {
+  activeHeroView = view === "bubble" ? "bubble" : "mood";
+
+  const moodView = byId("heroMoodView");
+  const bubbleView = byId("bubbleMapsView");
+
+  if (moodView) moodView.classList.toggle("hidden", activeHeroView !== "mood");
+  if (bubbleView) bubbleView.classList.toggle("hidden", activeHeroView !== "bubble");
+
+  qsa(".hero-view-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.heroView === activeHeroView);
+  });
+
+  if (activeHeroView === "bubble") {
+    setTimeout(renderBubbleMaps, 80);
+  } else {
+    toggleBubbleMapExpanded(false);
+  }
+}
+
+function toggleBubbleMapExpanded(forceValue) {
+  isBubbleMapExpanded =
+    typeof forceValue === "boolean"
+      ? forceValue
+      : !isBubbleMapExpanded;
+
+  document.body.classList.toggle("bubble-map-expanded", isBubbleMapExpanded);
+
+  const btn = byId("bubbleExpandBtn");
+  if (btn) {
+    btn.textContent = isBubbleMapExpanded ? "Collapse Map" : "Expand Emotion Map";
+  }
+
+  setTimeout(renderBubbleMaps, 120);
+}
+
+function setupBubbleMaps() {
+  qsa(".hero-view-btn").forEach((btn) => {
+    if (btn.dataset.boundBubbleView) return;
+    btn.dataset.boundBubbleView = "1";
+
+    btn.addEventListener("click", () => {
+      setHeroView(btn.dataset.heroView || "mood");
+    });
+  });
+
+  const expandBtn = byId("bubbleExpandBtn");
+  if (expandBtn && !expandBtn.dataset.boundBubbleExpand) {
+    expandBtn.dataset.boundBubbleExpand = "1";
+    expandBtn.addEventListener("click", () => {
+      toggleBubbleMapExpanded();
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (activeHeroView === "bubble") {
+      renderBubbleMaps();
+    }
+  });
 }
 
 // ===============================
