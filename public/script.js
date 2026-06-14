@@ -4473,8 +4473,10 @@ function getBubbleCoinScore(coin) {
 }
 
 function getBubbleSize(marketCap) {
-  const minSize = 42;
-  const maxSize = 126;
+  const isMobile = isMobileBubbleMap();
+
+  const minSize = isMobile ? 32 : 42;
+  const maxSize = isMobile ? 82 : 126;
 
   const cap = Number(marketCap || 0);
   if (!Number.isFinite(cap) || cap <= 0) return minSize;
@@ -4501,7 +4503,7 @@ function getBubbleY(score, containerHeight, size) {
 }
 
 function getBubbleX(index, total, containerWidth, size, seed = 0.5) {
-  const cols = containerWidth < 700 ? 6 : 10;
+  const cols = containerWidth < 480 ? 5 : containerWidth < 700 ? 7 : 10;
   const col = index % cols;
   const row = Math.floor(index / cols);
 
@@ -4588,6 +4590,26 @@ function getBubbleSourceCoins() {
     .slice(0, 50);
 }
 
+function isMobileBubbleMap() {
+  return window.matchMedia("(max-width: 720px)").matches;
+}
+
+function closeActiveBubbleTooltip() {
+  activeBubbleSymbol = null;
+
+  qsa(".bubble-coin").forEach((bubble) => {
+    bubble.classList.remove("bubble-active");
+  });
+}
+
+function setActiveBubbleTooltip(symbol) {
+  activeBubbleSymbol = symbol;
+
+  qsa(".bubble-coin").forEach((bubble) => {
+    bubble.classList.toggle("bubble-active", bubble.dataset.symbol === symbol);
+  });
+}
+
 function createBubbleElement(coin) {
   const symbol = coin.symbol?.toUpperCase?.() || "---";
 
@@ -4647,22 +4669,37 @@ function createBubbleElement(coin) {
     isHoveringBubble = false;
   });
 
-  bubble.addEventListener("click", async () => {
-    if (!symbol) return;
+  bubble.addEventListener("click", async (event) => {
+  event.preventDefault();
+  event.stopPropagation();
 
-    activeCoinSymbol = symbol;
-    saveActiveCoin(activeCoinSymbol);
+  if (!symbol) return;
 
-    renderCoinSections();
-    await loadCoinDetails();
-    renderStudio();
-
-    if (isBubbleMapExpanded) {
-      toggleBubbleMapExpanded(false);
+  /*
+    Mobile behavior:
+    First tap = show info.
+    Second tap on same coin = open chart.
+  */
+  if (isMobileBubbleMap()) {
+    if (activeBubbleSymbol !== symbol) {
+      setActiveBubbleTooltip(symbol);
+      return;
     }
+  }
 
-    qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  activeCoinSymbol = symbol;
+  saveActiveCoin(activeCoinSymbol);
+
+  renderCoinSections();
+  await loadCoinDetails();
+  renderStudio();
+
+  if (isBubbleMapExpanded) {
+    toggleBubbleMapExpanded(false);
+  }
+
+  qs(".chart-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
   return bubble;
 }
@@ -4882,7 +4919,19 @@ function setupBubbleMaps() {
 
   window.addEventListener("resize", () => {
     if (activeHeroView === "bubble") {
+      closeActiveBubbleTooltip();
       renderBubbleMaps();
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!isMobileBubbleMap()) return;
+
+    const clickedBubble = event.target.closest(".bubble-coin");
+    const clickedTooltip = event.target.closest(".bubble-tooltip");
+
+    if (!clickedBubble && !clickedTooltip) {
+      closeActiveBubbleTooltip();
     }
   });
 }
