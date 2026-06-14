@@ -192,6 +192,113 @@ function getActiveMacroDriver() {
   return activeMacroDriver || "market_flow";
 }
 
+/* =========================
+   HERO AMBIENT SYSTEM
+========================= */
+
+const HERO_AMBIENT_THEMES = {
+  euphoria: {
+    speed: 9,
+    drift: 15
+  },
+  content: {
+    speed: 10,
+    drift: 16
+  },
+  optimism: {
+    speed: 11,
+    drift: 17
+  },
+  neutral: {
+    speed: 12,
+    drift: 18
+  },
+  doubt: {
+    speed: 11,
+    drift: 16
+  },
+  concern: {
+    speed: 10,
+    drift: 15
+  },
+  frustration: {
+    speed: 8,
+    drift: 13
+  }
+};
+
+function seedHeroAmbientParticles() {
+  const container = document.getElementById("heroAmbientParticles");
+  if (!container || container.children.length) return;
+
+  const frag = document.createDocumentFragment();
+
+  for (let i = 0; i < 18; i++) {
+    const dot = document.createElement("span");
+    dot.className = `hero-particle${i % 4 === 0 ? " is-square" : ""}`;
+
+    dot.style.left = `${Math.random() * 100}%`;
+    dot.style.top = `${Math.random() * 100}%`;
+    dot.style.setProperty("--size", `${8 + Math.random() * 18}px`);
+    dot.style.setProperty("--delay", `${(Math.random() * -12).toFixed(2)}s`);
+    dot.style.setProperty("--duration", `${(9 + Math.random() * 10).toFixed(2)}s`);
+    dot.style.setProperty("--drift-x", `${(-24 + Math.random() * 48).toFixed(2)}px`);
+    dot.style.setProperty("--drift-y", `${(-30 + Math.random() * 50).toFixed(2)}px`);
+
+    frag.appendChild(dot);
+  }
+
+  container.appendChild(frag);
+}
+
+function clearHeroAmbientMoodClasses(el) {
+  el.classList.remove(
+    "mood-euphoria",
+    "mood-content",
+    "mood-optimism",
+    "mood-neutral",
+    "mood-doubt",
+    "mood-concern",
+    "mood-frustration"
+  );
+}
+
+function clearHeroAmbientDriverClasses(el) {
+  el.classList.remove(
+    "driver-market_flow",
+    "driver-etf_adoption",
+    "driver-rate_hike",
+    "driver-rate_cut",
+    "driver-regulation_crackdown",
+    "driver-crypto_hack",
+    "driver-war_escalation",
+    "driver-neutral_macro"
+  );
+}
+
+function updateHeroAmbient(moodKey = "neutral", score = 50, driverKey = "market_flow") {
+  const ambient = document.getElementById("heroAmbient");
+  if (!ambient) return;
+
+  seedHeroAmbientParticles();
+
+  const safeMood = HERO_AMBIENT_THEMES[moodKey] ? moodKey : "neutral";
+  const safeDriver = driverKey || "market_flow";
+  const scoreNum = Number(score || 50);
+  const normalized = Math.max(0, Math.min(1, Math.abs(scoreNum - 50) / 50));
+  const theme = HERO_AMBIENT_THEMES[safeMood];
+
+  clearHeroAmbientMoodClasses(ambient);
+  clearHeroAmbientDriverClasses(ambient);
+
+  ambient.classList.add(`mood-${safeMood}`);
+  ambient.classList.add(`driver-${safeDriver}`);
+
+  ambient.style.setProperty("--ambient-intensity", (0.32 + normalized * 0.68).toFixed(2));
+  ambient.style.setProperty("--ambient-speed", `${theme.speed}s`);
+  ambient.style.setProperty("--ambient-drift", `${theme.drift}s`);
+}
+
 // ===============================
 // BASIC HELPERS
 // ===============================
@@ -955,7 +1062,7 @@ function updateDriverPanel() {
 
   const macroLabel = getDriverLabel(driverKey);
   const narrative = currentNarrative || getDriverNarrative(driverKey);
-  const reaction = `${getReactionLabel(globalTimeframe)} (${globalTimeframe})`;
+  const reaction = `${getReactionLabel(globalTimeframe)} (${globalTimeframe || "24h"})`;
   const riskTone = currentRiskTone || getRiskToneFromMood(mood.key);
 
   setText("driverMacro", macroLabel);
@@ -963,10 +1070,13 @@ function updateDriverPanel() {
   setText("driverTimeframeReaction", reaction);
   setText("driverRiskTone", riskTone);
 
-  const macroDriverSelect = byId("macroDriver");
   if (macroDriverSelect && macroDriverSelect.value !== driverKey) {
     macroDriverSelect.value = driverKey;
   }
+
+  const activeScore = Number(currentGlobalScore ?? document.getElementById("heroScore")?.textContent ?? 50);
+  updateHeroAmbient(mood.key, activeScore, driverKey);
+}
 
   setText("heroDriverLabel", ` (${macroLabel})`);
 }
@@ -5059,6 +5169,11 @@ async function boot() {
 
    startAutoRefresh();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  seedHeroAmbientParticles();
+  updateHeroAmbient("neutral", 50, "market_flow");
+});
 
 if (document.readyState === "loading") {
   window.addEventListener("DOMContentLoaded", boot);
