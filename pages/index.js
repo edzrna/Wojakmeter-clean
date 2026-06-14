@@ -161,79 +161,115 @@ export default function Home({ ogImageUrl }) {
       ================================ */}
       <div id="heroMoodView" className="hero-mood-view">
         <div className="wojak-stage">
-          <div className="sweat hidden" id="sweatFx">
-            💧
-          </div>
+  <div className="sweat hidden" id="sweatFx">💧</div>
 
-          <div className="hero-social-wrapper" id="socialWrapper">
-            <div
-              className="hero-social-badge social-neutral"
-              id="socialBubble"
-              aria-label="Social sentiment"
-              role="button"
-              tabIndex={0}
-            >
-              <div className="hero-social-badge-label">𝕏</div>
+  <div className="hero-social-wrapper" id="socialWrapper">
+    <div
+      className="hero-social-badge social-neutral"
+      id="socialBubble"
+      aria-label="Social sentiment"
+      role="button"
+      tabIndex={0}
+    >
+      <div className="hero-social-badge-label">𝕏</div>
 
-              <div className="hero-social-badge-icon">
-                <img
-                  id="socialIconImg"
-                  className="mood-icon-img anim-float"
-                  src="/assets/icons/classic/neutral.png"
-                  alt="Social mood icon"
-                />
-              </div>
+      <div className="hero-social-badge-icon">
+        <img
+          id="socialIconImg"
+          className="mood-icon-img anim-float"
+          src="/assets/icons/classic/neutral.png"
+          alt="Social mood icon"
+        />
+      </div>
 
-              <div className="hero-social-badge-text">
-                <span id="socialMoodMini">Neutral</span>
-                <strong id="socialScoreMini">50</strong>
-              </div>
-            </div>
+      <div className="hero-social-badge-text">
+        <span id="socialMoodMini">Neutral</span>
+        <strong id="socialScoreMini">50</strong>
+      </div>
+    </div>
 
-            <div className="social-expand hidden" id="socialExpand">
-              <div className="social-expand-content">
-                <div className="social-expand-row">
-                  <strong>Social Mood</strong>
-                  <span id="socialExpandMood">Neutral</span>
-                </div>
+    <div className="social-expand hidden" id="socialExpand">
+      <div className="social-expand-content">
+        <div className="social-expand-row">
+          <strong>Social Mood</strong>
+          <span id="socialExpandMood">Neutral</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Social Score</strong>
-                  <span id="socialExpandScore">50</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Social Score</strong>
+          <span id="socialExpandScore">50</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Interactions</strong>
-                  <span id="socialExpandEngagement">--</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Interactions</strong>
+          <span id="socialExpandEngagement">--</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Bullish</strong>
-                  <span id="socialExpandBullish">--</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Bullish</strong>
+          <span id="socialExpandBullish">--</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Bearish</strong>
-                  <span id="socialExpandBearish">--</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Bearish</strong>
+          <span id="socialExpandBearish">--</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Neutral</strong>
-                  <span id="socialExpandNeutral">--</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Neutral</strong>
+          <span id="socialExpandNeutral">--</span>
+        </div>
 
-                <div className="social-expand-row">
-                  <strong>Window</strong>
-                  <span id="socialExpandWindow">24h</span>
-                </div>
+        <div className="social-expand-row">
+          <strong>Window</strong>
+          <span id="socialExpandWindow">24h</span>
+        </div>
 
-                <div className="social-expand-note">
-                  Social mood is derived from aggregated market sentiment across X,
-                  trending coins and meme activity.
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="social-expand-note">
+          Social mood is derived from aggregated market sentiment across X,
+          trending coins and meme activity.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* NEW: ambient emotional layer */}
+  <div
+    className="hero-ambient mood-neutral driver-market_flow"
+    id="heroAmbient"
+    aria-hidden="true"
+  >
+    <div className="hero-ambient-grid"></div>
+    <div className="hero-ambient-haze"></div>
+    <div className="hero-ambient-orbs"></div>
+    <div className="hero-ambient-streaks"></div>
+    <div className="hero-ambient-driver"></div>
+    <div className="hero-ambient-particles" id="heroAmbientParticles"></div>
+  </div>
+
+  <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
+    <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+      <path id="heroTimelineArea" d=""></path>
+      <path id="heroTimelineLine" d=""></path>
+    </svg>
+  </div>
+
+  <div id="heroFaceWrap" className="hero-face-wrap anim-float">
+    <img
+      id="heroFaceImg"
+      className="hero-face-img"
+      src="/assets/hero/classic/neutral.png"
+      alt="Global market mood"
+    />
+    <img
+      id="heroFaceOverlayImg"
+      className="hero-face-overlay hidden"
+      src=""
+      alt=""
+      aria-hidden="true"
+    />
+  </div>
+</div>
 
           <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
             <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
