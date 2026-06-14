@@ -132,7 +132,7 @@ export default function Home({ ogImageUrl }) {
     <span id="heroDriverLabel"> (Market flow / price action)</span>
   </h2>
 
-  <div className="hero-grid hero-grid-single">
+ <div className="hero-grid hero-grid-stack">
     <div className="hero-main">
 
       {/* HERO / BUBBLE VIEW TOGGLE */}
