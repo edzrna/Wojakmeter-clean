@@ -143,6 +143,7 @@ let activeHeroView = "mood";
 let isBubbleMapExpanded = false;
 let isHoveringBubble = false;
 let bubbleCoins = [];
+let activeBubbleSymbol = null;
 
 // ===============================
 // BASIC HELPERS
