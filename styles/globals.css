@@ -6095,3 +6095,140 @@ body.bubble-map-expanded #bubbleMapStage {
     min-width: 190px;
   }
 }
+
+/* ===============================
+   HERO LAYOUT REORGANIZATION
+   Laptop/Desktop like mobile flow
+================================ */
+
+/* Fuerza el Hero a una sola columna */
+.hero-grid-stack {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 22px;
+  align-items: start;
+}
+
+/* Centra el contenido principal */
+.hero-grid-stack .hero-main {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* Market Drivers debajo del hero, centrado */
+.hero-grid-stack .drivers-card {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* Evita que el panel de drivers compita visualmente con el hero */
+.hero-grid-stack .drivers-card {
+  margin-top: 8px;
+}
+
+/* Más aire entre secciones internas */
+.hero-main > .hero-mood,
+.hero-main > .hero-subtitle,
+.hero-main > .hero-score,
+.hero-main > .emotion-bar-inline,
+.hero-main > .heartbeat-wrap,
+.hero-main > .hero-share-row,
+.hero-main > .timeframes,
+.hero-main > .hero-modes,
+.hero-main > .wm-gauge-shell,
+.hero-main > .wm-layers,
+.hero-main > .hero-market-line {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Limita el ancho del visual principal */
+.hero-mood-view,
+.bubble-maps-view {
+  width: min(860px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Hero stage más limpio en laptop */
+.wojak-stage {
+  width: min(560px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Bubble map más elegante en laptop */
+.bubble-maps-view {
+  max-width: 920px;
+}
+
+.bubble-map-stage {
+  height: 520px;
+}
+
+/* Gauge y layers alineados con el contenido */
+.wm-gauge-shell,
+.wm-layers,
+.hero-market-line {
+  max-width: 860px;
+}
+
+/* Market line más limpia */
+.hero-market-line {
+  margin-top: 16px;
+}
+
+/* Drivers como bloque secundario inferior */
+.hero-grid-stack .drivers-card {
+  padding: 22px;
+  border-radius: 22px;
+}
+
+/* Mejor lectura del panel drivers */
+.hero-grid-stack .driver-item {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.7fr) minmax(0, 1.3fr);
+  align-items: center;
+}
+
+.hero-grid-stack .driver-item strong {
+  text-align: right;
+}
+
+/* En pantallas grandes todavía mantenemos todo centrado */
+@media (min-width: 1200px) {
+  .hero-grid-stack .hero-main,
+  .hero-grid-stack .drivers-card {
+    max-width: 960px;
+  }
+
+  .bubble-maps-view {
+    max-width: 960px;
+  }
+
+  .bubble-map-stage {
+    height: 540px;
+  }
+}
+
+/* En pantallas pequeñas mantiene el estilo móvil */
+@media (max-width: 720px) {
+  .hero-grid-stack {
+    gap: 18px;
+  }
+
+  .hero-grid-stack .hero-main,
+  .hero-grid-stack .drivers-card {
+    max-width: 100%;
+  }
+
+  .hero-grid-stack .driver-item {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-grid-stack .driver-item strong {
+    text-align: left;
+  }
+}
