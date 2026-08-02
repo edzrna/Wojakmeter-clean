@@ -1,0 +1,231 @@
+/* ===========================================================
+   WOJAKMETER — ORGANISM CSS LAYER  v2
+   Corregido contra el markup real (pages/index.js + style.css)
+
+   CAMBIOS vs v1:
+   - .hero-stage / .hero-visual → .wojak-stage (los primeros no existen)
+   - transform: scale() → scale:  (compone con tus animaciones
+     en vez de ser sobreescrito por ellas)
+   - Añadido .radar-face-wrap y .bag-mood-stage
+
+   Variables publicadas por wm-organism.js en <body>:
+     --wm-valence      0-100
+     --wm-arousal      0-100
+     --wm-impulse      0-1.4
+     --wm-fatigue      0-0.65
+     --wm-bpm          42-165
+     --wm-beat         0-1
+     --wm-pulse-scale  ~1.00
+     --wm-glow         0-1.2
+     --wm-color        rgb()
+
+   body[data-wm-mood]    frustration…euphoria
+   body[data-wm-arousal] dormant|steady|active|frantic
+
+   Carga DESPUÉS de style.css.
+   =========================================================== */
+
+/* -----------------------------------------------------------
+   1. EL LATIDO  —  usa `scale:`, no `transform:`
+
+   Tu CSS ya anima transform en .hero-face-wrap desde:
+     · .anim-float / .anim-pulse / .anim-shake (clase mood.anim)
+     · body[data-subemotion*="..."] .hero-face-wrap
+     · .hero-face-wrap.hero-face-pulse
+
+   La propiedad `scale` es independiente y se multiplica sobre
+   el transform animado. Así el latido convive con todo eso.
+   ----------------------------------------------------------- */
+
+.hero-face-wrap,
+.mood-hero-img,
+.bag-mood-hero-img,
+.radar-face-wrap img {
+  scale: var(--wm-pulse-scale, 1);
+  will-change: scale;
+}
+
+/* Tu regla existente pone `transform: none !important` en
+   .hero-face-img — no la tocamos. El latido va en el wrapper. */
+
+/* -----------------------------------------------------------
+   2. RESPLANDOR EMOCIONAL
+
+   Tu CSS ya usa .wojak-stage::after para el glow por mood.
+   Usamos ::before para no pisarlo — se superponen y suman.
+   ----------------------------------------------------------- */
+
+.wojak-stage,
+#moodStage,
+.bag-mood-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+.wojak-stage::before,
+.bag-mood-stage::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle at 50% 52%,
+    color-mix(in srgb, var(--wm-color, #cfd7e3) 40%, transparent) 0%,
+    color-mix(in srgb, var(--wm-color, #cfd7e3) 12%, transparent) 40%,
+    transparent 70%
+  );
+
+  opacity: calc(0.18 + var(--wm-glow, 0.3) * 0.62);
+  scale: calc(0.93 + var(--wm-beat, 0) * 0.10);
+  filter: blur(calc(16px + var(--wm-arousal, 20) * 0.20px));
+}
+
+/* moodStage ya tiene ::before (grid) y un glow propio.
+   Le damos el latido al glow existente en vez de crear otro. */
+#moodStageGlow {
+  scale: calc(0.95 + var(--wm-beat, 0) * 0.12);
+  opacity: calc(0.55 + var(--wm-glow, 0.3) * 0.45);
+  animation: none; /* reemplaza moodGlowPulse — ahora late con datos reales */
+}
+
+/* -----------------------------------------------------------
+   3. ESTADOS DE ACTIVACIÓN
+   La diferencia que no existía: score 50 dormido ≠ score 50 en guerra.
+   ----------------------------------------------------------- */
+
+body[data-wm-arousal="dormant"] .wojak-stage::before {
+  filter: blur(30px) saturate(0.55);
+}
+
+body[data-wm-arousal="frantic"] .wojak-stage::before {
+  filter: blur(11px) saturate(1.55);
+}
+
+/* Jitter en la etapa, NO en el wrapper — el wrapper ya está
+   ocupado por tus animaciones de subemotion. */
+body[data-wm-arousal="frantic"] .wojak-stage {
+  animation: wmOrganismJitter 0.15s steps(2) infinite;
+}
+
+@keyframes wmOrganismJitter {
+  0%   { translate: 0 0; }
+  50%  { translate: 0.7px -0.5px; }
+  100% { translate: 0 0; }
+}
+
+/* -----------------------------------------------------------
+   4. FLASH DE IMPULSO
+   Trade grande entrando → todo el organismo se sobresalta.
+   El valor decae solo en JS; no hay clases que limpiar.
+   ----------------------------------------------------------- */
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+
+  background: radial-gradient(
+    ellipse at 50% 42%,
+    color-mix(in srgb, var(--wm-color, #cfd7e3) 26%, transparent) 0%,
+    transparent 62%
+  );
+
+  opacity: calc(var(--wm-impulse, 0) * 0.20);
+  mix-blend-mode: screen;
+}
+
+/* En modo mapa expandido (z-index 3000) el flash quedaría debajo. */
+body.bubble-map-expanded::after {
+  z-index: 3001;
+}
+
+/* -----------------------------------------------------------
+   5. LÍNEA DE LATIDO
+   Tu CSS colorea #heartbeatPath por clase .heartbeat-{mood}.
+   Aquí sólo añadimos grosor y glow reactivos — el color lo
+   sigue mandando tu sistema de clases.
+   ----------------------------------------------------------- */
+
+#heartbeatPath {
+  stroke-width: calc(3px + var(--wm-arousal, 20) * 0.016px);
+  filter: drop-shadow(0 0 calc(var(--wm-glow, 0.3) * 10px) currentColor);
+}
+
+/* El corazón late al BPM real en vez de a duración fija por mood */
+.heartbeat-heart {
+  animation-duration: calc(60s / var(--wm-bpm, 60)) !important;
+}
+
+/* -----------------------------------------------------------
+   6. GAUGE
+   Tu JS escribe fill.style.stroke inline, así que hace falta
+   !important para que mande el color continuo del organismo.
+   Si prefieres conservar los 7 colores discretos, borra este bloque.
+   ----------------------------------------------------------- */
+
+#gaugeFill {
+  stroke: var(--wm-color, #cfd7e3) !important;
+  filter: drop-shadow(0 0 calc(var(--wm-glow, 0.3) * 9px) var(--wm-color, #cfd7e3));
+}
+
+/* -----------------------------------------------------------
+   7. PUNTERO DE LA BARRA DE EMOCIÓN
+   Ya tiene transition en left. Le sumamos el latido.
+   ----------------------------------------------------------- */
+
+.emotion-pointer-face {
+  scale: calc(1 + var(--wm-beat, 0) * 0.05);
+  border-color: color-mix(in srgb, var(--wm-color, #fff) 60%, white);
+}
+
+/* -----------------------------------------------------------
+   8. BURBUJAS
+   Tus animaciones por mood (wmBubbleEuphoria etc.) usan transform.
+   Otra vez: scale para no chocar.
+   ----------------------------------------------------------- */
+
+.bubble-coin {
+  scale: calc(1 + var(--wm-impulse, 0) * 0.03);
+}
+
+/* -----------------------------------------------------------
+   9. FATIGA
+   Actividad sostenida → desaturación. Comunica agotamiento
+   sin una sola palabra.
+   ----------------------------------------------------------- */
+
+.wojak-stage,
+#moodStage,
+.bag-mood-stage {
+  filter: saturate(calc(1 - var(--wm-fatigue, 0) * 0.42));
+  transition: filter 2.5s ease;
+}
+
+/* -----------------------------------------------------------
+   10. ACCESIBILIDAD  —  no negociable
+   ----------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-face-wrap,
+  .mood-hero-img,
+  .bag-mood-hero-img,
+  .radar-face-wrap img,
+  .emotion-pointer-face,
+  .bubble-coin,
+  #moodStageGlow,
+  .wojak-stage::before,
+  .bag-mood-stage::before {
+    scale: 1 !important;
+  }
+
+  body[data-wm-arousal="frantic"] .wojak-stage {
+    animation: none !important;
+  }
+
+  body::after { display: none; }
+}
