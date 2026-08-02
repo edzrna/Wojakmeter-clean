@@ -1,5 +1,5 @@
 import Head from "next/head";
-import "../styles/style.css";
+import "../styles/globals.css";
 import "../styles/wm-organism.css";
 
 
