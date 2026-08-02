@@ -1,5 +1,7 @@
 import Head from "next/head";
-import "../styles/globals.css";
+import "../styles/style.css";
+import "../styles/wm-organism.css";
+
 
 export default function App({ Component, pageProps }) {
   return (
