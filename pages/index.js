@@ -28,17 +28,61 @@ function formatCompactVolume(volumeUsd) {
 export default function Home({ ogImageUrl }) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "WojakMeter",
-    url: "https://wojakmeter.com",
-    description: "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
-    publisher: {
-      "@type": "Organization",
-      name: "WojakMeter",
-      url: "https://wojakmeter.com",
-      logo: { "@type": "ImageObject", url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png" }
-    },
-    sameAs: ["https://x.com/wojakmeterx"]
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://wojakmeter.com/#website",
+        name: "WojakMeter",
+        url: "https://wojakmeter.com",
+        description:
+          "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
+        publisher: { "@id": "https://wojakmeter.com/#org" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://wojakmeter.com/#org",
+        name: "WojakMeter",
+        url: "https://wojakmeter.com",
+        logo: {
+          "@type": "ImageObject",
+          url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png"
+        },
+        sameAs: ["https://x.com/wojakmeterx"]
+      },
+      {
+        /* Marcado FAQ: hace elegible el bloque de preguntas para
+           rich results en Google. Debe coincidir palabra por palabra
+           con lo que se ve en pantalla. */
+        "@type": "FAQPage",
+        "@id": "https://wojakmeter.com/#faq",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "What is WojakMeter?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "WojakMeter is a crypto sentiment tool that converts market data into a real-time emotional index. It reads price momentum, social sentiment and macro trends, then reports a single score for how the market feels."
+            }
+          },
+          {
+            "@type": "Question",
+            name: "How does the score work?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Multiple signals are aggregated into a 0-100 reading, mapped across seven emotional states from Frustration to Euphoria. You can view the raw market reading or blend in social, macro and community layers."
+            }
+          },
+          {
+            "@type": "Question",
+            name: "Why use it instead of a price chart?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "A chart shows what happened. WojakMeter shows how the market reacted to it. Two days with identical price action can carry completely different emotional weight, and that difference is what the index measures."
+            }
+          }
+        ]
+      }
+    ]
   };
 
   return (
@@ -49,13 +93,24 @@ export default function Home({ ogImageUrl }) {
         <meta name="keywords" content="wojakmeter, crypto sentiment, crypto emotion index, bitcoin sentiment, crypto market mood, market sentiment tracker, fear and greed alternative, crypto psychology, mood token, dexscreener sentiment, solana token mood" />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="WojakMeter" />
-        <meta name="theme-color" content="#071018" />
+
+        {/* Debe coincidir con --wm-ink-050 del tema. */}
+        <meta name="theme-color" content="#0A0F16" />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+        {/* Archivo = display. Inter = cuerpo. IBM Plex Mono = lecturas.
+            Rajdhani y Space Grotesk eliminadas. */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+
         <link rel="canonical" href="https://wojakmeter.com" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2" />
         <link rel="shortcut icon" href="/favicon.png?v=2" />
+
         <meta property="og:title" content="WojakMeter – The Crypto Emotion Index" />
         <meta property="og:description" content="Understand what the crypto market feels like in real-time using WojakMeter." />
         <meta property="og:image" content={ogImageUrl} />
@@ -70,29 +125,48 @@ export default function Home({ ogImageUrl }) {
         <meta name="twitter:creator" content="@wojakmeterx" />
       </Head>
 
-      <Script id="wm-structured-data" type="application/ld+json" strategy="afterInteractive"
+      <Script
+        id="wm-structured-data"
+        type="application/ld+json"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <Script src="/script.js?v=11" strategy="afterInteractive" />
+      <Script src="/script.js?v=12" strategy="afterInteractive" />
       <Script src="/wm-organism.js?v=2" strategy="afterInteractive" />
 
       <div className="style-classic">
         <div className="app-shell">
 
-          {/* ===== HEADER ===== */}
+          {/* ===========================================================
+              HEADER
+          =========================================================== */}
           <header className="topbar cardless wm-sticky-header" id="market">
-            <button type="button" className="wm-menu-toggle" id="wmMenuToggle" aria-label="Open navigation menu">☰</button>
+            <button
+              type="button"
+              className="wm-menu-toggle"
+              id="wmMenuToggle"
+              aria-label="Open navigation menu"
+            >
+              ☰
+            </button>
+
             <div className="topbar-left wm-logo-wrap">
               <a href="#market" className="wm-logo-link">
-                <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter Logo" className="logo-img" />
+                <img
+                  src="/assets/logo/wojakmeter_logo.png"
+                  alt="WojakMeter"
+                  className="logo-img"
+                />
               </a>
             </div>
+
             <div className="topbar-right-group wm-header-content">
               <div className="topbar-center">
-                <div className="market-stat">BTC.D <strong id="btcDominance">--</strong></div>
-                <div className="market-stat">Market Cap <strong id="headerMarketCap">--</strong></div>
-                <div className="market-stat">24H Volume <strong id="headerVolume">--</strong></div>
+                <div className="market-stat">BTC.D <strong id="btcDominance">Reading</strong></div>
+                <div className="market-stat">Market Cap <strong id="headerMarketCap">Reading</strong></div>
+                <div className="market-stat">24H Volume <strong id="headerVolume">Reading</strong></div>
               </div>
+
               <div className="topbar-right">
                 <label className="style-label" htmlFor="styleSelector">Wojak Style</label>
                 <select id="styleSelector" defaultValue="classic">
@@ -103,6 +177,7 @@ export default function Home({ ogImageUrl }) {
                 </select>
               </div>
             </div>
+
             <nav className="wm-mobile-menu" id="wmMobileMenu">
               <a href="#market">Market Mood</a>
               <a href="#top-coins">Market Sections</a>
@@ -118,287 +193,218 @@ export default function Home({ ogImageUrl }) {
           </header>
 
           <div className="ticker-bar" id="tickerBar">
-            <span>Loading market...</span>
+            <span>Reading market…</span>
           </div>
 
           <main className="dashboard">
 
-            {/* ===========================
+            {/* ===========================================================
                 1. HERO
-            =========================== */}
+                Orden: eyebrow → título → cara → lectura → gauge →
+                espectro → vitals → ventana → contexto → avanzado.
+                Los controles de modo bajan a un <details> cerrado.
+            =========================================================== */}
+            <section className="hero card">
 
-        <section className="hero card">
-  <h2 id="heroTitle">
-    CRYPTO MARKET MOOD
-    <span id="heroDriverLabel"> (Market flow / price action)</span>
-  </h2>
-
- <div className="hero-grid hero-grid-stack">
-    <div className="hero-main">
-
-      {/* HERO / BUBBLE VIEW TOGGLE */}
-      <div className="hero-view-toggle" id="heroViewToggle">
-        <button
-          type="button"
-          className="hero-view-btn active"
-          data-hero-view="mood"
-          id="heroViewMoodBtn"
-        >
-          Hero Mood
-        </button>
-
-        <button
-          type="button"
-          className="hero-view-btn"
-          data-hero-view="bubble"
-          id="heroViewBubbleBtn"
-        >
-          Bubble Maps
-        </button>
-      </div>
-
-      {/* ===============================
-          HERO MOOD VIEW
-      ================================ */}
-      <div id="heroMoodView" className="hero-mood-view">
-        <div className="wojak-stage">
-          <div className="sweat hidden" id="sweatFx">
-            💧
-          </div>
-
-          <div className="hero-social-wrapper" id="socialWrapper">
-            <div
-              className="hero-social-badge social-neutral"
-              id="socialBubble"
-              aria-label="Social sentiment"
-              role="button"
-              tabIndex={0}
-            >
-              <div className="hero-social-badge-label">𝕏</div>
-
-              <div className="hero-social-badge-icon">
-                <img
-                  id="socialIconImg"
-                  className="mood-icon-img anim-float"
-                  src="/assets/icons/classic/neutral.png"
-                  alt="Social mood icon"
-                />
+              <div className="hero-eyebrow">
+                <span className="hero-eyebrow-dot" aria-hidden="true"></span>
+                <span id="heroDriverLabel">Market flow / price action</span>
               </div>
 
-              <div className="hero-social-badge-text">
-                <span id="socialMoodMini">Neutral</span>
-                <strong id="socialScoreMini">50</strong>
-              </div>
-            </div>
+              <h2 id="heroTitle">Crypto Market Mood</h2>
 
-            <div className="social-expand hidden" id="socialExpand">
-              <div className="social-expand-content">
-                <div className="social-expand-row">
-                  <strong>Social Mood</strong>
-                  <span id="socialExpandMood">Neutral</span>
-                </div>
+              <div className="hero-grid hero-grid-stack">
+                <div className="hero-main">
 
-                <div className="social-expand-row">
-                  <strong>Social Score</strong>
-                  <span id="socialExpandScore">50</span>
-                </div>
+                  <div className="hero-view-toggle" id="heroViewToggle">
+                    <button
+                      type="button"
+                      className="hero-view-btn active"
+                      data-hero-view="mood"
+                      id="heroViewMoodBtn"
+                    >
+                      Hero Mood
+                    </button>
+                    <button
+                      type="button"
+                      className="hero-view-btn"
+                      data-hero-view="bubble"
+                      id="heroViewBubbleBtn"
+                    >
+                      Bubble Maps
+                    </button>
+                  </div>
 
-                <div className="social-expand-row">
-                  <strong>Interactions</strong>
-                  <span id="socialExpandEngagement">--</span>
-                </div>
+                  {/* ── VISTA: CARA ── */}
+                  <div id="heroMoodView" className="hero-mood-view">
+                    <div className="wojak-stage">
 
-                <div className="social-expand-row">
-                  <strong>Bullish</strong>
-                  <span id="socialExpandBullish">--</span>
-                </div>
+                      <div className="hero-social-wrapper" id="socialWrapper">
+                        <div
+                          className="hero-social-badge social-neutral"
+                          id="socialBubble"
+                          aria-label="Social sentiment"
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className="hero-social-badge-label">𝕏</div>
+                          <div className="hero-social-badge-icon">
+                            <img
+                              id="socialIconImg"
+                              className="mood-icon-img anim-float"
+                              src="/assets/icons/classic/neutral.png"
+                              alt="Social mood"
+                            />
+                          </div>
+                          <div className="hero-social-badge-text">
+                            <span id="socialMoodMini">Neutral</span>
+                            <strong id="socialScoreMini">50</strong>
+                          </div>
+                        </div>
 
-                <div className="social-expand-row">
-                  <strong>Bearish</strong>
-                  <span id="socialExpandBearish">--</span>
-                </div>
+                        <div className="social-expand hidden" id="socialExpand">
+                          <div className="social-expand-content">
+                            <div className="social-expand-row">
+                              <strong>Social Mood</strong>
+                              <span id="socialExpandMood">Neutral</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Social Score</strong>
+                              <span id="socialExpandScore">50</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Interactions</strong>
+                              <span id="socialExpandEngagement">Reading</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Bullish</strong>
+                              <span id="socialExpandBullish">Reading</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Bearish</strong>
+                              <span id="socialExpandBearish">Reading</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Neutral</strong>
+                              <span id="socialExpandNeutral">Reading</span>
+                            </div>
+                            <div className="social-expand-row">
+                              <strong>Window</strong>
+                              <span id="socialExpandWindow">24h</span>
+                            </div>
+                            <div className="social-expand-note">
+                              Social mood is derived from aggregated market sentiment
+                              across X, trending coins and meme activity.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                <div className="social-expand-row">
-                  <strong>Neutral</strong>
-                  <span id="socialExpandNeutral">--</span>
-                </div>
+                      <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
+                        <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+                          <path id="heroTimelineArea" d=""></path>
+                          <path id="heroTimelineLine" d=""></path>
+                        </svg>
+                      </div>
 
-                <div className="social-expand-row">
-                  <strong>Window</strong>
-                  <span id="socialExpandWindow">24h</span>
-                </div>
-
-                <div className="social-expand-note">
-                  Social mood is derived from aggregated market sentiment across X,
-                  trending coins and meme activity.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="hero-timeline-backdrop hidden" id="heroTimelineBackdrop">
-            <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
-              <path id="heroTimelineArea" d=""></path>
-              <path id="heroTimelineLine" d=""></path>
-            </svg>
-          </div>
-
-          <div id="heroFaceWrap" className="hero-face-wrap anim-float">
-            <img
-              id="heroFaceImg"
-              className="hero-face-img"
-              src="/assets/hero/classic/neutral.png"
-              alt="Global market mood"
-            />
-
-            <img
-              id="heroFaceOverlayImg"
-              className="hero-face-overlay hidden"
-              src=""
-              alt=""
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ===============================
-          BUBBLE MAPS VIEW
-      ================================ */}
-      <div id="bubbleMapsView" className="bubble-maps-view hidden">
-        <div className="bubble-map-head">
-          <div>
-            <span className="bubble-map-eyebrow">WOJAKMETER</span>
-            <strong>Bubble Maps</strong>
-            <p>Live emotional gravity map of the crypto market.</p>
-          </div>
-
-          <button
-            id="bubbleExpandBtn"
-            type="button"
-            className="action-btn"
-          >
-            Expand Emotion Map
-          </button>
-        </div>
-
-        <div className="bubble-map-legend">
-          <span className="legend-item frustration">Frustration</span>
-          <span className="legend-item concern">Concern</span>
-          <span className="legend-item doubt">Doubt</span>
-          <span className="legend-item neutral">Neutral</span>
-          <span className="legend-item optimism">Optimism</span>
-          <span className="legend-item content">Content</span>
-          <span className="legend-item euphoria">Euphoria</span>
-        </div>
-
-        <div className="bubble-map-info-row">
-          <div>
-            <strong id="bubbleGlobalMood">Neutral</strong>
-            <span>Global Mood</span>
-          </div>
-
-          <div>
-            <strong id="bubbleGlobalScore">50</strong>
-            <span>Emotion Score</span>
-          </div>
-
-          <div>
-            <strong id="bubbleAssetCount">Top 0</strong>
-            <span>Live Assets</span>
-          </div>
-        </div>
-
-        <div id="bubbleMapStage" className="bubble-map-stage">
-          <div className="bubble-zone bubble-zone-top">
-            Euphoria / Optimism
-          </div>
-
-          <div className="bubble-zone bubble-zone-mid">
-            Neutral / Doubt
-          </div>
-
-          <div className="bubble-zone bubble-zone-bottom">
-            Concern / Frustration
-          </div>
-        </div>
-      </div>
-
-      <div className="hero-mood mood-neutral" id="heroMood">
-        Neutral
-      </div>
-
-      <div className="hero-subtitle" id="heroSubtitle">
-        Market emotion is balanced for now.
-      </div>
-
-      <div className="hero-score" id="heroScoreWrap">
-        Score: <span id="heroScore">50</span> / 100
-      </div>
-
-      <section
-        className="emotion-bar-inline emotion-bar-inline-minimal"
-        id="emotionBarSection"
-      >
-        <div className="emotion-track-wrap">
-          <div className="emotion-track emotion-track-gradient" id="emotionTrack">
-            <div
-              className="emotion-pointer"
-              id="emotionPointer"
-              aria-label="WojakMeter indicator"
-            >
-              <div className="emotion-pointer-arrow"></div>
-
-              <div className="emotion-pointer-face">
-                <img
-                  id="emotionPointerImg"
-                  src="/assets/icons/classic/neutral.png"
-                  alt="Current emotional state"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-                  <div className="heartbeat-wrap" id="heartbeatWrap">
-                    <div className="heartbeat-heart" id="heartbeatHeart">❤</div>
-                    <div className="heartbeat-chart">
-                      <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="heartbeatPath" d=""></path>
-                      </svg>
+                      <div id="heroFaceWrap" className="hero-face-wrap anim-float">
+                        <img
+                          id="heroFaceImg"
+                          className="hero-face-img"
+                          src="/assets/hero/classic/neutral.png"
+                          alt="Global market mood"
+                        />
+                        <img
+                          id="heroFaceOverlayImg"
+                          className="hero-face-overlay hidden"
+                          src=""
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="hero-share-row">
-                    <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">Share mood on X</button>
+                  {/* ── VISTA: MAPA ── */}
+                  <div id="bubbleMapsView" className="bubble-maps-view hidden">
+                    <div className="bubble-map-head">
+                      <div>
+                        <span className="bubble-map-eyebrow">Emotional gravity</span>
+                        <strong>Bubble Maps</strong>
+                        <p>Every asset placed by what it feels, sized by what it weighs.</p>
+                      </div>
+                      <button id="bubbleExpandBtn" type="button" className="action-btn">
+                        Expand map
+                      </button>
+                    </div>
+
+                    <div className="bubble-map-legend">
+                      <span className="legend-item frustration">Frustration</span>
+                      <span className="legend-item concern">Concern</span>
+                      <span className="legend-item doubt">Doubt</span>
+                      <span className="legend-item neutral">Neutral</span>
+                      <span className="legend-item optimism">Optimism</span>
+                      <span className="legend-item content">Content</span>
+                      <span className="legend-item euphoria">Euphoria</span>
+                    </div>
+
+                    <div className="bubble-map-info-row">
+                      <div>
+                        <strong id="bubbleGlobalMood">Neutral</strong>
+                        <span>Global Mood</span>
+                      </div>
+                      <div>
+                        <strong id="bubbleGlobalScore">50</strong>
+                        <span>Emotion Score</span>
+                      </div>
+                      <div>
+                        <strong id="bubbleAssetCount">Top 0</strong>
+                        <span>Live Assets</span>
+                      </div>
+                    </div>
+
+                    <div id="bubbleMapStage" className="bubble-map-stage">
+                      <div className="bubble-zone bubble-zone-top">Euphoria / Optimism</div>
+                      <div className="bubble-zone bubble-zone-mid">Neutral / Doubt</div>
+                      <div className="bubble-zone bubble-zone-bottom">Concern / Frustration</div>
+                    </div>
                   </div>
 
-                  <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="1h">1h</button>
-                    <button data-timeframe="4h">4h</button>
-                    <button data-timeframe="24h" className="active">24h</button>
-                    <button data-timeframe="7d">7d</button>
-                    <button data-timeframe="30d">30d</button>
+                  {/* ── LA LECTURA ── */}
+                  <div className="hero-mood mood-neutral" id="heroMood">Neutral</div>
+
+                  <div className="hero-subtitle" id="heroSubtitle">
+                    Market emotion is balanced for now.
                   </div>
 
-                  <div className="hero-modes" id="heroModes">
-                    <button type="button" className="hero-mode-btn active" data-hero-mode="raw" id="heroModeRaw">Raw Market</button>
-                    <button type="button" className="hero-mode-btn" data-hero-mode="composite" id="heroModeComposite">Composite</button>
-                    <button type="button" className="hero-mode-btn" data-hero-mode="custom" id="heroModeCustom">Custom Layers</button>
+                  {/* Conservado por compatibilidad con script.js.
+                      El tema lo reduce a línea de contexto: el número
+                      grande vive solo en el gauge. */}
+                  <div className="hero-score hero-score-compact" id="heroScoreWrap">
+                    Score: <span id="heroScore">50</span> / 100
                   </div>
 
+                  {/* ── GAUGE: lectura principal ── */}
                   <section className="wm-gauge-shell" id="wmGaugeShell">
                     <div className="wm-gauge-head">
                       <div className="wm-gauge-title">WojakMeter Engine</div>
-                      <div className="wm-gauge-score">Final Score <strong id="gaugeScoreHead">50</strong>/100</div>
+                      <div className="wm-gauge-score">
+                        Final Score <strong id="gaugeScoreHead">50</strong>/100
+                      </div>
                     </div>
                     <div className="wm-gauge-wrap">
-                      <svg className="wm-gauge-svg" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                      <svg
+                        className="wm-gauge-svg"
+                        viewBox="0 0 300 190"
+                        preserveAspectRatio="xMidYMid meet"
+                        aria-hidden="true"
+                      >
                         <path className="gauge-track" d="M30 150 A120 120 0 0 1 270 150"></path>
                         <path id="gaugeFill" d="M30 150 A120 120 0 0 1 270 150"></path>
                       </svg>
-                      <div className="gauge-needle-wrap"><div className="gauge-needle" id="gaugeNeedle"></div></div>
+                      <div className="gauge-needle-wrap">
+                        <div className="gauge-needle" id="gaugeNeedle"></div>
+                      </div>
                       <div className="gauge-center-cap"></div>
                       <div className="gauge-score-center">
                         <div id="gaugeScore">50</div>
@@ -407,53 +413,154 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </section>
 
-                  <section className="wm-layers disabled-layers" id="wmLayers">
-                    <div className="layer-title">Toggle layers to see how each force affects the hero</div>
-                    <div className="layer-buttons" id="layerButtons">
-                      <button type="button" className="layer-btn active" data-layer="market" id="toggleLayerMarket">Market Mood</button>
-                      <button type="button" className="layer-btn" data-layer="social" id="toggleLayerSocial">Social Mood</button>
-                      <button type="button" className="layer-btn" data-layer="driver" id="toggleLayerDriver">Market Driver</button>
-                      <button type="button" className="layer-btn" data-layer="pulse" id="toggleLayerPulse">Emotion Pulse</button>
-                    </div>
-                    <div className="layer-grid">
-                      <div className="layer-card">
-                        <span className="layer-card-label">Market</span>
-                        <strong className="layer-card-score" id="layerScoreMarket">50</strong>
-                        <div className="layer-mini-bar"><span id="layerBarMarket"></span></div>
-                        <div className="layer-impact" id="layerImpactMarket">Base</div>
-                      </div>
-                      <div className="layer-card">
-                        <span className="layer-card-label">Social</span>
-                        <strong className="layer-card-score" id="layerScoreSocial">50</strong>
-                        <div className="layer-mini-bar"><span id="layerBarSocial"></span></div>
-                        <div className="layer-impact" id="layerImpactSocial">+0</div>
-                      </div>
-                      <div className="layer-card">
-                        <span className="layer-card-label">Driver</span>
-                        <strong className="layer-card-score" id="layerScoreDriver">50</strong>
-                        <div className="layer-mini-bar"><span id="layerBarDriver"></span></div>
-                        <div className="layer-impact" id="layerImpactDriver">+0</div>
-                      </div>
-                      <div className="layer-card">
-                        <span className="layer-card-label">Pulse</span>
-                        <strong className="layer-card-score" id="layerScorePulse">50</strong>
-                        <div className="layer-mini-bar"><span id="layerBarPulse"></span></div>
-                        <div className="layer-impact" id="layerImpactPulse">+0</div>
+                  {/* ── ESPECTRO ── */}
+                  <section
+                    className="emotion-bar-inline emotion-bar-inline-minimal"
+                    id="emotionBarSection"
+                  >
+                    <div className="emotion-track-wrap">
+                      <div className="emotion-track emotion-track-gradient" id="emotionTrack">
+                        <div
+                          className="emotion-pointer"
+                          id="emotionPointer"
+                          aria-label="Current position on the emotional spectrum"
+                        >
+                          <div className="emotion-pointer-arrow"></div>
+                          <div className="emotion-pointer-face">
+                            <img
+                              id="emotionPointerImg"
+                              src="/assets/icons/classic/neutral.png"
+                              alt="Current emotional state"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </section>
 
-                  <div className="hero-market-line">
-                    <div className="hero-line-item"><span>Market Change</span><strong id="globalMarketChange">--</strong></div>
-                    <div className="hero-line-sep"></div>
-                    <div className="hero-line-item"><span>Volume</span><strong id="globalMarketVolume" className="header-accent">--</strong></div>
-                    <div className="hero-line-sep"></div>
-                    <div className="hero-line-item"><span>Timeframe</span><strong id="globalMarketTimeframe">24h</strong></div>
+                  {/* ── SIGNOS VITALES: la firma ── */}
+                  <div className="heartbeat-wrap" id="heartbeatWrap">
+                    <div className="heartbeat-chart">
+                      <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
+                        <path id="heartbeatPath" d=""></path>
+                      </svg>
+                    </div>
                   </div>
+
+                  {/* ── VENTANA TEMPORAL ── */}
+                  <div className="timeframes hero-timeframes" id="heroTimeframes">
+                    <button data-timeframe="1h">1h</button>
+                    <button data-timeframe="4h">4h</button>
+                    <button data-timeframe="24h" className="active">24h</button>
+                    <button data-timeframe="7d">7d</button>
+                    <button data-timeframe="30d">30d</button>
+                  </div>
+
+                  {/* ── CONTEXTO ── */}
+                  <div className="hero-market-line">
+                    <div className="hero-line-item">
+                      <span>Market Change</span>
+                      <strong id="globalMarketChange">Reading</strong>
+                    </div>
+                    <div className="hero-line-sep"></div>
+                    <div className="hero-line-item">
+                      <span>Volume</span>
+                      <strong id="globalMarketVolume" className="header-accent">Reading</strong>
+                    </div>
+                    <div className="hero-line-sep"></div>
+                    <div className="hero-line-item">
+                      <span>Timeframe</span>
+                      <strong id="globalMarketTimeframe">24h</strong>
+                    </div>
+                  </div>
+
+                  <div className="hero-share-row">
+                    <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
+                      Share mood on X
+                    </button>
+                  </div>
+
+                  {/* ── PANEL AVANZADO ──
+                      <details> nativo: accesible por teclado y funciona
+                      sin JS. Antes esto bloqueaba la lectura. */}
+                  <details className="hero-advanced" id="heroAdvanced">
+                    <summary className="hero-advanced-toggle">
+                      How this score is built
+                    </summary>
+
+                    <div className="hero-advanced-body">
+                      <div className="hero-modes" id="heroModes">
+                        <button
+                          type="button"
+                          className="hero-mode-btn active"
+                          data-hero-mode="raw"
+                          id="heroModeRaw"
+                        >
+                          Raw Market
+                        </button>
+                        <button
+                          type="button"
+                          className="hero-mode-btn"
+                          data-hero-mode="composite"
+                          id="heroModeComposite"
+                        >
+                          Composite
+                        </button>
+                        <button
+                          type="button"
+                          className="hero-mode-btn"
+                          data-hero-mode="custom"
+                          id="heroModeCustom"
+                        >
+                          Custom Layers
+                        </button>
+                      </div>
+
+                      <section className="wm-layers disabled-layers" id="wmLayers">
+                        <div className="layer-title">
+                          Toggle layers to see how each force affects the hero
+                        </div>
+                        <div className="layer-buttons" id="layerButtons">
+                          <button type="button" className="layer-btn active" data-layer="market" id="toggleLayerMarket">Market Mood</button>
+                          <button type="button" className="layer-btn" data-layer="social" id="toggleLayerSocial">Social Mood</button>
+                          <button type="button" className="layer-btn" data-layer="driver" id="toggleLayerDriver">Market Driver</button>
+                          <button type="button" className="layer-btn" data-layer="pulse" id="toggleLayerPulse">Emotion Pulse</button>
+                        </div>
+                        <div className="layer-grid">
+                          <div className="layer-card">
+                            <span className="layer-card-label">Market</span>
+                            <strong className="layer-card-score" id="layerScoreMarket">50</strong>
+                            <div className="layer-mini-bar"><span id="layerBarMarket"></span></div>
+                            <div className="layer-impact" id="layerImpactMarket">Base</div>
+                          </div>
+                          <div className="layer-card">
+                            <span className="layer-card-label">Social</span>
+                            <strong className="layer-card-score" id="layerScoreSocial">50</strong>
+                            <div className="layer-mini-bar"><span id="layerBarSocial"></span></div>
+                            <div className="layer-impact" id="layerImpactSocial">+0</div>
+                          </div>
+                          <div className="layer-card">
+                            <span className="layer-card-label">Driver</span>
+                            <strong className="layer-card-score" id="layerScoreDriver">50</strong>
+                            <div className="layer-mini-bar"><span id="layerBarDriver"></span></div>
+                            <div className="layer-impact" id="layerImpactDriver">+0</div>
+                          </div>
+                          <div className="layer-card">
+                            <span className="layer-card-label">Pulse</span>
+                            <strong className="layer-card-score" id="layerScorePulse">50</strong>
+                            <div className="layer-mini-bar"><span id="layerBarPulse"></span></div>
+                            <div className="layer-impact" id="layerImpactPulse">+0</div>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
+                  </details>
                 </div>
 
+                {/* ── DRIVERS ── */}
                 <section className="drivers-card card">
-                  <div className="section-head"><h3>MARKET DRIVERS</h3></div>
+                  <div className="section-head"><h3>Market Drivers</h3></div>
+
                   <div className="drivers-controls">
                     <label htmlFor="macroDriver">Main macro driver</label>
                     <select id="macroDriver" defaultValue="market_flow">
@@ -467,25 +574,35 @@ export default function Home({ ogImageUrl }) {
                       <option value="neutral_macro">Neutral macro environment</option>
                     </select>
                   </div>
+
                   <div className="driver-list">
-                    <div className="driver-item"><span>Macro Driver</span><strong id="driverMacro">Market flow / price action</strong></div>
-                    <div className="driver-item"><span>Main Narrative</span><strong id="driverNarrative">Waiting for live market data.</strong></div>
-                    <div className="driver-item"><span>Timeframe Reaction</span><strong id="driverTimeframeReaction">Balanced reaction</strong></div>
-                    <div className="driver-item"><span>Risk Tone</span><strong id="driverRiskTone">Neutral</strong></div>
+                    <div className="driver-item">
+                      <span>Macro Driver</span>
+                      <strong id="driverMacro">Market flow / price action</strong>
+                    </div>
+                    <div className="driver-item">
+                      <span>Main Narrative</span>
+                      <strong id="driverNarrative">Reading live market data.</strong>
+                    </div>
+                    <div className="driver-item">
+                      <span>Timeframe Reaction</span>
+                      <strong id="driverTimeframeReaction">Balanced reaction</strong>
+                    </div>
+                    <div className="driver-item">
+                      <span>Risk Tone</span>
+                      <strong id="driverRiskTone">Neutral</strong>
+                    </div>
                   </div>
                 </section>
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 2. MARKET SECTIONS + CHART
-                Coins grid con gráfica integrada debajo.
-                Al seleccionar una moneda la gráfica
-                aparece inmediatamente en la misma sección.
-            =========================== */}
+            =========================================================== */}
             <section className="top-coins card" id="top-coins">
               <div className="section-head">
-                <h3>MARKET SECTIONS</h3>
+                <h3>Market Sections</h3>
                 <div className="market-section-tools">
                   <span className="muted">Live market overview</span>
                   <select id="marketSortSelect" className="market-control-select" defaultValue="marketCap">
@@ -511,8 +628,8 @@ export default function Home({ ogImageUrl }) {
 
               <div className="tabs-row" id="marketTabs">
                 <button className="tab-btn active" data-tab="coins">Top 20 Coins</button>
-                <button className="tab-btn" data-tab="trending">Trending Coins 🔥</button>
-                <button className="tab-btn" data-tab="memes">Top Meme Coins</button>
+                <button className="tab-btn" data-tab="trending">Trending</button>
+                <button className="tab-btn" data-tab="memes">Meme Coins</button>
               </div>
 
               <div className="tab-panel active" id="tab-coins">
@@ -525,13 +642,13 @@ export default function Home({ ogImageUrl }) {
                 <div className="coins-grid" id="memesGrid"></div>
               </div>
 
-              {/* ── CHART — aparece aquí al seleccionar moneda ── */}
+              {/* ── CHART ── */}
               <div className="inline-chart-wrap" id="inlineChartWrap">
                 <div className="chart-card card">
                   <div className="chart-topbar">
                     <div className="chart-coin-meta">
                       <div className="chart-coin-icon-wrap">
-                        <img id="chartCoinIcon" className="chart-coin-icon" src="" alt="Coin icon" />
+                        <img id="chartCoinIcon" className="chart-coin-icon" src="" alt="" />
                       </div>
                       <div className="chart-coin-copy">
                         <div className="chart-coin-title-line">
@@ -539,12 +656,13 @@ export default function Home({ ogImageUrl }) {
                           <span className="muted" id="chartRenderMode">Line chart</span>
                         </div>
                         <div className="chart-coin-stats">
-                          <div className="chart-mini-stat"><span>Price</span><strong id="chartCoinPrice">--</strong></div>
-                          <div className="chart-mini-stat"><span>Volume</span><strong id="chartCoinVolume">--</strong></div>
-                          <div className="chart-mini-stat"><span>Market Cap</span><strong id="chartCoinMarketCap">--</strong></div>
+                          <div className="chart-mini-stat"><span>Price</span><strong id="chartCoinPrice">Reading</strong></div>
+                          <div className="chart-mini-stat"><span>Volume</span><strong id="chartCoinVolume">Reading</strong></div>
+                          <div className="chart-mini-stat"><span>Market Cap</span><strong id="chartCoinMarketCap">Reading</strong></div>
                         </div>
                       </div>
                     </div>
+
                     <div className="chart-toolbar">
                       <div className="timeframes compact" id="chartTimeframes">
                         <button data-timeframe="1h">1h</button>
@@ -562,15 +680,25 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="chart-inline-moods">
                     <div className="chart-mood-chip">
-                      <img id="coinMoodIconImg" className="chart-mood-chip-icon mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="Technical mood icon" />
+                      <img
+                        id="coinMoodIconImg"
+                        className="chart-mood-chip-icon mood-icon-img anim-float"
+                        src="/assets/icons/classic/neutral.png"
+                        alt=""
+                      />
                       <div><span>Technical</span><strong id="coinMoodLabel">Neutral</strong></div>
                     </div>
                     <div className="chart-mood-chip">
-                      <img id="detailSocialIconImg" className="chart-mood-chip-icon mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="Social mood icon" />
+                      <img
+                        id="detailSocialIconImg"
+                        className="chart-mood-chip-icon mood-icon-img anim-float"
+                        src="/assets/icons/classic/neutral.png"
+                        alt=""
+                      />
                       <div><span>Social</span><strong id="detailSocialLabel">Neutral</strong></div>
                     </div>
                     <div className="chart-mood-chip chart-mood-chip-performance">
-                      <div><span>Performance</span><strong id="selectedPerformance">--</strong></div>
+                      <div><span>Performance</span><strong id="selectedPerformance">Reading</strong></div>
                     </div>
                   </div>
 
@@ -588,30 +716,37 @@ export default function Home({ ogImageUrl }) {
                   </div>
 
                   <div className="market-intervals">
-                    <div className="interval-box"><span>1h</span><strong id="perf1h">--</strong></div>
-                    <div className="interval-box"><span>4h</span><strong id="perf4h">--</strong></div>
-                    <div className="interval-box"><span>24h</span><strong id="perf24h">--</strong></div>
-                    <div className="interval-box"><span>7d</span><strong id="perf7d">--</strong></div>
-                    <div className="interval-box"><span>30d</span><strong id="perf30d">--</strong></div>
+                    <div className="interval-box"><span>1h</span><strong id="perf1h">Reading</strong></div>
+                    <div className="interval-box"><span>4h</span><strong id="perf4h">Reading</strong></div>
+                    <div className="interval-box"><span>24h</span><strong id="perf24h">Reading</strong></div>
+                    <div className="interval-box"><span>7d</span><strong id="perf7d">Reading</strong></div>
+                    <div className="interval-box"><span>30d</span><strong id="perf30d">Reading</strong></div>
                   </div>
 
                   <div className="market-exchange-layout">
                     <section className="exchange-card card">
                       <div className="exchange-card-head">
-                        <div><span className="section-kicker">LIVE MARKETS</span><h3>Where To Trade</h3></div>
+                        <div>
+                          <span className="section-kicker">Live markets</span>
+                          <h3>Where to trade</h3>
+                        </div>
                         <span className="muted">Active pairs for selected coin</span>
                       </div>
                       <div className="exchange-list" id="coinExchangeList">
-                        <div className="exchange-loading">Loading exchange pairs...</div>
+                        <div className="exchange-loading">Reading exchange pairs…</div>
                       </div>
                     </section>
+
                     <section className="exchange-card card">
                       <div className="exchange-card-head">
-                        <div><span className="section-kicker">EXCHANGE FLOW</span><h3>Top Exchange Mood</h3></div>
+                        <div>
+                          <span className="section-kicker">Exchange flow</span>
+                          <h3>Top exchange mood</h3>
+                        </div>
                         <span className="muted">Global liquidity sentiment</span>
                       </div>
                       <div className="exchange-list" id="topExchangeList">
-                        <div className="exchange-loading">Loading exchanges...</div>
+                        <div className="exchange-loading">Reading exchanges…</div>
                       </div>
                     </section>
                   </div>
@@ -619,14 +754,16 @@ export default function Home({ ogImageUrl }) {
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 3. BAG MOOD
-            =========================== */}
+            =========================================================== */}
             <section className="bag-mood-section card" id="bagMoodSection">
               <div className="section-head">
                 <div>
-                  <h3>BAG MOOD</h3>
-                  <span className="muted">Track your portfolio value, PNL and emotional state.</span>
+                  <h3>Bag Mood</h3>
+                  <span className="muted">
+                    Track your portfolio value, PNL and emotional state.
+                  </span>
                 </div>
                 <div className="bag-style-control">
                   <label htmlFor="bagStyleSelector">Bag Style</label>
@@ -638,10 +775,16 @@ export default function Home({ ogImageUrl }) {
                   </select>
                 </div>
               </div>
+
               <div className="bag-mood-grid">
                 <div className="bag-mood-visual">
                   <div className="bag-mood-stage">
-                    <img id="bagMoodHeroImg" className="bag-mood-hero-img anim-float" src="/assets/hero/classic/neutral.png" alt="Bag Mood Hero" />
+                    <img
+                      id="bagMoodHeroImg"
+                      className="bag-mood-hero-img anim-float"
+                      src="/assets/hero/classic/neutral.png"
+                      alt="Your bag mood"
+                    />
                   </div>
                   <div className="bag-mood-result">
                     <span id="bagMoodModeLabel">Portfolio Mood</span>
@@ -654,47 +797,77 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </div>
                 </div>
+
                 <div className="bag-mood-main">
                   <div className="bag-mode-tabs">
                     <button type="button" className="active" data-bag-mode="portfolio">Portfolio Mood</button>
                     <button type="button" data-bag-mode="single">Single Coin Mood</button>
                   </div>
-                  <div className="bag-position-note">Your mood is calculated from your real entry price vs live market price.</div>
+
+                  <div className="bag-position-note">
+                    Your mood is calculated from your real entry price against the live
+                    market price. Nothing leaves your browser.
+                  </div>
+
                   <div className="bag-search-box">
-                    <input id="bagSearchInput" type="text" placeholder="Search BTC, SOL, MOOD or paste contract..." autoComplete="off" />
+                    <input
+                      id="bagSearchInput"
+                      type="text"
+                      placeholder="Search BTC, SOL, MOOD or paste a contract"
+                      autoComplete="off"
+                    />
                     <input id="bagValueInput" type="number" min="0" step="any" placeholder="USD invested" />
                     <input id="bagEntryPriceInput" type="number" min="0" step="any" placeholder="Entry price" />
                     <button id="bagSearchBtn" type="button" className="action-btn">Add</button>
                   </div>
+
                   <div id="bagSearchResults" className="bag-search-results"></div>
+
                   <div id="bagMoodList" className="bag-mood-list">
                     <div className="bag-empty">Build your bag to see what it feels like.</div>
                   </div>
+
                   <div className="bag-actions">
-                    <button id="bagShareBtn" type="button" className="action-btn share-x-btn">Share Bag Mood</button>
+                    <button id="bagShareBtn" type="button" className="action-btn share-x-btn">
+                      Share Bag Mood
+                    </button>
                     <button id="bagResetBtn" type="button" className="action-btn">Reset Bag</button>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 4. EMOTION RADAR
-            =========================== */}
+            =========================================================== */}
             <section className="emotion-radar card" id="emotionRadarSection">
               <div className="emotion-radar-head">
-                <span className="section-kicker">LIVE NARRATIVE PULSE</span>
+                <span className="section-kicker">Live narrative pulse</span>
                 <h2>Internet Emotion Radar</h2>
-                <p>Paste any headline, tweet or narrative. WojakMeter translates how the internet feels about it.</p>
+                <p>
+                  Paste any headline, tweet or narrative. WojakMeter reports how the
+                  internet feels about it.
+                </p>
               </div>
+
               <div className="emotion-radar-grid">
                 <div className="emotion-radar-input-card">
                   <label htmlFor="emotionRadarInput">News, tweet or narrative</label>
-                  <textarea id="emotionRadarInput" placeholder="Example: Bitcoin ETF delayed again..." rows={7}></textarea>
+                  <textarea
+                    id="emotionRadarInput"
+                    placeholder="Bitcoin ETF delayed again…"
+                    rows={7}
+                  ></textarea>
+
                   <div className="emotion-radar-actions">
-                    <button id="translateEmotionBtn" className="action-btn" type="button">Translate Emotion</button>
-                    <button id="clearEmotionRadarBtn" className="ghost-btn" type="button">Clear</button>
+                    <button id="translateEmotionBtn" className="action-btn" type="button">
+                      Translate Emotion
+                    </button>
+                    <button id="clearEmotionRadarBtn" className="ghost-btn" type="button">
+                      Clear
+                    </button>
                   </div>
+
                   <div className="emotion-radar-examples">
                     <button type="button" data-radar-example="Bitcoin ETF delayed again">ETF delay</button>
                     <button type="button" data-radar-example="Solana network outage">Solana outage</button>
@@ -702,6 +875,7 @@ export default function Home({ ogImageUrl }) {
                     <button type="button" data-radar-example="Memecoin season is back">Memecoin season</button>
                   </div>
                 </div>
+
                 <div className="emotion-radar-result-card" id="emotionRadarResult">
                   <div className="radar-result-top">
                     <div className="radar-face-wrap">
@@ -713,37 +887,48 @@ export default function Home({ ogImageUrl }) {
                       <div className="radar-score">Score: <strong id="radarScore">50</strong>/100</div>
                     </div>
                   </div>
+
                   <div className="radar-meter"><div id="radarMeterFill"></div></div>
+
                   <div className="radar-output-grid">
                     <div><span>Modifier</span><strong id="radarModifier">Waiting</strong></div>
                     <div><span>Intensity</span><strong id="radarIntensity">0%</strong></div>
                     <div><span>Momentum</span><strong id="radarMomentum">Idle</strong></div>
                   </div>
+
                   <div className="radar-interpretation">
                     <span>Crowd Interpretation</span>
-                    <p id="radarInterpretation">Paste a narrative to translate its emotional temperature.</p>
+                    <p id="radarInterpretation">
+                      Paste a narrative to read its emotional temperature.
+                    </p>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 5. MOOD TOKEN
-            =========================== */}
+            =========================================================== */}
             <section className="mood-token-card card" id="moodSection">
               <div className="section-head">
                 <div className="mood-section-logo-wrap">
-                  <img src="/moodlogo.png" alt="MOOD Logo" className="mood-section-logo" />
+                  <img src="/moodlogo.png" alt="MOOD" className="mood-section-logo" />
                 </div>
                 <span className="muted">Reactive token mood engine</span>
               </div>
+
               <div className="mood-token-grid">
                 <div className="mood-token-main">
                   <div className="mood-token-copy">
-                    <span className="about-label">MOOD LIVE</span>
+                    <span className="about-label">MOOD Live</span>
                     <h2 className="about-title">Watch any Solana token react in real time.</h2>
-                    <p className="about-text">Track a default live token, switch to MOOD anytime, or paste any Solana token address to watch live emotional flow with DexScreener first and Pump.fun fallback.</p>
+                    <p className="about-text">
+                      Track a live trending token, switch to MOOD anytime, or paste any
+                      Solana address to follow its emotional flow. DexScreener first,
+                      Pump.fun as fallback.
+                    </p>
                   </div>
+
                   <div className="mood-ca-box">
                     <div className="mood-ca-head"><span>MOOD Contract Address</span></div>
                     <div className="mood-ca-row">
@@ -751,21 +936,39 @@ export default function Home({ ogImageUrl }) {
                       <button type="button" className="action-btn" id="copyMoodCaBtn">Copy CA</button>
                     </div>
                   </div>
+
                   <div className="mood-search-box">
-                    <input id="tokenSearchInput" type="text" placeholder="Paste Solana token address..." className="mood-input" />
+                    <input
+                      id="tokenSearchInput"
+                      type="text"
+                      placeholder="Paste a Solana token address"
+                      className="mood-input"
+                    />
                     <button id="tokenSearchBtn" className="action-btn" type="button">Load Token</button>
                   </div>
+
                   <div className="mood-actions-row">
-                    <button id="loadMoodMain" className="action-btn mood-buy-btn" type="button">Load MOOD</button>
-                    <a href="https://dexscreener.com" target="_blank" rel="noopener noreferrer" className="action-btn mood-secondary-btn">DexScreener</a>
+                    <button id="loadMoodMain" className="action-btn mood-buy-btn" type="button">
+                      Load MOOD
+                    </button>
+                    <a
+                      href="https://dexscreener.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="action-btn mood-secondary-btn"
+                    >
+                      DexScreener
+                    </a>
                   </div>
+
                   <div className="mood-token-meta">
-                    <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="Token icon" />
+                    <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="" />
                     <div className="mood-token-meta-copy">
                       <strong id="moodTokenName">Live Token</strong>
                       <span id="moodTokenSymbol">$---</span>
                     </div>
                   </div>
+
                   <div className="timeframes mood-token-timeframes" id="moodTokenTimeframes">
                     <button data-token-timeframe="1m">1m</button>
                     <button data-token-timeframe="5m" className="active">5m</button>
@@ -774,16 +977,18 @@ export default function Home({ ogImageUrl }) {
                     <button data-token-timeframe="4h">4h</button>
                     <button data-token-timeframe="24h">24h</button>
                   </div>
+
                   <div className="mood-stats-grid">
-                    <div className="mood-stat-box"><span>Price</span><strong id="moodTokenPrice">--</strong></div>
-                    <div className="mood-stat-box"><span>Market Cap</span><strong id="moodTokenMarketCap">--</strong></div>
-                    <div className="mood-stat-box"><span>Volume</span><strong id="moodTokenVolume">--</strong></div>
-                    <div className="mood-stat-box"><span>Change</span><strong id="moodChange">--</strong></div>
-                    <div className="mood-stat-box"><span>Flow</span><strong id="moodTokenFlow">--</strong></div>
-                    <div className="mood-stat-box"><span>Volatility</span><strong id="moodTokenVolatility">--</strong></div>
-                    <div className="mood-stat-box"><span>Last Action</span><strong id="moodTokenLastAction">Watching...</strong></div>
+                    <div className="mood-stat-box"><span>Price</span><strong id="moodTokenPrice">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Market Cap</span><strong id="moodTokenMarketCap">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Volume</span><strong id="moodTokenVolume">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Change</span><strong id="moodChange">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Flow</span><strong id="moodTokenFlow">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Volatility</span><strong id="moodTokenVolatility">Reading</strong></div>
+                    <div className="mood-stat-box"><span>Last Action</span><strong id="moodTokenLastAction">Watching</strong></div>
                   </div>
                 </div>
+
                 <div className="mood-token-visual">
                   <div className="mood-stage" id="moodStage">
                     <div className="mood-stage-glow" id="moodStageGlow"></div>
@@ -793,163 +998,260 @@ export default function Home({ ogImageUrl }) {
                         <path id="moodChartLine" d=""></path>
                       </svg>
                     </div>
-                    <img id="moodHeroImg" className="mood-hero-img anim-float" src="/assets/hero/classic/neutral.png" alt="Mood token sentiment" />
+                    <img
+                      id="moodHeroImg"
+                      className="mood-hero-img anim-float"
+                      src="/assets/hero/classic/neutral.png"
+                      alt="Token sentiment"
+                    />
                     <div className="mood-token-badge" id="moodTokenBadge">
                       <span>Token Sentiment</span>
                       <strong>Neutral</strong>
                     </div>
                   </div>
+
                   <div className="mood-token-score-row">
                     <div className="mood-token-score-box"><span>Score</span><strong id="moodTokenScore">50</strong></div>
                     <div className="mood-token-score-box"><span>Status</span><strong id="moodHeroMood">Neutral</strong></div>
                     <div className="mood-token-score-box"><span>Source</span><strong id="moodTokenSource">Auto</strong></div>
                   </div>
+
                   <div className="mood-trades-feed" id="moodTradesFeed">
-                    <div className="mood-empty-feed">Waiting live trades...</div>
+                    <div className="mood-empty-feed">Waiting for live trades…</div>
                   </div>
-                  <div className="mood-token-note">This module reacts to live token momentum, trade pressure, timeframe change and fallback market data using DexScreener first and Pump.fun when needed.</div>
+
+                  <div className="mood-token-note">
+                    This module reacts to live token momentum, trade pressure and
+                    timeframe change, using DexScreener first and Pump.fun when needed.
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 6. WOJAK STUDIO
-            =========================== */}
+            =========================================================== */}
             <section className="studio-card card" id="wojak-studio">
               <div className="section-head">
-                <h3>WOJAK STUDIO</h3>
+                <h3>Wojak Studio</h3>
                 <span className="muted">Create content from live market sentiment</span>
               </div>
+
               <div className="tabs-row" id="studioTabs">
                 <button className="tab-btn active" data-studio-tab="meme">Meme Generator</button>
                 <button className="tab-btn" data-studio-tab="daily">Daily Market Meme</button>
                 <button className="tab-btn" data-studio-tab="xpost">X Post Generator</button>
                 <button className="tab-btn" data-studio-tab="story">Story Mode</button>
               </div>
+
               <div className="studio-panel active" id="studio-meme">
                 <div className="studio-grid">
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Meme Prompt</h4><button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">Copy</button></div>
-                    <pre className="studio-output" id="memePromptOutput">Loading...</pre>
+                    <div className="studio-box-head">
+                      <h4>Meme Prompt</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memePromptOutput">Copy</button>
+                    </div>
+                    <pre className="studio-output" id="memePromptOutput">Reading market…</pre>
                   </div>
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Scene Summary</h4><button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="memeSceneOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>Scene Summary</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="memeSceneOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="memeSceneOutput">Reading market…</div>
                   </div>
                 </div>
               </div>
+
               <div className="studio-panel" id="studio-daily">
                 <div className="studio-grid studio-grid-single">
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Daily Market Meme</h4><button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="dailyMemeOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>Daily Market Meme</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="dailyMemeOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="dailyMemeOutput">Reading market…</div>
                   </div>
                 </div>
               </div>
+
               <div className="studio-panel" id="studio-xpost">
                 <div className="studio-grid">
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>X Caption</h4><button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="xPostCaptionOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>X Caption</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostCaptionOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostCaptionOutput">Reading market…</div>
                   </div>
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Alt Text</h4><button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="xPostAltOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>Alt Text</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostAltOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostAltOutput">Reading market…</div>
                   </div>
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Hashtags</h4><button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="xPostTagsOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>Hashtags</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="xPostTagsOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="xPostTagsOutput">Reading market…</div>
                   </div>
                 </div>
               </div>
+
               <div className="studio-panel" id="studio-story">
                 <div className="studio-grid studio-grid-single">
                   <div className="studio-box">
-                    <div className="studio-box-head"><h4>Market Story</h4><button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">Copy</button></div>
-                    <div className="studio-output prose-output" id="storyModeOutput">Loading...</div>
+                    <div className="studio-box-head">
+                      <h4>Market Story</h4>
+                      <button className="action-btn studio-copy-btn" data-copy-target="storyModeOutput">Copy</button>
+                    </div>
+                    <div className="studio-output prose-output" id="storyModeOutput">Reading market…</div>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* ===========================
+            {/* ===========================================================
                 7. EMOTIONAL SCALE
-            =========================== */}
+            =========================================================== */}
             <section className="scale-card card">
-              <h3>EMOTIONAL SCALE</h3>
+              <h3>Emotional Scale</h3>
               <div className="scale-grid" id="scaleGrid"></div>
             </section>
 
-            {/* ===========================
-                8. ABOUT
-            =========================== */}
+            {/* ===========================================================
+                8. ABOUT + FAQ
+                Antes eran dos secciones seguidas diciendo lo mismo, y una
+                de ellas se titulaba "SEO" en público. Fusionadas: mismo
+                contenido sin duplicar, y las preguntas ahora llevan
+                marcado FAQPage para rich results.
+            =========================================================== */}
             <section className="about-section card" id="about">
               <div className="about-container">
-                <span className="about-label">🧠 About</span>
-                <h2 className="about-title">WojakMeter is the Crypto Emotion Index.</h2>
-                <p className="about-text">We transform price action, sentiment, and macro signals into a single emotional score so you instantly understand what the market feels like.</p>
-                <p className="about-text about-text-strong">No noise. No complexity.<br />Just the emotional state of the market.</p>
+                <span className="about-label">About</span>
+                <h2 className="about-title">The Crypto Emotion Index.</h2>
+
+                <p className="about-text">
+                  A chart shows what happened. WojakMeter shows how the market reacted
+                  to it. Price action, social sentiment and macro signals collapse into
+                  one reading, so you know what the market feels like before you decide
+                  anything.
+                </p>
+
+                <p className="about-text about-text-strong">
+                  No noise. No complexity.<br />
+                  Just the emotional state of the market.
+                </p>
+
                 <div className="about-divider"></div>
-                <p className="about-text">Wojak, also known as the <strong>"Feel Guy"</strong>, represents raw human emotion: fear, doubt, confidence, euphoria.</p>
-                <p className="about-text">Crypto markets move the same way.</p>
-                <p className="about-text about-text-strong">Wojak isn't just a meme.<br />He is the market.</p>
+
+                <p className="about-text">
+                  Wojak, the <strong>&quot;Feel Guy&quot;</strong>, represents raw human
+                  emotion: fear, doubt, confidence, euphoria. Crypto markets move the
+                  same way.
+                </p>
+
+                <p className="about-text about-text-strong">
+                  Wojak isn&apos;t just a meme.<br />
+                  He is the market.
+                </p>
+
+                <div className="about-divider" id="what-is-wojakmeter"></div>
+
+                <h3 className="seo-subtitle">What is WojakMeter?</h3>
+                <p className="about-text">
+                  WojakMeter is a crypto sentiment tool that converts market data into a
+                  real-time emotional index. It reads price momentum, social sentiment
+                  and macro trends, then reports a single score for how the market feels.
+                </p>
+
+                <h3 className="seo-subtitle">How does the score work?</h3>
+                <p className="about-text">
+                  Multiple signals are aggregated into a 0–100 reading, mapped across
+                  seven emotional states from Frustration to Euphoria. You can view the
+                  raw market reading or blend in social, macro and community layers.
+                </p>
+
+                <h3 className="seo-subtitle">Why use it instead of a price chart?</h3>
+                <p className="about-text">
+                  A chart shows what happened. WojakMeter shows how the market reacted to
+                  it. Two days with identical price action can carry completely different
+                  emotional weight, and that difference is what the index measures.
+                </p>
               </div>
             </section>
 
-            {/* ===========================
-                9. SEO
-            =========================== */}
-            <section className="seo-section card" id="what-is-wojakmeter">
-              <div className="about-container">
-                <span className="about-label">🔍 SEO</span>
-                <h2 className="about-title">What is WojakMeter?</h2>
-                <p className="about-text">WojakMeter is a crypto sentiment tool that converts market data into a real-time emotional index. By analyzing price momentum, social sentiment, and macro trends, it provides a clear view of how the crypto market feels.</p>
-                <h3 className="seo-subtitle">How does it work?</h3>
-                <p className="about-text">The platform aggregates multiple signals and translates them into a 0–100 score, mapped across 7 emotional states ranging from Frustration to Euphoria.</p>
-                <h3 className="seo-subtitle">Why use WojakMeter?</h3>
-                <p className="about-text">Traditional tools focus on raw data. WojakMeter focuses on interpretation, helping traders quickly understand market psychology through a visual emotional framework.</p>
-              </div>
-            </section>
-
-            {/* ===========================
-                EMOTION PULSE — Floating
-            =========================== */}
+            {/* ===========================================================
+                EMOTION PULSE — flotante
+            =========================================================== */}
             <div className="emotion-pulse-toggle" id="pulseToggle" role="button" tabIndex={0}>
-              <span className="pulse-toggle-icon">⚡</span>
+              <span className="pulse-toggle-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12h4l3-8 4 16 3-8h4" />
+                </svg>
+              </span>
               <span className="pulse-toggle-text">Emotion Pulse</span>
             </div>
 
             <div className="emotion-pulse-panel hidden" id="pulsePanel">
               <div className="pulse-header">
                 <strong>Emotion Pulse</strong>
-                <span className="pulse-subtitle">Community reaction</span>
+                <span className="pulse-subtitle">How the community feels right now</span>
               </div>
+
               <div id="pulseStats" className="pulse-stats"></div>
+
               <div className="pulse-grid">
-                <button data-vote="frustration" type="button"><img src="/assets/icons/classic/frustration.png" alt="frustration" /></button>
-                <button data-vote="concern" type="button"><img src="/assets/icons/classic/concern.png" alt="concern" /></button>
-                <button data-vote="doubt" type="button"><img src="/assets/icons/classic/doubt.png" alt="doubt" /></button>
-                <button data-vote="neutral" type="button"><img src="/assets/icons/classic/neutral.png" alt="neutral" /></button>
-                <button data-vote="optimism" type="button"><img src="/assets/icons/classic/optimism.png" alt="optimism" /></button>
-                <button data-vote="content" type="button"><img src="/assets/icons/classic/content.png" alt="content" /></button>
-                <button data-vote="euphoria" type="button"><img src="/assets/icons/classic/euphoria.png" alt="euphoria" /></button>
+                <button data-vote="frustration" type="button" aria-label="Vote frustration">
+                  <img src="/assets/icons/classic/frustration.png" alt="" />
+                </button>
+                <button data-vote="concern" type="button" aria-label="Vote concern">
+                  <img src="/assets/icons/classic/concern.png" alt="" />
+                </button>
+                <button data-vote="doubt" type="button" aria-label="Vote doubt">
+                  <img src="/assets/icons/classic/doubt.png" alt="" />
+                </button>
+                <button data-vote="neutral" type="button" aria-label="Vote neutral">
+                  <img src="/assets/icons/classic/neutral.png" alt="" />
+                </button>
+                <button data-vote="optimism" type="button" aria-label="Vote optimism">
+                  <img src="/assets/icons/classic/optimism.png" alt="" />
+                </button>
+                <button data-vote="content" type="button" aria-label="Vote content">
+                  <img src="/assets/icons/classic/content.png" alt="" />
+                </button>
+                <button data-vote="euphoria" type="button" aria-label="Vote euphoria">
+                  <img src="/assets/icons/classic/euphoria.png" alt="" />
+                </button>
               </div>
+
               <div className="pulse-summary">
                 <div className="pulse-summary-box"><span>Pulse Mood</span><strong id="pulseMood">Neutral</strong></div>
                 <div className="pulse-summary-box"><span>Total Votes</span><strong id="pulseTotalVotes">0</strong></div>
                 <div className="pulse-summary-box"><span>Pulse Score</span><strong id="pulseScore">50</strong></div>
               </div>
+
               <div className="pulse-msg" id="pulseMsg"></div>
             </div>
 
           </main>
 
-          {/* ===== FOOTER ===== */}
+          {/* ===========================================================
+              FOOTER
+          =========================================================== */}
           <footer className="wm-footer">
             <div className="wm-footer-inner">
               <div className="wm-footer-brand">
-                <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter Logo" className="wm-footer-logo-img" />
+                <img
+                  src="/assets/logo/wojakmeter_logo.png"
+                  alt="WojakMeter"
+                  className="wm-footer-logo-img"
+                />
               </div>
+
               <div className="wm-footer-links-wrap">
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Navigation</h4>
@@ -961,28 +1263,55 @@ export default function Home({ ogImageUrl }) {
                   <a href="#wojak-studio">Wojak Studio</a>
                   <a href="#about">About</a>
                 </div>
+
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Legal</h4>
                   <Link href="/terms">Terms</Link>
                   <Link href="/privacy">Privacy</Link>
                   <Link href="/disclaimer">Disclaimer</Link>
                 </div>
+
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Community</h4>
-                  <a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer" className="footer-link">
+                  <a
+                    href="https://x.com/wojakmeterx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
                     <span className="x-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z" /></svg>
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          fill="currentColor"
+                          d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
+                        />
+                      </svg>
                     </span>
                     @wojakmeterx
                   </a>
-                  <a href="https://t.me/WojakMeter" target="_blank" rel="noopener noreferrer" className="footer-link">Telegram Channel</a>
-                  <a href="https://t.me/WojakMeter_bot" target="_blank" rel="noopener noreferrer" className="footer-link">
-                    <span style={{ marginRight: "6px" }}>🤖</span>Telegram Bot
+                  <a
+                    href="https://t.me/WojakMeter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
+                    Telegram Channel
                   </a>
-                  <a href="mailto:contact@wojakmeter.com" className="footer-link">contact@wojakmeter.com</a>
+                  <a
+                    href="https://t.me/WojakMeter_bot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
+                    Telegram Bot
+                  </a>
+                  <a href="mailto:contact@wojakmeter.com" className="footer-link">
+                    contact@wojakmeter.com
+                  </a>
                 </div>
               </div>
             </div>
+
             <div className="wm-footer-bottom">
               <p>© 2026 WojakMeter. All rights reserved.</p>
             </div>
@@ -995,9 +1324,11 @@ export default function Home({ ogImageUrl }) {
 }
 
 export async function getServerSideProps({ req }) {
-  const protocol = req.headers["x-forwarded-proto"] || (req.headers.host?.includes("localhost") ? "http" : "https");
-  const host     = req.headers.host;
-  const baseUrl  = `${protocol}://${host}`;
+  const protocol =
+    req.headers["x-forwarded-proto"] ||
+    (req.headers.host?.includes("localhost") ? "http" : "https");
+  const host    = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
 
   try {
     const [globalRes, sentimentRes] = await Promise.all([
@@ -1008,8 +1339,10 @@ export async function getServerSideProps({ req }) {
     const globalJson    = await globalRes.json().catch(() => null);
     const sentimentJson = await sentimentRes.json().catch(() => null);
 
-    const rawGlobal     = globalJson?.raw || {};
-    const change        = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const rawGlobal = globalJson?.raw || {};
+    const change = Number(
+      globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0
+    );
     const volumeUsd     = Number(rawGlobal?.total_volume?.usd ?? 0);
     const score         = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
     const mood          = scoreToMood(score);
