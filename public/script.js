@@ -16,6 +16,7 @@ const COIN_DETAILS_REFRESH_MS = 30000;
 const TRENDING_REFRESH_MS     = 60000;
 const MEMES_REFRESH_MS        = 90000;
 const SENTIMENT_REFRESH_MS    = 60000;
+const NEWS_REFRESH_MS = 120000; 
 
 const ACTIVE_COIN_STORAGE_KEY = "wojakActiveCoin";
 const STYLE_STORAGE_KEY       = "wojakStyle";
@@ -70,6 +71,8 @@ let moodBuyVolume = 0;
 let moodSellVolume = 0;
 let moodLiveScore = 50;
 let moodTokenTimeframe = "5m";
+let isLoadingNews = false;
+let newsData = [];
 
 /* Market cap REAL del proveedor. Antes se calculaba como
    moodPrice * 1e9, o sea asumiendo mil millones de supply para
@@ -208,6 +211,7 @@ function formatCurrencyCompact(value) {
   }).format(num);
 }
 
+
 function formatCurrency(value) {
   const num = Number(value);
   if (value == null || !Number.isFinite(num)) return "--";
@@ -342,6 +346,75 @@ function getHeroImagePath(style, moodKey) {
 
 function getIconImagePath(style, moodKey) {
   return `/assets/icons/${SHARED_ICON_STYLE}/${moodKey}.png`;
+}
+
+// El ícono usa el mismo mapa de mood que ya tienes
+function getNewsMoodColor(moodKey) {
+  return getMoodColor(moodKey); // reutiliza tu función existente
+}
+
+function createNewsItem(item) {
+  const mood = getMoodByScore(item.score ?? 50);
+  const el = document.createElement("a");
+  el.className = "news-item";
+  el.href = item.url || "#";
+  el.target = "_blank";
+  el.rel = "noopener noreferrer";
+  el.style.setProperty("--news-color", getNewsMoodColor(mood.key));
+
+  el.innerHTML = `
+    <img class="news-item-icon" src="${escapeHtml(getIconImagePath(getCurrentStyle(), mood.key))}" alt="${escapeHtml(mood.name)}" loading="lazy">
+    <span class="news-item-headline">${escapeHtml(item.headline)}</span>`;
+
+  return el;
+}
+
+function renderNewsBanner() {
+  const track = byId("newsTrack");
+  if (!track) return;
+
+  if (!newsData.length) {
+    track.innerHTML = `<span class="news-loading">No fresh headlines right now</span>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  const buildPass = () => {
+    newsData.forEach((item, i) => {
+      frag.appendChild(createNewsItem(item));
+      if (i < newsData.length - 1) {
+        const sep = document.createElement("span");
+        sep.className = "news-item-sep";
+        frag.appendChild(sep);
+      }
+    });
+  };
+
+  // Se duplica una vez para que el loop del marquee sea continuo (translateX -50%)
+  buildPass();
+  const midSep = document.createElement("span");
+  midSep.className = "news-item-sep";
+  frag.appendChild(midSep);
+  buildPass();
+
+  track.replaceChildren(frag);
+}
+
+async function loadNews() {
+  if (isLoadingNews) return;
+  isLoadingNews = true;
+  try {
+    const res = await fetchJson("/api/crypto-news", null);
+    const items = Array.isArray(res?.items) ? res.items : [];
+    if (items.length) {
+      newsData = items.slice(0, 12);
+      renderNewsBanner();
+    } else if (!newsData.length) {
+      renderNewsBanner();
+    }
+  } finally {
+    isLoadingNews = false;
+  }
 }
 
 // ===============================
@@ -4010,6 +4083,7 @@ function setupBagMoodControls() {
       bagMoodStyle = selected;
       lsSet(BAG_STYLE_STORAGE_KEY, selected);
       renderBagMood();
+      renderNewsBanner();
     });
   }
 
@@ -4221,6 +4295,7 @@ function startAutoRefresh() {
   setTimer("trending",    loadTrendingCoins, TRENDING_REFRESH_MS);
   setTimer("memes",       loadTopMemes,      MEMES_REFRESH_MS);
   setTimer("sentiment",   loadSentiment,     SENTIMENT_REFRESH_MS);
+  setTimer("news", loadNews, NEWS_REFRESH_MS);
 }
 
 function startMoodPolling() {
@@ -4263,7 +4338,8 @@ async function loadAll() {
     loadTopCoins(),
     loadTrendingCoins(),
     loadTopMemes(),
-    loadTopExchanges()
+    loadTopExchanges(),
+    loadNews()
   ]);
 
   currentPulseScore = getPulseScore();
