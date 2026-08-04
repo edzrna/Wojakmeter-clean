@@ -196,6 +196,18 @@ export default function Home({ ogImageUrl }) {
             <span>Reading market…</span>
           </div>
 
+                    <section className="news-banner card" id="newsBanner" aria-label="Crypto news">
+  <div className="news-banner-label">
+    <span className="news-banner-dot" aria-hidden="true"></span>
+    Market Pulse
+  </div>
+  <div className="news-track-wrap">
+    <div className="news-track" id="newsTrack">
+      <span className="news-loading">Reading the news…</span>
+    </div>
+  </div>
+</section>
+
           <main className="dashboard">
 
             {/* ===========================================================
