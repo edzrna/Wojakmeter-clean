@@ -76,11 +76,25 @@ function averageChange(coins) {
 
 async function getJson(baseUrl, path) {
   try {
-    const res = await fetch(`${baseUrl}${path}`, { headers: { accept: "application/json" } });
-    if (!res.ok) return null;
+    const res = await fetch(`${baseUrl}${path}`, {
+      headers: { accept: "application/json" }
+    });
+
+    if (!res.ok) {
+      return { __error: `HTTP ${res.status}` };
+    }
+
+    /* Si Deployment Protection intercepta, la respuesta es 200
+       con HTML de login. Sin esta comprobación, .json() lanza y
+       el fallo aparece como un null indistinguible de otros. */
+    const type = res.headers.get("content-type") || "";
+    if (!type.includes("application/json")) {
+      return { __error: `non_json_response (${type.slice(0, 40)})` };
+    }
+
     return await res.json();
-  } catch {
-    return null;
+  } catch (error) {
+    return { __error: error?.message || "fetch_failed" };
   }
 }
 
@@ -136,8 +150,25 @@ export default async function handler(req, res) {
     return res.status(500).json({ ok: false, error: "missing_database_url" });
   }
 
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const baseUrl = `${proto}://${req.headers.host}`;
+  /* ---------------- URL BASE INTERNA ----------------
+
+     BUG QUE ARREGLA:
+     Antes se usaba req.headers.host. Pero el cron de Vercel
+     invoca el DOMINIO DE DESPLIEGUE
+     (wojakmeter-clean-gersm....vercel.app), no el público.
+
+     Ese dominio está detrás de Deployment Protection, que en el
+     plan Pro viene activada por defecto: las llamadas a
+     /api/global desde ahí reciben una página de login HTML en vez
+     de JSON. fetch() no falla — devuelve 200 con HTML — y el
+     .json() revienta, así que `global` quedaba null y el endpoint
+     devolvía 502 sin explicar por qué.
+
+     Solución: usar siempre el dominio público, que no está
+     protegido. Configurable por si algún día cambia. */
+  const baseUrl =
+    process.env.PUBLIC_SITE_URL ||
+    "https://wojakmeter.com";
 
   let sql;
   try {
@@ -158,9 +189,21 @@ export default async function handler(req, res) {
       getJson(baseUrl, "/api/top-memes")
     ]);
 
-    if (!global) {
-      return res.status(502).json({ ok: false, error: "global_unavailable" });
+    if (!global || global.__error) {
+      return res.status(502).json({
+        ok: false,
+        error: "global_unavailable",
+        /* El motivo concreto, en vez de un 502 mudo. */
+        detail: global?.__error || "null_response",
+        triedUrl: `${baseUrl}/api/global?timeframe=24h`
+      });
     }
+
+    // Las fuentes secundarias son opcionales: si fallan, se usan
+    // valores neutros en vez de abortar el snapshot entero.
+    const safeSentiment = sentiment?.__error ? null : sentiment;
+    const safeTrending  = trending?.__error  ? null : trending;
+    const safeMemes     = memes?.__error     ? null : memes;
 
     const raw = global.raw || {};
 
@@ -172,17 +215,17 @@ export default async function handler(req, res) {
       ? parseFloat(String(global.btcDominance).replace("%", ""))
       : Number(raw?.market_cap_percentage?.btc ?? 0);
 
-    const trendingScore = Array.isArray(trending) && trending.length
-      ? normalizeChangeToScore(averageChange(trending), 3.5) : 50;
+    const trendingScore = Array.isArray(safeTrending) && safeTrending.length
+      ? normalizeChangeToScore(averageChange(safeTrending), 3.5) : 50;
 
-    const memeScore = Array.isArray(memes) && memes.length
-      ? normalizeChangeToScore(averageChange(memes), 3.2) : 50;
+    const memeScore = Array.isArray(safeMemes) && safeMemes.length
+      ? normalizeChangeToScore(averageChange(safeMemes), 3.2) : 50;
 
     const marketScore = computeMarketScore(change, trendingScore, memeScore, 50);
 
     /* El social score depende del newsScore de /api/sentiment.
        Copia de getSocialScoreFromMarket. */
-    const newsScore = Number(sentiment?.newsScore ?? sentiment?.score ?? 50);
+    const newsScore = Number(safeSentiment?.newsScore ?? safeSentiment?.score ?? 50);
     const socialScore = roundScore(clamp(
       50 + change * 5 +
       (trendingScore - 50) * 0.12 +
@@ -191,7 +234,7 @@ export default async function handler(req, res) {
       0, 100
     ));
 
-    const driver = sentiment?.driver || "Market flow / price action";
+    const driver = safeSentiment?.driver || "Market flow / price action";
 
     /* Guardamos el score del modo RAW, que es el que ve por
        defecto quien entra. Los otros modos dependen de ajustes
