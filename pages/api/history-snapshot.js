@@ -100,46 +100,25 @@ async function getJson(baseUrl, path) {
 
 export default async function handler(req, res) {
   /* ---------------- AUTENTICACIÓN ----------------
+     Vercel Cron invoca con GET y manda
+     `Authorization: Bearer ${CRON_SECRET}`.
 
-     HISTORIA DE ESTE BLOQUE:
-     La versión anterior exigía CRON_SECRET y devolvía 500 si no
-     existía. La variable ESTABA creada en el panel de Vercel y
-     aun así process.env.CRON_SECRET llegaba undefined al runtime,
-     incluso tras redesplegar sin caché.
-
-     En vez de seguir persiguiendo por qué no propaga, se
-     autentica con una señal que SÍ sabemos presente: en los logs
-     de invocación se ve `User Agent: vercel-cron/1.0`.
-
-     Orden de comprobación:
-       1. Si CRON_SECRET existe, se exige (camino preferido).
-       2. Si no existe, se acepta la invocación del cron de Vercel.
-       3. Cualquier otra cosa, 401.
-
-     COMPROMISO HONESTO: el user-agent es falsificable desde
-     fuera. El riesgo real es bajo — lo peor que consigue un
-     atacante es forzar un snapshot, y el índice único por bucket
-     de 15 min impide que llene la tabla. Aun así, en cuanto
-     CRON_SECRET propague, el camino 1 vuelve a mandar solo.
-     Para cerrarlo del todo: define CRON_SECRET y elimina el paso 2. */
+     Nota histórica: hubo una versión que aceptaba el user-agent
+     `vercel-cron/` como alternativa, porque CRON_SECRET parecía
+     no propagar. El problema real era otro (Deployment Protection
+     interceptando las llamadas internas), así que ese rodeo se
+     ha eliminado: el user-agent es falsificable y ya no hace
+     falta. Solo manda el secreto. */
 
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.authorization || "";
-  const userAgent = String(req.headers["user-agent"] || "");
-  const isVercelCron = userAgent.startsWith("vercel-cron/");
 
-  const authorized = secret
-    ? auth === `Bearer ${secret}`
-    : isVercelCron;
+  if (!secret) {
+    return res.status(500).json({ ok: false, error: "missing_cron_secret" });
+  }
 
-  if (!authorized) {
-    return res.status(401).json({
-      ok: false,
-      error: "unauthorized",
-      /* Pistas para diagnosticar sin exponer el secreto. */
-      hasSecret: Boolean(secret),
-      sawCronUA: isVercelCron
-    });
+  if (auth !== `Bearer ${secret}`) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
   }
 
   if (req.method !== "GET" && req.method !== "POST") {
