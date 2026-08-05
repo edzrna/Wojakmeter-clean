@@ -609,6 +609,70 @@ export default function Home({ ogImageUrl }) {
               </div>
             </section>
 
+/* ===========================================================
+    HISTÓRICO DE EMOCIÓN
+
+    DÓNDE VA: en pages/index.js, justo DESPUÉS del cierre de
+    </section> del hero y ANTES de la sección `top-coins`.
+
+    Ese sitio no es casual. La pregunta que se hace alguien
+    después de ver "Neutral 53" es "¿y antes?". El histórico
+    debe responderla inmediatamente, sin scroll de por medio.
+   =========================================================== */}
+
+<section className="history-section card" id="historySection">
+  <div className="section-head">
+    <div>
+      <span className="section-kicker">Emotion over time</span>
+      <h3>Market Mood History</h3>
+    </div>
+    <div className="timeframes compact" id="historyRanges">
+      <button type="button" data-history-range="24h">24h</button>
+      <button type="button" data-history-range="7d" className="active">7d</button>
+      <button type="button" data-history-range="30d">30d</button>
+      <button type="button" data-history-range="90d">90d</button>
+    </div>
+  </div>
+
+  {/* La frase de contexto. Es la parte más compartible de toda
+      la sección: "3d in Neutral" es un dato que la gente cita. */}
+  <div className="history-streak" id="historyStreak">Building history…</div>
+
+  <div className="history-chart" id="historyChart">
+    <svg viewBox="0 0 900 260" preserveAspectRatio="none" aria-hidden="true">
+      <g className="history-bands" id="historyBands"></g>
+      <path id="historyArea" d=""></path>
+      <path id="historyLine" d=""></path>
+    </svg>
+
+    {/* Se muestra solo cuando aún no hay datos suficientes.
+        Preferible a dibujar dos puntos como si fueran tendencia. */}
+    <div className="history-placeholder">
+      Collecting readings every 15 minutes. The chart fills in as history builds.
+    </div>
+  </div>
+
+  <div className="history-stats">
+    <div>
+      <span>Low</span>
+      <strong id="historyMin">--</strong>
+    </div>
+    <div>
+      <span>Average</span>
+      <strong id="historyAvg">--</strong>
+    </div>
+    <div>
+      <span>High</span>
+      <strong id="historyMax">--</strong>
+    </div>
+    <div>
+      <span>Data</span>
+      <strong id="historySamples">Collecting…</strong>
+    </div>
+  </div>
+</section>
+
+
             {/* ===========================================================
                 2. MARKET SECTIONS + CHART
             =========================================================== */}
