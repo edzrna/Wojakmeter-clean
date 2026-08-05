@@ -609,7 +609,7 @@ export default function Home({ ogImageUrl }) {
               </div>
             </section>
 
-/* ===========================================================
+{/* ===========================================================
     HISTÓRICO DE EMOCIÓN
 
     DÓNDE VA: en pages/index.js, justo DESPUÉS del cierre de
