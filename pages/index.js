@@ -998,124 +998,196 @@ export default function Home({ ogImageUrl }) {
             {/* ===========================================================
                 5. MOOD TOKEN
             =========================================================== */}
-            <section className="mood-token-card card" id="moodSection">
-              <div className="section-head">
-                <div className="mood-section-logo-wrap">
-                  <img src="/moodlogo.png" alt="MOOD" className="mood-section-logo" />
-                </div>
-                <span className="muted">Reactive token mood engine</span>
-              </div>
+           {/* ===========================================================
+    MOOD — VERSIÓN COMPACTA
+    Reemplaza la sección #moodSection completa en index.js.
+    Sustituye también a mood-section.jsx y mood-stage.jsx
+    anteriores: esto los incluye a los dos.
 
-              <div className="mood-token-grid">
-                <div className="mood-token-main">
-                  <div className="mood-token-copy">
-                    <span className="about-label">MOOD Live</span>
-                    <h2 className="about-title">Watch any Solana token react in real time.</h2>
-                    <p className="about-text">
-                      Track a live trending token, switch to MOOD anytime, or paste any
-                      Solana address to follow its emotional flow. DexScreener first,
-                      Pump.fun as fallback.
-                    </p>
-                  </div>
+    EL PROBLEMA EN MÓVIL: cada caja de métrica gastaba ~140px de
+    alto para mostrar una etiqueta y un número. Siete cajas eran
+    casi 500px de scroll para datos que caben en 200.
 
-                  <div className="mood-ca-box">
-                    <div className="mood-ca-head"><span>MOOD Contract Address</span></div>
-                    <div className="mood-ca-row">
-                      <code id="moodContractAddress">$MOOD</code>
-                      <button type="button" className="action-btn" id="copyMoodCaBtn">Copy CA</button>
-                    </div>
-                  </div>
+    QUÉ CAMBIA:
+    · Precio y cambio suben a la cabecera: dejan de ser cajas.
+    · Las métricas restantes pasan a filas densas de 36px.
+    · Tendencias e histórico son tiras horizontales: se
+      desplazan, no añaden altura.
+   =========================================================== */}
 
-                  <div className="mood-search-box">
-                    <input
-                      id="tokenSearchInput"
-                      type="text"
-                      placeholder="Paste a Solana token address"
-                      className="mood-input"
-                    />
-                    <button id="tokenSearchBtn" className="action-btn" type="button">Load Token</button>
-                  </div>
+<section className="mood-token-card card" id="moodSection">
+  <div className="section-head">
+    <div className="mood-section-logo-wrap">
+      <img src="/moodlogo.png" alt="MOOD" className="mood-section-logo" />
+    </div>
+    <span className="muted">Reactive token mood engine</span>
+  </div>
 
-                  <div className="mood-actions-row">
-                    <button id="loadMoodMain" className="action-btn mood-buy-btn" type="button">
-                      Load MOOD
-                    </button>
-                    <a
-                      href="https://dexscreener.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="action-btn mood-secondary-btn"
-                    >
-                      DexScreener
-                    </a>
-                  </div>
+  <div className="mood-token-copy">
+    <span className="about-label">MOOD Live</span>
+    <h2 className="about-title">Watch any Solana token react in real time.</h2>
+  </div>
 
-                  <div className="mood-token-meta">
-                    <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="" />
-                    <div className="mood-token-meta-copy">
-                      <strong id="moodTokenName">Live Token</strong>
-                      <span id="moodTokenSymbol">$---</span>
-                    </div>
-                  </div>
+  {/* ---------- BUSCADOR ---------- */}
+  <div className="mood-search-row">
+    <input
+      id="tokenSearchInput"
+      type="text"
+      placeholder="Paste a Solana token address"
+      className="mood-input"
+    />
+    <button id="tokenSearchBtn" className="action-btn" type="button">Load</button>
+    <button id="loadMoodMain" className="action-btn mood-buy-btn" type="button">MOOD</button>
+  </div>
 
-                  <div className="timeframes mood-token-timeframes" id="moodTokenTimeframes">
-                    <button data-token-timeframe="1m">1m</button>
-                    <button data-token-timeframe="5m" className="active">5m</button>
-                    <button data-token-timeframe="15m">15m</button>
-                    <button data-token-timeframe="1h">1h</button>
-                    <button data-token-timeframe="4h">4h</button>
-                    <button data-token-timeframe="24h">24h</button>
-                  </div>
+  {/* ---------- TENDENCIAS ---------- */}
+  <div className="mood-strip-block">
+    <div className="mood-strip-head">
+      <span className="mood-strip-label">Trending now</span>
+      <span className="mood-strip-hint">Tap to load</span>
+    </div>
+    <div className="mood-trending-strip" id="moodTrendingStrip">
+      <div className="mood-trending-empty">Loading…</div>
+    </div>
+  </div>
 
-                  <div className="mood-stats-grid">
-                    <div className="mood-stat-box"><span>Price</span><strong id="moodTokenPrice">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Market Cap</span><strong id="moodTokenMarketCap">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Volume</span><strong id="moodTokenVolume">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Change</span><strong id="moodChange">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Flow</span><strong id="moodTokenFlow">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Volatility</span><strong id="moodTokenVolatility">Reading</strong></div>
-                    <div className="mood-stat-box"><span>Last Action</span><strong id="moodTokenLastAction">Watching</strong></div>
-                  </div>
-                </div>
+  {/* ---------- HISTÓRICO DE REACCIONES ----------
+      Oculto hasta que haya algo: una sección vacía diciendo "aún
+      no hay nada" solo gasta espacio. */}
+  <div className="mood-strip-block hidden" id="moodHistorySection">
+    <div className="mood-strip-head">
+      <span className="mood-strip-label">You watched</span>
+      <button type="button" className="mood-strip-clear" id="moodHistoryClear">Clear</button>
+    </div>
+    <div className="mood-trending-strip" id="moodHistoryStrip"></div>
+  </div>
 
-                <div className="mood-token-visual">
-                  <div className="mood-stage" id="moodStage">
-                    <div className="mood-stage-glow" id="moodStageGlow"></div>
-                    <div className="mood-chart-backdrop hidden" id="moodChartBackdrop">
-                      <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="moodChartArea" d=""></path>
-                        <path id="moodChartLine" d=""></path>
-                      </svg>
-                    </div>
-                    <img
-                      id="moodHeroImg"
-                      className="mood-hero-img anim-float"
-                      src="/assets/hero/classic/neutral.png"
-                      alt="Token sentiment"
-                    />
-                    <div className="mood-token-badge" id="moodTokenBadge">
-                      <span>Token Sentiment</span>
-                      <strong>Neutral</strong>
-                    </div>
-                  </div>
+  {/* ---------- CABECERA DEL TOKEN ----------
+      Identidad, precio y cambio en una fila. Antes eran dos
+      cajas de 140px. */}
+  <div className="mood-token-header">
+    <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="" />
 
-                  <div className="mood-token-score-row">
-                    <div className="mood-token-score-box"><span>Score</span><strong id="moodTokenScore">50</strong></div>
-                    <div className="mood-token-score-box"><span>Status</span><strong id="moodHeroMood">Neutral</strong></div>
-                    <div className="mood-token-score-box"><span>Source</span><strong id="moodTokenSource">Auto</strong></div>
-                  </div>
+    <div className="mood-token-id">
+      <strong id="moodTokenName">Live Token</strong>
+      <span id="moodTokenSymbol">$---</span>
+    </div>
 
-                  <div className="mood-trades-feed" id="moodTradesFeed">
-                    <div className="mood-empty-feed">Waiting for live trades…</div>
-                  </div>
+    <div className="mood-token-price-block">
+      <strong id="moodTokenPrice">Reading</strong>
+      <span id="moodChange">--</span>
+    </div>
 
-                  <div className="mood-token-note">
-                    This module reacts to live token momentum, trade pressure and
-                    timeframe change, using DexScreener first and Pump.fun when needed.
-                  </div>
-                </div>
-              </div>
-            </section>
+    <div className="mood-token-links">
+      <a id="moodLinkDex" href="https://dexscreener.com" target="_blank"
+         rel="noopener noreferrer" className="mood-link-btn" title="DexScreener">DEX</a>
+      <a id="moodLinkPump" href="https://pump.fun" target="_blank"
+         rel="noopener noreferrer" className="mood-link-btn hidden" title="Pump.fun">PUMP</a>
+      <a id="moodLinkSolscan" href="https://solscan.io" target="_blank"
+         rel="noopener noreferrer" className="mood-link-btn" title="Solscan">SCAN</a>
+    </div>
+  </div>
+
+  <div className="timeframes mood-token-timeframes" id="moodTokenTimeframes">
+    <button data-token-timeframe="1m">1m</button>
+    <button data-token-timeframe="5m" className="active">5m</button>
+    <button data-token-timeframe="15m">15m</button>
+    <button data-token-timeframe="1h">1h</button>
+    <button data-token-timeframe="4h">4h</button>
+    <button data-token-timeframe="24h">24h</button>
+  </div>
+
+  {/* ---------- ESCENA ---------- */}
+  <div className="mood-stage" id="moodStage">
+    <div className="mood-stage-glow" id="moodStageGlow"></div>
+
+    <div className="mood-chart-backdrop hidden" id="moodChartBackdrop">
+      <svg viewBox="0 0 900 280" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="moodGradUp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(59,217,122,0.28)" />
+            <stop offset="100%" stopColor="rgba(59,217,122,0)" />
+          </linearGradient>
+          <linearGradient id="moodGradDown" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(228,72,92,0.28)" />
+            <stop offset="100%" stopColor="rgba(228,72,92,0)" />
+          </linearGradient>
+        </defs>
+        <g className="mood-chart-grid" id="moodChartGrid"></g>
+        <path id="moodChartArea" d=""></path>
+        <path id="moodChartLine" d=""></path>
+        <g className="mood-chart-last" id="moodChartLast"></g>
+      </svg>
+
+      {/* El eje va en un SVG aparte SIN preserveAspectRatio="none",
+          porque lleva texto y el estirado lo deformaría. */}
+      <svg className="mood-chart-axis-svg" viewBox="0 0 900 280" aria-hidden="true">
+        <g className="mood-chart-axis" id="moodChartAxis"></g>
+      </svg>
+    </div>
+
+    <img
+      id="moodHeroImg"
+      className="mood-hero-img anim-float"
+      src="/assets/hero/classic/neutral.png"
+      alt="Token sentiment"
+    />
+
+    <div className="mood-token-badge" id="moodTokenBadge">
+      <span>Sentiment</span>
+      <strong>Neutral</strong>
+    </div>
+
+    <div className="mood-score-corner">
+      <span>Score</span>
+      <strong id="moodTokenScore">50</strong>
+    </div>
+  </div>
+
+  {/* ---------- MÉTRICAS EN FILAS DENSAS ----------
+      Seis filas de 36px en vez de seis cajas de 140px. */}
+  <div className="mood-metrics">
+    <div className="mood-metric-row">
+      <span>Market Cap</span><strong id="moodTokenMarketCap">Reading</strong>
+    </div>
+    <div className="mood-metric-row">
+      <span>Volume</span><strong id="moodTokenVolume">Reading</strong>
+    </div>
+    <div className="mood-metric-row">
+      <span>Flow</span><strong id="moodTokenFlow">Reading</strong>
+    </div>
+    <div className="mood-metric-row">
+      <span>Volatility</span><strong id="moodTokenVolatility">Reading</strong>
+    </div>
+    <div className="mood-metric-row">
+      <span>Last action</span><strong id="moodTokenLastAction">Watching</strong>
+    </div>
+    <div className="mood-metric-row">
+      <span>Source</span><strong id="moodTokenSource">Auto</strong>
+    </div>
+  </div>
+
+  {/* ---------- ACCIONES ---------- */}
+  <div className="mood-actions-row">
+    <button id="shareTokenMoodBtn" className="action-btn share-x-btn" type="button">
+      Share this mood
+    </button>
+    <button type="button" className="action-btn" id="copyMoodCaBtn">Copy CA</button>
+  </div>
+
+  {/* El contrato, discreto: se copia, no se lee. */}
+  <div className="mood-ca-inline">
+    <span id="moodCaLabel">Contract</span>
+    <code id="moodContractAddress">--</code>
+  </div>
+
+  <div className="mood-trades-feed" id="moodTradesFeed">
+    <div className="mood-empty-feed">Waiting for live trades…</div>
+  </div>
+
+  {/* Conservado por compatibilidad con script.js. */}
+  <strong id="moodHeroMood" className="hidden">Neutral</strong>
+</section>
 
             {/* ===========================================================
                 6. WOJAK STUDIO
