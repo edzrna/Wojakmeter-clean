@@ -4488,3 +4488,369 @@ body.header-scrolled .wm-desktop-nav a { padding: 5px 9px; font-size: 0.64rem; }
   .mood-trade { grid-template-columns: 38px 1fr auto; }
   .mood-trade .trade-time { display: none; }
 }
+
+/* ===========================================================
+   38 · CABECERA REESTRUCTURADA
+   Añadir al final de globals.css. Sustituye las reglas
+   anteriores de .topbar, .topbar-center y .topbar-right.
+   =========================================================== */
+
+/* El problema anterior: una rejilla de tres columnas metía las
+   métricas ENTRE el logo y la navegación. El logo se solapaba
+   con "Cap $2.28T" y la nav quedaba aplastada contra el borde.
+
+   Ahora son dos filas con papeles claros: identidad y navegación
+   arriba, datos abajo. */
+
+.topbar {
+  display: block;
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.wm-header-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* -----------------------------------------------------------
+   MARCA + ESLOGAN
+   El logo solo no dice qué es el sitio. El eslogan sí.
+   ----------------------------------------------------------- */
+
+.wm-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.wm-brand .logo-img {
+  height: 46px;
+  width: auto;
+  max-width: 210px;
+  object-fit: contain;
+  transition: height 0.3s var(--ease);
+}
+
+.wm-tagline {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  white-space: nowrap;
+  /* Separador vertical en vez de un guion: menos ruido y marca
+     mejor la jerarquía entre marca y descriptor. */
+  padding-left: var(--sp-2);
+  border-left: 1px solid var(--line);
+}
+
+/* -----------------------------------------------------------
+   NAVEGACIÓN DE ESCRITORIO
+   ----------------------------------------------------------- */
+
+.wm-desktop-nav {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.wm-desktop-nav a {
+  padding: 7px 10px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.wm-desktop-nav a:hover {
+  color: var(--bone);
+  background: rgba(232, 233, 236, 0.05);
+}
+
+.wm-desktop-nav .wm-nav-mood {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--sp-1);
+  padding: 6px 12px;
+  border: 1px solid var(--line-hard);
+  background: var(--ink-300);
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.wm-desktop-nav .wm-nav-mood img {
+  height: 13px;
+  width: auto;
+  object-fit: contain;
+}
+
+.wm-desktop-nav .wm-nav-mood:hover {
+  background: var(--bone);
+  color: var(--ink-000);
+  border-color: var(--bone);
+}
+
+.wm-desktop-nav .wm-nav-mood:hover img { filter: brightness(0); }
+
+.wm-header-style {
+  display: none;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.wm-header-style .style-label { margin-bottom: 0; }
+
+/* -----------------------------------------------------------
+   MÉTRICAS
+
+   Con fila propia dejan de competir por espacio, y caben seis
+   en vez de tres. Antes solo había tres cifras sueltas y
+   ninguna decía en qué ESTADO está el mercado — que es de lo
+   que va el sitio entero.
+   ----------------------------------------------------------- */
+
+.wm-header-metrics {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--line-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wm-header-metrics::-webkit-scrollbar { display: none; }
+
+.wm-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.wm-metric > span {
+  font-family: var(--font-data);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  white-space: nowrap;
+}
+
+.wm-metric > strong {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bone);
+  white-space: nowrap;
+}
+
+/* --- Anillo de dominancia ---
+   Un porcentaje sobre un total se lee mejor como proporción que
+   como cifra suelta. */
+
+.wm-metric-dominance {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.wm-metric-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wm-metric-copy span {
+  font-family: var(--font-data);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.wm-metric-copy strong {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bone);
+}
+
+.wm-dom-ring {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  /* -90deg para que el anillo empiece arriba, no a las 3 en
+     punto: es la convención y se lee sin pensar. */
+  transform: rotate(-90deg);
+}
+
+.wm-dom-track {
+  fill: none;
+  stroke: rgba(232, 233, 236, 0.09);
+  stroke-width: 3;
+}
+
+.wm-dom-fill {
+  fill: none;
+  stroke: var(--bone);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  transition: stroke-dasharray 0.8s var(--ease);
+}
+
+/* -----------------------------------------------------------
+   TICKER CON EMOCIÓN
+
+   Antes mostraba precio y porcentaje: exactamente lo mismo que
+   cualquier ticker de cualquier sitio cripto. En una página
+   llamada "The Crypto Emotion Index", la tira superior no decía
+   nada sobre emoción.
+   ----------------------------------------------------------- */
+
+.ticker-item {
+  position: relative;
+  min-width: 116px;
+  padding-bottom: 8px;
+}
+
+.ticker-mood {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ticker-item .ticker-top { width: 100%; }
+
+/* Barra de score bajo cada moneda: el dato emocional en su
+   forma más compacta posible. */
+.ticker-item .ticker-bar {
+  position: absolute;
+  left: var(--sp-2);
+  right: var(--sp-2);
+  bottom: 2px;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: rgba(232, 233, 236, 0.07);
+  overflow: hidden;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.ticker-item .ticker-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.6s var(--ease);
+}
+
+.ticker-item[data-mood="frustration"] .ticker-bar span { background: var(--neg-hard); }
+.ticker-item[data-mood="concern"]     .ticker-bar span { background: var(--neg-soft); }
+.ticker-item[data-mood="doubt"]       .ticker-bar span { background: var(--neg-pale); }
+.ticker-item[data-mood="neutral"]     .ticker-bar span { background: var(--mid); }
+.ticker-item[data-mood="optimism"]    .ticker-bar span { background: var(--pos-pale); }
+.ticker-item[data-mood="content"]     .ticker-bar span { background: var(--pos-soft); }
+.ticker-item[data-mood="euphoria"]    .ticker-bar span { background: var(--pos-hard); }
+
+/* -----------------------------------------------------------
+   FOOTER
+   ----------------------------------------------------------- */
+
+.wm-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.wm-footer-tagline {
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+/* -----------------------------------------------------------
+   RESPONSIVE
+   ----------------------------------------------------------- */
+
+@media (min-width: 981px) {
+  .wm-desktop-nav { display: flex; }
+  .wm-header-style { display: flex; }
+  .wm-menu-toggle { display: none; }
+}
+
+@media (max-width: 980px) {
+  .wm-desktop-nav { display: none; }
+  .wm-brand { margin: 0 auto; }
+  .wm-tagline { display: none; }
+
+  .wm-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: var(--ink-200);
+    color: var(--bone);
+    font-size: 19px;
+    flex-shrink: 0;
+  }
+
+  .wm-brand .logo-img { height: 40px; max-width: 170px; }
+
+  .wm-header-metrics { gap: var(--sp-3); }
+  .wm-metric > strong,
+  .wm-metric-copy strong { font-size: 0.74rem; }
+  .wm-dom-ring { width: 28px; height: 28px; }
+
+  /* Al hacer scroll se ocultan las métricas: la cabecera pegajosa
+     no debe comerse un tercio de la pantalla en móvil. */
+  body.header-scrolled .wm-header-metrics {
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-top-color: transparent;
+  }
+
+  .wm-header-metrics {
+    max-height: 60px;
+    opacity: 1;
+    transition: max-height 0.3s var(--ease), opacity 0.24s ease,
+                margin-top 0.3s var(--ease), padding-top 0.3s var(--ease);
+  }
+
+  body.header-scrolled .wm-brand .logo-img { height: 32px; max-width: 140px; }
+}
+
+@media (max-width: 560px) {
+  .topbar { padding: var(--sp-2) var(--sp-3); }
+  .wm-header-metrics { gap: var(--sp-3); }
+  .wm-metric > span,
+  .wm-metric-copy span { font-size: 0.5rem; }
+}
