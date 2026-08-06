@@ -86,6 +86,7 @@ function emptyPayload(address, reason = "none") {
     buys: 0,
     sells: 0,
     lastAction: "Watching",
+    flow: { m5Buys: 0, m5Sells: 0, m5Volume: 0, m5Change: 0 },
     isNew: true
   };
 }
@@ -128,6 +129,19 @@ export default async function handler(req, res) {
         const buys  = safeNum(window.buys);
         const sells = safeNum(window.sells);
 
+        /* VENTANA CORTA para detectar flujo en vivo.
+
+           DexScreener no ofrece websocket de operaciones, pero sí
+           contadores por ventana. Restando estos valores entre
+           dos consultas seguidas se sabe cuántas compras y
+           ventas ocurrieron en ese intervalo — que es lo que
+           permite que el módulo se sienta vivo con tokens ya
+           graduados de pump.fun, donde el stream está mudo.
+
+           No son operaciones individuales y el frontend lo
+           etiqueta como flujo agregado, no como trades. */
+        const m5 = txns.m5 || {};
+
         return res.status(200).json({
           ok: true,
           address,
@@ -161,6 +175,14 @@ export default async function handler(req, res) {
           buys,
           sells,
           lastAction: deriveLastAction(buys, sells),
+
+          // Contadores y volumen de la ventana de 5 minutos.
+          flow: {
+            m5Buys:   safeNum(m5.buys),
+            m5Sells:  safeNum(m5.sells),
+            m5Volume: safeNum(pair?.volume?.m5),
+            m5Change: safeNum(pair?.priceChange?.m5)
+          },
 
           isNew: String(pair?.url || "").includes("pump.fun") || marketCap < 500000,
           pairAddress: pair?.pairAddress || "",
@@ -213,6 +235,13 @@ export default async function handler(req, res) {
             buys,
             sells,
             lastAction: deriveLastAction(buys, sells),
+
+            flow: {
+              m5Buys: safeNum(data.buy30m) / 6,
+              m5Sells: safeNum(data.sell30m) / 6,
+              m5Volume: safeNum(data.v30mUSD) / 6,
+              m5Change: safeNum(data.priceChange30mPercent) / 6
+            },
 
             isNew: marketCap > 0 && marketCap < 500000
           });
