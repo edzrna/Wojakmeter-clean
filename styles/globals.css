@@ -3701,3 +3701,219 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   .bubble-coin .bubble-motion { animation: none !important; }
   .hero-timeline-backdrop svg { mask-image: none; -webkit-mask-image: none; }
 }
+
+/* ===========================================================
+   33 · GRÁFICO PREMIUM
+   Añadir al final de styles/globals.css.
+   Sustituye lo que hubiera para .chart-placeholder.
+   =========================================================== */
+
+.chart-plot {
+  position: relative;
+  height: 380px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--ink-000);
+  overflow: hidden;
+  /* Sin esto, arrastrar sobre el gráfico selecciona texto de la
+     página y el gesto se siente roto. */
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.chart-plot svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.chart-plot.chart-dragging svg {
+  cursor: grabbing;
+}
+
+.chart-time-label {
+  position: absolute;
+  top: 10px;
+  right: 70px;
+  z-index: 3;
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------
+   RETÍCULA Y EJES
+   Muy tenues a propósito: son referencia, no contenido. Si
+   compiten con la serie, el gráfico se lee como papel pautado.
+   ----------------------------------------------------------- */
+
+.chart-grid line {
+  stroke: rgba(232, 233, 236, 0.055);
+  stroke-width: 1;
+}
+
+.chart-axis text {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--bone-faint);
+}
+
+.chart-axis-y text {
+  text-anchor: start;
+}
+
+/* -----------------------------------------------------------
+   SERIE
+   ----------------------------------------------------------- */
+
+.chart-line {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* El glow del gráfico anterior era tan fuerte que engordaba la
+     línea y la volvía imprecisa. Aquí es un acento, no un efecto. */
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.chart-area {
+  stroke: none;
+}
+
+/* Velas: bordes nítidos. shape-rendering evita el antialiasing
+   que difumina cuerpos estrechos y los hace ver borrosos. */
+.candle-body,
+.candle-wick {
+  shape-rendering: crispEdges;
+}
+
+/* -----------------------------------------------------------
+   VOLUMEN
+   ----------------------------------------------------------- */
+
+.vol-up   { fill: rgba(59, 217, 122, 0.28); }
+.vol-down { fill: rgba(228, 72, 92, 0.28); }
+
+/* -----------------------------------------------------------
+   ÚLTIMA COTIZACIÓN
+   La etiqueta pegada al eje derecho es lo que más rápido hace
+   que un gráfico se identifique como herramienta de trading.
+   ----------------------------------------------------------- */
+
+.last-price-line {
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.5;
+}
+
+.last-price-line.up   { stroke: var(--pos-hard); }
+.last-price-line.down { stroke: var(--neg-hard); }
+
+.last-price-tag.up   { fill: var(--pos-hard); }
+.last-price-tag.down { fill: var(--neg-hard); }
+
+.last-price-text {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: var(--ink-000);
+}
+
+/* -----------------------------------------------------------
+   CROSSHAIR
+   ----------------------------------------------------------- */
+
+.crosshair-v,
+.crosshair-h {
+  stroke: rgba(232, 233, 236, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  pointer-events: none;
+}
+
+.crosshair-dot {
+  fill: var(--bone);
+  stroke: var(--ink-000);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------
+   TOOLTIP
+   ----------------------------------------------------------- */
+
+.chart-tooltip {
+  position: absolute;
+  top: 14px;
+  z-index: 5;
+  min-width: 148px;
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: rgba(5, 8, 12, 0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  /* Margen respecto al cursor para que no quede justo debajo. */
+  transform: translateX(14px);
+}
+
+.chart-tooltip.hidden { display: none; }
+
+.chart-tooltip-time {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.chart-tooltip-row span {
+  color: var(--bone-faint);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+}
+
+.chart-tooltip-row strong {
+  color: var(--bone);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -----------------------------------------------------------
+   MÓVIL
+   El arrastre horizontal debe desplazar el gráfico, no hacer
+   scroll de la página. touch-action: none dentro del SVG lo
+   consigue sin bloquear el scroll vertical del contenedor.
+   ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .chart-plot { height: 300px; }
+  .chart-plot svg { touch-action: none; }
+  .chart-time-label { font-size: 0.5rem; right: 62px; }
+  .chart-axis text { font-size: 9px; }
+  .chart-tooltip { min-width: 130px; font-size: 0.68rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-line { filter: none; }
+}
