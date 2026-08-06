@@ -5285,3 +5285,315 @@ body.header-scrolled .wm-desktop-nav a { padding: 5px 9px; font-size: 0.64rem; }
   .bag-headline-sub { gap: var(--sp-2); font-size: 0.58rem; }
 }
 
+/* ===========================================================
+   40 · AUDITORÍA MÓVIL
+   Añadir al FINAL de globals.css, después de todo lo demás.
+
+   CAUSA COMÚN DE TODO LO QUE SIGUE:
+   Varias secciones usan rejillas con columnas `auto` o `1fr`
+   que a 400px de ancho colapsan. Los elementos no se truncan
+   con elegancia: se SOLAPAN. El caso más grave era la lista de
+   exchanges, donde "Liquidity" quedaba debajo de la cara del
+   mood y el nombre se reducía a "B...".
+   =========================================================== */
+
+@media (max-width: 720px) {
+
+  /* -----------------------------------------------------------
+     1. LISTA DE EXCHANGES  (lo más roto)
+
+     La rejilla de dos columnas comprimía la izquierda hasta
+     dejar el nombre en tres caracteres, y el bloque derecho
+     se montaba encima del texto. Ahora es una fila con la cara
+     como ancla y el resto fluyendo debajo.
+     ----------------------------------------------------------- */
+
+  .exchange-item {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo name  action"
+      "logo meta  action";
+    align-items: center;
+    gap: 4px var(--sp-2);
+    padding: var(--sp-2);
+  }
+
+  .exchange-left {
+    display: contents;   /* los hijos pasan a la rejilla del padre */
+  }
+
+  .exchange-logo {
+    grid-area: logo;
+    width: 34px;
+    height: 34px;
+  }
+
+  .exchange-copy {
+    grid-area: name;
+    min-width: 0;
+  }
+
+  .exchange-name {
+    max-width: 100%;
+    font-size: 0.78rem;
+  }
+
+  .exchange-pair { font-size: 0.6rem; }
+
+  .exchange-meta {
+    margin-top: 2px;
+    gap: 5px;
+  }
+
+  .exchange-volume { font-size: 0.58rem; }
+  .exchange-trust { font-size: 0.55rem; padding: 1px 5px; }
+
+  .exchange-right {
+    grid-area: action;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  /* La cara y el nombre del mood se apilan en vertical: en
+     horizontal no caben sin invadir el texto de la izquierda. */
+  .exchange-mood { gap: 5px; }
+  .exchange-mood img { width: 18px; height: 18px; }
+  .exchange-mood-label strong { font-size: 0.6rem; }
+  .exchange-score { font-size: 0.55rem; margin-top: 1px; }
+
+  .exchange-trade-btn {
+    min-width: 44px;
+    padding: 5px 8px;
+    font-size: 0.56rem;
+  }
+
+  /* -----------------------------------------------------------
+     2. CABECERA DEL CHART
+
+     Precio, volumen y market cap ocupaban una línea cada uno, y
+     los timeframes rompían en dos filas. La tarjeta medía más
+     que el propio gráfico.
+     ----------------------------------------------------------- */
+
+  .chart-topbar { gap: var(--sp-2); }
+
+  .chart-coin-meta { gap: var(--sp-2); }
+
+  .chart-coin-icon-wrap { width: 38px; height: 38px; }
+
+  .chart-coin-title-line { margin-bottom: 5px; gap: var(--sp-1); }
+  .chart-coin-title-line h3 { font-size: 0.92rem; }
+  .chart-coin-title-line .muted { font-size: 0.62rem; }
+
+  /* Las tres cifras en una sola fila desplazable en vez de tres
+     líneas apiladas. */
+  .chart-coin-stats {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--sp-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chart-coin-stats::-webkit-scrollbar { display: none; }
+
+  .chart-mini-stat { flex-shrink: 0; }
+  .chart-mini-stat span { font-size: 0.55rem; }
+  .chart-mini-stat strong { font-size: 0.74rem; }
+
+  .chart-toolbar { align-items: stretch; gap: var(--sp-1); }
+
+  /* Los cinco timeframes en una fila. Antes 30D caía sola a una
+     segunda línea. */
+  #chartTimeframes {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  #chartTimeframes button {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 4px;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+
+  .chart-mode-switch { display: flex; gap: 4px; }
+  .chart-mode-switch button { flex: 1; padding: 7px; font-size: 0.6rem; }
+
+  /* Technical y Social lado a lado: ocupaban ancho completo cada
+     uno y sumaban 180px de alto para dos palabras. */
+  .chart-inline-moods {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+  }
+
+  .chart-mood-chip {
+    flex: 1;
+    min-width: 0;
+    padding: var(--sp-1) var(--sp-2);
+    gap: var(--sp-1);
+  }
+
+  .chart-mood-chip-icon { width: 26px; height: 26px; }
+  .chart-mood-chip span { font-size: 0.52rem; }
+  .chart-mood-chip strong { font-size: 0.72rem; }
+
+  .chart-mood-chip-performance {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  /* -----------------------------------------------------------
+     3. PESTAÑAS  (Studio y Market Sections)
+
+     Cuatro pestañas con padding de escritorio se rompían en
+     cuatro filas. Ocupaban media pantalla antes del contenido.
+     ----------------------------------------------------------- */
+
+  .tabs-row {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .tabs-row::-webkit-scrollbar { display: none; }
+
+  .tabs-row .tab-btn {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* -----------------------------------------------------------
+     4. BAG — formulario desbordado
+
+     Los campos se salían del contenedor: "Search BTC, SOL, MOOD
+     or paste a contr" cortado a media palabra y "Entry p"
+     invisible fuera de pantalla.
+     ----------------------------------------------------------- */
+
+  .bag-add-form {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-1);
+  }
+
+  .bag-search-wrap { grid-column: 1 / -1; }
+
+  /* min-width:0 es lo que evita que un input se niegue a
+     encogerse por debajo de su contenido y desborde la rejilla. */
+  .bag-add-form input,
+  .bag-search-wrap input {
+    min-width: 0;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .bag-add-form .bag-add-btn { grid-column: 1 / -1; }
+
+  .bag-header { padding: var(--sp-2); }
+  .bag-hero { width: 96px; height: 96px; }
+  .bag-headline > strong { font-size: 1.5rem; }
+  .bag-pnl-hero strong { font-size: 1.4rem; }
+
+  .bag-style-control { display: flex; align-items: center; gap: var(--sp-1); }
+  .bag-style-control label { margin-bottom: 0; white-space: nowrap; }
+
+  /* -----------------------------------------------------------
+     5. RADAR — cajas gigantes para una palabra
+
+     Modifier, Intensity y Momentum ocupaban 110px de alto cada
+     una para mostrar un valor de una línea.
+     ----------------------------------------------------------- */
+
+  .radar-output-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .radar-output-grid > div { padding: var(--sp-1) var(--sp-2); }
+  .radar-output-grid span { font-size: 0.5rem; }
+  .radar-output-grid strong { font-size: 0.68rem; }
+
+  .radar-face-wrap { width: 62px; height: 62px; flex-basis: 62px; }
+  #radarMoodLabel { font-size: 1.6rem; }
+
+  #emotionRadarInput { min-height: 96px; }
+
+  .emotion-radar-actions { gap: var(--sp-1); }
+  .emotion-radar-actions button { flex: 1; }
+
+  /* -----------------------------------------------------------
+     6. ESCALA EMOCIONAL
+     Siete estados en dos columnas dejaban uno huérfano y la
+     sección medía 900px. Con cuatro columnas caben en dos filas.
+     ----------------------------------------------------------- */
+
+  .scale-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .scale-item { padding: var(--sp-2) 4px; }
+  .scale-face { width: 38px; height: 38px; }
+  .scale-item strong { font-size: 0.55rem; letter-spacing: 0.02em; }
+
+  /* -----------------------------------------------------------
+     7. STUDIO — salida monoespaciada enorme
+     ----------------------------------------------------------- */
+
+  .studio-output { font-size: 0.76rem; min-height: 110px; padding: var(--sp-2); }
+  pre.studio-output { font-size: 0.68rem; }
+  .studio-box { padding: var(--sp-2); }
+  .studio-box-head h4 { font-size: 0.84rem; }
+
+  /* -----------------------------------------------------------
+     8. MÉTRICAS DE CABECERA
+     El anillo de dominancia salía vacío porque no había datos
+     todavía; se le da un mínimo visible para que no parezca roto.
+     ----------------------------------------------------------- */
+
+  .wm-header-metrics { gap: var(--sp-3); padding-bottom: 2px; }
+  .wm-metric > span, .wm-metric-copy span { font-size: 0.48rem; }
+  .wm-metric > strong, .wm-metric-copy strong { font-size: 0.7rem; }
+  .wm-dom-ring { width: 26px; height: 26px; }
+
+  /* -----------------------------------------------------------
+     9. ABOUT — texto a ancho completo
+     ----------------------------------------------------------- */
+
+  .about-text { font-size: 0.88rem; line-height: 1.6; }
+  .about-title { font-size: 1.5rem; }
+  .seo-subtitle { font-size: 1rem; }
+}
+
+/* -----------------------------------------------------------
+   10. PANTALLAS MUY ESTRECHAS
+   ----------------------------------------------------------- */
+
+@media (max-width: 420px) {
+  .scale-grid { grid-template-columns: repeat(3, 1fr); }
+  .radar-output-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .exchange-item { grid-template-columns: 30px minmax(0, 1fr) auto; }
+  .exchange-logo { width: 30px; height: 30px; }
+  .exchange-name { font-size: 0.72rem; }
+
+  .chart-coin-title-line h3 { font-size: 0.84rem; }
+  #chartTimeframes button { font-size: 0.55rem; padding: 6px 2px; }
+}
+
+/* -----------------------------------------------------------
+   11. EL BOTÓN FLOTANTE TAPA CONTENIDO
+
+   "Emotion Pulse" está fijo abajo y en varias capturas se come
+   la última fila de la sección visible. Se añade un colchón al
+   final de la página.
+   ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .dashboard { padding-bottom: 64px; }
+}
+
