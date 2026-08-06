@@ -4854,3 +4854,434 @@ body.header-scrolled .wm-desktop-nav a { padding: 5px 9px; font-size: 0.64rem; }
   .wm-metric > span,
   .wm-metric-copy span { font-size: 0.5rem; }
 }
+
+/* ===========================================================
+   39 · BAG MOOD — REDISEÑADA
+   Añadir al final de globals.css. Sustituye las reglas
+   anteriores de .bag-mood-grid, .bag-mood-visual,
+   .bag-mood-score-row, .bag-search-box y .bag-row.
+   =========================================================== */
+
+/* -----------------------------------------------------------
+   CABECERA
+
+   Antes el personaje tenía un recuadro de 350px para él solo y
+   las métricas iban debajo en cuatro cajas de 85px. Juntos
+   ocupan la mitad y se leen como una unidad.
+   ----------------------------------------------------------- */
+
+.bag-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--ink-200), var(--ink-050));
+}
+
+.bag-hero {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* Aura del mood detrás del personaje. Sin ella el recuadro
+   quedaba visualmente muerto. */
+.bag-hero::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--bag-glow, rgba(184,192,203,.16)), transparent 68%);
+  filter: blur(16px);
+}
+
+.bag-mood-hero-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bag-headline { min-width: 0; }
+
+.bag-mode-tag {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.bag-headline > strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 2px 0 var(--sp-2);
+}
+
+/* El PNL es LA cifra: es a lo que la gente entra a mirar. Antes
+   tenía el mismo peso visual que "Total Invested". */
+.bag-pnl-hero {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.bag-pnl-hero strong {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.bag-pnl-hero span {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+}
+
+.bag-headline-sub {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.bag-headline-sub span {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.bag-headline-sub strong {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  color: var(--bone);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* -----------------------------------------------------------
+   BARRA DE ASIGNACIÓN
+
+   Faltaba lo que hace útil a un portafolio: saber cuánto pesa
+   cada cosa. Una línea responde "¿qué tengo?" sin leer la tabla.
+   ----------------------------------------------------------- */
+
+.bag-allocation { margin-top: var(--sp-2); }
+
+.bag-allocation-bar {
+  display: flex;
+  height: 8px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: rgba(232, 233, 236, 0.05);
+}
+
+.bag-alloc-seg {
+  display: block;
+  height: 100%;
+  transition: width 0.6s var(--ease);
+  /* Separador de 1px entre tramos: sin él, dos posiciones con
+     el mismo mood se ven como una sola. */
+  box-shadow: inset -1px 0 0 rgba(5, 8, 12, 0.55);
+}
+
+.bag-alloc-seg:last-child { box-shadow: none; }
+
+/* -----------------------------------------------------------
+   AÑADIR POSICIÓN
+   ----------------------------------------------------------- */
+
+.bag-mode-tabs {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+
+.bag-mode-tabs button {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--ink-200);
+  color: var(--bone-dim);
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.bag-mode-tabs button.active {
+  background: var(--bone);
+  border-color: var(--bone);
+  color: var(--ink-000);
+  font-weight: 600;
+}
+
+.bag-add-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.bag-search-wrap { position: relative; min-width: 0; }
+.bag-search-wrap input { width: 100%; }
+
+/* Capa flotante. Antes se insertaba en el flujo y empujaba la
+   lista de posiciones: parecía que la página se rompía. */
+.bag-search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-hard);
+  background: rgba(5, 8, 12, 0.98);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+}
+
+.bag-search-results.open { display: block; }
+
+.bag-result {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+}
+
+.bag-result:hover { background: var(--ink-300); }
+
+.bag-result .bag-coin img { width: 26px; height: 26px; }
+.bag-result .bag-coin strong { font-size: 0.8rem; }
+.bag-result .bag-coin span { font-size: 0.66rem; }
+
+.bag-result > span {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-faint);
+}
+
+.bag-privacy-note {
+  margin: var(--sp-2) 0 0;
+  font-size: 0.72rem;
+  color: var(--bone-faint);
+}
+
+/* -----------------------------------------------------------
+   POSICIONES
+
+   Antes: seis filas de etiqueta y valor por moneda, ~400px cada
+   una. Cinco monedas eran 2.000px de scroll. Ahora 64px.
+   ----------------------------------------------------------- */
+
+.bag-mood-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--sp-3);
+}
+
+.bag-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  padding-bottom: calc(var(--sp-2) + 3px);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--ink-200);
+  overflow: hidden;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.bag-row:hover { background: var(--ink-300); }
+.bag-row.active-bag-row { border-color: var(--line-hard); }
+
+.bag-row-coin {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.bag-row-coin img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.bag-row-id { min-width: 0; }
+
+.bag-row-id strong {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bone);
+}
+
+.bag-row-id span {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  color: var(--bone-faint);
+}
+
+.bag-row-value,
+.bag-row-pnl { text-align: right; min-width: 0; }
+
+.bag-row-value strong,
+.bag-row-pnl strong {
+  display: block;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.bag-row-value strong { color: var(--bone); }
+
+.bag-row-value span,
+.bag-row-pnl span {
+  display: block;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.62rem;
+  color: var(--bone-faint);
+}
+
+.bag-row-pnl.positive strong { color: var(--pos-hard); }
+.bag-row-pnl.negative strong { color: var(--neg-hard); }
+.bag-row-pnl.neutral strong  { color: var(--mid); }
+
+.bag-row-mood img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.bag-remove-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--bone-faint);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.bag-remove-btn:hover {
+  color: var(--neg-hard);
+  border-color: var(--neg-hard);
+}
+
+/* Barra de peso al pie de cada fila: se ve la proporción sin
+   leer el porcentaje. */
+.bag-row-weight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(232, 233, 236, 0.04);
+}
+
+.bag-row-weight span {
+  display: block;
+  height: 100%;
+  background: rgba(232, 233, 236, 0.22);
+  transition: width 0.6s var(--ease);
+}
+
+.bag-empty {
+  padding: var(--sp-5) var(--sp-3);
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--bone-faint);
+  border-radius: var(--r-md);
+  border: 1px dashed var(--line);
+}
+
+.bag-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+/* -----------------------------------------------------------
+   MÓVIL
+   ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .bag-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--sp-2);
+  }
+
+  .bag-hero { width: 120px; height: 120px; margin: 0 auto; }
+  .bag-pnl-hero { justify-content: center; }
+  .bag-headline-sub { justify-content: center; }
+
+  .bag-add-form { grid-template-columns: 1fr 1fr; }
+  .bag-search-wrap { grid-column: 1 / -1; }
+
+  /* Dos filas por posición: con cinco columnas el símbolo
+     quedaba en dos caracteres. */
+  .bag-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: var(--sp-1);
+  }
+
+  .bag-row-value,
+  .bag-row-pnl {
+    text-align: left;
+    grid-row: 2;
+  }
+
+  .bag-row-value { grid-column: 1; }
+  .bag-row-pnl { grid-column: 2 / -1; text-align: right; }
+  .bag-row-mood { grid-row: 1; }
+}
+
+@media (max-width: 420px) {
+  .bag-actions { flex-direction: column; }
+  .bag-headline-sub { gap: var(--sp-2); font-size: 0.58rem; }
+}
+
