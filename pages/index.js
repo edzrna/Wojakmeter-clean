@@ -911,12 +911,10 @@ export default function Home({ ogImageUrl }) {
               <div className="section-head">
                 <div>
                   <h3>Bag Mood</h3>
-                  <span className="muted">
-                    Track your portfolio value, PNL and emotional state.
-                  </span>
+                  <span className="muted">Your portfolio, and how it feels.</span>
                 </div>
                 <div className="bag-style-control">
-                  <label htmlFor="bagStyleSelector">Bag Style</label>
+                  <label htmlFor="bagStyleSelector">Style</label>
                   <select id="bagStyleSelector" defaultValue="classic">
                     <option value="classic">Classic</option>
                     <option value="synth">Synth</option>
@@ -926,65 +924,89 @@ export default function Home({ ogImageUrl }) {
                 </div>
               </div>
 
-              <div className="bag-mood-grid">
-                <div className="bag-mood-visual">
-                  <div className="bag-mood-stage">
-                    <img
-                      id="bagMoodHeroImg"
-                      className="bag-mood-hero-img anim-float"
-                      src="/assets/hero/classic/neutral.png"
-                      alt="Your bag mood"
-                    />
-                  </div>
-                  <div className="bag-mood-result">
-                    <span id="bagMoodModeLabel">Portfolio Mood</span>
-                    <strong id="bagMoodTitle" className="mood-neutral">Neutral</strong>
-                    <div className="bag-mood-score-row">
-                      <div><span>Portfolio Value</span><strong id="bagPortfolioValue">$0.00</strong></div>
-                      <div><span>Total Invested</span><strong id="bagTotalInvested">$0.00</strong></div>
-                      <div><span>PNL %</span><strong id="bagPortfolioPnlPercent" className="neutral">+0.00%</strong></div>
-                      <div><span>PNL</span><strong id="bagPortfolioPnl" className="neutral">$0.00</strong></div>
-                    </div>
-                  </div>
+              {/* ---------- CABECERA ----------
+                  Personaje y cifras juntos. Antes el personaje tenía un
+                  recuadro de 350px para él solo y las métricas iban debajo
+                  en cuatro cajas. */}
+              <div className="bag-header">
+                <div className="bag-hero">
+                  <img
+                    id="bagMoodHeroImg"
+                    className="bag-mood-hero-img anim-float"
+                    src="/assets/hero/classic/neutral.png"
+                    alt="Your bag mood"
+                  />
                 </div>
 
-                <div className="bag-mood-main">
-                  <div className="bag-mode-tabs">
-                    <button type="button" className="active" data-bag-mode="portfolio">Portfolio Mood</button>
-                    <button type="button" data-bag-mode="single">Single Coin Mood</button>
+                <div className="bag-headline">
+                  <span className="bag-mode-tag" id="bagMoodModeLabel">Portfolio Mood</span>
+                  <strong id="bagMoodTitle" className="mood-neutral">Neutral</strong>
+
+                  {/* El PNL es LA cifra: es lo que la gente viene a mirar.
+                      Antes tenía el mismo peso visual que "Total Invested". */}
+                  <div className="bag-pnl-hero">
+                    <strong id="bagPortfolioPnlPercent" className="neutral">+0.00%</strong>
+                    <span id="bagPortfolioPnl" className="neutral">$0.00</span>
                   </div>
 
-                  <div className="bag-position-note">
-                    Your mood is calculated from your real entry price against the live
-                    market price. Nothing leaves your browser.
-                  </div>
-
-                  <div className="bag-search-box">
-                    <input
-                      id="bagSearchInput"
-                      type="text"
-                      placeholder="Search BTC, SOL, MOOD or paste a contract"
-                      autoComplete="off"
-                    />
-                    <input id="bagValueInput" type="number" min="0" step="any" placeholder="USD invested" />
-                    <input id="bagEntryPriceInput" type="number" min="0" step="any" placeholder="Entry price" />
-                    <button id="bagSearchBtn" type="button" className="action-btn">Add</button>
-                  </div>
-
-                  <div id="bagSearchResults" className="bag-search-results"></div>
-
-                  <div id="bagMoodList" className="bag-mood-list">
-                    <div className="bag-empty">Build your bag to see what it feels like.</div>
-                  </div>
-
-                  <div className="bag-actions">
-                    <button id="bagShareBtn" type="button" className="action-btn share-x-btn">
-                      Share Bag Mood
-                    </button>
-                    <button id="bagResetBtn" type="button" className="action-btn">Reset Bag</button>
+                  <div className="bag-headline-sub">
+                    <span>Value <strong id="bagPortfolioValue">$0.00</strong></span>
+                    <span>Invested <strong id="bagTotalInvested">$0.00</strong></span>
+                    <span>Score <strong id="bagMoodScore">50/100</strong></span>
                   </div>
                 </div>
               </div>
+
+              {/* ---------- BARRA DE ASIGNACIÓN ----------
+                  Cada tramo coloreado por el mood de esa posición: cuenta a
+                  la vez cuánto pesa y cómo va. */}
+              <div className="bag-allocation">
+                <div className="bag-allocation-bar" id="bagAllocationBar"></div>
+              </div>
+
+              <div className="bag-mode-tabs">
+                <button type="button" className="active" data-bag-mode="portfolio">Portfolio</button>
+                <button type="button" data-bag-mode="single">Single coin</button>
+              </div>
+
+              {/* ---------- AÑADIR POSICIÓN ----------
+                  Los tres campos en una fila en escritorio. Antes eran tres
+                  filas apiladas incluso con espacio de sobra. */}
+              <div className="bag-add-form">
+                <div className="bag-search-wrap">
+                  <input
+                    id="bagSearchInput"
+                    type="text"
+                    placeholder="Search BTC, SOL, MOOD or paste a contract"
+                    autoComplete="off"
+                  />
+                  {/* Capa flotante: no empuja el contenido. */}
+                  <div id="bagSearchResults" className="bag-search-results"></div>
+                </div>
+                <input id="bagValueInput" type="number" min="0" step="any" placeholder="USD invested" />
+                <input id="bagEntryPriceInput" type="number" min="0" step="any" placeholder="Entry price" />
+                <button id="bagSearchBtn" type="button" className="action-btn bag-add-btn">Add</button>
+              </div>
+
+              <p className="bag-privacy-note">
+                Calculated from your entry price against the live market price. Nothing leaves your browser.
+              </p>
+
+              {/* ---------- POSICIONES ---------- */}
+              <div id="bagMoodList" className="bag-mood-list">
+                <div className="bag-empty">Build your bag to see what it feels like.</div>
+              </div>
+
+              <div className="bag-actions">
+                <button id="bagShareBtn" type="button" className="action-btn share-x-btn">
+                  Share Bag Mood
+                </button>
+                <button id="bagResetBtn" type="button" className="action-btn">Reset</button>
+              </div>
+
+              {/* Conservado por compatibilidad con script.js. */}
+              <span id="bagMoodChange" className="hidden">+0.00%</span>
+              <span id="bagMoodTimeframe" className="hidden">Entry</span>
             </section>
 
             {/* ===========================================================
