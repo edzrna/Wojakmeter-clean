@@ -3421,3 +3421,283 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   #historyLine,
   #historyArea { transition: none; }
 }
+
+/* ===========================================================
+   32 · PULIDO — FONDO DEL HERO Y BURBUJAS VIVAS
+   Añadir al final de styles/globals.css
+   =========================================================== */
+
+/* -----------------------------------------------------------
+   FONDO DEL HERO
+
+   El problema no era que se viera poco, era que se veía MAL:
+   una línea gris cruzando por detrás de la cara, cortada por
+   ella, sin referencia. Tres arreglos:
+
+   1. Se desvanece hacia el centro con una máscara, así que la
+      cara nunca la corta a media curva.
+   2. Línea de referencia en 50 cuando muestra emoción.
+   3. Degradado vertical en el relleno, que da profundidad sin
+      competir con el sujeto.
+   ----------------------------------------------------------- */
+
+.hero-timeline-backdrop {
+  opacity: 1;
+}
+
+.hero-timeline-backdrop svg {
+  width: 96%;
+  height: 84%;
+  overflow: visible;
+
+  /* La curva se atenúa en el centro, donde está la cara, y
+     recupera presencia en los bordes. Sin esto compiten. */
+  mask-image:
+    radial-gradient(ellipse 42% 52% at 50% 52%, transparent 30%, #000 78%),
+    linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    radial-gradient(ellipse 42% 52% at 50% 52%, transparent 30%, #000 78%),
+    linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+}
+
+#heroTimelineLine {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.62;
+  transition: stroke 0.8s ease;
+}
+
+#heroTimelineArea {
+  transition: fill 0.8s ease;
+}
+
+/* Referencia en 50. Es la diferencia entre un dato y un adorno:
+   sin ella la curva no tiene arriba ni abajo. */
+#heroTimelineMid {
+  fill: none;
+  stroke: rgba(232, 233, 236, 0.14);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+}
+
+/* Etiqueta discreta que dice QUÉ se está mirando. */
+.hero-timeline-backdrop[data-mode="emotion"]::after {
+  content: "EMOTION · 7D";
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  font-family: var(--font-data);
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  color: rgba(232, 233, 236, 0.2);
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------
+   GAUGE — la aguja atravesaba el número
+
+   En la captura, el "58" y la aguja se solapan. El número es la
+   lectura principal del sitio, así que va delante y con fondo
+   propio.
+   ----------------------------------------------------------- */
+
+.gauge-score-center {
+  z-index: 5;
+}
+
+.gauge-score-center #gaugeScore {
+  position: relative;
+  display: inline-block;
+  padding: 0 10px;
+  /* Halo del color del fondo: la aguja pasa por detrás sin que
+     el número pierda legibilidad. */
+  text-shadow:
+    0 0 12px var(--ink-050),
+    0 0 24px var(--ink-050),
+    0 0 4px var(--ink-050);
+}
+
+.gauge-needle { z-index: 2; }
+
+/* -----------------------------------------------------------
+   BURBUJAS VIVAS
+
+   El problema real: la emoción estaba codificada en 1px de aro.
+   Con 46 activos oscuros, el mapa leía como cuadrícula estática.
+
+   Ahora el color entra en el CUERPO de la burbuja, con
+   intensidad proporcional a lo lejos que está del centro
+   emocional. Lo extremo destaca; lo neutro se calla.
+   ----------------------------------------------------------- */
+
+.bubble-coin {
+  border-width: 1.5px;
+  border-color: color-mix(
+    in srgb,
+    var(--bubble-color) calc(30% + var(--bubble-extremity, 0) * 55%),
+    transparent
+  );
+
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.14), transparent 26%),
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--bubble-color) calc(6% + var(--bubble-extremity, 0) * 26%), transparent),
+      rgba(5, 8, 12, .94)
+    );
+
+  box-shadow:
+    0 0 calc(var(--bubble-glow) * (0.3 + var(--bubble-extremity, 0) * 0.8) * 1px)
+      color-mix(in srgb, var(--bubble-color) calc(14% + var(--bubble-extremity, 0) * 30%), transparent),
+    inset 0 0 14px rgba(0, 0, 0, .5);
+}
+
+/* --- Movimiento proporcional al movimiento real ---
+   Las animaciones por mood se sustituyen por una sola que se
+   modula con --bubble-intensity. Un activo que cae 0.3% apenas
+   respira; uno que cae 6% se agita de verdad. */
+
+.bubble-coin .bubble-motion {
+  animation: bubbleLife var(--bubble-speed, 2.6s) ease-in-out infinite;
+  animation-delay: var(--bubble-delay, 0s);
+  will-change: transform;
+}
+
+/* El resplandor respira junto al movimiento. Sin esto, la
+   burbuja se mueve pero su aura queda clavada, y el conjunto
+   se lee como un sprite desplazándose en vez de algo vivo. */
+.bubble-coin {
+  animation: bubbleGlow calc(var(--bubble-speed, 2.6s) * 1.5) ease-in-out infinite;
+  animation-delay: var(--bubble-delay, 0s);
+}
+
+@keyframes bubbleGlow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% {
+    filter:
+      brightness(calc(1 + var(--bubble-intensity, .3) * 0.22))
+      saturate(calc(1 + var(--bubble-intensity, .3) * 0.35));
+  }
+}
+
+/* Amplitudes subidas: el recorrido vertical pasa de 8px a 26px
+   totales y la pulsación de escala de 5% a 14%. Aquí es donde
+   se percibe la "vida" — más que en la velocidad. */
+@keyframes bubbleLife {
+  0%, 100% {
+    transform:
+      translateY(calc(var(--bubble-intensity, .3) * 9px))
+      scale(calc(1 - var(--bubble-intensity, .3) * 0.055));
+  }
+  30% {
+    transform:
+      translateY(calc(var(--bubble-intensity, .3) * -6px))
+      scale(calc(1 + var(--bubble-intensity, .3) * 0.05));
+  }
+  50% {
+    transform:
+      translateY(calc(var(--bubble-intensity, .3) * -17px))
+      scale(calc(1 + var(--bubble-intensity, .3) * 0.09));
+  }
+  75% {
+    transform:
+      translateY(calc(var(--bubble-intensity, .3) * -4px))
+      scale(calc(1 + var(--bubble-intensity, .3) * 0.03));
+  }
+}
+
+/* Los extremos emocionales sí merecen carácter propio.
+   Frustración tiembla; euforia empuja hacia arriba. */
+.bubble-coin.mood-frustration .bubble-motion,
+.bubble-coin.mood-concern .bubble-motion {
+  animation-name: bubbleStress;
+  animation-timing-function: linear;
+}
+
+/* El temblor de estrés: recorrido casi triplicado y con
+   rotación añadida. Una burbuja en pánico debe verse nerviosa a
+   simple vista, no bajo inspección. */
+@keyframes bubbleStress {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(calc(var(--bubble-intensity,.4) * -7px), calc(var(--bubble-intensity,.4) * 4px)) rotate(calc(var(--bubble-intensity,.4) * -2.5deg)); }
+  30% { transform: translate(calc(var(--bubble-intensity,.4) * 7px), calc(var(--bubble-intensity,.4) * -4px)) rotate(calc(var(--bubble-intensity,.4) * 2.5deg)); }
+  45% { transform: translate(calc(var(--bubble-intensity,.4) * -5px), calc(var(--bubble-intensity,.4) * -5px)) rotate(calc(var(--bubble-intensity,.4) * -1.8deg)); }
+  60% { transform: translate(calc(var(--bubble-intensity,.4) * 6px), calc(var(--bubble-intensity,.4) * 3px)) rotate(calc(var(--bubble-intensity,.4) * 2deg)); }
+  80% { transform: translate(calc(var(--bubble-intensity,.4) * -4px), calc(var(--bubble-intensity,.4) * 2px)) rotate(calc(var(--bubble-intensity,.4) * -1.2deg)); }
+}
+
+.bubble-coin.mood-euphoria .bubble-motion {
+  animation-name: bubbleRise;
+}
+
+/* La euforia empuja hacia arriba con fuerza y rebota. */
+@keyframes bubbleRise {
+  0%, 100% { transform: translateY(calc(var(--bubble-intensity,.6) * 5px)) scale(1); }
+  40% { transform: translateY(calc(var(--bubble-intensity,.6) * -22px)) scale(calc(1 + var(--bubble-intensity,.6) * 0.12)); }
+  55% { transform: translateY(calc(var(--bubble-intensity,.6) * -16px)) scale(calc(1 + var(--bubble-intensity,.6) * 0.08)); }
+  70% { transform: translateY(calc(var(--bubble-intensity,.6) * -24px)) scale(calc(1 + var(--bubble-intensity,.6) * 0.13)); }
+}
+
+/* --- El escenario como campo emocional ---
+   Antes el fondo era plano y las zonas solo texto. Ahora hay un
+   gradiente vertical real: se ve que arriba es euforia y abajo
+   es miedo, aunque no leas las etiquetas. */
+
+.bubble-map-stage::before {
+  background:
+    linear-gradient(180deg,
+      rgba(59, 217, 122, 0.07) 0%,
+      rgba(59, 217, 122, 0.02) 18%,
+      transparent 42%,
+      transparent 58%,
+      rgba(228, 72, 92, 0.02) 82%,
+      rgba(228, 72, 92, 0.07) 100%),
+    var(--ink-000);
+}
+
+/* Línea de equilibrio: separa optimismo de pesimismo. */
+.bubble-map-stage::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(232, 233, 236, 0.09) 20%,
+    rgba(232, 233, 236, 0.09) 80%,
+    transparent);
+}
+
+.bubble-zone {
+  color: rgba(232, 233, 236, 0.16);
+  font-size: 0.55rem;
+}
+
+/* Profundidad: las burbujas grandes al frente y más nítidas.
+   Sin esto, 46 círculos del mismo peso visual son ruido. */
+.bubble-coin:hover {
+  z-index: 90;
+  border-color: color-mix(in srgb, var(--bubble-color) 85%, white 10%);
+  box-shadow:
+    0 0 calc(var(--bubble-glow) * 1.2px) color-mix(in srgb, var(--bubble-color) 45%, transparent),
+    0 8px 28px rgba(0, 0, 0, .55);
+}
+
+.bubble-inner img {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.6))
+          saturate(calc(0.75 + var(--bubble-extremity, 0) * 0.45));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-coin,
+  .bubble-coin .bubble-motion { animation: none !important; }
+  .hero-timeline-backdrop svg { mask-image: none; -webkit-mask-image: none; }
+}
