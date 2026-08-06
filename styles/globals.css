@@ -4310,3 +4310,181 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   .mood-token-price-block strong { font-size: 0.95rem; }
   .mood-actions-row { grid-template-columns: 1fr; }
 }
+
+/* -----------------------------------------------------------
+   BOTÓN DE MOOD CON LOGO
+
+   Sustituye al botón de texto. El logo se reconoce antes que la
+   palabra, y da al token su propio espacio de marca sin invadir
+   la zona de datos del token que se está analizando.
+
+   Sigue siendo el único botón "primario" del módulo: fondo
+   sólido frente al resto, que son contornos.
+   ----------------------------------------------------------- */
+
+.mood-logo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  min-height: 38px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-hard);
+  background: var(--ink-300);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.mood-logo-btn img {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+  /* El logo es claro sobre fondo oscuro; sin esto pierde
+     presencia contra el panel. */
+  filter: brightness(1.05);
+}
+
+.mood-logo-btn:hover {
+  background: var(--ink-200);
+  border-color: var(--bone-faint);
+}
+
+.mood-logo-btn:active {
+  transform: translateY(1px);
+}
+
+/* Cuando MOOD es el token cargado, el botón se marca como
+   activo: sin esto no hay forma de saber si ya estás en él. */
+.mood-logo-btn.active {
+  background: var(--bone);
+  border-color: var(--bone);
+}
+
+.mood-logo-btn.active img {
+  filter: brightness(0) invert(0);
+}
+
+@media (max-width: 420px) {
+  .mood-logo-btn { padding: 6px 11px; }
+  .mood-logo-btn img { height: 17px; }
+}
+
+/* ===========================================================
+   36 · NAVEGACIÓN DE ESCRITORIO
+   =========================================================== */
+
+/* Solo existía en móvil. En escritorio había que hacer scroll
+   por toda la página para cambiar de sección. */
+.wm-desktop-nav {
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+
+@media (min-width: 901px) {
+  .wm-desktop-nav { display: flex; }
+
+  /* La cabecera pasa a tres zonas: logo, navegación, datos.
+     Sin esto la nav no tiene sitio propio y empuja las métricas. */
+  .topbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  .topbar-right-group { justify-content: flex-end; }
+}
+
+.wm-desktop-nav a {
+  padding: 7px 11px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.wm-desktop-nav a:hover {
+  color: var(--bone);
+  background: rgba(232, 233, 236, 0.05);
+}
+
+/* MOOD con tratamiento propio: es el token del proyecto, no una
+   sección más. Con el mismo peso que los demás enlaces se
+   perdería en la fila. */
+.wm-desktop-nav .wm-nav-mood {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--sp-2);
+  padding: 6px 13px;
+  border: 1px solid var(--line-hard);
+  background: var(--ink-300);
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.wm-desktop-nav .wm-nav-mood img {
+  height: 14px;
+  width: auto;
+  object-fit: contain;
+}
+
+.wm-desktop-nav .wm-nav-mood:hover {
+  background: var(--bone);
+  color: var(--ink-000);
+  border-color: var(--bone);
+}
+
+.wm-desktop-nav .wm-nav-mood:hover img {
+  filter: brightness(0);
+}
+
+/* Con la cabecera encogida al hacer scroll, la nav se aprieta
+   para no forzar salto de línea. */
+body.header-scrolled .wm-desktop-nav a { padding: 5px 9px; font-size: 0.64rem; }
+
+/* ===========================================================
+   37 · FEED DE FLUJO
+   =========================================================== */
+
+.mood-trade {
+  display: grid;
+  grid-template-columns: 42px 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.trade-amount {
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.trade-meta,
+.trade-time {
+  font-size: 0.62rem;
+  color: var(--bone-faint);
+  white-space: nowrap;
+}
+
+/* El flujo derivado se distingue de una operación real: es una
+   estimación agregada, y el usuario merece saberlo. */
+.mood-trade.derived {
+  opacity: 0.82;
+  border-style: dashed;
+}
+
+.mood-trade.derived .trade-meta {
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 480px) {
+  .mood-trade { grid-template-columns: 38px 1fr auto; }
+  .mood-trade .trade-time { display: none; }
+}
