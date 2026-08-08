@@ -1009,74 +1009,126 @@ export default function Home({ ogImageUrl }) {
               <span id="bagMoodTimeframe" className="hidden">Entry</span>
             </section>
 
-            {/* ===========================================================
-                4. EMOTION RADAR
-            =========================================================== */}
-            <section className="emotion-radar card" id="emotionRadarSection">
-              <div className="emotion-radar-head">
-                <span className="section-kicker">Live narrative pulse</span>
-                <h2>Internet Emotion Radar</h2>
-                <p>
-                  Paste any headline, tweet or narrative. WojakMeter reports how the
-                  internet feels about it.
-                </p>
-              </div>
+            
+                {/* ===========================================================
+    EMOTION RADAR — REDISEÑADA
+    Reemplaza la sección #emotionRadarSection completa.
 
-              <div className="emotion-radar-grid">
-                <div className="emotion-radar-input-card">
-                  <label htmlFor="emotionRadarInput">News, tweet or narrative</label>
-                  <textarea
-                    id="emotionRadarInput"
-                    placeholder="Bitcoin ETF delayed again…"
-                    rows={7}
-                  ></textarea>
+    EL CAMBIO DE FONDO:
+    Antes era una caja de texto pidiendo que el usuario
+    ESCRIBIERA algo, mientras las noticias reales pasaban por el
+    ticker sin que nadie las mirara. Dos piezas desconectadas:
+    una pidiendo contenido, la otra tirándolo.
 
-                  <div className="emotion-radar-actions">
-                    <button id="translateEmotionBtn" className="action-btn" type="button">
-                      Translate Emotion
-                    </button>
-                    <button id="clearEmotionRadarBtn" className="ghost-btn" type="button">
-                      Clear
-                    </button>
-                  </div>
+    Ahora los titulares en vivo son lo primero, con la cara de
+    cómo reacciona el mercado a cada uno. La caja de texto pasa a
+    ser lo secundario: para probar tu propio texto, no la única
+    forma de usar la sección.
+   =========================================================== */}
 
-                  <div className="emotion-radar-examples">
-                    <button type="button" data-radar-example="Bitcoin ETF delayed again">ETF delay</button>
-                    <button type="button" data-radar-example="Solana network outage">Solana outage</button>
-                    <button type="button" data-radar-example="AI coins are pumping hard">AI coins</button>
-                    <button type="button" data-radar-example="Memecoin season is back">Memecoin season</button>
-                  </div>
-                </div>
+<section className="emotion-radar card" id="emotionRadarSection">
+  <div className="emotion-radar-head">
+    <span className="section-kicker">Live narrative pulse</span>
+    <h2>Internet Emotion Radar</h2>
+    <p>
+      How the market feels about what's happening right now.
+      Tap a headline, or test your own text.
+    </p>
+  </div>
 
-                <div className="emotion-radar-result-card" id="emotionRadarResult">
-                  <div className="radar-result-top">
-                    <div className="radar-face-wrap">
-                      <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" />
-                    </div>
-                    <div>
-                      <span className="radar-label">Detected Emotion</span>
-                      <h3 id="radarMoodLabel" className="mood-neutral">Neutral</h3>
-                      <div className="radar-score">Score: <strong id="radarScore">50</strong>/100</div>
-                    </div>
-                  </div>
+  <div className="radar-layout">
 
-                  <div className="radar-meter"><div id="radarMeterFill"></div></div>
+    {/* ---------- COLUMNA IZQUIERDA: TITULARES EN VIVO ----------
+        Lo primero, porque es lo que no requiere que el usuario
+        aporte nada. Una sección que empieza pidiendo trabajo
+        pierde a la mayoría antes de demostrar su valor. */}
+    <div className="radar-feed">
+      <div className="radar-feed-head">
+        <span className="radar-feed-label">Live headlines</span>
+        <span className="radar-feed-hint">Tap to analyze</span>
+      </div>
 
-                  <div className="radar-output-grid">
-                    <div><span>Modifier</span><strong id="radarModifier">Waiting</strong></div>
-                    <div><span>Intensity</span><strong id="radarIntensity">0%</strong></div>
-                    <div><span>Momentum</span><strong id="radarMomentum">Idle</strong></div>
-                  </div>
+      <div className="radar-news-list" id="radarNewsList">
+        <div className="radar-news-empty">Loading live headlines…</div>
+      </div>
 
-                  <div className="radar-interpretation">
-                    <span>Crowd Interpretation</span>
-                    <p id="radarInterpretation">
-                      Paste a narrative to read its emotional temperature.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
+      {/* Caja de texto plegada: sigue disponible, ya no domina. */}
+      <details className="radar-custom">
+        <summary>Test your own text</summary>
+
+        <textarea
+          id="emotionRadarInput"
+          placeholder="Paste a headline, tweet or narrative…"
+          rows={4}
+        ></textarea>
+
+        <div className="emotion-radar-actions">
+          <button id="translateEmotionBtn" className="action-btn" type="button">
+            Analyze
+          </button>
+          <button id="clearEmotionRadarBtn" className="ghost-btn" type="button">
+            Clear
+          </button>
+        </div>
+
+        <div className="emotion-radar-examples">
+          <button type="button" data-radar-example="Bitcoin ETF delayed again">ETF delay</button>
+          <button type="button" data-radar-example="Solana network outage halts transactions">Outage</button>
+          <button type="button" data-radar-example="AI coins are pumping hard">AI coins</button>
+          <button type="button" data-radar-example="Memecoin season is back">Memecoins</button>
+        </div>
+      </details>
+    </div>
+
+    {/* ---------- COLUMNA DERECHA: LECTURA ---------- */}
+    <div className="radar-result" id="emotionRadarResult">
+      <div className="radar-result-top">
+        <div className="radar-face-wrap">
+          <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" />
+        </div>
+        <div className="radar-result-id">
+          <span className="radar-label">Detected emotion</span>
+          <h3 id="radarMoodLabel" className="mood-neutral">Neutral</h3>
+          <div className="radar-score">
+            <strong id="radarScore">50</strong>
+            <span>/100</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="radar-meter"><div id="radarMeterFill"></div></div>
+
+      {/* Desglose de señales: convierte una caja negra en algo
+          que el usuario puede cuestionar. Sin esto, el score es
+          una afirmación sin respaldo. */}
+      <div className="radar-signals" id="radarSignals">
+        <span className="sig neu">no strong signals detected</span>
+      </div>
+
+      <div className="radar-output-grid">
+        <div><span>Modifier</span><strong id="radarModifier">Waiting</strong></div>
+        <div><span>Intensity</span><strong id="radarIntensity">0%</strong></div>
+        <div><span>Momentum</span><strong id="radarMomentum">Idle</strong></div>
+      </div>
+
+      <div className="radar-interpretation">
+        <span>Crowd interpretation</span>
+        <p id="radarInterpretation">
+          Tap a headline to read its emotional temperature.
+        </p>
+      </div>
+
+      {/* El contexto de mercado va SEPARADO del score. Antes el
+          Fear &amp; Greed movía el número hasta 12 puntos, así que
+          el mismo titular puntuaba distinto según el día y la
+          lectura dejaba de ser verificable. */}
+      <div className="radar-context hidden" id="radarContext"></div>
+
+      <a href="#" id="radarSourceLink" className="radar-source-link hidden"
+         target="_blank" rel="noopener noreferrer">Read source</a>
+    </div>
+  </div>
+</section>
 
             {/* ===========================================================
                 5. MOOD TOKEN
