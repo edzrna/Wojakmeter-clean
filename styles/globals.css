@@ -7916,7 +7916,21 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 /* ---------- Tabla ---------- */
 
-.rush-board-wrap { margin-top: var(--sp-4); }
+/* La tabla salio de la tarjeta al montar el lightbox y se quedo
+   sin contenedor: las filas se estiraban a todo el ancho de la
+   seccion y el nombre acababa a un extremo y la puntuacion al
+   otro, con medio metro de vacio en medio.
+
+   Panel propio, y un ancho maximo: una fila de leaderboard mas
+   larga que esto deja de leerse como una fila. */
+.rush-board-wrap {
+  margin-top: var(--sp-4);
+  max-width: 620px;
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--ink-050);
+}
 
 .rush-board-head {
   display: flex;
@@ -7945,8 +7959,8 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 260px;
-  overflow-y: auto;
+  /* Siete filas fijas: ya no hace falta scroll interno, y quitarlo
+     evita que la ultima fila quede cortada por la mitad. */
 }
 
 .rush-board-row {
@@ -8022,6 +8036,19 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   color: var(--bone);
   font-variant-numeric: tabular-nums;
 }
+
+/* Asiento libre: presente pero claramente vacante. La cara se
+   atenua en vez de ocultarse —es justo la que se lleva quien ocupe
+   ese puesto— y el nombre va en cursiva para que no se confunda
+   con un jugador que se llame asi. */
+.rush-board-open { opacity: 0.42; }
+
+.rush-board-open .rush-board-name {
+  font-style: italic;
+  color: var(--bone-faint);
+}
+
+.rush-board-open .rush-board-mood { filter: grayscale(0.7); }
 
 .rush-board-empty {
   color: var(--bone-faint);
