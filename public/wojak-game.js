@@ -1437,18 +1437,29 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     return MOODS[Math.max(0, Math.min(MOODS.length - 1, index))];
   }
 
+  /* Siete plazas exactas, siempre pintadas.
+
+     Las que aun no tienen dueno salen como asiento vacio con su
+     cara atenuada. Dos razones: la tabla no cambia de alto segun
+     cuanta gente haya jugado —una lista que crece y encoge en cada
+     refresco es un sobresalto— y las siete caras estan a la vista
+     desde el primer dia, que es media gracia de que el icono lo
+     marque el puesto.
+
+     Un hueco visible tambien invita mas que una lista corta y
+     cerrada: se ve exactamente cuantos sitios quedan. */
+  const BOARD_SIZE = 7;
+
   function renderLeaderboard(rows) {
     if (!el.board || !Array.isArray(rows)) return;
 
-    if (!rows.length) {
-      el.board.innerHTML = `<li class="rush-board-empty">No scores yet this week — yours starts it.</li>`;
-      return;
-    }
+    const filled = rows.slice(0, BOARD_SIZE);
+    const seats = Array.from({ length: BOARD_SIZE }, (_, i) => filled[i] || null);
 
-    el.board.innerHTML = rows.map((r, i) => {
+    el.board.innerHTML = seats.map((r, i) => {
       const position = i + 1;
       const mood = moodForRank(position);
-      const market = MOODS.find((m) => m.key === r.market_mood);
+      const market = r ? MOODS.find((m) => m.key === r.market_mood) : null;
 
       /* El title conserva el dato que el icono ya no cuenta. */
       const title = market
@@ -1456,14 +1467,14 @@ const ROUNDS_WITH_RANGE_HINT = 3;
         : mood.name;
 
       return `
-        <li class="rush-board-row" data-rank="${position}">
+        <li class="rush-board-row${r ? "" : " rush-board-open"}" data-rank="${position}">
           <span class="rush-board-pos">${position}</span>
-          <span class="rush-board-name">${escapeHtml(r.name || "anon")}</span>
+          <span class="rush-board-name">${r ? escapeHtml(r.name || "anon") : "Open seat"}</span>
           <img class="rush-board-mood" src="${RANK_PATH(mood.key)}"
                alt="" title="${escapeHtml(title)}"
                loading="lazy" decoding="async"
                onerror="this.onerror=null;this.src='${ICON_PATH(mood.key)}'">
-          <strong class="rush-board-score">${Number(r.score) || 0}</strong>
+          <strong class="rush-board-score">${r ? (Number(r.score) || 0) : "—"}</strong>
         </li>`;
     }).join("");
   }
