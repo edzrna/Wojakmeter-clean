@@ -56,6 +56,14 @@ const MAX_ROUNDS = 500;
    demasiado bajo y tiraba partidas reales. */
 const MAX_RUNS_PER_NETWORK = 200;
 
+/* Siete plazas, siete emociones.
+
+   No es un numero redondo elegido al azar: el icono de cada fila
+   baja por la escala segun el puesto, asi que a partir del octavo
+   no queda cara que repartir. Una tabla mas larga tendria filas
+   con la misma frustracion repetida hasta abajo. */
+const BOARD_SIZE = 7;
+
 function getSalt() {
   return process.env.PULSE_SALT || process.env.CRON_SECRET || "wojakmeter-pulse-v1";
 }
@@ -169,7 +177,7 @@ export default async function handler(req, res) {
 
       const ranked = top
         .sort((a, b) => b.score - a.score)
-        .slice(0, 20)
+        .slice(0, BOARD_SIZE)
         .map((r) => ({
           name: r.name,
           score: r.score,
@@ -240,7 +248,7 @@ export default async function handler(req, res) {
         ok: true,
         renamed: true,
         record,
-        top: top.sort((a, b) => b.score - a.score).slice(0, 20)
+        top: top.sort((a, b) => b.score - a.score).slice(0, BOARD_SIZE)
           .map((r) => ({ name: r.name, score: r.score, market_mood: r.market_mood }))
       });
     } catch (error) {
@@ -362,7 +370,7 @@ export default async function handler(req, res) {
 
     const ranked = top
       .sort((a, b) => b.score - a.score)
-      .slice(0, 20)
+      .slice(0, BOARD_SIZE)
       .map((r) => ({ name: r.name, score: r.score, market_mood: r.market_mood }));
 
     return res.status(200).json({
