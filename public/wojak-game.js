@@ -1412,6 +1412,31 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     buzz([30, 50, 30, 50, 90]);
   }
 
+  /* ---------------------------------------------------------
+     EL ICONO DE LA TABLA LO DA EL PUESTO, NO EL MERCADO
+
+     Antes cada fila mostraba la emocion que tenia el mercado
+     durante esa partida. Era un dato cierto pero mudo: en una
+     tabla de puntuaciones nadie se pregunta como estaba el mercado
+     en la fila 4, y las siete caras salian mezcladas sin que el
+     orden significara nada.
+
+     Ahora la cara baja por la escala segun la posicion: el primero
+     esta en euforia y el septimo en frustracion. La columna se lee
+     de un vistazo como un degradado de verde a rojo, y el icono
+     dice algo sobre TI en vez de sobre el grafico.
+
+     MOODS va de frustration (0) a euphoria (6), asi que el puesto
+     se invierte: 1 -> 6, 2 -> 5 ... 7 -> 0. De la octava fila en
+     adelante se queda en frustration; no hay nada por debajo, y
+     tampoco hace falta.
+
+     El mercado de esa partida no se pierde: sigue en el title. */
+  function moodForRank(position) {
+    const index = MOODS.length - position;
+    return MOODS[Math.max(0, Math.min(MOODS.length - 1, index))];
+  }
+
   function renderLeaderboard(rows) {
     if (!el.board || !Array.isArray(rows)) return;
 
@@ -1421,15 +1446,23 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     }
 
     el.board.innerHTML = rows.map((r, i) => {
-      const mood = MOODS.find((m) => m.key === r.market_mood);
+      const position = i + 1;
+      const mood = moodForRank(position);
+      const market = MOODS.find((m) => m.key === r.market_mood);
+
+      /* El title conserva el dato que el icono ya no cuenta. */
+      const title = market
+        ? `${mood.name} · market was ${market.name} during this run`
+        : mood.name;
+
       return `
-        <li class="rush-board-row">
-          <span class="rush-board-pos">${i + 1}</span>
+        <li class="rush-board-row" data-rank="${position}">
+          <span class="rush-board-pos">${position}</span>
           <span class="rush-board-name">${escapeHtml(r.name || "anon")}</span>
-          ${mood ? `<img class="rush-board-mood" src="${RANK_PATH(mood.key)}"
-                        alt="${mood.name}" title="Market was ${mood.name}"
-                        loading="lazy" decoding="async"
-                        onerror="this.onerror=null;this.src='${ICON_PATH(mood.key)}'">` : ""}
+          <img class="rush-board-mood" src="${RANK_PATH(mood.key)}"
+               alt="" title="${escapeHtml(title)}"
+               loading="lazy" decoding="async"
+               onerror="this.onerror=null;this.src='${ICON_PATH(mood.key)}'">
           <strong class="rush-board-score">${Number(r.score) || 0}</strong>
         </li>`;
     }).join("");
