@@ -7967,6 +7967,33 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   font-variant-numeric: tabular-nums;
 }
 
+/* El podio, en el oro del logo. Solo los tres primeros: si se
+   destacan cinco, no se destaca ninguno. */
+.rush-board-row[data-rank="1"] .rush-board-pos,
+.rush-board-row[data-rank="2"] .rush-board-pos,
+.rush-board-row[data-rank="3"] .rush-board-pos {
+  color: #E9B94A;
+  font-weight: 700;
+}
+
+/* El primero se lleva un poco mas: el numero grande y un hilo de
+   luz a la izquierda de la fila. */
+.rush-board-row[data-rank="1"] {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, #E9B94A 12%, transparent) 0%,
+    transparent 60%);
+  box-shadow: inset 2px 0 0 #E9B94A;
+}
+
+.rush-board-row[data-rank="1"] .rush-board-name,
+.rush-board-row[data-rank="1"] .rush-board-score { color: var(--bone); }
+
+/* La cara del puesto crece con la posicion: la euforia del primero
+   pide mas sitio que la frustracion del septimo. */
+.rush-board-row[data-rank="1"] .rush-board-mood { width: 30px; height: 30px; }
+.rush-board-row[data-rank="2"] .rush-board-mood,
+.rush-board-row[data-rank="3"] .rush-board-mood { width: 27px; height: 27px; }
+
 .rush-board-name {
   color: var(--bone-dim);
   flex: 1;
