@@ -1571,7 +1571,7 @@ export default function Home({ ogImageUrl }) {
               {/* ── TABLA (fuera del lightbox: se ve sin jugar) ── */}
               <div className="rush-board-wrap">
                 <div className="rush-board-head">
-                  <strong>This week</strong>
+                  <strong>Top 7 this week</strong>
                   <span>Best run per player</span>
                 </div>
                 <ol className="rush-board" id="rushBoard">
