@@ -9022,3 +9022,112 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
    las caras. Si el oro entra en las casillas, deja de saberse si
    un color significa una emocion o solo decoracion.
    ----------------------------------------------------------- */
+
+/* -----------------------------------------------------------
+   58 · EMOTION RUSH — NOMBRE DEL JUGADOR
+
+   Se pide una sola vez, dentro del dialogo, y se puede cambiar
+   cuando se quiera desde la tarjeta.
+   ----------------------------------------------------------- */
+
+/* Identidad en la tarjeta. Discreta: es informacion, no una
+   llamada a la accion —el boton grande de esta zona es Play y no
+   puede competir con nada. */
+.rush-identity {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 4px var(--sp-2);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--bone-faint);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.rush-identity strong { color: var(--bone-dim); font-weight: 600; }
+
+.rush-identity:hover { border-color: var(--line-hard); }
+.rush-identity:hover strong { color: var(--bone); }
+
+/* El lapiz solo al pasar por encima: en reposo, la fila de meta ya
+   tiene dos pastillas y un tercer icono fijo la satura. */
+.rush-identity::after {
+  content: " ✎";
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+
+.rush-identity:hover::after { opacity: 0.7; }
+
+/* ---------- La puerta ---------- */
+
+.rush-name-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  border-radius: inherit;
+  /* 82% y no 92%: la puerta aparece sobre la pantalla final y hay
+     que seguir viendo la puntuacion detras —es justo la razon por
+     la que merece la pena poner el nombre. */
+  background: color-mix(in srgb, var(--ink-000) 82%, transparent);
+}
+
+.rush-name-gate[hidden] { display: none; }
+
+.rush-name-gate-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: min(340px, 100%);
+  text-align: center;
+}
+
+/* El campo hereda el estilo del de la pantalla final: es el mismo
+   dato y no tiene por que verse de dos maneras. */
+.rush-name-gate .rush-name-input { flex: none; width: 100%; }
+
+.rush-gate-note {
+  font-size: 0.66rem;
+  color: var(--bone-faint);
+  max-width: 28ch;
+}
+
+/* Saltar es una salida, no una alternativa equivalente: enlace y
+   no boton, para que no compita con Start. */
+.rush-gate-skip {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: var(--sp-1);
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  color: var(--bone-faint);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.rush-gate-skip:hover { color: var(--bone-dim); }
+.rush-gate-skip[hidden] { display: none; }
+
+/* El tablero de debajo se aparta; el HUD se deja intacto, porque
+   ya no hay partida en curso y el marcador sigue siendo util. */
+.rush-gating .rush-grid,
+.rush-gating .rush-prompt { opacity: 0.15; pointer-events: none; }
+
+/* El puesto, grande, dentro del propio texto de la puerta: es el
+   argumento entero de por que estamos preguntando. */
+.rush-name-gate .rush-overlay-kicker {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3.4vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--bone);
+}
