@@ -211,6 +211,8 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     /* El record global vigente, refrescado desde el servidor. */
     heat: 0,
     modalOpen: false,
+    gateMode: "claim",
+    lastRank: null,
     slowFrames: 0,
     lowPower: false,
     particleCount: 0,
@@ -1249,13 +1251,69 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     try { return localStorage.getItem(NAME_KEY) || null; } catch { return null; }
   }
 
+  /* El rechazo se guarda CON EL PUESTO en el que ocurrio, no como
+     un si/no.
+
+     Un booleano hacia que quien decia "no" una vez no volviera a
+     ver la pregunta jamas, aunque despues se pusiera primero.
+     Guardando el puesto, solo se calla para ese resultado y los
+     peores: si mejoras, se vuelve a preguntar una sola vez. */
+  const NAME_SKIP_KEY = "wmRushNameSkippedRank";
+
+  function bestSkippedRank() {
+    try {
+      const n = Number(localStorage.getItem(NAME_SKIP_KEY));
+      return Number.isFinite(n) && n > 0 ? n : Infinity;
+    } catch { return Infinity; }
+  }
+
+  function markNameSkipped(rank) {
+    if (!Number.isFinite(rank)) return;
+    try {
+      if (rank < bestSkippedRank()) localStorage.setItem(NAME_SKIP_KEY, String(rank));
+    } catch {}
+  }
+
   function setPlayerName(value) {
     const clean = String(value || "").trim().slice(0, 18);
     try {
       if (clean) localStorage.setItem(NAME_KEY, clean);
       else localStorage.removeItem(NAME_KEY);
     } catch {}
+    syncNameFields(clean || null);
     return clean || null;
+  }
+
+  /* El nombre se puede tocar en tres sitios —la puerta, la tarjeta
+     y la pantalla final— y los tres tienen que decir lo mismo.
+     Antes cada campo llevaba su propia copia y era cuestion de
+     tiempo que se contradijeran. */
+  function syncNameFields(name) {
+    const shown = name || "anon";
+    if (el.identityName) el.identityName.textContent = shown;
+    if (el.nameInput && el.nameInput.value !== (name || "")) el.nameInput.value = name || "";
+    if (el.gateInput && el.gateInput.value !== (name || "")) el.gateInput.value = name || "";
+  }
+
+  /* Un solo camino para guardar y publicar el nombre, lo llame
+     quien lo llame. */
+  async function commitName(value) {
+    const name = setPlayerName(value);
+    const player = getPlayerId();
+    if (!player) return;
+
+    try {
+      const res = await fetch("/api/game-score", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ player, name, renameOnly: true })
+      });
+      const data = await res.json();
+      if (data?.ok) {
+        renderLeaderboard(data.top);
+        applyRecord(data.record);
+      }
+    } catch {}
   }
 
   function describeSubmitError(code) {
@@ -1321,12 +1379,20 @@ const ROUNDS_WITH_RANGE_HINT = 3;
         if (el.rank && Number.isFinite(data.rank)) {
           el.rank.textContent = `#${data.rank} of ${data.total}`;
         }
+
+        /* El puesto lo dice el SERVIDOR, no el cliente: es quien
+           sabe si esta partida entro de verdad en la tabla. */
+        state.lastRank = Number.isFinite(data.rank) ? data.rank : null;
         renderLeaderboard(data.top);
 
         /* El servidor manda: dos personas pueden terminar a la vez
            y solo una tiene el record. Si dice que no, se corrige
            lo que la pantalla acaba de celebrar. */
         applyRecord(data.record);
+
+        /* Solo despues de pintar la tabla: la pregunta tiene
+           sentido cuando la fila ya esta ahi detras. */
+        claimSpot(state.lastRank);
 
         if (data.brokeRecord === false && state.recordBeatenThisRun) {
           state.recordBeatenThisRun = false;
@@ -1543,7 +1609,82 @@ const ROUNDS_WITH_RANGE_HINT = 3;
 
   let lastFocused = null;
 
-  function openGame() {
+  /* Dos modos:
+       "edit"  — desde la pastilla de la tarjeta, cuando quiera.
+       "claim" — al terminar una partida que ha entrado en el top 7
+                 y aun no hay nombre.
+
+     El modo "play" desaparecio: ver la nota en openGame(). */
+  function showNameGate(mode, subtitle) {
+    if (!el.gate) return false;
+
+    state.gateMode = mode;
+    el.gate.hidden = false;
+    el.root?.classList.add("rush-gating");
+
+    if (el.gateKicker) {
+      el.gateKicker.textContent = mode === "edit"
+        ? "Change your name"
+        : (subtitle || "Claim your spot");
+    }
+    if (el.gateGo) el.gateGo.textContent = mode === "edit" ? "Save" : "Claim it";
+    if (el.gateSkip) {
+      el.gateSkip.hidden = mode === "edit";
+      el.gateSkip.textContent = "Stay anonymous";
+    }
+
+    el.gateInput.value = getPlayerName() || "";
+    el.gateInput.focus();
+    el.gateInput.select?.();
+    return true;
+  }
+
+  function hideNameGate() {
+    if (!el.gate) return;
+    el.gate.hidden = true;
+    el.root?.classList.remove("rush-gating");
+  }
+
+  function resolveNameGate(save) {
+    if (save) commitName(el.gateInput?.value);
+    else markNameSkipped(state.lastRank);
+
+    hideNameGate();
+
+    /* Editar desde la tarjeta cierra el dialogo: no se venia a
+       jugar. Reclamar el puesto deja la pantalla final a la vista,
+       con la tabla ya actualizada y el nombre puesto. */
+    if (state.gateMode === "edit") closeGame();
+  }
+
+  /* ---------------------------------------------------------
+     RECLAMAR EL PUESTO
+
+     Se pide el nombre al TERMINAR, y solo si la partida ha entrado
+     en la tabla. Ahi el jugador tiene un numero delante y ve su
+     fila: el campo deja de ser un tramite y pasa a ser "esa fila
+     es tuya, ponle tu nombre".
+
+     Si la partida no entro, no se pregunta nada. No hay nada que
+     reclamar y preguntarlo seria pedir por pedir.
+     --------------------------------------------------------- */
+  function claimSpot(rank) {
+    if (getPlayerName()) return;
+    if (!Number.isFinite(rank) || rank > BOARD_SIZE) return;
+
+    /* Se puede volver a preguntar despues de una partida MEJOR.
+
+       Callarse para siempre tras el primer "no" dejaba a quien
+       luego hacia 1.500 puntos como `anon` en el primer puesto,
+       sin forma obvia de arreglarlo. Ahora el rechazo vale para
+       ese puesto y los peores, no para todos. */
+    if (rank >= bestSkippedRank()) return;
+
+    const ordinal = rank === 1 ? "#1" : `#${rank}`;
+    showNameGate("claim", `You're ${ordinal} — claim your spot`);
+  }
+
+  function openGame(mode) {
     if (!el.modal || state.modalOpen) return;
 
     state.modalOpen = true;
@@ -1559,8 +1700,21 @@ const ROUNDS_WITH_RANGE_HINT = 3;
        modal, que sigue siendo el elemento activo. */
     el.close?.focus();
 
-    /* Abrir ES empezar. Dos pulsaciones para jugar —Play y luego
-       Start— es una de mas. */
+    if (mode === "edit") {
+      showNameGate("edit");
+      return;
+    }
+
+    /* NO SE PIDE EL NOMBRE AQUI.
+
+       Lo hacia, y estaba mal. Pedirlo antes de la primera partida
+       es fricción en el peor sitio: la persona todavia no ha
+       jugado, no sabe si le gusta, y lo primero que ve al pulsar
+       Play es un formulario.
+
+       El record se pone delante porque DA algo —un objetivo—; el
+       campo de nombre solo PIDE. Ahora se pide al terminar, y solo
+       si hay algo que reclamar. Ver claimSpot(). */
     startGame();
   }
 
@@ -1573,6 +1727,8 @@ const ROUNDS_WITH_RANGE_HINT = 3;
        cerrado gasta bateria y, peor, el jugador vuelve a una
        derrota que no vio ocurrir. */
     pauseGame();
+
+    hideNameGate();
 
     el.modal.hidden = true;
     document.documentElement.classList.remove("rush-modal-open");
@@ -1631,6 +1787,12 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     el.callout      = $("rushCallout");
     el.modal        = $("rushModal");
     el.close        = $("rushClose");
+    el.gate         = $("rushNameGate");
+    el.gateInput    = $("rushNameInput");
+    el.gateKicker   = $("rushGateKicker");
+    el.gateGo       = $("rushNameGo");
+    el.gateSkip     = $("rushNameSkip");
+    el.identityName = $("rushIdentityName");
     el.rank         = $("rushRank");
     el.nameInput    = $("rushName");
 
@@ -1672,28 +1834,20 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     /* El nombre se guarda al escribirlo, no al enviar la partida.
        Asi ya esta puesto la proxima vez y el servidor lo aplica de
        forma retroactiva a las partidas anteriores de este jugador. */
-    if (el.nameInput) {
-      el.nameInput.value = getPlayerName() || "";
-      el.nameInput.addEventListener("change", async (e) => {
-        const name = setPlayerName(e.target.value);
-        const player = getPlayerId();
-        if (!player) return;
-        try {
-          const res = await fetch("/api/game-score", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ player, name, renameOnly: true })
-          });
-          const data = await res.json();
-          if (data?.ok) {
-            renderLeaderboard(data.top);
-            applyRecord(data.record);
-          }
-        } catch {}
-      });
-    }
+    el.nameInput?.addEventListener("change", (e) => commitName(e.target.value));
 
-    $("rushOpen")?.addEventListener("click", openGame);
+    $("rushOpen")?.addEventListener("click", () => openGame("play"));
+    $("rushIdentity")?.addEventListener("click", () => openGame("edit"));
+    $("rushNameGo")?.addEventListener("click", () => resolveNameGate(true));
+    $("rushNameSkip")?.addEventListener("click", () => resolveNameGate(false));
+
+    /* Enter en el campo equivale a pulsar el boton: escribir el
+       nombre y tener que ir al raton para empezar rompe el ritmo. */
+    el.gateInput?.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      resolveNameGate(true);
+    });
     $("rushClose")?.addEventListener("click", closeGame);
     $("rushModalBackdrop")?.addEventListener("click", closeGame);
     $("rushRestart")?.addEventListener("click", startGame);
@@ -1723,6 +1877,11 @@ const ROUNDS_WITH_RANGE_HINT = 3;
          espaciadora arrancara una partida mientras el usuario
          intentaba desplazarse por la pagina. */
       if (!state.modalOpen) return;
+
+      /* Con la puerta abierta, el teclado es del formulario: sin
+         esto, teclear un nombre con numeros dispararia respuestas
+         de la cuadricula. */
+      if (el.gate && !el.gate.hidden) return;
 
       if (!state.running && (e.code === "Space" || e.code === "Enter")) {
         const active = document.activeElement;
@@ -1776,6 +1935,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
 
   function init() {
     bind();
+    syncNameFields(getPlayerName());
     renderScaleGuides();
     renderBest();
     renderHud();
