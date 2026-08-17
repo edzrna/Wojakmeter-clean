@@ -133,6 +133,7 @@ export default function Home({ ogImageUrl }) {
       />
       <Script src="/script.js?v=13" strategy="afterInteractive" />
       <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
+      <Script src="/hero-rig.js?v=1" strategy="afterInteractive" />
       <Script src="/wm-organism.js?v=2" strategy="afterInteractive" />
 
       <div className="style-classic">
@@ -322,7 +323,12 @@ export default function Home({ ogImageUrl }) {
 
                   {/* ── VISTA: CARA ── */}
                   <div id="heroMoodView" className="hero-mood-view">
-                    <div className="wojak-stage">
+                    {/* id explícito: tanto script.js como
+                        public/hero-rig.js lo buscan primero por id y
+                        solo después por clase. Con el id puesto, la
+                        cadena de reserva deja de depender de que
+                        nadie renombre la clase. */}
+                    <div className="wojak-stage" id="heroStage">
 
                       <div className="hero-social-wrapper" id="socialWrapper">
                         <div
@@ -470,6 +476,20 @@ export default function Home({ ogImageUrl }) {
                   <div className="hero-score hero-score-compact" id="heroScoreWrap">
                     Score: <span id="heroScore">50</span> / 100
                   </div>
+
+                  {/* ── EL ÍNDICE Y LA LENTE ──
+
+                      El número canónico va SIEMPRE visible junto al
+                      perfil. En cuanto se pueda confundir cuál es el
+                      dato real y cuál la interpretación, el índice
+                      deja de ser una medición.
+
+                      Los dos huecos los rellena public/hero-rig.js;
+                      si el cron aún no ha guardado ninguna lectura
+                      del índice nuevo, se quedan vacíos y la página
+                      sigue funcionando como siempre. */}
+                  <div className="hero-index-readout" id="heroIndexReadout"></div>
+                  <div className="hero-profiles" id="heroProfiles"></div>
 
                   {/* ── VENTANA TEMPORAL Y CONTEXTO ──
 
@@ -1537,6 +1557,13 @@ export default function Home({ ogImageUrl }) {
                   </p>
 
                   <div className="rush-card-meta">
+                    {/* Quien eres en la tabla, y como cambiarlo, en el
+                        mismo sitio. Antes el nombre solo se podia tocar
+                        en la pantalla de fin de partida: para editarlo
+                        habia que jugar y perder. */}
+                    <button type="button" className="rush-identity" id="rushIdentity">
+                      Playing as <strong id="rushIdentityName">anon</strong>
+                    </button>
                     <span className="rush-market-tag" id="rushMarketTag">Market: Neutral 50</span>
                     <button type="button" className="rush-sound" id="rushSound" aria-pressed="true">
                       Sound on
@@ -1600,6 +1627,47 @@ export default function Home({ ogImageUrl }) {
                   aria-modal="true"
                   aria-labelledby="rushModalTitle"
                 >
+                  {/* ── PUERTA DE NOMBRE ──
+
+                      Se muestra al pulsar Play solo si aun no hay
+                      nombre. Va DENTRO del dialogo y no como un paso
+                      previo en la tarjeta: quien pulsa Play quiere
+                      jugar, y sacarle a otra pantalla antes de entrar
+                      se siente como un formulario. Aqui ya esta dentro,
+                      y el nombre es lo ultimo antes de la cuenta atras.
+
+                      Se puede saltar. Un juego que no deja jugar sin
+                      dar un nombre pierde justo a quien solo queria
+                      probarlo. */}
+                  <div className="rush-name-gate" id="rushNameGate" hidden>
+                    <div className="rush-name-gate-inner">
+                      <span className="rush-overlay-kicker" id="rushGateKicker">
+                        Who&rsquo;s playing?
+                      </span>
+
+                      <input
+                        type="text"
+                        id="rushNameInput"
+                        className="rush-name-input"
+                        placeholder="Your name for the board"
+                        maxLength={18}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+
+                      <span className="rush-gate-note">
+                        Shown on the leaderboard. Nothing else is stored.
+                      </span>
+
+                      <button type="button" className="rush-btn rush-btn-primary" id="rushNameGo">
+                        Start
+                      </button>
+                      <button type="button" className="rush-gate-skip" id="rushNameSkip">
+                        Play as anon
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="rush-modal-bar">
                     <span className="rush-modal-title" id="rushModalTitle">Emotion Rush</span>
                     <button
