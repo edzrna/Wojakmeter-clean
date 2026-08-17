@@ -728,8 +728,21 @@ body[data-mood="euphoria"]    .wojak-stage::after { background: radial-gradient(
   display: flex;
   align-items: center;
   justify-content: center;
-  transform-origin: center center;
+  transform-origin: 50% 88%;
   will-change: transform;
+
+  /* ── RIG (sección 59) ──
+
+     Respiración continua, ladeo por fatiga y pérdida de color.
+     Usa `translate` y `rotate` como propiedades individuales, NO
+     `transform`: así se componen con el transform que aplican las
+     animaciones de mood en vez de sustituirlo. */
+  animation: wm-breathe var(--wm-breath, 6s) ease-in-out infinite;
+  rotate: calc(var(--wm-fatigue, 0) * 3.2deg);
+  filter:
+    saturate(calc(1 - var(--wm-fatigue, 0) * 0.35))
+    brightness(calc(1 - var(--wm-fatigue, 0) * 0.1));
+  transition: rotate 1.4s var(--ease), filter 1.4s var(--ease);
 }
 
 .hero-face-img,
@@ -9130,4 +9143,278 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   letter-spacing: 0.01em;
   text-transform: none;
   color: var(--bone);
+}
+
+/* -----------------------------------------------------------
+   59 · HERO RIG — el personaje vivo
+
+   Todo el movimiento sale de cuatro variables que escribe
+   public/hero-rig.js sobre el escenario: --wm-valence,
+   --wm-arousal, --wm-tension y --wm-fatigue, de 0 a 1 (la
+   valencia, de -1 a 1).
+
+   REGLA QUE HACE QUE ESTO CONVIVA CON script.js:
+   las animaciones que ya existen usan `transform`. Aquí se usan
+   las propiedades individuales `translate`, `rotate` y `scale`,
+   que el navegador COMPONE con el transform en vez de
+   sustituirlo. Sin eso, la respiración mataría el anim-float.
+   ----------------------------------------------------------- */
+
+.wojak-stage,
+#heroStage {
+  --wm-valence: 0;
+  --wm-arousal: 0;
+  --wm-tension: 0;
+  --wm-fatigue: 0;
+  --wm-breath: 6s;
+  --wm-blink: 9s;
+}
+
+/* ---------- Respiración ----------
+
+   La señal de vida más barata que existe y la que más se nota.
+   El ritmo lo marca la activación: agitado respira en 1,6s,
+   muerto en 6. La regla vive fusionada en .hero-face-wrap, arriba. */
+@keyframes wm-breathe {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 calc(-2px - var(--wm-arousal, 0) * 4px); }
+}
+
+/* ---------- Activación ----------
+
+   Un halo que late al ritmo de la respiración. Se apaga del todo
+   en calma: un resplandor permanente deja de comunicar nada. */
+#heroStage::after,
+.wojak-stage::after {
+  content: "";
+  position: absolute;
+  inset: 12% 18%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--wm-color, var(--mid)) 55%, transparent), transparent 68%);
+  opacity: calc(var(--wm-arousal, 0) * 0.28);
+  filter: blur(30px);
+  animation: wm-pulse var(--wm-breath, 6s) ease-in-out infinite;
+  transition: opacity 1.2s var(--ease);
+}
+
+@keyframes wm-pulse {
+  0%, 100% { scale: 1; }
+  50%      { scale: calc(1 + var(--wm-arousal, 0) * 0.08); }
+}
+
+/* La tensión tiñe el borde del escenario: el caso que hoy es
+   invisible es precio subiendo con casi todo bajando. */
+#heroStage,
+.wojak-stage {
+  --wm-shake: calc(var(--wm-tension, 0) * 1.4px);
+}
+
+.wm-rig-idle .hero-face-wrap { animation: none; }
+
+/* ---------- SACUDIDA ----------
+
+   El evento. Salta cuando el índice se mueve más de 8 puntos en
+   una hora, dura 2,6s y vuelve al estado continuo.
+
+   Dos direcciones distintas a propósito: subir de golpe es un
+   respingo hacia arriba, caer de golpe es un encogimiento. La
+   misma animación para las dos leería como "algo pasó" en vez de
+   "algo bueno" o "algo malo". */
+.wm-shock[data-shock-dir="up"] .hero-face-wrap {
+  animation: wm-shock-up 0.7s cubic-bezier(.16,1.4,.3,1),
+             wm-breathe var(--wm-breath, 6s) ease-in-out infinite 0.7s;
+}
+
+.wm-shock[data-shock-dir="down"] .hero-face-wrap {
+  animation: wm-shock-down 0.7s cubic-bezier(.16,1.2,.3,1),
+             wm-breathe var(--wm-breath, 6s) ease-in-out infinite 0.7s;
+}
+
+@keyframes wm-shock-up {
+  0%   { translate: 0 0;     scale: 1; }
+  22%  { translate: 0 -18px; scale: 1.07; }
+  55%  { translate: 0 4px;   scale: 0.985; }
+  100% { translate: 0 0;     scale: 1; }
+}
+
+@keyframes wm-shock-down {
+  0%   { translate: 0 0;    scale: 1; }
+  18%  { translate: 0 10px; scale: 0.93; }
+  40%  { translate: -4px 6px; }
+  62%  { translate: 4px 8px; }
+  100% { translate: 0 0;   scale: 1; }
+}
+
+/* Destello del escenario en el momento del golpe. */
+.wm-shock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  animation: wm-shock-flash 0.7s var(--ease);
+}
+
+.wm-shock[data-shock-dir="up"]::before {
+  background: radial-gradient(circle at 50% 45%,
+    color-mix(in srgb, var(--pos-hard) 40%, transparent), transparent 62%);
+}
+
+.wm-shock[data-shock-dir="down"]::before {
+  background: radial-gradient(circle at 50% 45%,
+    color-mix(in srgb, var(--neg-hard) 40%, transparent), transparent 62%);
+}
+
+@keyframes wm-shock-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- TRANSICIÓN DE EMOCIÓN ----------
+
+   Va aparte de la sacudida porque son cosas distintas: se puede
+   cruzar de Doubt a Neutral con un movimiento de dos puntos si
+   estabas justo en el borde, y ese cruce merece marcarse aunque
+   no haya habido sacudida. */
+.wm-transition .hero-face-img,
+.wm-transition .hero-face-overlay {
+  animation: wm-mood-swap 1.4s var(--ease);
+}
+
+@keyframes wm-mood-swap {
+  0%   { opacity: .35; scale: .96; filter: blur(3px); }
+  60%  { opacity: 1;   scale: 1.02; filter: blur(0); }
+  100% { opacity: 1;   scale: 1; }
+}
+
+/* ---------- EXTREMO SOSTENIDO ----------
+
+   No es un golpe: es un estado. Mientras el índice esté por
+   encima de 90 o por debajo de 10, el personaje se queda en modo
+   exagerado. */
+.wm-extreme .hero-face-wrap {
+  animation: wm-breathe calc(var(--wm-breath, 6s) * 0.55) ease-in-out infinite,
+             wm-extreme-shudder 3.2s ease-in-out infinite;
+}
+
+@keyframes wm-extreme-shudder {
+  0%, 100% { rotate: 0deg; }
+  25%      { rotate: -1.1deg; }
+  75%      { rotate: 1.1deg; }
+}
+
+.wm-extreme[data-extreme="high"] { --wm-color: var(--pos-hard); }
+.wm-extreme[data-extreme="low"]  { --wm-color: var(--neg-hard); }
+
+/* ---------- Índice y lente ---------- */
+
+.hero-index-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  justify-content: center;
+  font-family: var(--font-data);
+  font-size: .72rem;
+  color: var(--bone-faint);
+  margin-top: var(--sp-2);
+  min-height: 1.4em;
+}
+
+.hero-index-label {
+  font-size: .58rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.hero-index-value {
+  font-size: 1rem;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-index-lens { color: var(--bone-dim); }
+
+/* La confianza solo aparece cuando NO es completa: un indicador
+   permanente al 100% es ruido, y uno que aparece al 60% es una
+   advertencia. */
+.hero-index-conf {
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 1px 6px;
+  font-size: .58rem;
+  color: var(--warn, var(--gold));
+  cursor: help;
+}
+
+.hero-profiles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--sp-2);
+}
+
+.hero-profile {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data);
+  font-size: .64rem;
+  color: var(--bone-faint);
+  transition: border-color .2s var(--ease), color .2s var(--ease);
+}
+
+.hero-profile:hover { border-color: var(--line-hard); color: var(--bone-dim); }
+
+.hero-profile.active {
+  border-color: var(--bone-faint);
+  color: var(--bone);
+}
+
+/* El score de cada perfil, con el color de la emoción que daría.
+   Se elige el perfil viendo qué cara pone cada uno AHORA, no
+   leyendo una descripción. */
+.hero-profile-score {
+  font-variant-numeric: tabular-nums;
+  opacity: .8;
+}
+
+.hero-profile-score[data-mood="euphoria"]   { color: #3BD97A; }
+.hero-profile-score[data-mood="content"]    { color: #7FD9A0; }
+.hero-profile-score[data-mood="optimism"]   { color: #A8E6BF; }
+.hero-profile-score[data-mood="neutral"]    { color: #B8C0CB; }
+.hero-profile-score[data-mood="doubt"]      { color: #E8B4BA; }
+.hero-profile-score[data-mood="concern"]    { color: #E8848F; }
+.hero-profile-score[data-mood="frustration"]{ color: #E4485C; }
+
+/* ---------- Movimiento reducido ----------
+
+   Se retira TODO el movimiento del rig. El personaje sigue
+   cambiando de cara con el mercado: eso es información, no
+   animación. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-face-wrap,
+  .wm-shock .hero-face-wrap,
+  .wm-extreme .hero-face-wrap {
+    animation: none;
+    rotate: 0deg;
+    translate: 0 0;
+  }
+
+  #heroStage::after,
+  .wojak-stage::after,
+  .wm-shock::before { animation: none; }
+
+  .wm-transition .hero-face-img,
+  .wm-transition .hero-face-overlay { animation: none; }
 }
