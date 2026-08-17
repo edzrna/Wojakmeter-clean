@@ -1,4 +1,6 @@
 import { neon } from "@neondatabase/serverless";
+import { computeIndex, computeBreadth, moodFromScore as indexMood }
+  from "../../lib/market-index";
 
 export const config = { runtime: "nodejs", maxDuration: 30 };
 
@@ -16,9 +18,30 @@ export const config = { runtime: "nodejs", maxDuration: 30 };
 
    ⚠️ SI CAMBIAS LA FÓRMULA EN script.js, CÁMBIALA AQUÍ TAMBIÉN.
    Es duplicación consciente: el frontend no puede importar de
-   /lib porque es un script clásico, no un módulo. La alternativa
-   sería convertirlo a módulo ES, que es más trabajo del que
-   justifica ahora mismo.
+   /lib porque es un script clásico, no un módulo.
+
+   ── ÍNDICE NUEVO, EN PARALELO ──────────────────────────────
+
+   Desde agosto este endpoint calcula ADEMÁS el índice nuevo de
+   lib/market-index.js y lo guarda en sus propias columnas, junto
+   al viejo. Nada de lo que se ve en la página cambia todavía.
+
+   Se hace así por dos razones:
+
+   1) Los z-scores necesitan 90 días de historia, y hoy no se
+      guardan ni la amplitud ni la volatilidad en ninguna parte.
+      Cada día que pase sin recolectarlas es un día que no se
+      puede recuperar después. La recolección tiene que empezar
+      antes que la sustitución.
+
+   2) Con las dos series guardadas se puede comparar cuánto
+      cambia de verdad el número antes de tocar lo que ve la
+      gente, en vez de decidirlo a ojo.
+
+   El bloque del índice nuevo va en su PROPIO try/catch: si algo
+   falla ahí, el snapshot viejo se guarda igual. Perder el
+   histórico de siempre por un fallo en la parte experimental
+   sería el peor resultado posible.
    =========================================================== */
 
 /* La conexión se crea DENTRO del handler, no a nivel de módulo.
@@ -93,6 +116,39 @@ function averageChange(coins) {
     (acc, c) => acc + Number(c?.price_change_percentage_24h_in_currency || 0), 0
   );
   return sum / coins.length;
+}
+
+/* ---------------------------------------------------------
+   VOLATILIDAD REALIZADA
+
+   Sale de la serie de capitalización que /api/global ya devuelve,
+   así que no hace falta ninguna fuente nueva: desviación típica
+   de los cambios punto a punto, en porcentaje.
+
+   Sin signo a propósito. La volatilidad mide agitación, no
+   dirección: subir un 8% y caer un 8% son igual de volátiles. El
+   signo se lo presta el retorno dentro del motor del índice.
+   --------------------------------------------------------- */
+function realizedVolatility(timeline) {
+  const vals = (timeline || [])
+    .map((e) => (Array.isArray(e) ? Number(e[1]) : Number(e)))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  if (vals.length < 4) return null;
+
+  const rets = [];
+  for (let i = 1; i < vals.length; i++) {
+    rets.push(((vals[i] - vals[i - 1]) / vals[i - 1]) * 100);
+  }
+
+  const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+  const variance = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length;
+
+  /* Escalado al periodo completo: la desviación por punto
+     multiplicada por la raíz del número de puntos. Es la
+     convención estándar y hace la cifra comparable entre
+     ventanas con distinta granularidad. */
+  return Math.sqrt(variance) * Math.sqrt(rets.length);
 }
 
 async function getJson(baseUrl, path) {
@@ -182,11 +238,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [global, sentiment, trending, memes] = await Promise.all([
+    /* top-coins es nuevo aquí: es la fuente de la AMPLITUD, la
+       señal que distingue un rally real de que BTC arrastre la
+       media. Va en el mismo Promise.all para no añadir latencia. */
+    const [global, sentiment, trending, memes, topCoins] = await Promise.all([
       getJson(baseUrl, "/api/global?timeframe=24h"),
       getJson(baseUrl, "/api/sentiment"),
       getJson(baseUrl, "/api/trending"),
-      getJson(baseUrl, "/api/top-memes")
+      getJson(baseUrl, "/api/top-memes"),
+      getJson(baseUrl, "/api/top-coins")
     ]);
 
     if (!global || global.__error) {
@@ -204,6 +264,7 @@ export default async function handler(req, res) {
     const safeSentiment = sentiment?.__error ? null : sentiment;
     const safeTrending  = trending?.__error  ? null : trending;
     const safeMemes     = memes?.__error     ? null : memes;
+    const safeTopCoins  = topCoins?.__error  ? null : topCoins;
 
     const raw = global.raw || {};
 
@@ -242,16 +303,73 @@ export default async function handler(req, res) {
     const score = marketScore;
     const mood = moodFromScore(score);
 
+    /* ═══════════════ ÍNDICE NUEVO ═══════════════
+
+       Todo este bloque está aislado: si falla, `newIndex` queda
+       null y el snapshot de siempre se guarda igual. */
+    let newIndex = null;
+    let indexError = null;
+
+    try {
+      const breadth = computeBreadth(
+        Array.isArray(safeTopCoins) ? safeTopCoins
+          : (safeTopCoins?.coins || safeTopCoins?.data || [])
+      );
+      const volatility = realizedVolatility(global.timeline);
+
+      /* La historia para los z-scores. Solo lo necesario: cuatro
+         columnas de 90 días, no la tabla entera. */
+      const rows = await sql`
+        SELECT change_24h, volatility, volume_usd, btc_dominance
+        FROM emotion_history
+        WHERE ts > NOW() - INTERVAL '90 days'
+        ORDER BY ts DESC
+        LIMIT 9000;
+      `;
+
+      const history = {
+        change:     rows.map((r) => Number(r.change_24h)).filter(Number.isFinite),
+        volatility: rows.map((r) => Number(r.volatility)).filter(Number.isFinite),
+        volume:     rows.map((r) => Number(r.volume_usd)).filter(Number.isFinite),
+        dominance:  rows.map((r) => Number(r.btc_dominance)).filter(Number.isFinite)
+      };
+
+      const computed = computeIndex(
+        { change, breadth, volatility, volume: volumeUsd,
+          dominance: btcDominance, headlines: newsScore },
+        history
+      );
+
+      newIndex = {
+        ...computed,
+        breadth,
+        volatility,
+        mood: computed.score === null ? null : indexMood(computed.score),
+        samples: rows.length
+      };
+    } catch (error) {
+      /* Se registra pero no se propaga: el histórico de siempre
+         vale más que la parte experimental. */
+      console.error("index engine error:", error);
+      indexError = error?.message || "index_failed";
+    }
+
     /* ON CONFLICT: si el bucket de 15 min ya existe, actualiza en
        vez de fallar. Vercel documenta que el cron puede invocar
        la misma ejecución más de una vez. */
     const [row] = await sql`
       INSERT INTO emotion_history
         (score, mood, market_score, social_score, driver_score,
-         change_24h, volume_usd, market_cap, btc_dominance, driver, source)
+         change_24h, volume_usd, market_cap, btc_dominance, driver, source,
+         breadth, volatility, index_score, index_conf, index_parts)
       VALUES
         (${score}, ${mood}, ${marketScore}, ${socialScore}, ${50},
-         ${change}, ${volumeUsd}, ${marketCap}, ${btcDominance}, ${driver}, 'cron')
+         ${change}, ${volumeUsd}, ${marketCap}, ${btcDominance}, ${driver}, 'cron',
+         ${newIndex?.breadth ?? null},
+         ${newIndex?.volatility ?? null},
+         ${newIndex?.score ?? null},
+         ${newIndex?.confidence ?? null},
+         ${newIndex ? JSON.stringify(newIndex.parts) : null})
       ON CONFLICT (bucket) DO UPDATE SET
         score        = EXCLUDED.score,
         mood         = EXCLUDED.mood,
@@ -261,11 +379,32 @@ export default async function handler(req, res) {
         volume_usd   = EXCLUDED.volume_usd,
         market_cap   = EXCLUDED.market_cap,
         btc_dominance= EXCLUDED.btc_dominance,
-        driver       = EXCLUDED.driver
+        driver       = EXCLUDED.driver,
+        breadth      = EXCLUDED.breadth,
+        volatility   = EXCLUDED.volatility,
+        index_score  = EXCLUDED.index_score,
+        index_conf   = EXCLUDED.index_conf,
+        index_parts  = EXCLUDED.index_parts
       RETURNING id, ts, score, mood;
     `;
 
-    return res.status(200).json({ ok: true, saved: row });
+    return res.status(200).json({
+      ok: true,
+      saved: row,
+      /* Los dos números en la respuesta: así el cron log sirve
+         para vigilar la divergencia sin abrir la base de datos. */
+      index: newIndex ? {
+        score: newIndex.score,
+        mood: newIndex.mood,
+        confidence: newIndex.confidence,
+        breadth: newIndex.breadth,
+        volatility: newIndex.volatility,
+        missing: newIndex.missing,
+        samples: newIndex.samples,
+        deltaVsLegacy: newIndex.score === null ? null : newIndex.score - score
+      } : null,
+      indexError
+    });
   } catch (error) {
     console.error("history-snapshot error:", error);
     return res.status(500).json({
