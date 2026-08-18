@@ -400,6 +400,53 @@ export default function Home({ ogImageUrl }) {
                         </svg>
                       </div>
 
+                      {/* ── HISTÓRICO DETRÁS DEL PERSONAJE ──
+
+                          La curva y la cara cuentan la misma historia,
+                          así que van en el mismo sitio. Se puede
+                          arrastrar sobre ella para recorrer los días:
+                          la cara cambia al estado que tenía el mercado
+                          esa fecha.
+
+                          Escala fija de 0 a 100, no autoescalada: con
+                          autoescala un mes plano entre 48 y 52 parece
+                          una montaña rusa. Así la altura significa algo
+                          y dos capturas de meses distintos se pueden
+                          comparar.
+
+                          Lo dibuja y lo gobierna public/hero-rig.js. */}
+                      <svg
+                        className="hero-history"
+                        id="heroHistorySvg"
+                        viewBox="0 0 900 280"
+                        preserveAspectRatio="none"
+                        aria-label="Emotion history — drag to scrub"
+                      >
+                        <defs>
+                          <linearGradient id="heroHistoryFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#E8E9EC" stopOpacity="0.5" />
+                            <stop offset="100%" stopColor="#E8E9EC" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path id="heroHistoryArea" d=""></path>
+                        {/* Referencia en 50: da arriba y abajo a la curva */}
+                        <path id="heroHistoryMid" d=""></path>
+                        <path id="heroHistoryLine" d=""></path>
+                        <circle id="heroHistoryMarker" r="6" cx="-20" cy="-20"></circle>
+                      </svg>
+
+                      {/* La cara del día que se está mirando. Capa propia
+                          por encima: así no hay que sincronizar nada con
+                          la imagen que gestiona script.js — al soltar,
+                          esta se desvanece y vuelve la de en vivo. */}
+                      <img
+                        className="hero-scrub-face"
+                        id="heroScrubFace"
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <div className="hero-scrub-readout" id="heroScrubReadout"></div>
+
                       <div id="heroFaceWrap" className="hero-face-wrap anim-float">
                         <img
                           id="heroFaceImg"
@@ -488,6 +535,16 @@ export default function Home({ ogImageUrl }) {
                       si el cron aún no ha guardado ninguna lectura
                       del índice nuevo, se quedan vacíos y la página
                       sigue funcionando como siempre. */}
+                  {/* Tres modos, porque los tres son legítimos: quien
+                      viene a leer el dato quiere la curva limpia, quien
+                      viene a mirar quiere la cara, y la mayoría quiere
+                      las dos. */}
+                  <div className="hero-view-modes">
+                    <button type="button" data-view-mode="chart" aria-pressed="false">Chart</button>
+                    <button type="button" data-view-mode="both" aria-pressed="true">Both</button>
+                    <button type="button" data-view-mode="hero" aria-pressed="false">Hero</button>
+                  </div>
+
                   <div className="hero-index-readout" id="heroIndexReadout"></div>
                   <div className="hero-profiles" id="heroProfiles"></div>
 
