@@ -549,8 +549,12 @@ export default function Home({ ogImageUrl }) {
                     <button type="button" data-view-mode="hero" aria-pressed="false">Hero</button>
                   </div>
 
-                  <div className="hero-index-readout" id="heroIndexReadout"></div>
-                  <div className="hero-profiles" id="heroProfiles"></div>
+                  {/* Los perfiles (Moon Boy, Crypto Bro...) se
+                      retiraron de la UI: cinco numeros alrededor del
+                      indice creaban la confusion que el indice unico
+                      vino a resolver. El motor sigue en
+                      lib/hero-profiles.js por si vuelven como feature
+                      de compartir, separada de la lectura principal. */}
 
                   {/* ── VENTANA TEMPORAL Y CONTEXTO ──
 
@@ -565,9 +569,12 @@ export default function Home({ ogImageUrl }) {
 
                       Ahora la secuencia se lee entera: cara, estado,
                       score, en que ventana, y cuanto se movio. */}
+                  {/* Sin 1H ni 4H: el indice se muestrea cada 15
+                      minutos, asi que 1H son cuatro puntos — ruido
+                      con forma de dato. El grafico de monedas si
+                      conserva esas ventanas porque su proveedor
+                      tiene granularidad de minutos. */}
                   <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="1h">1h</button>
-                    <button data-timeframe="4h">4h</button>
                     <button data-timeframe="24h" className="active">24h</button>
                     <button data-timeframe="7d">7d</button>
                     <button data-timeframe="30d">30d</button>
