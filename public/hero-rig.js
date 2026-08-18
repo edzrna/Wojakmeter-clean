@@ -46,6 +46,17 @@
   const EXTREME_LOW  = 10;
 
   const PROFILE_KEY = "wmHeroProfile";
+  const VIEW_KEY = "wmHeroView";
+
+  const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
+
+  const MOODS = [
+    ["frustration", 0, 19, "#E4485C"], ["concern", 20, 34, "#E8848F"],
+    ["doubt", 35, 44, "#E8B4BA"],      ["neutral", 45, 59, "#B8C0CB"],
+    ["optimism", 60, 69, "#A8E6BF"],   ["content", 70, 84, "#7FD9A0"],
+    ["euphoria", 85, 100, "#3BD97A"]
+  ];
+  const moodFor = (s) => (MOODS.find(([, lo, hi]) => s >= lo && s <= hi) || MOODS[3]);
 
   const state = {
     axes: { valence: 0, arousal: 0, tension: 0, fatigue: 0 },
@@ -56,7 +67,13 @@
     lastMood: null,
     timer: null,
     rafId: null,
-    shockUntil: 0
+    shockUntil: 0,
+
+    /* Vista integrada */
+    view: "both",
+    history: [],
+    scrubbing: false,
+    scrubIndex: null
   };
 
   const $ = (id) => document.getElementById(id);
@@ -177,6 +194,147 @@
     state.rafId = requestAnimationFrame(tick);
   }
 
+  /* =========================================================
+     LA VISTA INTEGRADA
+
+     El histórico se dibuja DETRÁS del personaje, en el mismo
+     escenario, y se puede recorrer con el dedo o el ratón: al
+     arrastrar, la cara cambia al estado que tenía el mercado ese
+     día.
+
+     POR QUÉ ASÍ Y NO COMO DOS MÓDULOS SEPARADOS:
+     la cara y la curva cuentan la misma historia. Tenerlas en
+     sitios distintos obliga a mirar arriba y abajo para relacionar
+     "estaba en Doubt" con "y venía cayendo desde el martes". Aquí
+     la relación se ve sin buscarla.
+
+     TRES MODOS, porque los tres son legítimos: quien viene a leer
+     el dato quiere la curva limpia, quien viene a mirar quiere la
+     cara, y la mayoría quiere las dos.
+     ========================================================= */
+
+  function setView(mode) {
+    state.view = ["chart", "both", "hero"].includes(mode) ? mode : "both";
+    try { localStorage.setItem(VIEW_KEY, state.view); } catch {}
+
+    const el = stage();
+    if (el) el.dataset.view = state.view;
+
+    document.querySelectorAll("[data-view-mode]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.viewMode === state.view);
+      b.setAttribute("aria-pressed", String(b.dataset.viewMode === state.view));
+    });
+
+    /* El histórico solo se pide si se va a ver. */
+    if (state.view !== "hero" && !state.history.length) loadHistory();
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch("/api/history?range=30d", { headers: { accept: "application/json" } });
+      const data = await res.json();
+      if (!data?.ok || !Array.isArray(data.series) || data.series.length < 4) return;
+
+      state.history = data.series;
+      drawHistory();
+    } catch {}
+  }
+
+  /* Escala FIJA de 0 a 100, no autoescalada al rango.
+
+     Con autoescala, un mes plano entre 48 y 52 se convierte en una
+     montaña rusa y un mes de verdad movido se ve igual de agitado.
+     Con escala fija, la altura SIGNIFICA algo: arriba es eufórico
+     siempre, y dos capturas de meses distintos son comparables. */
+  function drawHistory() {
+    const path = $("heroHistoryLine");
+    const area = $("heroHistoryArea");
+    if (!path || !area || state.history.length < 4) return;
+
+    const W = 900, H = 280, PAD = 26;
+    const pts = state.history.slice(-90);
+
+    const xy = pts.map((p, i) => [
+      (i / (pts.length - 1)) * W,
+      PAD + (1 - clamp(Number(p.score) || 50, 0, 100) / 100) * (H - PAD * 2)
+    ]);
+
+    const d = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+    path.setAttribute("d", d);
+    area.setAttribute("d", `${d} L${W} ${H} L0 ${H} Z`);
+
+    const mid = $("heroHistoryMid");
+    if (mid) {
+      const y = PAD + 0.5 * (H - PAD * 2);
+      mid.setAttribute("d", `M0 ${y} L${W} ${y}`);
+    }
+
+    state.drawn = xy;
+  }
+
+  /* ---------------------------------------------------------
+     RECORRER LOS DÍAS
+
+     Mientras se arrastra, la cara del día se muestra en una capa
+     PROPIA por encima. No se toca la imagen que gestiona
+     script.js: al soltar, esa capa se desvanece y vuelve el estado
+     en vivo sin que nadie haya tenido que sincronizar nada.
+     --------------------------------------------------------- */
+  function scrubAt(clientX) {
+    const svg = $("heroHistorySvg");
+    if (!svg || !state.history.length) return;
+
+    const rect = svg.getBoundingClientRect();
+    const t = clamp((clientX - rect.left) / rect.width, 0, 1);
+
+    const pts = state.history.slice(-90);
+    const i = Math.round(t * (pts.length - 1));
+    const p = pts[i];
+    if (!p) return;
+
+    state.scrubIndex = i;
+
+    const score = Math.round(Number(p.score) || 50);
+    const [mood, , , color] = moodFor(score);
+
+    const face = $("heroScrubFace");
+    if (face) {
+      const src = HERO_IMG(mood);
+      if (!face.src.endsWith(src)) face.src = src;
+    }
+
+    const marker = $("heroHistoryMarker");
+    if (marker && state.drawn?.[i]) {
+      marker.setAttribute("cx", state.drawn[i][0]);
+      marker.setAttribute("cy", state.drawn[i][1]);
+      marker.setAttribute("fill", color);
+    }
+
+    const out = $("heroScrubReadout");
+    if (out) {
+      const when = new Date(p.ts);
+      out.innerHTML =
+        `<strong>${score}</strong>` +
+        `<span style="color:${color}">${mood}</span>` +
+        `<span class="hero-scrub-date">${when.toLocaleDateString(undefined,
+          { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>`;
+    }
+  }
+
+  function startScrub(e) {
+    if (state.view === "hero" || !state.history.length) return;
+    state.scrubbing = true;
+    stage()?.classList.add("wm-scrubbing");
+    scrubAt(e.clientX);
+  }
+
+  function endScrub() {
+    if (!state.scrubbing) return;
+    state.scrubbing = false;
+    state.scrubIndex = null;
+    stage()?.classList.remove("wm-scrubbing");
+  }
+
   /* ---------------------------------------------------------
      CARGA
      --------------------------------------------------------- */
@@ -277,9 +435,34 @@
     stage().dataset.profile = state.profile;
 
     document.addEventListener("click", (e) => {
-      const btn = e.target.closest?.("[data-profile]");
-      if (btn) setProfile(btn.dataset.profile);
+      const prof = e.target.closest?.("[data-profile]");
+      if (prof) { setProfile(prof.dataset.profile); return; }
+
+      const view = e.target.closest?.("[data-view-mode]");
+      if (view) setView(view.dataset.viewMode);
     });
+
+    /* Recorrer los días. pointer* cubre ratón, dedo y lápiz con un
+       solo juego de eventos. */
+    const svg = $("heroHistorySvg");
+    if (svg) {
+      svg.addEventListener("pointerdown", (e) => {
+        svg.setPointerCapture?.(e.pointerId);
+        startScrub(e);
+      });
+      svg.addEventListener("pointermove", (e) => {
+        if (state.scrubbing) scrubAt(e.clientX);
+      });
+      svg.addEventListener("pointerup", endScrub);
+      svg.addEventListener("pointercancel", endScrub);
+      svg.addEventListener("pointerleave", endScrub);
+    }
+
+    try {
+      const savedView = localStorage.getItem(VIEW_KEY);
+      if (savedView) state.view = savedView;
+    } catch {}
+    setView(state.view);
 
     /* Con la pestaña oculta no se pide nada ni se anima: el rig
        corre en cada frame y no tiene por que gastar bateria
