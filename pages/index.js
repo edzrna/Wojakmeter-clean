@@ -171,7 +171,6 @@ export default function Home({ ogImageUrl }) {
               </a>
 
               <nav className="wm-desktop-nav" aria-label="Main navigation">
-                <a href="#historySection">History</a>
                 <a href="#top-coins">Markets</a>
                 <a href="#bagMoodSection">Bag</a>
                 <a href="#emotionRadarSection">Radar</a>
@@ -251,7 +250,6 @@ export default function Home({ ogImageUrl }) {
 
             <nav className="wm-mobile-menu" id="wmMobileMenu">
               <a href="#market">Market Mood</a>
-              <a href="#historySection">History</a>
               <a href="#top-coins">Market Sections</a>
               <a href="#bagMoodSection">Bag Mood</a>
               <a href="#emotionRadarSection">Emotion Radar</a>
@@ -434,6 +432,10 @@ export default function Home({ ogImageUrl }) {
                         <path id="heroHistoryLine" d=""></path>
                         <circle id="heroHistoryMarker" r="6" cx="-20" cy="-20"></circle>
                       </svg>
+
+                      {/* Qué ventana se está viendo. La escriben las
+                          pills de timeframe vía hero-rig.js. */}
+                      <span className="hero-range-tag" id="heroRangeTag">EMOTION · 24H</span>
 
                       {/* La cara del día que se está mirando. Capa propia
                           por encima: así no hay que sincronizar nada con
@@ -774,92 +776,12 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 3. HISTÓRICO DE EMOCIÓN
-            =========================================================== */}
-            <section className="history-section card" id="historySection">
-              <div className="section-head">
-                <div>
-                  <span className="section-kicker">Emotion over time</span>
-                  <h3>Market Mood History</h3>
-                </div>
-                <div className="timeframes compact" id="historyRanges">
-                  <button type="button" data-history-range="24h">24h</button>
-                  <button type="button" data-history-range="7d" className="active">7d</button>
-                  <button type="button" data-history-range="30d">30d</button>
-                  <button type="button" data-history-range="90d">90d</button>
-                </div>
-              </div>
-
-              {/* ---------- LECTURA PRINCIPAL ----------
-                  Score actual y cambio del periodo juntos. El cambio
-                  es lo primero que pregunta cualquiera al ver una
-                  serie temporal, y no estaba en ninguna parte. */}
-              <div className="history-headline">
-                <div className="history-now">
-                  <strong id="historyCurrent" className="mood-neutral">--</strong>
-                  <span id="historyCurrentMood" className="mood-neutral">Neutral</span>
-                </div>
-                <div className="history-delta">
-                  <span>Change</span>
-                  <strong id="historyChange" className="neutral">--</strong>
-                </div>
-              </div>
-
-              <div className="history-streak" id="historyStreak">Building history…</div>
-
-              {/* ---------- GRÁFICO ---------- */}
-              <div className="history-chart" id="historyChart">
-                {/* Sin preserveAspectRatio: el viewBox lo fija el JS
-                    con el tamaño real, y así el texto de las bandas
-                    y los ejes no se deforma. */}
-                <svg id="historySvg" viewBox="0 0 900 300">
-                  <g className="history-bands" id="historyBands"></g>
-                  <path id="historyArea" d=""></path>
-                  <path id="historyLine" d=""></path>
-                  <g className="history-axis history-axis-y" id="historyAxisY"></g>
-                  <g className="history-axis history-axis-x" id="historyAxisX"></g>
-                  <g className="history-crosshair" id="historyCrosshair"></g>
-                </svg>
-
-                <div className="chart-tooltip hidden" id="historyTooltip"></div>
-
-                <div className="history-placeholder">
-                  Collecting readings every 15 minutes. The chart fills in as history builds.
-                </div>
-              </div>
-
-              {/* ---------- MÉTRICAS ----------
-                  Mínimo, media y máximo describen la distribución
-                  pero no el comportamiento. Estas sí. */}
-              <div className="history-metrics">
-                <div className="history-metric">
-                  <span>Range</span>
-                  <strong id="historyRange2">--</strong>
-                </div>
-                <div className="history-metric">
-                  <span>Average</span>
-                  <strong id="historyAvg">--</strong>
-                </div>
-                <div className="history-metric" title="Standard deviation of the score. How much the mood swings.">
-                  <span>Volatility</span>
-                  <strong id="historyVolatility">--</strong>
-                  <em id="historyVolatilityLabel">--</em>
-                </div>
-                <div className="history-metric" title="How many times the market crossed from one emotional state to another.">
-                  <span>Mood shifts</span>
-                  <strong id="historyFlips">--</strong>
-                </div>
-                <div className="history-metric" title="Longest continuous stretch in a single emotional state.">
-                  <span>Longest streak</span>
-                  <strong id="historyStreakLen">--</strong>
-                  <em id="historyStreakMood">--</em>
-                </div>
-                <div className="history-metric" title="Share of the period that has actual readings. Low coverage means gaps.">
-                  <span>Coverage</span>
-                  <strong id="historyCoverage">--</strong>
-                  <em id="historySamples">Collecting…</em>
-                </div>
-              </div>
-            </section>
+            {/* La sección Market Mood History se retiró: el
+                histórico vive ahora DETRÁS del personaje, en el
+                mismo escenario, gobernado por las pills de
+                timeframe del hero. Tener la misma curva dos veces
+                obligaba a desplazarse arriba y abajo para
+                relacionar la cara con su historia. */}
 
             {/* ===========================================================
                 2. MARKET SECTIONS + CHART
@@ -1983,7 +1905,6 @@ export default function Home({ ogImageUrl }) {
                       orden en que aparecen al bajar. */}
                   <h4 className="wm-footer-title">Navigation</h4>
                   <a href="#market">Market Mood</a>
-                  <a href="#historySection">Market Mood History</a>
                   <a href="#top-coins">Market Sections</a>
                   <a href="#bagMoodSection">Bag Mood</a>
                   <a href="#emotionRadarSection">Emotion Radar</a>
