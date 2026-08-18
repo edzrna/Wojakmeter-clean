@@ -55,28 +55,120 @@
      tiempo real: con el cron de 15 minutos, 1h son ~4 lecturas y
      4h son ~16. Pocas, pero son las que hay — inventar una curva
      mas suave seria dibujar datos que no existen. */
+  /* 1H y 4H se retiraron: con el cron de 15 minutos eran 4 y 16
+     lecturas — ruido con forma de curva. */
   const TF = {
-    "1h":  { fetch: "24h", keepMs: 3600e3,      label: "1H"  },
-    "4h":  { fetch: "24h", keepMs: 4 * 3600e3,  label: "4H"  },
-    "24h": { fetch: "24h", keepMs: null,        label: "24H" },
-    "7d":  { fetch: "7d",  keepMs: null,        label: "7D"  },
-    "30d": { fetch: "30d", keepMs: null,        label: "30D" }
+    "24h": { fetch: "24h", label: "24H", days: 1 },
+    "7d":  { fetch: "7d",  label: "7D",  days: 7 },
+    "30d": { fetch: "30d", label: "30D", days: 30 }
   };
 
   const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
 
-  /* Frases por emoción. Las escribe el rig porque ahora es él
-     quien manda en la lectura: si las dejara a script.js, el
-     subtítulo describiría un score distinto al que se ve. */
-  const BLURB = {
-    frustration: "Capitulation. Everything is red and nobody is buying.",
-    concern:     "Nervous. Sellers have the upper hand.",
-    doubt:       "Hesitant. The move has no conviction behind it.",
-    neutral:     "Traders are watching without strong conviction.",
-    optimism:    "Positive sentiment is forming.",
-    content:     "Comfortable. The trend has support underneath it.",
-    euphoria:    "Everyone is a genius. Historically, that is the risk."
+  /* ---------------------------------------------------------
+     LAS 21 SUBEMOCIONES
+
+     El catalogo de siempre (script.js las elegia con su formula
+     vieja). Ahora las elige el rig con los CUATRO EJES, que es lo
+     que garantiza que base, overlay y texto salgan siempre del
+     mismo estado — la mezcla de craneo verde con cara neutra venia
+     de dos sistemas eligiendo cada uno por su lado.
+
+     tension alta -> la variante de presion o miedo
+     fatiga alta  -> la de agotamiento o compresion
+     arousal alta -> la intensa
+     --------------------------------------------------------- */
+  function subemotionFor(moodKey, score, axes, windowDelta) {
+    const { arousal: a, tension: x, fatigue: f } = axes;
+
+    if (moodKey === "frustration") {
+      if (a >= 0.6)  return "frustration_panic";
+      if (score <= 10) return "frustration_capitulation";
+      if (f >= 0.45) return "frustration_exhaustion";
+    }
+    if (moodKey === "concern") {
+      if (a >= 0.55) return "concern_fear_spike";
+      if (x >= 0.5)  return "concern_breakdown";
+      return "concern_pressure";
+    }
+    if (moodKey === "doubt") {
+      if (x >= 0.5)  return "doubt_confusion";
+      if (windowDelta > 0 && x >= 0.3) return "doubt_fake_recovery";
+      return "doubt_hesitation";
+    }
+    if (moodKey === "neutral") {
+      if (x >= 0.45) return "neutral_pressure_building";
+      if (f >= 0.5)  return "neutral_compression";
+      return "neutral_waiting";
+    }
+    if (moodKey === "optimism") {
+      if (windowDelta > 3 && a >= 0.4) return "optimism_building";
+      if (score >= 64 && x < 0.3)      return "optimism_confident";
+      if (windowDelta < 0)             return "optimism_pullback";
+    }
+    if (moodKey === "content") {
+      if (score >= 80 && a >= 0.45) return "content_overextended";
+      if (x < 0.25)                 return "content_confidence";
+      return "content_strength";
+    }
+    if (moodKey === "euphoria") {
+      if (score >= 92 && a >= 0.45) return "euphoria_overheat";
+      if (x >= 0.4)                 return "euphoria_weakening";
+      return "euphoria_breakout";
+    }
+    return moodKey;
+  }
+
+  /* Narrativas por subemocion — mismo catalogo que script.js.
+     Duplicacion consciente: el rig no puede leer la const de un
+     script clasico. Si se cambia alla, cambiar aqui. */
+  const NARR = {
+    frustration: "The market feels exhausted after heavy emotional pressure.",
+    frustration_capitulation: "Traders are giving up faster than price is stabilizing.",
+    frustration_panic: "Panic selling is dominating the emotional flow.",
+    frustration_exhaustion: "Fear may be reaching emotional exhaustion.",
+    concern: "Fear is spreading through the market.",
+    concern_pressure: "Defensive pressure is building across the market.",
+    concern_fear_spike: "Fear is accelerating faster than price decline.",
+    concern_breakdown: "Confidence is breaking down under heavy pressure.",
+    doubt: "The market is unsure and hesitation is spreading.",
+    doubt_confusion: "Mixed signals are creating emotional confusion.",
+    doubt_hesitation: "Traders are waiting before committing direction.",
+    doubt_fake_recovery: "The bounce feels weak and emotionally fragile.",
+    neutral: "No strong conviction in either direction.",
+    neutral_pressure_building: "Pressure is building under a calm surface.",
+    neutral_compression: "Low volume, tight range — a move is loading.",
+    neutral_waiting: "The market is waiting for a reason to move.",
+    optimism: "Buyers are starting to step in.",
+    optimism_building: "Momentum is building behind the buyers.",
+    optimism_confident: "Buyers are in control and holding ground.",
+    optimism_pullback: "The uptrend is catching its breath.",
+    content: "Steady climb with support underneath.",
+    content_strength: "The trend is strong and orderly.",
+    content_confidence: "Broad confidence across the market.",
+    content_overextended: "Strong, but stretching — watch the pace.",
+    euphoria: "Extreme greed territory.",
+    euphoria_breakout: "Everything is green and accelerating.",
+    euphoria_overheat: "Overheated. Historically, this is the risk zone.",
+    euphoria_weakening: "Still euphoric, but the fuel is thinning."
   };
+
+  /* El subtitulo lleva la narrativa Y los datos que la sostienen:
+     "frases genericas" era el sintoma de un texto sin numeros. */
+  function buildSubtitle(sub, moodKey) {
+    const base = NARR[sub] || NARR[moodKey] || "";
+    const tf = TF[state.range] || TF["24h"];
+    const d = state.windowDelta;
+    const bits = [];
+
+    if (Number.isFinite(d) && d !== 0) {
+      bits.push(`Index ${d > 0 ? "up" : "down"} ${Math.abs(d)} over ${tf.label}`);
+    }
+    const days = Math.floor(state.streakSeconds / 86400);
+    if (days >= 2) bits.push(`${days} days in this zone`);
+
+    return bits.length ? `${base} ${bits.join(" · ")}.` : base;
+  }
 
   const MOODS = [
     ["frustration", 0, 19, "#E4485C"], ["concern", 20, 34, "#E8848F"],
@@ -96,10 +188,13 @@
     timer: null,
     rafId: null,
     shockUntil: 0,
+    streakSeconds: 0,
 
     /* Vista integrada */
     view: "both",
     range: "24h",
+    windowScore: null,
+    windowDelta: 0,
     history: [],
     scrubbing: false,
     scrubIndex: null
@@ -270,6 +365,31 @@
       state.history = data.series;
       drawHistory();
 
+      /* LA VENTANA MANDA TAMBIEN EN EL PERSONAJE.
+
+         El score que se muestra es la MEDIA del indice en la
+         ventana elegida: 24H dice como se sintio el dia, 7D como
+         se sintio la semana. Titulo, cara y subtitulo salen todos
+         de ese mismo numero, asi que cambiar de pill cambia todo
+         junto y nada se contradice: hay UNA verdad por vista, solo
+         que con distinto alcance.
+
+         (La version anterior dejaba la cara clavada en el "ahora"
+         mientras la curva cambiaba de ventana — coherente sobre el
+         papel, pero partia la seccion en dos mitades que no se
+         hablaban.) */
+      const pts = visibleSeries();
+      const scores = pts.map((p) => Number(p.score)).filter(Number.isFinite);
+      if (scores.length >= 2) {
+        state.windowScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+        state.windowDelta = Math.round(scores[scores.length - 1] - scores[0]);
+        /* El movimiento de la ventana alimenta la reaccion: una
+           semana que subio 20 puntos se ve mas encendida que una
+           plana, aunque la media sea parecida. */
+        target.arousal = Math.max(target.arousal,
+          clamp(Math.abs(state.windowDelta) / 20, 0, 1));
+      }
+
       /* La etiqueta lleva tambien CUANTO se movio el indice en la
          ventana elegida. Es lo que reconecta las pills con el
          personaje sin volver al comportamiento viejo: la cara
@@ -296,11 +416,7 @@
      dibujo y el scrub recortaran cada uno por su lado, el dedo
      apuntaria a un dia y la pastilla mostraria otro. */
   function visibleSeries() {
-    const tf = TF[state.range] || TF["24h"];
-    if (!tf.keepMs) return state.history.slice(-90);
-
-    const last = Number(new Date(state.history[state.history.length - 1]?.ts || Date.now()));
-    return state.history.filter((p) => last - Number(new Date(p.ts)) <= tf.keepMs);
+    return state.history.slice(-400);
   }
 
   function setRange(range) {
@@ -427,6 +543,7 @@
       stage()?.classList.remove("wm-rig-idle");
 
       state.score = data.score;
+      state.streakSeconds = Number(data.streakSeconds || 0);
 
       /* El gráfico viejo de script.js se apaga en cuanto el índice
          nuevo está vivo: hasta ahora se dibujaban los dos, uno
@@ -438,8 +555,6 @@
 
       Object.assign(target, data.axes || {});
       handleEvents(data);
-      renderProfiles(data);
-      renderReadout(data);
     } catch {
       /* Sin conexion el personaje no se congela: se queda con los
          ultimos ejes y sigue respirando. */
@@ -447,49 +562,21 @@
   }
 
   /* ---------------------------------------------------------
-     SELECTOR DE PERFIL
-
-     Se pinta con el score que cada perfil daria AHORA MISMO. Se
-     elige viendo que cara pone cada uno con el mercado de este
-     momento, no leyendo una descripcion.
-     --------------------------------------------------------- */
-  function renderProfiles(data) {
-    const host = $("heroProfiles");
-    if (!host || !Array.isArray(data.profiles)) return;
-
-    host.innerHTML = data.profiles.map((p) => `
-      <button type="button" class="hero-profile${p.id === state.profile ? " active" : ""}"
-              data-profile="${p.id}" title="${escapeHtml(p.tagline || "")}">
-        <span class="hero-profile-name">${escapeHtml(p.name)}</span>
-        <span class="hero-profile-score" data-mood="${p.mood}">${p.score}</span>
-      </button>`).join("");
-  }
-
-  /* El numero canonico SIEMPRE visible junto a la lente. En cuanto
-     se pueda confundir cual es el dato real, el indice deja de ser
-     una medicion. */
-  /* ---------------------------------------------------------
      UN SOLO NUMERO EN PANTALLA
 
-     PROBLEMA QUE ARREGLA:
-     el titulo grande y el "SCORE: 52" los escribe script.js con la
-     formula vieja, que ademas cambia con la pill de timeframe. El
-     indice nuevo salia debajo como "INDEX 76". Dos numeros y dos
-     emociones contradiciendose en la misma pantalla, y el visitante
-     sin forma de saber cual es el dato.
-
-     El indice canonico es UNO. Asi que en cuanto existe, manda: el
-     rig reescribe el titulo, el subtitulo y el score.
-
-     Se reaplica en cada frame porque script.js los reescribe en
-     cada una de sus actualizaciones y no hay forma de pedirle que
-     no lo haga sin tocar sus 7.000 lineas. La comprobacion es una
-     lectura de textContent: si ya coincide, no se toca el DOM.
+     script.js reescribe titulo, subtitulo y score en cada una de
+     sus actualizaciones con su formula vieja; el rig los impone en
+     cada frame. La comprobacion es una lectura de textContent: si
+     ya coinciden, no se toca el DOM.
      --------------------------------------------------------- */
   function enforceCanonical() {
     if (state.score === null || state.scrubbing) return;
 
-    const mood = moodFor(state.score);
+    /* Un solo numero por vista: la media de la ventana elegida (o
+       el indice actual mientras el historico no ha cargado).
+       Titulo, score, cara, overlay y subtitulo salen TODOS de el. */
+    const shown = Number.isFinite(state.windowScore) ? state.windowScore : state.score;
+    const mood = moodFor(shown);
     const label = mood[0][0].toUpperCase() + mood[0].slice(1);
 
     const title = $("heroMood");
@@ -498,80 +585,39 @@
       title.className = `hero-mood mood-${mood[0]}`;
     }
 
-    const sub = $("heroSubtitle");
-    const text = BLURB[mood[0]];
-    if (sub && text && sub.textContent.trim() !== text) sub.textContent = text;
+    const sub = subemotionFor(mood[0], shown, state.axes, state.windowDelta);
+    const subEl = $("heroSubtitle");
+    const text = buildSubtitle(sub, mood[0]);
+    if (subEl && text && subEl.textContent.trim() !== text) subEl.textContent = text;
 
     const num = $("heroScore");
-    if (num && num.textContent !== String(state.score)) {
-      num.textContent = String(state.score);
+    if (num && num.textContent !== String(shown)) {
+      num.textContent = String(shown);
     }
 
-    /* LA CARA TAMBIEN.
-
-       Bug real que llego en captura: titulo "Optimism" con una
-       cara de preocupacion debajo. El rig imponia titulo, subtitulo
-       y score, pero la IMAGEN seguia eligiendola script.js con su
-       formula vieja — media pantalla decia una emocion y la otra
-       media otra.
-
-       La cara sigue el score EXPRESIVO del perfil (la lente decide
-       que cara se pone); titulo y numero siguen siendo el dato
-       canonico. Con Straight Read son lo mismo. */
-    const expressive = Number.isFinite(state.expressive) ? state.expressive : state.score;
     const face = $("heroFaceImg");
     if (face) {
-      const src = HERO_IMG(moodFor(expressive)[0]);
+      const src = HERO_IMG(mood[0]);
       if (!String(face.src).endsWith(src)) face.src = src;
     }
 
-    /* Y EL OVERLAY DE SUBEMOCION, FUERA.
-
-       Bug de captura: craneo verde con cara neutra. script.js pone
-       su base y ENCIMA un overlay de subemocion coherentes entre
-       si; el rig cambiaba solo la base y el overlay del sistema
-       viejo se quedaba pintado — dos emociones mezcladas en una
-       cara. Mientras el indice mande, el overlay no juega. */
+    /* El overlay de subemocion, GOBERNADO en vez de apagado: el
+       craneo-verde-con-cara-neutra venia de dos sistemas eligiendo
+       cada uno por su lado. Aqui base y overlay salen del mismo
+       mood en la misma pasada, asi que no pueden divergir. Solo
+       hay overlay cuando la subemocion refina al mood base. */
     const overlay = $("heroFaceOverlayImg");
-    if (overlay && overlay.style.display !== "none") {
-      overlay.style.display = "none";
-      overlay.classList.add("hidden");
+    if (overlay) {
+      if (sub !== mood[0]) {
+        const osrc = `/assets/overlays/classic/${sub}.png`;
+        if (!String(overlay.src).endsWith(osrc)) overlay.src = osrc;
+        if (overlay.style.display !== "") overlay.style.display = "";
+        overlay.classList.remove("hidden");
+      } else if (overlay.style.display !== "none") {
+        overlay.style.display = "none";
+        overlay.classList.add("hidden");
+      }
     }
-  }
-
-  function renderReadout(data) {
-    const el = $("heroIndexReadout");
-    if (!el) return;
-
-    const conf = Number(data.confidence || 0);
-    /* Ya no repite el número: ahora el grande de arriba ES el
-       índice. Aquí solo se dice con qué lente se está mirando y,
-       si la lente cambia la lectura, cuánto la cambia. */
-    const lens = Number(data.expressive);
-    const shift = Number.isFinite(lens) && lens !== data.score
-      ? `<span class="hero-index-shift">reads it as ${lens}</span>` : "";
-
-    el.innerHTML = `
-      <span class="hero-index-label">Lens</span>
-      <span class="hero-index-lens">${escapeHtml(data.profile?.name || "")}</span>
-      ${shift}
-      ${conf < 0.8 ? `<span class="hero-index-conf"
-        title="Señales medidas: ${Math.round(conf * 100)}% del peso total"
-        >${Math.round(conf * 100)}%</span>` : ""}`;
-  }
-
-  function escapeHtml(v) {
-    return String(v ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    })[c]);
-  }
-
-  function setProfile(id) {
-    state.profile = id;
-    try { localStorage.setItem(PROFILE_KEY, id); } catch {}
-    const el = stage();
-    if (el) el.dataset.profile = id;
-    load();
   }
 
   /* ---------------------------------------------------------
@@ -580,17 +626,12 @@
   function init() {
     if (!stage()) return;
 
-    try {
-      const saved = localStorage.getItem(PROFILE_KEY);
-      if (saved) state.profile = saved;
-    } catch {}
-
-    stage().dataset.profile = state.profile;
+    /* Sin selector de perfiles: la lectura es una (straight). El
+       motor de lentes sigue en lib/hero-profiles.js por si vuelve
+       como feature de compartir, separada de la lectura principal. */
+    state.profile = "straight";
 
     document.addEventListener("click", (e) => {
-      const prof = e.target.closest?.("[data-profile]");
-      if (prof) { setProfile(prof.dataset.profile); return; }
-
       const view = e.target.closest?.("[data-view-mode]");
       if (view) { setView(view.dataset.viewMode); return; }
 
