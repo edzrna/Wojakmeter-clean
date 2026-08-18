@@ -9637,3 +9637,20 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   border-left: 1px solid var(--line);
   padding-left: 8px;
 }
+
+/* Etiqueta de la ventana visible, esquina del escenario. Misma
+   tipografía de dato que el resto de captions. */
+.hero-range-tag {
+  position: absolute;
+  left: 4%;
+  bottom: 4%;
+  z-index: 2;
+  font-family: var(--font-data);
+  font-size: .6rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  pointer-events: none;
+}
+
+[data-view="hero"] .hero-range-tag { opacity: 0; }
