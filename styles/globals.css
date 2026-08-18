@@ -7652,6 +7652,14 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   -webkit-backdrop-filter: blur(4px);
   pointer-events: none;
   max-width: 92%;
+
+  /* Por encima de cualquier capa de sprite.
+
+     Antes no declaraba z-index y dependia del orden del DOM. En
+     cuanto los sprites empezaron a numerar sus capas (--fx-layer
+     sube con cada toque), la reaccion acababa TAPANDO el nombre
+     y el rango — justo el texto que hace jugable el tablero. */
+  z-index: 200;
 }
 
 .rush-cell-name {
@@ -9719,7 +9727,11 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 .rush-cell-fx {
   position: absolute;
   inset: 0;
-  z-index: calc(2 + var(--fx-layer, 0));
+  /* Techo por debajo del chip (200). El contador se recicla en
+     JS, asi que este calc nunca puede acercarse: cinturon y
+     tirantes, porque el fallo se ve como texto invisible y cuesta
+     de diagnosticar. */
+  z-index: calc(2 + min(var(--fx-layer, 0), 90));
   pointer-events: none;
   opacity: 0;
 
@@ -9735,7 +9747,13 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   /* alternate + 2 iteraciones = ida y vuelta exactas. Con
      `infinite` quedaría latiendo bajo el dedo; con una sola
      iteración se quedaría en el fotograma disgregado. */
-  animation: rush-sprite 0.52s steps(8, jump-none) 2 alternate;
+  /* 0,26s por sentido = 0,52s de ida y vuelta.
+
+     Estaba al doble y se comia el ritmo: en las rondas rapidas el
+     reloj baja a 900 ms, asi que una reaccion de mas de un
+     segundo seguia corriendo cuando ya habia que responder otra
+     vez. Ahora cabe holgada dentro de la ronda mas corta. */
+  animation: rush-sprite 0.26s steps(8, jump-none) 2 alternate;
 }
 
 /* jump-none es obligatorio, no una preferencia.
@@ -9752,8 +9770,9 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 /* La ilustración de debajo se atenúa mientras corre la reacción:
    el sprite ya lleva al personaje dentro y las dos capas juntas
-   se ven como una imagen sucia. */
-.rush-cell-fx.playing ~ .rush-cell-chip { opacity: .85; }
+   se ven como una imagen sucia. El CHIP no se toca: es el texto
+   que dice qué casilla es, y atenuarlo justo cuando el sprite
+   llena la celda era quitarlo cuando más falta hace. */
 
 .rush-cell:has(.rush-cell-fx.playing) .rush-cell-art {
   opacity: .15;
