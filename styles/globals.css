@@ -9703,3 +9703,75 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 /* El movimiento de la ventana, con el color del sentido. */
 .hero-range-tag[data-dir="up"]   { color: var(--pos, #3BD97A); }
 .hero-range-tag[data-dir="down"] { color: var(--neg, #E4485C); }
+
+/* -----------------------------------------------------------
+   62 · EMOTION RUSH — SPRITES DE REACCIÓN
+
+   Una tira por emoción: 3200×400, ocho fotogramas de 400×400.
+   Se reproduce al pulsar, de ida y vuelta (0→7→0).
+
+   IDA Y VUELTA y no bucle simple porque el personaje se
+   DISGREGA hacia el último fotograma: la vuelta lo recompone y
+   la casilla termina como empezó. Parar en el 7 la dejaría medio
+   vacía hasta la ronda siguiente.
+   ----------------------------------------------------------- */
+
+.rush-cell-fx {
+  position: absolute;
+  inset: 0;
+  z-index: calc(2 + var(--fx-layer, 0));
+  pointer-events: none;
+  opacity: 0;
+
+  background-repeat: no-repeat;
+  /* 800% = las ocho tiras a lo ancho; cada fotograma ocupa
+     exactamente el alto de la casilla. */
+  background-size: 800% 100%;
+  background-position: 0% 0%;
+}
+
+.rush-cell-fx.playing {
+  opacity: 1;
+  /* alternate + 2 iteraciones = ida y vuelta exactas. Con
+     `infinite` quedaría latiendo bajo el dedo; con una sola
+     iteración se quedaría en el fotograma disgregado. */
+  animation: rush-sprite 0.52s steps(8, jump-none) 2 alternate;
+}
+
+/* jump-none es obligatorio, no una preferencia.
+
+   Con `steps(8)` normal —jump-end— los ocho pasos van de 0% a
+   87,5%, que en una tira de ocho fotogramas cae ENTRE fotogramas:
+   se verían dos medias caras a la vez y el octavo no aparecería
+   nunca. jump-none reparte los ocho valores incluyendo los dos
+   extremos: 0, 14.29, 28.57 … 100%. */
+@keyframes rush-sprite {
+  from { background-position: 0% 0%; }
+  to   { background-position: 100% 0%; }
+}
+
+/* La ilustración de debajo se atenúa mientras corre la reacción:
+   el sprite ya lleva al personaje dentro y las dos capas juntas
+   se ven como una imagen sucia. */
+.rush-cell-fx.playing ~ .rush-cell-chip { opacity: .85; }
+
+.rush-cell:has(.rush-cell-fx.playing) .rush-cell-art {
+  opacity: .15;
+  transition: opacity .12s var(--ease);
+}
+
+/* Respaldo para navegadores sin :has() — la reacción se ve igual,
+   solo que sin atenuar el fondo. */
+@supports not (selector(:has(*))) {
+  .rush-cell-fx.playing { opacity: .92; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rush-cell-fx.playing {
+    animation: none;
+    /* Sin movimiento se muestra el primer fotograma, que es el
+       personaje entero: informa del acierto sin animar nada. */
+    background-position: 0% 0%;
+    opacity: 1;
+  }
+}
