@@ -270,8 +270,25 @@
       state.history = data.series;
       drawHistory();
 
+      /* La etiqueta lleva tambien CUANTO se movio el indice en la
+         ventana elegida. Es lo que reconecta las pills con el
+         personaje sin volver al comportamiento viejo: la cara
+         sigue siendo el AHORA (cambiarla por ventana era lo que
+         producia dos emociones contradiciendose en pantalla), pero
+         la ventana si te dice que camino trajo hasta aqui. */
       const tag = $("heroRangeTag");
-      if (tag) tag.textContent = `EMOTION · ${tf.label}`;
+      if (tag) {
+        const pts = visibleSeries();
+        const first = Number(pts[0]?.score);
+        const last = Number(pts[pts.length - 1]?.score);
+        const d = Number.isFinite(first) && Number.isFinite(last)
+          ? Math.round(last - first) : null;
+        const arrow = d > 0 ? `▲${d}` : d < 0 ? `▼${Math.abs(d)}` : "—";
+        tag.textContent = d === null
+          ? `EMOTION · ${tf.label}`
+          : `EMOTION · ${tf.label} · ${arrow}`;
+        tag.dataset.dir = d > 0 ? "up" : d < 0 ? "down" : "flat";
+      }
     } catch {}
   }
 
