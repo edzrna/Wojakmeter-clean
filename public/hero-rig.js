@@ -489,6 +489,24 @@
     if (num && num.textContent !== String(state.score)) {
       num.textContent = String(state.score);
     }
+
+    /* LA CARA TAMBIEN.
+
+       Bug real que llego en captura: titulo "Optimism" con una
+       cara de preocupacion debajo. El rig imponia titulo, subtitulo
+       y score, pero la IMAGEN seguia eligiendola script.js con su
+       formula vieja — media pantalla decia una emocion y la otra
+       media otra.
+
+       La cara sigue el score EXPRESIVO del perfil (la lente decide
+       que cara se pone); titulo y numero siguen siendo el dato
+       canonico. Con Straight Read son lo mismo. */
+    const expressive = Number.isFinite(state.expressive) ? state.expressive : state.score;
+    const face = $("heroFaceImg");
+    if (face) {
+      const src = HERO_IMG(moodFor(expressive)[0]);
+      if (!String(face.src).endsWith(src)) face.src = src;
+    }
   }
 
   function renderReadout(data) {
@@ -546,11 +564,12 @@
       const view = e.target.closest?.("[data-view-mode]");
       if (view) { setView(view.dataset.viewMode); return; }
 
-      /* Las pills de timeframe del hero. script.js ya las escucha
-         para sus propias metricas; este listener solo anade que la
-         curva de detras cambie de ventana con ellas. No se detiene
-         la propagacion: los dos hacen su parte del mismo click. */
-      const tf = e.target.closest?.("[data-timeframe]");
+      /* SOLO las pills del hero (#heroTimeframes). La primera
+         version escuchaba cualquier [data-timeframe] del documento,
+         y el grafico de monedas usa el mismo atributo: cambiar BTC
+         a 1H movia tambien la curva del heroe. Mismo click, dos
+         modulos que no tienen nada que ver. */
+      const tf = e.target.closest?.("#heroTimeframes [data-timeframe]");
       if (tf && TF[tf.dataset.timeframe]) setRange(tf.dataset.timeframe);
     });
 
