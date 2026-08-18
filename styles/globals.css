@@ -742,7 +742,8 @@ body[data-mood="euphoria"]    .wojak-stage::after { background: radial-gradient(
   filter:
     saturate(calc(1 - var(--wm-fatigue, 0) * 0.35))
     brightness(calc(1 - var(--wm-fatigue, 0) * 0.1));
-  transition: rotate 1.4s var(--ease), filter 1.4s var(--ease);
+  transition: rotate 1.4s var(--ease), filter 1.4s var(--ease),
+              opacity .5s var(--ease);
 }
 
 .hero-face-img,
@@ -9417,4 +9418,188 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
   .wm-transition .hero-face-img,
   .wm-transition .hero-face-overlay { animation: none; }
+}
+
+/* -----------------------------------------------------------
+   60 · HÉROE + HISTÓRICO INTEGRADOS
+
+   La curva vive detrás del personaje, en el mismo escenario, y se
+   puede recorrer arrastrando. Tres modos gobernados por
+   data-view en el escenario, que escribe public/hero-rig.js.
+   ----------------------------------------------------------- */
+
+.hero-history {
+  position: absolute;
+  inset: 6% 4% 14%;
+  width: 92%;
+  height: 80%;
+  z-index: 1;
+  /* touch-action none: sin esto, arrastrar sobre la curva en móvil
+     desplaza la página en vez de recorrer los días. */
+  touch-action: none;
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity .5s var(--ease);
+}
+
+#heroHistoryLine {
+  fill: none;
+  stroke: var(--bone);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: .55;
+  /* vector-effect: el SVG usa preserveAspectRatio none y se
+     estira; sin esto el trazo se deforma con él y engorda por un
+     lado. Es el mismo fallo que ya apareció con las velas. */
+  vector-effect: non-scaling-stroke;
+}
+
+#heroHistoryArea {
+  fill: url(#heroHistoryFill);
+  opacity: .18;
+  stroke: none;
+}
+
+#heroHistoryMid {
+  fill: none;
+  stroke: var(--line-hard);
+  stroke-width: 1;
+  stroke-dasharray: 3 6;
+  vector-effect: non-scaling-stroke;
+}
+
+#heroHistoryMarker {
+  opacity: 0;
+  transition: opacity .2s var(--ease);
+  stroke: var(--ink-000);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ---------- Los tres modos ---------- */
+
+/* Solo curva: el personaje se atenúa, no desaparece. Quitarlo del
+   todo deja un hueco enorme y el escenario pierde el sentido. */
+[data-view="chart"] .hero-history { opacity: 1; }
+[data-view="chart"] .hero-face-wrap { opacity: .12; filter: grayscale(1); }
+
+[data-view="both"] .hero-history { opacity: .55; }
+[data-view="both"] .hero-face-wrap { opacity: 1; }
+
+[data-view="hero"] .hero-history { opacity: 0; pointer-events: none; }
+[data-view="hero"] .hero-face-wrap { opacity: 1; }
+
+.hero-view-modes {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  margin-top: var(--sp-2);
+}
+
+.hero-view-modes button {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: var(--font-data);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  transition: background .2s var(--ease), color .2s var(--ease);
+}
+
+.hero-view-modes button:hover { color: var(--bone-dim); }
+
+.hero-view-modes button.active {
+  background: var(--bone);
+  color: var(--ink-000);
+  font-weight: 600;
+}
+
+/* ---------- Recorrer los días ---------- */
+
+/* La cara del día que se está mirando, en su propia capa. Así no
+   hay que sincronizar nada con la imagen que gestiona script.js:
+   al soltar, esta se desvanece y la de en vivo sigue ahí debajo,
+   intacta. */
+.hero-scrub-face {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(440px, 82%);
+  height: auto;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s var(--ease);
+}
+
+.wm-scrubbing .hero-scrub-face { opacity: 1; }
+
+/* Mientras se recorre, la cara en vivo se aparta: dos rostros
+   superpuestos a media opacidad no se leen ni como uno ni como
+   otro. */
+.wm-scrubbing .hero-face-wrap { opacity: 0; }
+
+/* Y la curva sube a primer plano, porque es lo que se está
+   manipulando. */
+.wm-scrubbing .hero-history { opacity: 1; }
+.wm-scrubbing #heroHistoryMarker { opacity: 1; }
+.wm-scrubbing #heroHistoryLine { opacity: .9; }
+
+/* Durante el recorrido, el rig no debe respirar ni temblar: el
+   estado que se muestra es de otro día y animarlo con los ejes de
+   hoy sería mentir. */
+.wm-scrubbing .hero-face-wrap,
+.wm-scrubbing .hero-scrub-face { animation: none; }
+
+.hero-scrub-readout {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  translate: -50% 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: rgba(4, 7, 11, .82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-family: var(--font-data);
+  font-size: .7rem;
+  color: var(--bone-dim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s var(--ease);
+}
+
+.wm-scrubbing .hero-scrub-readout { opacity: 1; }
+
+.hero-scrub-readout strong {
+  font-size: 1.05rem;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-scrub-readout span { text-transform: capitalize; }
+.hero-scrub-date { color: var(--bone-faint); text-transform: none !important; }
+
+@media (max-width: 640px) {
+  .hero-scrub-readout { font-size: .64rem; gap: 6px; padding: 4px 10px; }
+  .hero-view-modes button { padding: 4px 9px; font-size: .58rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-history,
+  .hero-scrub-face,
+  .hero-scrub-readout,
+  .hero-face-wrap { transition: none; }
 }
