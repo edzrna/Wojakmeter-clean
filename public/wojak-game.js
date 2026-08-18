@@ -69,6 +69,49 @@
                  falta, la casilla cae al icono en vez de quedarse
                  vacia. */
   const ART_PATH  = (key) => `/assets/game/er_icons_button_${key}.png`;
+
+  /* ---------------------------------------------------------
+     SPRITES DE REACCION
+
+     Una tira por emocion: 3200x400, ocho fotogramas de 400x400
+     en fila. Se reproduce al pulsar la casilla, de ida y vuelta
+     (0→7→0), porque el personaje se DISGREGA hacia el ultimo
+     fotograma: la vuelta lo recompone y el bucle cierra donde
+     empezo. Terminar en el 7 dejaria la casilla medio vacia.
+
+     La animacion es CSS con `steps()`: mover un
+     background-position ocho veces cuesta mucho menos que ocho
+     <img> o un canvas, y este juego ya tuvo problemas de
+     rendimiento en movil.
+     --------------------------------------------------------- */
+  /* WebP con respaldo a PNG.
+
+     Los siete sprites en PNG suman ~16 MB; en WebP de la misma
+     resolucion, ~3,7 MB. En un movil con datos moviles esa
+     diferencia decide si el juego arranca o no, asi que se pide
+     WebP primero y solo se cae a PNG si no existe.
+
+     La deteccion es una sola vez, por canvas: si el navegador
+     sabe EXPORTAR webp, sabe leerlo. */
+  let spriteExt = "png";
+  try {
+    const c = document.createElement("canvas");
+    c.width = c.height = 1;
+    if (c.toDataURL("image/webp").startsWith("data:image/webp")) spriteExt = "webp";
+  } catch {}
+
+  const SPRITE_PATH = (key) => `/assets/game/sprites/${key}_sprite.${spriteExt}`;
+  const SPRITE_FRAMES = 8;
+
+  /* Cada reproduccion se pone POR ENCIMA de la anterior: al
+     encadenar toques rapidos, la ultima reaccion es la que manda.
+     Un z-index fijo haria que la casilla de arriba a la izquierda
+     tapara siempre a las demas por orden del DOM. */
+  let spriteLayer = 0;
+
+  /* Emociones cuyo sprite no ha cargado. Se llena en la precarga
+     y evita reintentos por cada toque. */
+  const spriteMissing = new Set();
   const RANK_PATH = (key) => `/assets/game/er_icons_rank_${key}.png`;
   const ICON_PATH = (key) => `/assets/icons/classic/${key}.png`;
 
@@ -93,7 +136,61 @@
     /* Guarda por si Image no existe: la precarga es una mejora, no
        un requisito, y no puede tumbar la apertura del dialogo. */
     if (typeof Image !== "function") return;
-    MOODS.forEach((m) => { new Image().src = ART_PATH(m.key); });
+    MOODS.forEach((m) => {
+      new Image().src = ART_PATH(m.key);
+      /* Los sprites pesan mas que las caras planas: si se cargaran
+         al primer toque, la primera reaccion de cada emocion se
+         perderia. Se piden al abrir el dialogo, durante la cuenta
+         atras. */
+      /* La precarga es una MEJORA, no un requisito: si algo aqui
+         lanza, se lleva por delante la apertura del dialogo. Por
+         eso va en su propio try y usa onerror en vez de
+         addEventListener, que no todos los objetos Image
+         implementan. */
+      try {
+        const sp = new Image();
+        /* Se anota la que falta y no se vuelve a intentar: sin
+           esto, cada toque dispararia otra peticion fallida. */
+        sp.onerror = () => spriteMissing.add(m.key);
+        sp.src = SPRITE_PATH(m.key);
+      } catch {}
+    });
+  }
+
+  /* ---------------------------------------------------------
+     REPRODUCIR EL SPRITE
+
+     Se reinicia siempre desde cero aunque ya estuviera corriendo:
+     en una racha rapida se pulsa la misma casilla dos veces en
+     medio segundo, y sin reinicio la segunda no se veria.
+     --------------------------------------------------------- */
+  function playSprite(cell, key) {
+    const fx = cell.querySelector(".rush-cell-fx");
+    if (!fx) return;
+
+    /* En modo bajo consumo no se anima. El juego ya baja las
+       particulas cuando detecta frames lentos; anadir siete
+       sprites encima seria justo lo contrario de lo que hace esa
+       deteccion. La casilla sigue marcandose. */
+    if (state.lowPower) return;
+
+    /* Si el sprite no existe todavia —no se han subido los siete—
+       la casilla se marca igual y no se pinta un hueco. La imagen
+       se comprueba una vez por emocion y se recuerda. */
+    if (spriteMissing.has(key)) return;
+
+    fx.style.backgroundImage = `url("${SPRITE_PATH(key)}")`;
+
+    /* La reproduccion anterior se corta y se reinicia. Sin quitar
+       la clase y forzar reflow, el navegador considera que la
+       animacion ya esta puesta y no la relanza. */
+    fx.classList.remove("playing");
+    void fx.offsetWidth;
+
+    /* Cada toque sube una capa: la reaccion mas reciente queda
+       siempre encima de las que sigan corriendo. */
+    cell.style.setProperty("--fx-layer", String(++spriteLayer));
+    fx.classList.add("playing");
   }
 
   function moodByScore(score) {
@@ -607,6 +704,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
       cell.classList.add(correct ? "rush-cell-right" : "rush-cell-wrong");
       /* Se limpia al empezar la ronda siguiente, no con un timer:
          un timer mas por toque es justo lo que sobra aqui. */
+      playSprite(cell, key);
     }
 
     if (correct) {
@@ -658,8 +756,15 @@ const ROUNDS_WITH_RANGE_HINT = 3;
       const hint = document.createElement("span");
       hint.className = "rush-cell-range-hint";
 
+      /* Capa del sprite: vacia hasta que se pulsa. Va por encima
+         de la ilustracion y por debajo del chip, para que el
+         nombre siga leyendose durante la reaccion. */
+      const fx = document.createElement("span");
+      fx.className = "rush-cell-fx";
+      fx.setAttribute("aria-hidden", "true");
+
       chip.append(name, hint);
-      btn.append(img, chip);
+      btn.append(img, fx, chip);
       frag.appendChild(btn);
     }
     el.grid.appendChild(frag);
@@ -737,9 +842,17 @@ const ROUNDS_WITH_RANGE_HINT = 3;
           img.src = nextSrc;
         }
 
-        const chip = cell.children[1];
-        chip.children[0].textContent = mood.name;
-        chip.children[1].textContent = `${mood.min}–${mood.max}`;
+        /* Por CLASE, no por posición.
+
+           Estaba como cell.children[1] y se rompió al insertar la
+           capa del sprite entre la ilustración y el chip: el índice
+           1 pasó a ser el sprite y la línea siguiente reventaba.
+           Buscar por clase sobrevive a que el marcado crezca. */
+        const chip = cell.querySelector(".rush-cell-chip");
+        if (chip) {
+          chip.children[0].textContent = mood.name;
+          chip.children[1].textContent = `${mood.min}–${mood.max}`;
+        }
       });
 
       /* Aviso una sola vez, cuando se van. Sin esto el jugador
