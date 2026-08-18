@@ -431,9 +431,9 @@ select { cursor: pointer; }
 .topbar-left { display: flex; align-items: center; }
 
 .logo-img {
-  height: 72px;
+  height: 84px;
   width: auto;
-  max-width: 380px;
+  max-width: 420px;
   object-fit: contain;
   transition: height 0.3s var(--ease);
 }
@@ -1611,6 +1611,14 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
 
 .chart-mini-stat strong { color: var(--bone); font-size: 0.82rem; }
 
+/* El precio manda tambien en escritorio: es la cifra por la que
+   se abre la tarjeta, y estaba al mismo peso que el volumen. */
+.chart-mini-stat:first-child strong {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .chart-toolbar {
   display: flex;
   flex-direction: column;
@@ -1664,17 +1672,6 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
   overflow: hidden;
 }
 
-.chart-time-label {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  z-index: 2;
-  font-family: var(--font-data);
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bone-faint);
-}
 
 #coinChartSvg { width: 100%; height: 100%; }
 
@@ -3789,18 +3786,6 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   cursor: grabbing;
 }
 
-.chart-time-label {
-  position: absolute;
-  top: 10px;
-  right: 70px;
-  z-index: 3;
-  font-family: var(--font-data);
-  font-size: 0.58rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--bone-faint);
-  pointer-events: none;
-}
 
 /* -----------------------------------------------------------
    RETÍCULA Y EJES
@@ -4660,7 +4645,7 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   align-items: center;
   gap: 6px;
   margin-left: var(--sp-1);
-  padding: 6px 12px;
+  padding: 7px 14px;
   border: 1px solid var(--line-hard);
   background: var(--ink-300);
   color: var(--bone);
@@ -4668,7 +4653,10 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 }
 
 .wm-desktop-nav .wm-nav-mood img {
-  height: 13px;
+  /* 20px y no 13: el boton quedo solo con el logotipo (el texto
+     MOOD al lado lo repetia), asi que el logo ES el boton y tiene
+     que leerse como tal. */
+  height: 20px;
   width: auto;
   object-fit: contain;
 }
@@ -5459,19 +5447,34 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   .chart-coin-title-line h3 { font-size: 0.92rem; }
   .chart-coin-title-line .muted { font-size: 0.62rem; }
 
-  /* Las tres cifras en una sola fila desplazable en vez de tres
-     líneas apiladas. */
+  /* Antes: una fila desplazable con la barra oculta. En un
+     telefono estrecho "MARKET CAP" quedaba cortado a "MARKET CAF"
+     y nada indicaba que se podia deslizar — un scroll invisible
+     es un corte, no un scroll.
+
+     Ahora: rejilla. El precio ocupa la primera fila entera — es
+     la cifra por la que se abre la tarjeta — y volumen y market
+     cap comparten la segunda. Nada se corta a ningun ancho. */
   .chart-coin-stats {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: var(--sp-3);
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-1) var(--sp-3);
   }
 
-  .chart-coin-stats::-webkit-scrollbar { display: none; }
+  .chart-mini-stat:first-child {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
 
-  .chart-mini-stat { flex-shrink: 0; }
+  .chart-mini-stat:first-child strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
   .chart-mini-stat span { font-size: 0.55rem; }
   .chart-mini-stat strong { font-size: 0.74rem; }
 
@@ -8397,15 +8400,19 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   gap: 7px;
   margin-left: var(--sp-1);
   padding: 6px 12px;
-  border: 1px solid var(--pos-hard);
-  color: var(--pos-hard);
+  /* Naranja oficial del juego, no el verde del mercado: el verde
+     significa "sube" en toda la pagina y el boton del juego no es
+     un dato. */
+  border: 1px solid #E9A733;
+  color: #E9A733;
   font-weight: 600;
   border-radius: var(--r-pill);
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
 
 .wm-desktop-nav .wm-nav-play:hover {
-  background: var(--pos-hard);
+  background: linear-gradient(180deg, #F7CE5B, #C8801C);
+  border-color: #C8801C;
   color: var(--ink-000);
 }
 
@@ -9654,3 +9661,33 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 }
 
 [data-view="hero"] .hero-range-tag { opacity: 0; }
+
+/* -----------------------------------------------------------
+   61 · PULIDO DE CABECERA Y NAV
+   ----------------------------------------------------------- */
+
+/* Cinturón: si algún flujo recrea la etiqueta del timeframe del
+   gráfico (retirada del marcado), no se ve. La pill activa ya
+   dice la ventana. */
+.chart-time-label { display: none !important; }
+
+/* Logo EXACTAMENTE centrado en móvil. Centrado geométrico
+   respecto a la pantalla, no al hueco que deja la hamburguesa:
+   con flex quedaba unos píxeles a la derecha del centro real. */
+@media (max-width: 900px) {
+  .wm-topbar-inner,
+  .wm-topbar { position: relative; }
+
+  .wm-brand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    margin: 0;
+  }
+
+  .logo-img { height: 64px; max-width: min(320px, 62vw); }
+}
+
+
+.wm-mobile-menu .wm-mobile-play { color: #E9A733; }
