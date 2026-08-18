@@ -2898,9 +2898,23 @@ async function loadCoinDetails() {
     if (isStaleRequest("coin", token)) return;
     if (requestedSymbol !== activeCoinSymbol || requestedTf !== chartTimeframe) return;
 
+    /* BUG QUE ARREGLA — las horas del eje X se repetian.
+
+       Este .map se quedaba SOLO con el precio (e[1]) y tiraba la
+       marca de tiempo (e[0]). drawChart sabe leer pares
+       [ts, precio], pero al recibir numeros sueltos caia en su
+       rama de respaldo `Number(p?.ts ?? p?.[0] ?? Date.now())`:
+       sin ts, TODOS los puntos quedaban fechados AHORA.
+
+       Por eso el eje mostraba la misma hora tres veces ("07:15,
+       07:15") en 24H y "18 Aug, 18 Aug" en 7D: no eran fechas del
+       dato, era la hora de abrir la pagina repetida.
+
+       Ahora se conserva el par entero. drawChart normaliza. */
     const prices = (Array.isArray(chartRes?.prices) ? chartRes.prices : [])
-      .map((e) => Array.isArray(e) ? Number(e[1]) : Number(e))
-      .filter((n) => Number.isFinite(n));
+      .filter((e) => Array.isArray(e)
+        ? Number.isFinite(Number(e[1]))
+        : Number.isFinite(Number(e)));
 
     drawChart({
       prices,
