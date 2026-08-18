@@ -507,6 +507,19 @@
       const src = HERO_IMG(moodFor(expressive)[0]);
       if (!String(face.src).endsWith(src)) face.src = src;
     }
+
+    /* Y EL OVERLAY DE SUBEMOCION, FUERA.
+
+       Bug de captura: craneo verde con cara neutra. script.js pone
+       su base y ENCIMA un overlay de subemocion coherentes entre
+       si; el rig cambiaba solo la base y el overlay del sistema
+       viejo se quedaba pintado — dos emociones mezcladas en una
+       cara. Mientras el indice mande, el overlay no juega. */
+    const overlay = $("heroFaceOverlayImg");
+    if (overlay && overlay.style.display !== "none") {
+      overlay.style.display = "none";
+      overlay.classList.add("hidden");
+    }
   }
 
   function renderReadout(data) {
