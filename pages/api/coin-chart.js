@@ -3,28 +3,36 @@ import { cachedJson, cgHeaders, cgUrl, fetchJsonWithRetry } from "../../lib/data
 /* ===========================================================
    COIN CHART
 
-   ARREGLADO (v2):
+   ARREGLADO (v3) — dos fallos que se veían en pantalla:
 
-   1. El mapeo de timeframes estaba cruzado. Antes:
-        "24h" → 30 días
-        "7d"  → 90 días
-        "30d" → no existía el case → default → 1 día
-      O sea que "30d" mostraba MENOS datos que "24h" y ningún
-      botón dibujaba lo que decía.
+   A) "30D era igual que 7D."
+      El recorte se hacía por NÚMERO DE PUNTOS, no por tiempo,
+      y el número estaba calculado suponiendo una granularidad
+      que CoinGecko no usa. Para days=30 devuelve datos HORARIOS
+      (~720 puntos); quedarse con los últimos 180 son las últimas
+      180 horas = 7,5 días. Casi la misma ventana que 7D, con la
+      misma forma. El mapeo de días estaba bien: lo que mentía
+      era el slice.
 
-   2. Ahora devuelve OHLC real. Antes solo mandaba `prices`
-      (línea), y el frontend fabricaba velas falsas usando el
-      punto anterior como open y los vecinos como high/low.
-      Eso no es OHLC: cualquier trader lo detecta.
+   B) "1H y 4H salían vacíos."
+      Dos causas sumadas. La primera, el mismo error de conteo:
+      24 puntos de 5 minutos son 2 horas, no 1. La segunda y la
+      que de verdad los vaciaba: 1h, 4h y 24h piden EXACTAMENTE
+      lo mismo a CoinGecko (days=1) pero cada uno tenía su propia
+      clave de caché, así que recorrer las cinco pestañas
+      disparaba diez llamadas en pocos segundos. En el plan demo
+      eso es un 429, los reintentos se agotan y la respuesta llega
+      vacía — sin error visible, solo un rectángulo negro.
 
-   3. El parámetro `interval` se ha quitado. CoinGecko solo lo
-      acepta en planes de pago; en el plan demo devuelve 401 y
-      hacía que el retry gastara los tres intentos para nada.
-      Sin él, CoinGecko elige la granularidad por sí mismo.
+   LA REGLA NUEVA:
+   se pide por DÍAS y se cachea por DÍAS; el timeframe solo
+   decide cuánto tiempo se recorta al final. Así 1h/4h/24h
+   comparten una sola llamada y un solo hueco de caché, y el
+   recorte se hace en milisegundos reales en vez de contar
+   puntos a ciegas.
    =========================================================== */
 
-/* Mapa timeframe → días. Cada valor es el rango que el usuario
-   espera ver cuando pulsa ese botón. */
+/* Mapa timeframe → días que se le piden a CoinGecko. */
 const TIMEFRAME_DAYS = {
   "1h":  1,
   "4h":  1,
@@ -33,52 +41,79 @@ const TIMEFRAME_DAYS = {
   "30d": 30
 };
 
-/* CoinGecko solo acepta ciertos valores en /ohlc:
-   1, 7, 14, 30, 90, 180, 365. Y la granularidad de la vela la
-   fija él según el rango:
-     1 día    → velas de 30 min
-     7-30 días→ velas de 4 horas
-     >30 días → velas diarias */
-const TIMEFRAME_OHLC_DAYS = {
-  "1h":  1,
-  "4h":  1,
-  "24h": 1,
-  "7d":  7,
-  "30d": 30
+/* Cuánto tiempo se conserva, en milisegundos. Esto es lo que el
+   usuario espera ver al pulsar el botón, y ahora se recorta por
+   RELOJ, no por número de puntos: da igual que CoinGecko cambie
+   la granularidad, la ventana sigue siendo la correcta. */
+const HOUR = 3600 * 1000;
+const TIMEFRAME_WINDOW_MS = {
+  "1h":  1  * HOUR,
+  "4h":  4  * HOUR,
+  "24h": 24 * HOUR,
+  "7d":  7  * 24 * HOUR,
+  "30d": 30 * 24 * HOUR
 };
 
-/* Cuántas velas conservar por timeframe. CoinGecko devuelve el
-   rango completo; para "1h" queremos las últimas horas, no el
-   día entero. Recortamos por el final. */
-const TIMEFRAME_CANDLE_LIMIT = {
-  "1h":  12,   // 12 velas de 30 min = 6 h de contexto
-  "4h":  24,   // 12 h
-  "24h": 48,   // el día completo
-  "7d":  42,   // 7 días en velas de 4 h
-  "30d": 30    // 30 velas diarias
-};
+/* Techo de puntos por serie, solo para no mandar 720 puntos al
+   móvil cuando 300 se ven igual. Se aplica DESPUÉS del recorte
+   temporal y submuestreando de forma uniforme, así que nunca
+   acorta la ventana: solo la dibuja con menos densidad. */
+const MAX_POINTS = 320;
 
 function normalizeTimeframe(tf) {
   const clean = String(tf || "24h");
   return TIMEFRAME_DAYS[clean] ? clean : "24h";
 }
 
+/* Recorta una serie de pares [ts, valor] a la ventana pedida,
+   contando hacia atrás desde el ÚLTIMO punto del dato (no desde
+   Date.now(): si el proveedor va con retraso, contar desde ahora
+   dejaría la ventana medio vacía). */
+function sliceByTime(rows, windowMs, tsOf) {
+  const valid = (Array.isArray(rows) ? rows : [])
+    .filter((r) => Number.isFinite(Number(tsOf(r))));
+
+  if (!valid.length) return [];
+
+  const last = Number(tsOf(valid[valid.length - 1]));
+  const cutoff = last - windowMs;
+
+  const kept = valid.filter((r) => Number(tsOf(r)) >= cutoff);
+
+  /* Si la ventana pedida es más corta que la separación entre
+     puntos, quedarían 0 o 1: se devuelven los dos últimos para
+     que el gráfico tenga algo que dibujar en vez de un lienzo
+     negro. Un tramo corto es información; el vacío no. */
+  return kept.length >= 2 ? kept : valid.slice(-2);
+}
+
+/* Submuestreo uniforme conservando SIEMPRE el primero y el
+   último: son los que fijan la performance del periodo, y
+   perderlos cambiaría el porcentaje que se muestra al lado. */
+function downsample(rows, max) {
+  if (rows.length <= max) return rows;
+  const step = (rows.length - 1) / (max - 1);
+  const out = [];
+  for (let i = 0; i < max; i++) out.push(rows[Math.round(i * step)]);
+  out[out.length - 1] = rows[rows.length - 1];
+  return out;
+}
+
 export default async function handler(req, res) {
   const coin = String(req.query.coin || "bitcoin");
   const timeframe = normalizeTimeframe(req.query.timeframe);
 
-  const days     = TIMEFRAME_DAYS[timeframe];
-  const ohlcDays = TIMEFRAME_OHLC_DAYS[timeframe];
-  const limit    = TIMEFRAME_CANDLE_LIMIT[timeframe];
+  const days = TIMEFRAME_DAYS[timeframe];
+  const windowMs = TIMEFRAME_WINDOW_MS[timeframe];
 
   try {
-    /* Las dos peticiones van en paralelo y cada una tiene su
-       propia clave de caché, así que compartir el chart entre
-       usuarios sigue funcionando. Si OHLC falla, la línea
-       sobrevive: son independientes a propósito. */
+    /* CLAVE DE CACHÉ POR DÍAS, no por timeframe: 1h, 4h y 24h
+       piden lo mismo, así que comparten una sola llamada. Eso
+       corta a la mitad las peticiones al recorrer las pestañas,
+       que era lo que disparaba el 429. */
     const [lineResult, ohlcResult] = await Promise.allSettled([
       cachedJson(
-        `coin-chart:${coin}:${timeframe}`,
+        `coin-chart:${coin}:d${days}`,
         () => fetchJsonWithRetry(
           cgUrl(`/coins/${encodeURIComponent(coin)}/market_chart`, {
             vs_currency: "usd",
@@ -90,11 +125,11 @@ export default async function handler(req, res) {
       ),
 
       cachedJson(
-        `coin-ohlc:${coin}:${timeframe}`,
+        `coin-ohlc:${coin}:d${days}`,
         () => fetchJsonWithRetry(
           cgUrl(`/coins/${encodeURIComponent(coin)}/ohlc`, {
             vs_currency: "usd",
-            days: ohlcDays
+            days
           }),
           { headers: cgHeaders(), timeoutMs: 7000, retries: 2 }
         ),
@@ -107,10 +142,10 @@ export default async function handler(req, res) {
       ? (lineResult.value?.data?.prices || [])
       : [];
 
-    /* market_chart con days=1 devuelve ~288 puntos de 5 min.
-       Para "1h" y "4h" queremos solo el tramo final. */
-    const lineLimit = { "1h": 24, "4h": 60, "24h": 288, "7d": 168, "30d": 180 }[timeframe];
-    const prices = rawPrices.slice(-lineLimit);
+    const prices = downsample(
+      sliceByTime(rawPrices, windowMs, (r) => r?.[0]),
+      MAX_POINTS
+    );
 
     // --- Velas ---
     /* CoinGecko devuelve arrays [ts, open, high, low, close].
@@ -120,9 +155,13 @@ export default async function handler(req, res) {
       ? (ohlcResult.value?.data || [])
       : [];
 
-    const candles = (Array.isArray(rawOhlc) ? rawOhlc : [])
-      .filter((c) => Array.isArray(c) && c.length >= 5)
-      .slice(-limit)
+    const candles = sliceByTime(
+      (Array.isArray(rawOhlc) ? rawOhlc : []).filter(
+        (c) => Array.isArray(c) && c.length >= 5
+      ),
+      windowMs,
+      (c) => c?.[0]
+    )
       .map(([ts, open, high, low, close]) => ({
         ts:    Number(ts),
         open:  Number(open),
@@ -141,12 +180,23 @@ export default async function handler(req, res) {
       ok: true,
       timeframe,
       days,
+
       prices,
       candles,
+
       /* El frontend necesita saber si las velas son reales para
          decidir si ofrece el modo candle o lo desactiva. Nunca
          debe dibujar velas inventadas. */
       hasCandles: candles.length >= 2,
+
+      /* Los extremos reales de lo que se está mandando. Sirven
+         para verificar de un vistazo —en la pestaña de red— que
+         30D trae de verdad 30 días, que es justo lo que este
+         arreglo corrige. */
+      from: prices.length ? Number(prices[0][0]) : null,
+      to:   prices.length ? Number(prices[prices.length - 1][0]) : null,
+      points: prices.length,
+
       stale: Boolean(lineResult.value?.stale)
     });
   } catch (error) {
