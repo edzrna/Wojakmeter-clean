@@ -9699,3 +9699,7 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 
 .wm-mobile-menu .wm-mobile-play { color: #E9A733; }
+
+/* El movimiento de la ventana, con el color del sentido. */
+.hero-range-tag[data-dir="up"]   { color: var(--pos, #3BD97A); }
+.hero-range-tag[data-dir="down"] { color: var(--neg, #E4485C); }
