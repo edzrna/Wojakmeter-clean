@@ -188,9 +188,11 @@ export default function Home({ ogImageUrl }) {
 
                 {/* MOOD al final y destacado: es el token del
                     proyecto, no una sección más de la lista. */}
-                <a href="#moodSection" className="wm-nav-mood">
-                  <img src="/moodlogo.png" alt="" />
-                  <span>MOOD</span>
+                {/* Solo el logo: el logotipo ya dice MOOD, y el texto
+                    al lado lo repetía. El aria-label mantiene el nombre
+                    para lectores de pantalla. */}
+                <a href="#moodSection" className="wm-nav-mood" aria-label="MOOD token">
+                  <img src="/moodlogo.png" alt="MOOD" />
                 </a>
               </nav>
 
@@ -891,11 +893,11 @@ export default function Home({ ogImageUrl }) {
                   {/* Sin preserveAspectRatio: el viewBox lo fija el JS con
                       el tamaño real en píxeles. Ese atributo era lo que
                       estiraba el lienzo y achataba las velas. */}
+                  {/* La etiqueta chartTimeLabel se retiró: repetía el
+                      timeframe que ya marca la pill activa de arriba.
+                      script.js le sigue escribiendo via setText, que
+                      tiene guard de nulo y pasa de largo. */}
                   <div className="chart-plot" id="chartPlot">
-                    <div className="chart-time-label" id="chartTimeLabel">
-                      24h &middot; drag to pan, scroll to zoom
-                    </div>
-
                     <svg id="coinChartSvg" viewBox="0 0 900 340">
                       {/* El orden define el apilado. */}
                       <g className="chart-grid" id="chartGrid"></g>
