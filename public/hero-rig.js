@@ -48,6 +48,21 @@
   const PROFILE_KEY = "wmHeroProfile";
   const VIEW_KEY = "wmHeroView";
 
+  /* Las pills del hero mandan sobre la curva de detras.
+
+     El endpoint /api/history solo tiene 24h/7d/30d/90d, asi que
+     1h y 4h se sirven pidiendo 24h y recortando en el cliente por
+     tiempo real: con el cron de 15 minutos, 1h son ~4 lecturas y
+     4h son ~16. Pocas, pero son las que hay — inventar una curva
+     mas suave seria dibujar datos que no existen. */
+  const TF = {
+    "1h":  { fetch: "24h", keepMs: 3600e3,      label: "1H"  },
+    "4h":  { fetch: "24h", keepMs: 4 * 3600e3,  label: "4H"  },
+    "24h": { fetch: "24h", keepMs: null,        label: "24H" },
+    "7d":  { fetch: "7d",  keepMs: null,        label: "7D"  },
+    "30d": { fetch: "30d", keepMs: null,        label: "30D" }
+  };
+
   const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
 
   /* Frases por emoción. Las escribe el rig porque ahora es él
@@ -84,6 +99,7 @@
 
     /* Vista integrada */
     view: "both",
+    range: "24h",
     history: [],
     scrubbing: false,
     scrubIndex: null
@@ -244,14 +260,36 @@
   }
 
   async function loadHistory() {
+    const tf = TF[state.range] || TF["24h"];
     try {
-      const res = await fetch("/api/history?range=30d", { headers: { accept: "application/json" } });
+      const res = await fetch(`/api/history?range=${tf.fetch}`,
+        { headers: { accept: "application/json" } });
       const data = await res.json();
-      if (!data?.ok || !Array.isArray(data.series) || data.series.length < 4) return;
+      if (!data?.ok || !Array.isArray(data.series) || data.series.length < 2) return;
 
       state.history = data.series;
       drawHistory();
+
+      const tag = $("heroRangeTag");
+      if (tag) tag.textContent = `EMOTION · ${tf.label}`;
     } catch {}
+  }
+
+  /* La MISMA serie recortada para dibujar y para recorrer: si el
+     dibujo y el scrub recortaran cada uno por su lado, el dedo
+     apuntaria a un dia y la pastilla mostraria otro. */
+  function visibleSeries() {
+    const tf = TF[state.range] || TF["24h"];
+    if (!tf.keepMs) return state.history.slice(-90);
+
+    const last = Number(new Date(state.history[state.history.length - 1]?.ts || Date.now()));
+    return state.history.filter((p) => last - Number(new Date(p.ts)) <= tf.keepMs);
+  }
+
+  function setRange(range) {
+    if (!TF[range] || state.range === range) return;
+    state.range = range;
+    loadHistory();
   }
 
   /* Escala FIJA de 0 a 100, no autoescalada al rango.
@@ -266,7 +304,8 @@
     if (!path || !area || state.history.length < 4) return;
 
     const W = 900, H = 280, PAD = 26;
-    const pts = state.history.slice(-90);
+    const pts = visibleSeries();
+    if (pts.length < 2) return;
 
     const xy = pts.map((p, i) => [
       (i / (pts.length - 1)) * W,
@@ -301,7 +340,7 @@
     const rect = svg.getBoundingClientRect();
     const t = clamp((clientX - rect.left) / rect.width, 0, 1);
 
-    const pts = state.history.slice(-90);
+    const pts = visibleSeries();
     const i = Math.round(t * (pts.length - 1));
     const p = pts[i];
     if (!p) return;
@@ -505,7 +544,14 @@
       if (prof) { setProfile(prof.dataset.profile); return; }
 
       const view = e.target.closest?.("[data-view-mode]");
-      if (view) setView(view.dataset.viewMode);
+      if (view) { setView(view.dataset.viewMode); return; }
+
+      /* Las pills de timeframe del hero. script.js ya las escucha
+         para sus propias metricas; este listener solo anade que la
+         curva de detras cambie de ventana con ellas. No se detiene
+         la propagacion: los dos hacen su parte del mismo click. */
+      const tf = e.target.closest?.("[data-timeframe]");
+      if (tf && TF[tf.dataset.timeframe]) setRange(tf.dataset.timeframe);
     });
 
     /* Recorrer los días. pointer* cubre ratón, dedo y lápiz con un
