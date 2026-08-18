@@ -9484,7 +9484,23 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 [data-view="chart"] .hero-history { opacity: 1; }
 [data-view="chart"] .hero-face-wrap { opacity: .12; filter: grayscale(1); }
 
-[data-view="both"] .hero-history { opacity: .55; }
+/* En modo Both, la curva se APARTA DE LA CARA.
+
+   Sin esto, la línea cruza el rostro justo a la altura de los ojos
+   y las dos cosas se estropean: ni se lee la curva ni se lee la
+   expresión. La máscara la desvanece en el centro, así que pasa
+   por detrás de la cabeza en vez de por encima.
+
+   El agujero es elíptico y alto, con el borde difuminado: un corte
+   duro se vería como un recorte. */
+[data-view="both"] .hero-history {
+  opacity: .55;
+  mask-image: radial-gradient(ellipse 26% 62% at 50% 42%,
+    transparent 40%, #000 78%);
+  -webkit-mask-image: radial-gradient(ellipse 26% 62% at 50% 42%,
+    transparent 40%, #000 78%);
+}
+
 [data-view="both"] .hero-face-wrap { opacity: 1; }
 
 [data-view="hero"] .hero-history { opacity: 0; pointer-events: none; }
@@ -9602,4 +9618,22 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   .hero-scrub-face,
   .hero-scrub-readout,
   .hero-face-wrap { transition: none; }
+}
+
+/* El heroTimelineBackdrop de script.js queda apagado de forma
+   permanente en cuanto el índice nuevo está vivo: dibujaba una
+   segunda curva encima de esta, con otra escala y otro color, y
+   en modo Hero seguía visible porque los modos solo gobernaban
+   la mía. Lo apaga public/hero-rig.js; esto es el cinturón. */
+[data-view] .hero-timeline-backdrop { display: none; }
+
+/* La lente, cuando lee el índice distinto al canónico. El número
+   grande sigue siendo el índice; esto solo dice cuánto lo desvía
+   el perfil, para que la diferencia sea explícita en vez de
+   confundirse con el dato. */
+.hero-index-shift {
+  color: var(--bone-faint);
+  font-size: .66rem;
+  border-left: 1px solid var(--line);
+  padding-left: 8px;
 }
