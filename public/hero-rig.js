@@ -50,6 +50,19 @@
 
   const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
 
+  /* Frases por emoción. Las escribe el rig porque ahora es él
+     quien manda en la lectura: si las dejara a script.js, el
+     subtítulo describiría un score distinto al que se ve. */
+  const BLURB = {
+    frustration: "Capitulation. Everything is red and nobody is buying.",
+    concern:     "Nervous. Sellers have the upper hand.",
+    doubt:       "Hesitant. The move has no conviction behind it.",
+    neutral:     "Traders are watching without strong conviction.",
+    optimism:    "Positive sentiment is forming.",
+    content:     "Comfortable. The trend has support underneath it.",
+    euphoria:    "Everyone is a genius. Historically, that is the risk."
+  };
+
   const MOODS = [
     ["frustration", 0, 19, "#E4485C"], ["concern", 20, 34, "#E8848F"],
     ["doubt", 35, 44, "#E8B4BA"],      ["neutral", 45, 59, "#B8C0CB"],
@@ -191,6 +204,7 @@
     }
 
     if (moved) writeAxes();
+    enforceCanonical();
     state.rafId = requestAnimationFrame(tick);
   }
 
@@ -357,6 +371,12 @@
       stage()?.classList.remove("wm-rig-idle");
 
       state.score = data.score;
+
+      /* El gráfico viejo de script.js se apaga en cuanto el índice
+         nuevo está vivo: hasta ahora se dibujaban los dos, uno
+         encima del otro, y en modo Hero seguía apareciendo el
+         suyo porque mi CSS solo apagaba el mío. */
+      $("heroTimelineBackdrop")?.classList.add("hidden");
       state.mood = data.mood;
       state.expressive = data.expressive;
 
@@ -392,16 +412,62 @@
   /* El numero canonico SIEMPRE visible junto a la lente. En cuanto
      se pueda confundir cual es el dato real, el indice deja de ser
      una medicion. */
+  /* ---------------------------------------------------------
+     UN SOLO NUMERO EN PANTALLA
+
+     PROBLEMA QUE ARREGLA:
+     el titulo grande y el "SCORE: 52" los escribe script.js con la
+     formula vieja, que ademas cambia con la pill de timeframe. El
+     indice nuevo salia debajo como "INDEX 76". Dos numeros y dos
+     emociones contradiciendose en la misma pantalla, y el visitante
+     sin forma de saber cual es el dato.
+
+     El indice canonico es UNO. Asi que en cuanto existe, manda: el
+     rig reescribe el titulo, el subtitulo y el score.
+
+     Se reaplica en cada frame porque script.js los reescribe en
+     cada una de sus actualizaciones y no hay forma de pedirle que
+     no lo haga sin tocar sus 7.000 lineas. La comprobacion es una
+     lectura de textContent: si ya coincide, no se toca el DOM.
+     --------------------------------------------------------- */
+  function enforceCanonical() {
+    if (state.score === null || state.scrubbing) return;
+
+    const mood = moodFor(state.score);
+    const label = mood[0][0].toUpperCase() + mood[0].slice(1);
+
+    const title = $("heroMood");
+    if (title && title.textContent !== label) {
+      title.textContent = label;
+      title.className = `hero-mood mood-${mood[0]}`;
+    }
+
+    const sub = $("heroSubtitle");
+    const text = BLURB[mood[0]];
+    if (sub && text && sub.textContent.trim() !== text) sub.textContent = text;
+
+    const num = $("heroScore");
+    if (num && num.textContent !== String(state.score)) {
+      num.textContent = String(state.score);
+    }
+  }
+
   function renderReadout(data) {
     const el = $("heroIndexReadout");
     if (!el) return;
 
     const conf = Number(data.confidence || 0);
+    /* Ya no repite el número: ahora el grande de arriba ES el
+       índice. Aquí solo se dice con qué lente se está mirando y,
+       si la lente cambia la lectura, cuánto la cambia. */
+    const lens = Number(data.expressive);
+    const shift = Number.isFinite(lens) && lens !== data.score
+      ? `<span class="hero-index-shift">reads it as ${lens}</span>` : "";
+
     el.innerHTML = `
-      <span class="hero-index-label">Index</span>
-      <strong class="hero-index-value">${data.score}</strong>
-      <span class="hero-index-sep">·</span>
-      <span class="hero-index-lens">seen by ${escapeHtml(data.profile?.name || "")}</span>
+      <span class="hero-index-label">Lens</span>
+      <span class="hero-index-lens">${escapeHtml(data.profile?.name || "")}</span>
+      ${shift}
       ${conf < 0.8 ? `<span class="hero-index-conf"
         title="Señales medidas: ${Math.round(conf * 100)}% del peso total"
         >${Math.round(conf * 100)}%</span>` : ""}`;
