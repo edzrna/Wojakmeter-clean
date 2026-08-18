@@ -189,7 +189,13 @@
 
     /* Cada toque sube una capa: la reaccion mas reciente queda
        siempre encima de las que sigan corriendo. */
-    cell.style.setProperty("--fx-layer", String(++spriteLayer));
+    /* El contador se recicla en vez de crecer sin fin: en una
+       partida larga llegaria a cientos y superaria el z-index del
+       chip, que es lo que tapaba el nombre de la casilla. 90 es
+       techo de sobra — nunca hay mas de nueve reacciones vivas a
+       la vez. */
+    spriteLayer = (spriteLayer % 90) + 1;
+    cell.style.setProperty("--fx-layer", String(spriteLayer));
     fx.classList.add("playing");
   }
 
