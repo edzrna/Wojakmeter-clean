@@ -9675,8 +9675,12 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
    respecto a la pantalla, no al hueco que deja la hamburguesa:
    con flex quedaba unos píxeles a la derecha del centro real. */
 @media (max-width: 900px) {
-  .wm-topbar-inner,
-  .wm-topbar { position: relative; }
+  /* El ancestro posicionado tiene que ser LA FILA DEL LOGO
+     (.wm-header-top), no el header entero. La primera version
+     apuntaba a .wm-topbar — una clase que no existe — asi que el
+     absoluto subia hasta el header completo y el logo caia
+     centrado sobre la fila de metricas, tapandola. */
+  .wm-header-top { position: relative; }
 
   .wm-brand {
     position: absolute;
@@ -9684,7 +9688,11 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
     top: 50%;
     translate: -50% -50%;
     margin: 0;
+    /* El centrado no debe robarle el tap a la hamburguesa. */
+    pointer-events: none;
   }
+
+  .wm-brand img, .wm-brand span { pointer-events: auto; }
 
   .logo-img { height: 64px; max-width: min(320px, 62vw); }
 }
