@@ -750,23 +750,32 @@
   function enforceCanonical() {
     if (state.score === null || state.scrubbing) return;
 
-    /* EL NUMERO ES EL INDICE CANONICO. Punto.
+    /* LA VENTANA MANDA — Y AHORA SÍ SE PUEDE.
 
-       Estuvo un tiempo mostrando la MEDIA de la ventana elegida,
-       para que las pills movieran también al personaje. En
-       produccion eso resulto ser un error grave: el resto de la
-       pagina —el gauge, la barra superior, el marcador de indice—
-       sigue mostrando el indice del momento, asi que el titulo
-       decia "Neutral 56" mientras el gauge decia "80 Content" tres
-       centimetros mas abajo. Cuatro cifras distintas en la misma
-       pantalla.
+       Este numero ha ido y vuelto dos veces, y merece la pena
+       dejar escrito por que:
 
-       El heroe no puede tener su propia verdad. La ventana se
-       expresa donde no compite con el dato: en la etiqueta del
-       grafico (EMOTION · 24H · ▲20) y en el subtitulo ("Index up
-       20 over 24H"), que dicen COMO SE LLEGO hasta aqui sin
-       inventar un segundo "aqui". */
-    const shown = state.score;
+       1. Al principio era el indice del momento. Las pills movian
+          el grafico pero no al personaje, y la seccion se partia
+          en dos mitades que no se hablaban.
+
+       2. Se cambio a la media de la ventana. Entonces el heroe
+          decia "Neutral 56" mientras el gauge decia "80 Content"
+          tres centimetros mas abajo: el resto de la pagina seguia
+          con el indice del momento, calculado ademas con la
+          formula vieja. Cuatro cifras distintas a la vez.
+
+       3. Ahora el rig gobierna TAMBIEN el gauge y la barra
+          superior. Al salir los tres de esta misma variable, la
+          ventana puede mandar sin producir contradiccion: cambiar
+          de pill mueve el personaje, el gauge y el indice a la
+          vez, porque son el mismo numero.
+
+       Lo que fallaba antes no era elegir la ventana: era que solo
+       una parte de la pagina se enteraba. */
+    const shown = Number.isFinite(state.windowScore)
+      ? state.windowScore
+      : state.score;
     const mood = moodFor(shown);
     const label = mood[0][0].toUpperCase() + mood[0].slice(1);
 
