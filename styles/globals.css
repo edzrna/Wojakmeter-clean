@@ -9740,20 +9740,42 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
      exactamente el alto de la casilla. */
   background-size: 800% 100%;
   background-position: 0% 0%;
+
+  /* MÓVIL: el sprite es una imagen de 3200px escalada a una
+     casilla de ~110px. Sin esto, algunos navegadores móviles
+     remuestrean en cada uno de los ocho pasos y el efecto va a
+     tirones; will-change reserva la capa una sola vez. */
+  will-change: background-position, opacity;
+  backface-visibility: hidden;
 }
 
-.rush-cell-fx.playing {
+/* ── DOS SENTIDOS ──
+   .out  la emoción que se va: 0 → 7, se rompe
+   .in   la que llega: 7 → 0, se recompone
+
+   Ya no es ida y vuelta sobre la misma imagen. Ahora el estallido
+   y la reconstrucción son DOS emociones distintas, encadenadas:
+   la que tocas se rompe y la que la sustituye se arma en su
+   sitio. */
+.rush-cell-fx.out.playing {
   opacity: 1;
-  /* alternate + 2 iteraciones = ida y vuelta exactas. Con
-     `infinite` quedaría latiendo bajo el dedo; con una sola
-     iteración se quedaría en el fotograma disgregado. */
   /* 0,26s por sentido = 0,52s de ida y vuelta.
 
      Estaba al doble y se comia el ritmo: en las rondas rapidas el
      reloj baja a 900 ms, asi que una reaccion de mas de un
      segundo seguia corriendo cuando ya habia que responder otra
      vez. Ahora cabe holgada dentro de la ronda mas corta. */
-  animation: rush-sprite 0.26s steps(8, jump-none) 2 alternate;
+  animation: rush-sprite var(--fx-dur, .26s) steps(8, jump-none) 1 forwards;
+}
+
+.rush-cell-fx.in.playing {
+  opacity: 1;
+  animation: rush-sprite-rev var(--fx-dur, .26s) steps(8, jump-none) 1 backwards;
+}
+
+@keyframes rush-sprite-rev {
+  from { background-position: 100% 0%; }
+  to   { background-position: 0% 0%; }
 }
 
 /* jump-none es obligatorio, no una preferencia.
@@ -9780,9 +9802,19 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 }
 
 /* Respaldo para navegadores sin :has() — la reacción se ve igual,
-   solo que sin atenuar el fondo. */
+   solo que sin atenuar el fondo.
+
+   Importa en MÓVIL: :has() llegó tarde a algunos WebView de
+   Android, y sin este respaldo la ilustración de debajo seguía a
+   plena opacidad bajo los fragmentos y el efecto se veía sucio. */
 @supports not (selector(:has(*))) {
-  .rush-cell-fx.playing { opacity: .92; }
+  .rush-cell-fx.playing { opacity: .96; }
+}
+
+@media (max-width: 700px) {
+  /* Un poco más rápida en el teléfono: la pantalla es más pequeña,
+     el recorrido aparente es menor y a 0,26s se siente lenta. */
+  .rush-cell-fx { --fx-dur: .22s; }
 }
 
 @media (prefers-reduced-motion: reduce) {
