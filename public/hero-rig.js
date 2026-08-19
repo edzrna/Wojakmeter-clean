@@ -65,6 +65,74 @@
 
   const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
 
+  /* Bucle animado: 24 fotogramas de 640px en rejilla 6x4. */
+  const IDLE_SPRITE = (mood) => `/assets/hero/idle/${mood}_idle.webp`;
+
+  /* ---------------------------------------------------------
+     LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
+
+     Hay SIETE sprites. La subemocion no cambia el dibujo: cambia
+     como se REPRODUCE. Cada entrada modula el mismo bucle.
+
+       rate    multiplica la duracion del ciclo (mayor = mas lento)
+       shake   temblor, 0 a 1
+       tilt    ladeo en grados
+       dim     desaturacion, 0 a 1
+
+     Un `neutral_compression` es el bucle de neutral lento y
+     apagado; un `neutral_pressure_building` es el mismo bucle
+     acelerando con temblor. Misma imagen, dos estados que se leen
+     distinto — y sumando los ejes en vivo, un continuo entre
+     ellos, no tres casillas.
+     --------------------------------------------------------- */
+  const SUB_FX = {
+    /* Frustration: todo rapido y sacudido. La capitulacion es la
+       excepcion — es el agotamiento DESPUES del grito. */
+    frustration:              { rate: 0.55, shake: 0.75, tilt: 0,    dim: 0 },
+    frustration_panic:        { rate: 0.42, shake: 1.00, tilt: 0,    dim: 0 },
+    frustration_capitulation: { rate: 1.30, shake: 0.20, tilt: 3.5,  dim: 0.35 },
+    frustration_exhaustion:   { rate: 1.55, shake: 0.10, tilt: 4.5,  dim: 0.45 },
+
+    concern:                  { rate: 0.85, shake: 0.35, tilt: 0,    dim: 0 },
+    concern_pressure:         { rate: 1.00, shake: 0.25, tilt: 1.0,  dim: 0.05 },
+    concern_fear_spike:       { rate: 0.55, shake: 0.85, tilt: 0,    dim: 0 },
+    concern_breakdown:        { rate: 0.75, shake: 0.60, tilt: 3.0,  dim: 0.30 },
+
+    /* Doubt: la duda es quietud con la mirada inquieta, asi que el
+       cuerpo va lento aunque los ojos no. */
+    doubt:                    { rate: 1.15, shake: 0.20, tilt: 1.5,  dim: 0.05 },
+    doubt_confusion:          { rate: 1.00, shake: 0.45, tilt: 2.5,  dim: 0.10 },
+    doubt_hesitation:         { rate: 1.35, shake: 0.12, tilt: 1.0,  dim: 0.12 },
+    doubt_fake_recovery:      { rate: 0.90, shake: 0.40, tilt: 2.0,  dim: 0.08 },
+
+    neutral:                  { rate: 1.20, shake: 0.08, tilt: 0,    dim: 0 },
+    neutral_waiting:          { rate: 1.30, shake: 0.05, tilt: 0,    dim: 0.05 },
+    neutral_compression:      { rate: 1.60, shake: 0.03, tilt: 2.0,  dim: 0.25 },
+    neutral_pressure_building:{ rate: 0.80, shake: 0.45, tilt: 0,    dim: 0 },
+
+    optimism:                 { rate: 0.95, shake: 0.05, tilt: 0,    dim: 0 },
+    optimism_building:        { rate: 0.75, shake: 0.10, tilt: 0,    dim: 0 },
+    optimism_confident:       { rate: 1.00, shake: 0.00, tilt: 0,    dim: 0 },
+    optimism_pullback:        { rate: 1.25, shake: 0.15, tilt: 1.5,  dim: 0.15 },
+
+    content:                  { rate: 1.15, shake: 0.00, tilt: 0,    dim: 0 },
+    content_strength:         { rate: 1.00, shake: 0.00, tilt: 0,    dim: 0 },
+    content_confidence:       { rate: 1.20, shake: 0.00, tilt: 0,    dim: 0 },
+    content_overextended:     { rate: 0.70, shake: 0.25, tilt: 0,    dim: 0 },
+
+    euphoria:                 { rate: 0.55, shake: 0.20, tilt: 0,    dim: 0 },
+    euphoria_breakout:        { rate: 0.45, shake: 0.30, tilt: 0,    dim: 0 },
+    euphoria_overheat:        { rate: 0.38, shake: 0.55, tilt: 0,    dim: 0 },
+    euphoria_weakening:       { rate: 0.85, shake: 0.35, tilt: 2.0,  dim: 0.20 }
+  };
+
+  /* Sprites que ya se sabe que no existen o no cargan. Se
+     comprueba UNA vez por emocion: sin esto, cada frame del rig
+     dispararia otra peticion fallida. */
+  const idleReady = new Set();
+  const idleFailed = new Set();
+  let idleMood = null;
+
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES
 
@@ -572,6 +640,89 @@
      cada frame. La comprobacion es una lectura de textContent: si
      ya coinciden, no se toca el DOM.
      --------------------------------------------------------- */
+  /* ---------------------------------------------------------
+     EL BUCLE, CON RESPALDO A IMAGEN PLANA
+
+     El sprite solo sustituye a la imagen fija cuando ha terminado
+     de descargarse. Hasta entonces —y para siempre, si falla— se
+     ve el render de siempre.
+
+     Esto no es una cortesia: son 700-900 KB por emocion. En una
+     conexion lenta, cambiar a la capa animada antes de tiempo
+     dejaria un hueco justo donde esta lo mas visible de la
+     pagina.
+     --------------------------------------------------------- */
+  function ensureIdle(mood) {
+    const el = $("heroSprite");
+    const st = stage();
+    if (!el || !st) return;
+
+    if (idleFailed.has(mood)) {
+      st.classList.remove("wm-has-sprite");
+      return;
+    }
+
+    if (idleMood === mood) return;
+    idleMood = mood;
+
+    const src = IDLE_SPRITE(mood);
+
+    if (idleReady.has(mood)) {
+      el.style.backgroundImage = `url("${src}")`;
+      st.classList.add("wm-has-sprite");
+      return;
+    }
+
+    /* Mientras carga, la imagen plana sigue mandando. */
+    st.classList.remove("wm-has-sprite");
+
+    try {
+      const probe = new Image();
+      probe.onload = () => {
+        idleReady.add(mood);
+        /* Puede haber cambiado de emocion mientras descargaba: si
+           ya no es la actual, se guarda en cache y no se pinta. */
+        if (idleMood !== mood) return;
+        el.style.backgroundImage = `url("${src}")`;
+        st.classList.add("wm-has-sprite");
+      };
+      probe.onerror = () => {
+        idleFailed.add(mood);
+        st.classList.remove("wm-has-sprite");
+      };
+      probe.src = src;
+    } catch {
+      idleFailed.add(mood);
+    }
+  }
+
+  /* Traduce la subemocion a como se reproduce el bucle. */
+  function applyIdleFx(sub, moodKey) {
+    const el = stage();
+    if (!el) return;
+
+    const fx = SUB_FX[sub] || SUB_FX[moodKey] ||
+               { rate: 1, shake: 0, tilt: 0, dim: 0 };
+
+    /* Duracion base 3,0s modulada por la subemocion Y por los ejes
+       en vivo, asi que dos mercados en la misma subemocion no se
+       mueven exactamente igual.
+
+       Suelo de 0,9s y techo de 4,2s: por debajo el bucle parpadea
+       y por encima baja de 6 fps y se ve a saltos — con 24
+       fotogramas, 4,2s son 5,7 fps, que es el limite. */
+    const base = 3.0 * fx.rate * (1.35 - state.axes.arousal * 0.7);
+    const dur = clamp(base, 0.9, 4.2);
+
+    el.style.setProperty("--idle-dur", dur.toFixed(2) + "s");
+    el.style.setProperty("--idle-shake",
+      clamp(fx.shake + state.axes.tension * 0.35, 0, 1).toFixed(2));
+    el.style.setProperty("--idle-tilt",
+      (fx.tilt + state.axes.fatigue * 3.5).toFixed(2) + "deg");
+    el.style.setProperty("--idle-dim",
+      clamp(fx.dim + state.axes.fatigue * 0.35, 0, 0.6).toFixed(2));
+  }
+
   function enforceCanonical() {
     if (state.score === null || state.scrubbing) return;
 
@@ -616,6 +767,13 @@
       const src = HERO_IMG(mood[0]);
       if (!String(face.src).endsWith(src)) face.src = src;
     }
+
+    /* El bucle animado y su modulacion. La imagen plana de arriba
+       se sigue actualizando SIEMPRE, aunque haya sprite: es el
+       respaldo, y tiene que estar en la emocion correcta el dia
+       que el sprite falle. */
+    ensureIdle(mood[0]);
+    applyIdleFx(sub, mood[0]);
 
     /* El overlay de subemocion, GOBERNADO en vez de apagado: el
        craneo-verde-con-cara-neutra venia de dos sistemas eligiendo
