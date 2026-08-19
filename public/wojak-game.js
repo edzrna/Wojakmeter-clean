@@ -103,6 +103,11 @@
   const SPRITE_PATH = (key) => `/assets/game/sprites/${key}_sprite.${spriteExt}`;
   const SPRITE_FRAMES = 8;
 
+  /* Duracion de un sentido, en ms. Tiene que coincidir con la
+     variable --fx-dur del CSS: el JS la usa para saber cuando
+     limpiar la clase y cuando encadenar la entrada. */
+  const SPRITE_MS = 260;
+
   /* Cada reproduccion se pone POR ENCIMA de la anterior: al
      encadenar toques rapidos, la ultima reaccion es la que manda.
      Un z-index fijo haria que la casilla de arriba a la izquierda
@@ -164,15 +169,10 @@
      en una racha rapida se pulsa la misma casilla dos veces en
      medio segundo, y sin reinicio la segunda no se veria.
      --------------------------------------------------------- */
-  function playSprite(cell, key) {
-    const fx = cell.querySelector(".rush-cell-fx");
+  /* dir: "out" rompe (0->7) · "in" recompone (7->0) */
+  function playSprite(cell, key, dir) {
+    const fx = cell.querySelector(`.rush-cell-fx.${dir}`);
     if (!fx) return;
-
-    /* En modo bajo consumo no se anima. El juego ya baja las
-       particulas cuando detecta frames lentos; anadir siete
-       sprites encima seria justo lo contrario de lo que hace esa
-       deteccion. La casilla sigue marcandose. */
-    if (state.lowPower) return;
 
     /* Si el sprite no existe todavia —no se han subido los siete—
        la casilla se marca igual y no se pinta un hueco. La imagen
@@ -197,6 +197,12 @@
     spriteLayer = (spriteLayer % 90) + 1;
     cell.style.setProperty("--fx-layer", String(spriteLayer));
     fx.classList.add("playing");
+
+    /* Se limpia al terminar. Si la capa se quedara con la clase,
+       el reinicio del proximo toque dependeria del reflow y en
+       moviles lentos se saltaria la primera reproduccion. */
+    clearTimeout(fx.__t);
+    fx.__t = setTimeout(() => fx.classList.remove("playing"), SPRITE_MS + 60);
   }
 
   function moodByScore(score) {
@@ -710,7 +716,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
       cell.classList.add(correct ? "rush-cell-right" : "rush-cell-wrong");
       /* Se limpia al empezar la ronda siguiente, no con un timer:
          un timer mas por toque es justo lo que sobra aqui. */
-      playSprite(cell, key);
+      playSprite(cell, key, "out");
     }
 
     if (correct) {
@@ -765,12 +771,23 @@ const ROUNDS_WITH_RANGE_HINT = 3;
       /* Capa del sprite: vacia hasta que se pulsa. Va por encima
          de la ilustracion y por debajo del chip, para que el
          nombre siga leyendose durante la reaccion. */
-      const fx = document.createElement("span");
-      fx.className = "rush-cell-fx";
-      fx.setAttribute("aria-hidden", "true");
+      /* DOS capas y no una:
+           .out  la emocion que se va, rompiendose (0 -> 7)
+           .in   la que llega, recomponiendose (7 -> 0)
+         Con una sola capa habria que reasignar la imagen a mitad
+         de la animacion, y el navegador descarta el fotograma en
+         curso al cambiar el background-image: se veria un
+         parpadeo justo en el punto de union. */
+      const fxOut = document.createElement("span");
+      fxOut.className = "rush-cell-fx out";
+      fxOut.setAttribute("aria-hidden", "true");
+
+      const fxIn = document.createElement("span");
+      fxIn.className = "rush-cell-fx in";
+      fxIn.setAttribute("aria-hidden", "true");
 
       chip.append(name, hint);
-      btn.append(img, fx, chip);
+      btn.append(img, fxOut, fxIn, chip);
       frag.appendChild(btn);
     }
     el.grid.appendChild(frag);
@@ -833,7 +850,21 @@ const ROUNDS_WITH_RANGE_HINT = 3;
         const cell = cells[i];
         if (!cell) return;
 
+        /* ── LA EMOCION QUE ENTRA SE RECOMPONE ──
+           Si la casilla cambia de emocion, la nueva llega en
+           REVERSA: del fotograma 7 al 0, es decir, los fragmentos
+           volviendo a formar la imagen. Encadenado con el
+           estallido del toque, la lectura completa es "esta se
+           rompe, esta otra se arma en su sitio".
+
+           Solo cuando cambia de verdad: repetir la misma emocion
+           haria que la casilla se recompusiera sin haberse roto
+           nunca, que se ve como un parpadeo sin motivo. */
+        const prevKey = cell.dataset.key;
         cell.dataset.key = mood.key;
+        if (prevKey && prevKey !== mood.key) {
+          playSprite(cell, mood.key, "in");
+        }
         cell.style.setProperty("--cell", mood.color);
         cell.setAttribute("aria-label", `${mood.name} ${mood.min} to ${mood.max}`);
 
