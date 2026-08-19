@@ -1193,6 +1193,10 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
   border-radius: var(--r-md);
   background: var(--ink-000);
   overflow: hidden;
+
+  /* El panel entero respira un poco cuando el mercado se acelera,
+     al doble de frecuencia que el desplazamiento. */
+  animation: hb-glow calc(var(--hb-dur, 3.2s) / 2) ease-in-out infinite;
 }
 
 .heartbeat-wrap::before {
@@ -1238,6 +1242,13 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 7px currentColor);
+
+  /* Amplitud: un mercado agitado no solo late más rápido, late
+     más alto. Escala vertical desde el centro del viewBox. */
+  scale: 1 var(--hb-amp, 1);
+  transform-box: view-box;
+  transform-origin: 0 28px;
+  transition: scale .9s var(--ease);
 }
 
 .heartbeat-neutral     #heartbeatPath { color: var(--mid);      stroke: currentColor; }
@@ -9905,4 +9916,75 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   .hero-sprite { animation: none; opacity: 0 !important; }
   .wm-has-sprite .hero-face-img { opacity: 1; }
   .wm-has-sprite .hero-face-overlay { opacity: 1; }
+}
+
+/* -----------------------------------------------------------
+   64 · MARKET VITALS — MONITOR EN MOVIMIENTO
+
+   Antes era un trazo SVG fijo: la forma cambiaba con la emoción
+   pero la línea no se movía nunca, y un monitor de signos vitales
+   quieto se lee como un aparato apagado.
+
+   Ahora la traza se DESPLAZA en bucle. Tres copias seguidas de la
+   misma ruta —dos de ellas <use>, así que script.js sigue
+   escribiendo un solo `d`— y el grupo se mueve exactamente el
+   ancho del viewBox. Empalma sin costura porque todos los trazos
+   empiezan y terminan a la misma altura.
+   ----------------------------------------------------------- */
+
+#heartbeatScroll {
+  /* El color va en el GRUPO, no en el path: <use> clona el
+     trazado pero hereda el color de su contexto, así que
+     pintándolo aquí las tres copias salen idénticas. Puesto solo
+     en #heartbeatPath, las copias salían negras. */
+  stroke: currentColor;
+  animation: hb-scroll var(--hb-dur, 3.2s) linear infinite;
+  will-change: transform;
+  transform-box: view-box;
+  transform-origin: 0 28px;
+}
+
+@keyframes hb-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-320px); }
+}
+
+/* El color por emoción, ahora en el grupo. */
+.heartbeat-neutral     #heartbeatScroll { color: var(--mid); }
+.heartbeat-optimism    #heartbeatScroll { color: var(--pos-pale); }
+.heartbeat-content     #heartbeatScroll { color: var(--pos-soft); }
+.heartbeat-euphoria    #heartbeatScroll { color: var(--pos-hard); }
+.heartbeat-doubt       #heartbeatScroll { color: var(--neg-pale); }
+.heartbeat-concern     #heartbeatScroll { color: var(--neg-soft); }
+.heartbeat-frustration #heartbeatScroll { color: var(--neg-hard); }
+
+/* La amplitud responde al mercado: un mercado agitado no solo
+   late más rápido, late más alto. Se escala desde el centro
+   vertical del viewBox (28 de 56). */
+/* ── BARRA DE BARRIDO ──
+   El borde luminoso que deja el haz al pasar. Es lo que convierte
+   una línea que se mueve en un monitor. Va al ras del borde
+   derecho, que es donde "nace" la traza. */
+.heartbeat-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 26%;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--ink-000) 55%, transparent) 55%,
+    color-mix(in srgb, var(--ink-000) 88%, transparent));
+}
+
+@keyframes hb-glow {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(calc(1 + var(--hb-amp, 1) * 0.06)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #heartbeatScroll,
+  .heartbeat-wrap { animation: none; }
 }
