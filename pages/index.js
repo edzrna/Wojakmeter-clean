@@ -678,9 +678,32 @@ export default function Home({ ogImageUrl }) {
                   {/* ── SIGNOS VITALES: la firma ── */}
                   <div className="heartbeat-wrap" id="heartbeatWrap">
                     <div className="heartbeat-chart">
+                      {/* MONITOR DE SIGNOS VITALES.
+
+                          La traza se DESPLAZA en bucle en vez de
+                          estar clavada. Se logra con dos copias
+                          seguidas: la segunda es un <use> de la
+                          primera, así que script.js sigue
+                          escribiendo un solo `d` y las dos cambian
+                          a la vez.
+
+                          Empalma sin costura porque todos los
+                          trazos de HEARTBEAT_PATHS empiezan y
+                          terminan a la misma altura, y el
+                          desplazamiento es exactamente el ancho
+                          del viewBox. */}
                       <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
-                        <path id="heartbeatPath" d=""></path>
+                        <g id="heartbeatScroll">
+                          <path id="heartbeatPath" d=""></path>
+                          <use href="#heartbeatPath" x="320"></use>
+                          <use href="#heartbeatPath" x="640"></use>
+                        </g>
                       </svg>
+
+                      {/* Barra de barrido: el borde luminoso que
+                          deja el haz al pasar. Es lo que convierte
+                          una línea que se mueve en un monitor. */}
+                      <span className="heartbeat-sweep" aria-hidden="true"></span>
                     </div>
                   </div>
 
