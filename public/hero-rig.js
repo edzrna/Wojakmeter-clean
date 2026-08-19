@@ -759,6 +759,13 @@
     if (idleKey === key) return;
     idleKey = key;
 
+    /* Se corta el bucle anterior en el acto. Sin esto, entre que
+       cambia la emoción y termina de descargar la nueva, la capa
+       animada sigue reproduciendo la ANTERIOR encima de la imagen
+       plana ya actualizada: el título dice una emoción y el
+       personaje enseña otra. */
+    st.classList.remove("wm-has-sprite");
+
     const src = IDLE_SPRITE(mood);
 
     if (idleReady.has(key)) {
@@ -900,12 +907,50 @@
        Es una funcion de nivel superior de un script clasico, asi
        que vive en window. Si no estuviera, no se hace nada: el
        gauge se queda como estaba en lugar de romperse. */
-    /* La barra superior dice literalmente "Index", así que tiene
-       que ser el índice. También lo escribía script.js con la
-       fórmula vieja. */
+    /* ── LA BARRA SUPERIOR, ENTERA ──
+
+       BUG QUE ARREGLA: la barra decía "Euphoria" mientras el héroe
+       mostraba Content.
+
+       Yo imponía solo el NÚMERO y me dejé la etiqueta de emoción y
+       el régimen, que script.js sigue escribiendo con la fórmula
+       vieja. Como el número y la palabra viven en la misma fila,
+       el resultado era una fila que se contradecía a sí misma.
+
+       Las tres salen del mismo `shown`, igual que todo lo demás.
+       No basta con arreglar la cifra que se ve mal: hay que
+       arreglar TODO lo que esa cifra describe. */
     const head = $("headerScore");
     if (head && head.textContent !== String(shown)) {
       head.textContent = String(shown);
+    }
+
+    const headMood = $("headerMoodLabel");
+    if (headMood && headMood.textContent !== label) {
+      headMood.textContent = label;
+      headMood.className = `mood-${mood[0]}`;
+    }
+
+    /* Mismos cortes que script.js: si divergieran, la barra diría
+       "Greed" con un índice de zona de "Extreme greed". */
+    const regime =
+      shown >= 80 ? "Extreme greed" :
+      shown >= 62 ? "Greed" :
+      shown >= 45 ? "Balanced" :
+      shown >= 30 ? "Fear" : "Extreme fear";
+
+    const regimeEl = $("headerRegime");
+    if (regimeEl && regimeEl.textContent !== regime) {
+      regimeEl.textContent = regime;
+      regimeEl.className = `mood-${mood[0]}`;
+    }
+
+    /* Bubble Maps enseña el MISMO sujeto —la emoción global— en
+       otra vista, así que también tiene que coincidir. Estaba
+       saliendo de la fórmula vieja. */
+    const bubble = $("bubbleGlobalScore");
+    if (bubble && bubble.textContent !== String(shown)) {
+      bubble.textContent = String(shown);
     }
 
     const gauge = $("gaugeScore");
