@@ -198,11 +198,13 @@ export default function Home({ ogImageUrl }) {
 
               <div className="wm-header-style">
                 <label className="style-label" htmlFor="styleSelector">Style</label>
+                {/* Solo Classic y Synth. Boyak y Minimal se
+                    retiraron: no tenían tratamiento visual propio
+                    ni bucles animados, así que elegirlos daba la
+                    misma cara con otro nombre. */}
                 <select id="styleSelector" defaultValue="classic">
                   <option value="classic">Classic</option>
                   <option value="synth">Synth</option>
-                  <option value="boyak">Boyak</option>
-                  <option value="minimal">Minimal</option>
                 </select>
               </div>
             </div>
@@ -997,11 +999,15 @@ export default function Home({ ogImageUrl }) {
                 </div>
                 <div className="bag-style-control">
                   <label htmlFor="bagStyleSelector">Style</label>
+                  {/* El MISMO recorte que el selector del topbar.
+                      Había dos listas de estilos en la página y
+                      solo una se actualizó al retirar Boyak y
+                      Minimal, así que en Bag seguían apareciendo
+                      y elegirlos dejaba el estilo en un valor que
+                      ALLOWED_STYLES ya rechaza. */}
                   <select id="bagStyleSelector" defaultValue="classic">
                     <option value="classic">Classic</option>
                     <option value="synth">Synth</option>
-                    <option value="boyak">Boyak</option>
-                    <option value="minimal">Minimal</option>
                   </select>
                 </div>
               </div>
