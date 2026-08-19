@@ -283,6 +283,7 @@
     view: "both",
     range: "24h",
     windowScore: null,
+    warnedCoverage: false,
     windowDelta: 0,
     history: [],
     scrubbing: false,
@@ -468,7 +469,38 @@
          papel, pero partia la seccion en dos mitades que no se
          hablaban.) */
       const pts = visibleSeries();
-      const scores = pts.map((p) => Number(p.score)).filter(Number.isFinite);
+      const cover = indexCoverage(pts);
+
+      /* Si la mayoría de la ventana AÚN NO tiene índice nuevo —el
+         cron lleva poco tiempo rellenando esa columna—, mezclar
+         las dos mediciones daría una media sin significado. En ese
+         caso se renuncia a la ventana y manda el índice del
+         momento, que sí es una cifra real.
+
+         Es la diferencia entre un número peor y un número falso. */
+      if (cover < 0.6) {
+        state.windowScore = null;
+        state.windowDelta = 0;
+
+        /* Aviso UNA vez. Sin esto, el sintoma en pantalla —"las
+           pills no mueven el score"— es indistinguible de un fallo
+           del rig, cuando la causa real esta en el endpoint. */
+        if (!state.warnedCoverage) {
+          state.warnedCoverage = true;
+          console.warn(
+            "WM hero-rig: /api/history no trae index_score " +
+            `(cobertura ${Math.round(cover * 100)}%). El heroe usa el ` +
+            "indice del momento y las pills no moveran el numero. " +
+            "Anade index_score al SELECT y al objeto de la serie en " +
+            "pages/api/history.js."
+          );
+        }
+      }
+
+      const scores = cover >= 0.6
+        ? pts.map(pointIndex).filter(Number.isFinite)
+        : [];
+
       if (scores.length >= 2) {
         /* La media de la ventana ya NO se muestra como score —ver
            la nota en enforceCanonical—, pero se conserva porque el
@@ -511,6 +543,41 @@
     return state.history.slice(-400);
   }
 
+  /* ---------------------------------------------------------
+     EL ÍNDICE DE UN PUNTO DEL HISTÓRICO
+
+     BUG QUE ARREGLA — y era el gordo:
+
+     emotion_history guarda DOS columnas distintas: `score`, que es
+     la fórmula vieja de script.js, e `index_score`, que es el
+     índice nuevo. El rig promediaba `p.score` y lo mostraba como
+     si fuera el índice.
+
+     O sea: el héroe decía "Index" y enseñaba la media de OTRA
+     medición. Podían diferir por 20 puntos sin que nada pareciera
+     roto, porque las dos son cifras plausibles de 0 a 100. Ese es
+     el tipo de fallo que no salta: no hay excepción, no hay hueco,
+     solo un número equivocado con toda naturalidad.
+
+     Se prefiere index_score y se cae a score solo si el punto es
+     anterior al despliegue del motor nuevo, que es cuando esa
+     columna está vacía.
+     --------------------------------------------------------- */
+  function pointIndex(p) {
+    const idx = Number(p?.index_score ?? p?.indexScore);
+    if (Number.isFinite(idx)) return idx;
+    const legacy = Number(p?.score);
+    return Number.isFinite(legacy) ? legacy : null;
+  }
+
+  /* Cuántos puntos de la ventana traen ya el índice nuevo. */
+  function indexCoverage(pts) {
+    if (!pts.length) return 0;
+    const n = pts.filter((p) =>
+      Number.isFinite(Number(p?.index_score ?? p?.indexScore))).length;
+    return n / pts.length;
+  }
+
   function setRange(range) {
     if (!TF[range] || state.range === range) return;
     state.range = range;
@@ -534,7 +601,7 @@
 
     const xy = pts.map((p, i) => [
       (i / (pts.length - 1)) * W,
-      PAD + (1 - clamp(Number(p.score) || 50, 0, 100) / 100) * (H - PAD * 2)
+      PAD + (1 - clamp(pointIndex(p) ?? 50, 0, 100) / 100) * (H - PAD * 2)
     ]);
 
     const d = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
@@ -572,7 +639,11 @@
 
     state.scrubIndex = i;
 
-    const score = Math.round(Number(p.score) || 50);
+    /* La cara del día que se recorre sale del MISMO índice que el
+       resto: si la curva se dibuja con index_score y la pastilla
+       leyera `score`, el dedo señalaría un punto y el número diría
+       otra cosa. */
+    const score = Math.round(pointIndex(p) ?? 50);
     const [mood, , , color] = moodFor(score);
 
     const face = $("heroScrubFace");
