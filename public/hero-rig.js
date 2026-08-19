@@ -381,6 +381,9 @@
       const pts = visibleSeries();
       const scores = pts.map((p) => Number(p.score)).filter(Number.isFinite);
       if (scores.length >= 2) {
+        /* La media de la ventana ya NO se muestra como score —ver
+           la nota en enforceCanonical—, pero se conserva porque el
+           subtitulo la usa para decir de donde viene el numero. */
         state.windowScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
         state.windowDelta = Math.round(scores[scores.length - 1] - scores[0]);
         /* El movimiento de la ventana alimenta la reaccion: una
@@ -572,10 +575,23 @@
   function enforceCanonical() {
     if (state.score === null || state.scrubbing) return;
 
-    /* Un solo numero por vista: la media de la ventana elegida (o
-       el indice actual mientras el historico no ha cargado).
-       Titulo, score, cara, overlay y subtitulo salen TODOS de el. */
-    const shown = Number.isFinite(state.windowScore) ? state.windowScore : state.score;
+    /* EL NUMERO ES EL INDICE CANONICO. Punto.
+
+       Estuvo un tiempo mostrando la MEDIA de la ventana elegida,
+       para que las pills movieran también al personaje. En
+       produccion eso resulto ser un error grave: el resto de la
+       pagina —el gauge, la barra superior, el marcador de indice—
+       sigue mostrando el indice del momento, asi que el titulo
+       decia "Neutral 56" mientras el gauge decia "80 Content" tres
+       centimetros mas abajo. Cuatro cifras distintas en la misma
+       pantalla.
+
+       El heroe no puede tener su propia verdad. La ventana se
+       expresa donde no compite con el dato: en la etiqueta del
+       grafico (EMOTION · 24H · ▲20) y en el subtitulo ("Index up
+       20 over 24H"), que dicen COMO SE LLEGO hasta aqui sin
+       inventar un segundo "aqui". */
+    const shown = state.score;
     const mood = moodFor(shown);
     const label = mood[0][0].toUpperCase() + mood[0].slice(1);
 
