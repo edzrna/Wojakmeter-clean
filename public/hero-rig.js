@@ -798,6 +798,47 @@
     }
   }
 
+  /* ---------------------------------------------------------
+     MARKET VITALS — EL RITMO SALE DEL MERCADO
+
+     No es una animacion decorativa a velocidad fija: el monitor
+     late a la frecuencia que marcan los ejes, igual que el
+     personaje.
+
+       activacion -> velocidad del desplazamiento
+       tension    -> amplitud de la traza
+
+     Un mercado dormido recorre la pantalla en 6s con la linea
+     casi plana; uno en panico, en 1,2s y a plena amplitud. Es la
+     diferencia entre un adorno y un instrumento.
+     --------------------------------------------------------- */
+  function applyVitals() {
+    const a = state.axes.arousal;
+    const t = state.axes.tension;
+
+    /* Suelo de 1,2s: por debajo, la traza se mueve mas rapido de
+       lo que el ojo puede seguir y se convierte en una mancha. */
+    const dur = clamp(6.0 - a * 4.8, 1.2, 6.0);
+
+    /* La amplitud no baja de 0,45: a cero seria una linea recta y
+       parecerian constantes vitales de un muerto, que no es lo que
+       significa un mercado tranquilo. */
+    const amp = clamp(0.45 + a * 0.5 + t * 0.35, 0.45, 1.45);
+
+    /* EN EL PROPIO CONTENEDOR, no en el escenario del héroe.
+
+       Las variables CSS solo bajan por el árbol, y el monitor está
+       FUERA de #heroStage —comprobado en el marcado: 17.000
+       caracteres más abajo y en otra rama—. Escribirlas en el
+       escenario habría dejado el pulso con los valores por defecto
+       para siempre, sin ningún error visible. */
+    const wrap = $("heartbeatWrap");
+    if (!wrap) return;
+
+    wrap.style.setProperty("--hb-dur", dur.toFixed(2) + "s");
+    wrap.style.setProperty("--hb-amp", amp.toFixed(2));
+  }
+
   /* Traduce la subemocion a como se reproduce el bucle. */
   function applyIdleFx(sub, moodKey) {
     const el = stage();
@@ -885,6 +926,7 @@
        que el sprite falle. */
     ensureIdle(mood[0]);
     applyIdleFx(sub, mood[0]);
+    applyVitals();
 
     /* ── EL GAUGE, TAMBIEN EL CANONICO ──
 
