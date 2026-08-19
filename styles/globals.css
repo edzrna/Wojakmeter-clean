@@ -9826,3 +9826,83 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
     opacity: 1;
   }
 }
+
+/* -----------------------------------------------------------
+   63 · HÉROE — BUCLE ANIMADO
+
+   24 fotogramas de 640px en rejilla 6×4. Se reproduce con DOS
+   animaciones: las columnas avanzan seis veces por fila, las
+   filas una vez por ciclo. `jump-none` en las dos para que los
+   pasos caigan exactamente en 0/20/40/60/80/100% y
+   0/33/67/100%; con `steps()` normal caerían ENTRE fotogramas y
+   se verían dos medias caras a la vez.
+   ----------------------------------------------------------- */
+
+.hero-sprite {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+
+  background-repeat: no-repeat;
+  background-size: 600% 400%;
+  background-position: 0% 0%;
+
+  /* Invisible hasta que el sprite ha cargado. Debajo sigue la
+     imagen plana, que es el respaldo. */
+  opacity: 0;
+
+  animation:
+    hero-idle-cols calc(var(--idle-dur, 3s) / 4) steps(6, jump-none) infinite,
+    hero-idle-rows var(--idle-dur, 3s) steps(4, jump-none) infinite,
+    hero-idle-shake calc(.10s + (1 - var(--idle-shake, 0)) * .26s) linear infinite;
+
+  rotate: var(--idle-tilt, 0deg);
+  filter: saturate(calc(1 - var(--idle-dim, 0)))
+          brightness(calc(1 - var(--idle-dim, 0) * 0.22));
+  transition: opacity .45s var(--ease), rotate 1.2s var(--ease),
+              filter 1.2s var(--ease);
+
+  /* El sprite es una hoja de 3840px escalada a ~440px. Sin esto,
+     algunos navegadores móviles la remuestrean en cada paso y el
+     bucle va a tirones. */
+  will-change: background-position;
+  backface-visibility: hidden;
+}
+
+@keyframes hero-idle-cols {
+  from { background-position-x: 0%; }
+  to   { background-position-x: 100%; }
+}
+
+@keyframes hero-idle-rows {
+  from { background-position-y: 0%; }
+  to   { background-position-y: 100%; }
+}
+
+/* Temblor: amplitud 0 con tensión 0, así que desaparece solo en
+   los estados tranquilos en vez de tener que apagarlo. */
+@keyframes hero-idle-shake {
+  0%, 100% { translate: calc(var(--idle-shake, 0) * -1.7px) 0; }
+  50%      { translate: calc(var(--idle-shake, 0) * 1.7px)
+                        calc(var(--idle-shake, 0) * .9px); }
+}
+
+/* ── EL CAMBIO ──
+   Solo cuando el sprite ha terminado de descargarse. La imagen
+   plana no se oculta con display:none: se desvanece, para que el
+   relevo no dé un parpadeo. */
+.wm-has-sprite .hero-sprite { opacity: 1; }
+.wm-has-sprite .hero-face-img { opacity: 0; }
+.wm-has-sprite .hero-face-overlay { opacity: 0; }
+
+.hero-face-img { transition: opacity .45s var(--ease); }
+
+/* Movimiento reducido: se apaga el bucle y vuelve la imagen fija.
+   El personaje sigue cambiando con el mercado — eso es
+   información, no animación. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-sprite { animation: none; opacity: 0 !important; }
+  .wm-has-sprite .hero-face-img { opacity: 1; }
+  .wm-has-sprite .hero-face-overlay { opacity: 1; }
+}
