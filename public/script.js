@@ -23,7 +23,11 @@ const STYLE_STORAGE_KEY       = "wojakStyle";
 const MACRO_DRIVER_STORAGE_KEY = "wojakMacroDriver";
 const DEFAULT_STYLE      = "classic";
 const SHARED_ICON_STYLE  = "classic";
-const ALLOWED_STYLES     = ["classic", "synth", "boyak", "minimal"];
+/* Solo dos estilos. Boyak y Minimal se retiraron de la interfaz;
+   la lista tiene que reflejarlo o un valor guardado en
+   localStorage de una sesion anterior seguiria siendo valido y
+   pediria carpetas de assets que ya no se mantienen. */
+const ALLOWED_STYLES     = ["classic", "synth"];
 
 const PULSE_VOTE_STORAGE_KEY = "wmPulseLastVoteTime";
 const PULSE_VOTER_ID_KEY     = "wmPulseVoterId";
@@ -3795,6 +3799,12 @@ let moodOhlcv = [];
 let moodOhlcvTimeframe = null;
 let isLoadingOhlcv = false;
 
+/* Petición encolada mientras otra está en vuelo, y contador de
+   generación para descartar respuestas que llegan tarde.
+   Ver la nota larga en loadMoodOhlcv(). */
+let pendingOhlcvReload = false;
+let ohlcvRequestId = 0;
+
 const MOOD_CHART = {
   mode: "line",
   hoverIndex: null,
@@ -3928,8 +3938,26 @@ function formatMoodAxisTime(ts, tf) {
    DexScreener en vez de interpolar entre tres lecturas.
    =========================================================== */
 async function loadMoodOhlcv(force = false) {
-  if (isLoadingOhlcv) return;
   if (!moodResolvedAddress) return;
+
+  /* BUG QUE ARREGLA — "pulso MOOD y no carga el gráfico".
+
+     Antes esto era `if (isLoadingOhlcv) return;`: si había otra
+     petición en vuelo, la nueva se DESCARTABA en silencio y nadie
+     volvía a intentarlo.
+
+     Y eso pasaba justo al pulsar MOOD, porque al abrir la página
+     ya se está cargando el token de trending por defecto. Si
+     pulsabas dentro de esa ventana —que es lo normal, son unos
+     segundos— tu petición moría ahí: el gráfico se quedaba con el
+     token anterior o en blanco, sin error ni reintento.
+
+     Ahora la petición se ENCOLA en vez de perderse, y al terminar
+     la que estaba en curso se relanza. */
+  if (isLoadingOhlcv) {
+    pendingOhlcvReload = true;
+    return;
+  }
 
   /* Si ya están las velas de este timeframe y no se fuerza, no se
      vuelve a pedir: el límite del proveedor es 30 peticiones por
@@ -3937,19 +3965,37 @@ async function loadMoodOhlcv(force = false) {
   if (!force && moodOhlcvTimeframe === moodTokenTimeframe && moodOhlcv.length) return;
 
   isLoadingOhlcv = true;
+
+  /* Se anota QUÉ se está pidiendo. Si cuando vuelva la respuesta
+     el usuario ya ha cambiado de token o de timeframe, se tira:
+     sin esto, las velas de un token podían acabar dibujadas bajo
+     el nombre de otro — el mismo fallo que ya se arregló en el
+     gráfico de monedas con isStaleRequest. */
+  const reqId = ++ohlcvRequestId;
+  const reqAddress = moodResolvedAddress;
+  const reqTimeframe = moodTokenTimeframe;
+
   try {
     const params = new URLSearchParams({
-      address: moodResolvedAddress,
-      timeframe: moodTokenTimeframe
+      address: reqAddress,
+      timeframe: reqTimeframe
     });
     if (moodPairAddress) params.set("pool", moodPairAddress);
 
     const data = await fetchJson(`/api/token-ohlcv?${params}`, { candles: [] });
+
+    /* Llegó tarde: el usuario ya está mirando otra cosa. */
+    if (reqId !== ohlcvRequestId
+        || reqAddress !== moodResolvedAddress
+        || reqTimeframe !== moodTokenTimeframe) {
+      return;
+    }
+
     const candles = Array.isArray(data?.candles) ? data.candles : [];
 
     if (candles.length >= 2) {
       moodOhlcv = candles;
-      moodOhlcvTimeframe = moodTokenTimeframe;
+      moodOhlcvTimeframe = reqTimeframe;
     } else {
       /* Sin velas del proveedor se cae a la serie local. Es peor,
          pero es mejor que un gráfico vacío — y el usuario lo ve
@@ -3962,6 +4008,14 @@ async function loadMoodOhlcv(force = false) {
     drawMoodBackdrop();
   } finally {
     isLoadingOhlcv = false;
+
+    /* Si alguien pidió una recarga mientras esta estaba en vuelo,
+       se atiende ahora. Siempre con force: quien pulsó quería
+       datos nuevos, no la caché de lo que ya había. */
+    if (pendingOhlcvReload) {
+      pendingOhlcvReload = false;
+      loadMoodOhlcv(true);
+    }
   }
 }
 

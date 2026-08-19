@@ -63,10 +63,28 @@
     "30d": { fetch: "30d", label: "30D", days: 30 }
   };
 
-  const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
+  /* EL ESTILO ACTIVO manda en las dos rutas.
 
-  /* Bucle animado: 24 fotogramas de 640px en rejilla 6x4. */
-  const IDLE_SPRITE = (mood) => `/assets/hero/idle/${mood}_idle.webp`;
+     Antes estaban clavadas a "classic": al elegir Synth en el
+     selector, la imagen plana cambiaba —la gestiona script.js—
+     pero el bucle animado seguia siendo el de classic, asi que se
+     veia un robot que al cargar el sprite se convertia en una
+     persona. Los dos tienen que salir del mismo estilo.
+
+     Se lee del selector en cada llamada y no se cachea: el usuario
+     puede cambiarlo en cualquier momento. */
+  function heroStyle() {
+    const v = String(document.getElementById("styleSelector")?.value || "")
+      .toLowerCase();
+    return (v === "synth" || v === "classic") ? v : "classic";
+  }
+
+  const HERO_IMG = (mood) => `/assets/hero/${heroStyle()}/${mood}.png`;
+
+  /* Bucle animado: 24 fotogramas de 640px en rejilla 6x4.
+     Un archivo por estilo y emocion. */
+  const IDLE_SPRITE = (mood) =>
+    `/assets/hero/idle/${heroStyle()}/${mood}_idle.webp`;
 
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
@@ -129,9 +147,12 @@
   /* Sprites que ya se sabe que no existen o no cargan. Se
      comprueba UNA vez por emocion: sin esto, cada frame del rig
      dispararia otra peticion fallida. */
+  /* Las claves llevan el estilo: el mismo mood en classic y en
+     synth son dos archivos distintos, y sin el estilo en la clave
+     el segundo heredaria el estado de carga del primero. */
   const idleReady = new Set();
   const idleFailed = new Set();
-  let idleMood = null;
+  let idleKey = null;
 
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES
@@ -657,17 +678,19 @@
     const st = stage();
     if (!el || !st) return;
 
-    if (idleFailed.has(mood)) {
+    const key = `${heroStyle()}/${mood}`;
+
+    if (idleFailed.has(key)) {
       st.classList.remove("wm-has-sprite");
       return;
     }
 
-    if (idleMood === mood) return;
-    idleMood = mood;
+    if (idleKey === key) return;
+    idleKey = key;
 
     const src = IDLE_SPRITE(mood);
 
-    if (idleReady.has(mood)) {
+    if (idleReady.has(key)) {
       el.style.backgroundImage = `url("${src}")`;
       st.classList.add("wm-has-sprite");
       return;
@@ -679,20 +702,21 @@
     try {
       const probe = new Image();
       probe.onload = () => {
-        idleReady.add(mood);
-        /* Puede haber cambiado de emocion mientras descargaba: si
-           ya no es la actual, se guarda en cache y no se pinta. */
-        if (idleMood !== mood) return;
+        idleReady.add(key);
+        /* Puede haber cambiado de emocion O DE ESTILO mientras
+           descargaba: si ya no es el actual, se guarda en cache y
+           no se pinta. */
+        if (idleKey !== key) return;
         el.style.backgroundImage = `url("${src}")`;
         st.classList.add("wm-has-sprite");
       };
       probe.onerror = () => {
-        idleFailed.add(mood);
+        idleFailed.add(key);
         st.classList.remove("wm-has-sprite");
       };
       probe.src = src;
     } catch {
-      idleFailed.add(mood);
+      idleFailed.add(key);
     }
   }
 
@@ -843,6 +867,12 @@
     /* Con la pestaña oculta no se pide nada ni se anima: el rig
        corre en cada frame y no tiene por que gastar bateria
        moviendo una cara que nadie mira. */
+    /* Cambiar de estilo obliga a recargar el bucle: sin esto se
+       quedaria el sprite del estilo anterior hasta que cambiara la
+       emocion, que puede tardar horas. */
+    document.getElementById("styleSelector")
+      ?.addEventListener("change", () => { idleKey = null; });
+
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         clearInterval(state.timer);
