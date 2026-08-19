@@ -799,6 +799,44 @@
     ensureIdle(mood[0]);
     applyIdleFx(sub, mood[0]);
 
+    /* ── EL GAUGE, TAMBIEN EL CANONICO ──
+
+       BUG QUE ARREGLA: el heroe decia "Content 78" y el gauge, tres
+       centimetros mas abajo, "60 Optimism". El gauge lo pinta
+       script.js con su formula vieja, que no es el indice.
+
+       En la revision anterior di por hecho que el gauge ya mostraba
+       el canonico porque en aquella captura coincidian — coincidian
+       POR CASUALIDAD. Comprobar dos numeros iguales no demuestra que
+       vengan de la misma fuente, y eso fue un error de metodo por mi
+       parte.
+
+       Se llama a la MISMA funcion de script.js en vez de reescribir
+       los textos: updateGauge pinta la aguja, el arco, el color y
+       las dos cifras de una pasada. Tocar solo el texto dejaria la
+       aguja apuntando a otro sitio, que es peor que la
+       contradiccion original.
+
+       Es una funcion de nivel superior de un script clasico, asi
+       que vive en window. Si no estuviera, no se hace nada: el
+       gauge se queda como estaba en lugar de romperse. */
+    /* La barra superior dice literalmente "Index", así que tiene
+       que ser el índice. También lo escribía script.js con la
+       fórmula vieja. */
+    const head = $("headerScore");
+    if (head && head.textContent !== String(shown)) {
+      head.textContent = String(shown);
+    }
+
+    const gauge = $("gaugeScore");
+    if (gauge && gauge.textContent !== String(shown)
+        && typeof window.updateGauge === "function"
+        && typeof window.getMoodByScore === "function") {
+      try {
+        window.updateGauge(shown, window.getMoodByScore(shown));
+      } catch {}
+    }
+
     /* El overlay de subemocion, GOBERNADO en vez de apagado: el
        craneo-verde-con-cara-neutra venia de dos sistemas eligiendo
        cada uno por su lado. Aqui base y overlay salen del mismo
