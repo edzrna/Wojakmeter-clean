@@ -465,6 +465,28 @@ export default function Home({ ogImageUrl }) {
                           alt=""
                           aria-hidden="true"
                         />
+
+                        {/* ── BUCLE ANIMADO ──
+
+                            Va ENCIMA de la imagen plana, no en su
+                            lugar. La imagen plana sigue ahí abajo
+                            como respaldo: si el sprite no ha
+                            cargado todavía —o falla, o el usuario
+                            pidió menos movimiento— se ve el render
+                            fijo de siempre y no un hueco.
+
+                            El cambio a sprite solo ocurre cuando
+                            la imagen ha terminado de descargarse,
+                            así que nunca hay un fotograma en
+                            blanco. Lo gobierna public/hero-rig.js.
+
+                            Los archivos: /assets/hero/idle/<mood>_idle.webp
+                            24 fotogramas de 640px en rejilla 6x4. */}
+                        <div
+                          id="heroSprite"
+                          className="hero-sprite"
+                          aria-hidden="true"
+                        ></div>
                       </div>
                     </div>
                   </div>
