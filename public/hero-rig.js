@@ -101,26 +101,30 @@
   /* ---------------------------------------------------------
      QUIEN SE REPRODUCE DE IDA Y VUELTA
 
-     Ahora TODAS menos `concern`. Las hojas nuevas estan dibujadas
-     como `content`: van de reposo a extremo, asi que el salto del
-     ultimo fotograma al primero seria un brinco. Yendo y
-     viniendo, el bucle cierra solo y no hay corte que disimular.
+     Ahora TODAS menos `concern` y `frustration`. Las hojas nuevas
+     estan dibujadas como `content`: van de reposo a extremo, asi
+     que el salto del ultimo fotograma al primero seria un brinco.
+     Yendo y viniendo, el bucle cierra solo y no hay corte que
+     disimular.
 
-     `concern` es la excepcion y lo seguira siendo: su sudor
-     RESBALA. Medido sobre la hoja, el centroide del cambio baja
-     en 15 de los 24 pasos y sube en 7 — es la unica de las siete
-     con una direccion clara. Del derecho el sudor cae; del reves
-     subiria por la cara. En las demas el movimiento esta
-     repartido casi mitad y mitad, que es la firma de un gesto sin
-     direccion (respirar, parpadear), y por eso aguantan la vuelta
-     sin que se note.
+     `concern` queda fuera porque su sudor RESBALA. Medido sobre
+     la hoja, el centroide del cambio baja en 15 de los 24 pasos y
+     sube en 7: es la unica con una direccion vertical marcada.
+     Del derecho el sudor cae; del reves subiria por la cara.
 
-     La lista es de EXCEPCIONES, no de incluidos: si mañana llega
-     otra hoja con algo que cae —lagrimas que corran, ceniza,
-     humo— basta con añadirla aqui. Una emocion nueva entra por
-     defecto en ida y vuelta, que es lo que quieren casi todas.
+     `frustration` queda fuera por decision del autor. La medicion
+     no la señalaba —su movimiento sale casi mitad y mitad, y las
+     lagrimas estan pintadas, no viajan—, pero el grito tiene un
+     sentido que la cifra no captura: se abre y se descarga. Del
+     reves la boca se cierra sola y el grito se traga, que es lo
+     contrario de lo que cuenta esa emocion.
+
+     La lista es de EXCEPCIONES, no de incluidos: una emocion
+     nueva entra por defecto en ida y vuelta, que es lo que
+     quieren casi todas. Se añade aqui lo que tenga direccion,
+     medida o dramatica.
      --------------------------------------------------------- */
-  const IDLE_NO_PINGPONG = new Set(["concern"]);
+  const IDLE_NO_PINGPONG = new Set(["concern", "frustration"]);
 
   const isPingPong = (mood) => !IDLE_NO_PINGPONG.has(String(mood || ""));
 
@@ -926,15 +930,16 @@
 
     /* En ida y vuelta el ciclo dura el DOBLE, porque recorre la
        hoja dos veces. Sin esta correccion, una hoja de vaiven
-       pasaria sus 24 fotogramas en la mitad de tiempo que
-       `concern` y se veria acelerada frente a ella. */
+       pasaria sus 24 fotogramas en la mitad de tiempo que las de
+       bucle simple y se veria acelerada frente a ellas. */
     const cycle = pingpong ? dur : dur / 2;
     const steps = pingpong ? IDLE_STEPS : IDLE_FRAMES;
 
     const t = (now % cycle) / cycle;             // 0 … 1
     const step = Math.floor(t * steps);
 
-    /* Ida y vuelta para casi todas; bucle simple para `concern`. */
+    /* Ida y vuelta para casi todas; bucle simple para las de la
+       lista de excepciones. */
     const frame = (!pingpong || step < IDLE_FRAMES)
       ? step
       : IDLE_STEPS - step;
