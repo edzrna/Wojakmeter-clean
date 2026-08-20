@@ -96,27 +96,33 @@
      0,1,…,23,22,…,1 y otra vez 0. Son 46, no 48: contar 48
      mostraria el fotograma 23 y el 0 dos veces seguidas, y esa
      doble exposicion se ve como un tiron justo en el giro. */
-  /* Pasos de un ciclo de IDA Y VUELTA sin repetir los extremos.
-     46 y no 48: contar 48 mostraria el ultimo fotograma y el
-     primero dos veces seguidas, y esa doble exposicion se ve como
-     un tiron justo en el giro. */
   const IDLE_STEPS = IDLE_FRAMES * 2 - 2;
 
   /* ---------------------------------------------------------
      QUIEN SE REPRODUCE DE IDA Y VUELTA
 
-     Solo `content`. Su hoja va de reposo a extremo, asi que al
-     saltar del ultimo fotograma al primero se ve un brinco;
-     yendo y viniendo, el bucle cierra solo.
+     Ahora TODAS menos `concern`. Las hojas nuevas estan dibujadas
+     como `content`: van de reposo a extremo, asi que el salto del
+     ultimo fotograma al primero seria un brinco. Yendo y
+     viniendo, el bucle cierra solo y no hay corte que disimular.
 
-     Las demas estan dibujadas como ciclos cerrados —el ultimo
-     fotograma ya enlaza con el primero— y forzarles el vaiven
-     duplicaria su duracion y las haria ir a la mitad de
-     velocidad, ademas de invertir gestos que solo tienen sentido
-     en un sentido: el sudor de `concern` subiria por la cara
-     durante la vuelta.
+     `concern` es la excepcion y lo seguira siendo: su sudor
+     RESBALA. Medido sobre la hoja, el centroide del cambio baja
+     en 15 de los 24 pasos y sube en 7 — es la unica de las siete
+     con una direccion clara. Del derecho el sudor cae; del reves
+     subiria por la cara. En las demas el movimiento esta
+     repartido casi mitad y mitad, que es la firma de un gesto sin
+     direccion (respirar, parpadear), y por eso aguantan la vuelta
+     sin que se note.
+
+     La lista es de EXCEPCIONES, no de incluidos: si mañana llega
+     otra hoja con algo que cae —lagrimas que corran, ceniza,
+     humo— basta con añadirla aqui. Una emocion nueva entra por
+     defecto en ida y vuelta, que es lo que quieren casi todas.
      --------------------------------------------------------- */
-  const IDLE_PINGPONG = new Set(["content"]);
+  const IDLE_NO_PINGPONG = new Set(["concern"]);
+
+  const isPingPong = (mood) => !IDLE_NO_PINGPONG.has(String(mood || ""));
 
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
@@ -914,21 +920,21 @@
        que es la unica fuente que garantiza estar sincronizada con
        la hoja que se esta mostrando ahora mismo. */
     const moodKey = String(state.idleKeyMood || "");
-    const pingpong = IDLE_PINGPONG.has(moodKey);
+    const pingpong = isPingPong(moodKey);
 
     const dur = state.idleDur || 3000;
 
     /* En ida y vuelta el ciclo dura el DOBLE, porque recorre la
-       hoja dos veces. Sin esta correccion, `content` pasaria los
-       24 fotogramas en la mitad de tiempo que las demas y se
-       veria acelerada. */
+       hoja dos veces. Sin esta correccion, una hoja de vaiven
+       pasaria sus 24 fotogramas en la mitad de tiempo que
+       `concern` y se veria acelerada frente a ella. */
     const cycle = pingpong ? dur : dur / 2;
     const steps = pingpong ? IDLE_STEPS : IDLE_FRAMES;
 
     const t = (now % cycle) / cycle;             // 0 … 1
     const step = Math.floor(t * steps);
 
-    /* Bucle simple para casi todas; ida y vuelta para `content`. */
+    /* Ida y vuelta para casi todas; bucle simple para `concern`. */
     const frame = (!pingpong || step < IDLE_FRAMES)
       ? step
       : IDLE_STEPS - step;
