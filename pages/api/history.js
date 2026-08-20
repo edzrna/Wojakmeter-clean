@@ -71,6 +71,22 @@ export default async function handler(req, res) {
         ROUND(AVG(score))::int AS score,
         MIN(score)::int        AS low,
         MAX(score)::int        AS high,
+        /* EL ÍNDICE NUEVO, aparte del score viejo.
+
+           emotion_history guarda las dos mediciones en columnas
+           distintas y hasta ahora esta consulta solo devolvía
+           `score`, la fórmula antigua. El cliente dibujaba la
+           curva del héroe con ella creyendo que era el índice:
+           dos cifras plausibles de 0 a 100, así que el error no
+           saltaba por ningún lado.
+
+           Va en su propia columna y no sustituyendo a `score`
+           porque durante la transición interesa poder comparar
+           las dos series. NULL en las lecturas anteriores al
+           despliegue del motor nuevo, y el cliente ya sabe caer
+           al score del momento cuando falta. */
+        ROUND(AVG(index_score))::int AS index_score,
+        COUNT(index_score)           AS index_n,
         ROUND(AVG(change_24h)::numeric, 2)::float AS change
       FROM emotion_history
       WHERE ts > NOW() - ${interval}::interval
@@ -78,14 +94,25 @@ export default async function handler(req, res) {
       ORDER BY 1 ASC;
     `;
 
-    const points = series.map((r) => ({
-      ts: new Date(r.t).getTime(),
-      score: r.score,
-      low: r.low,
-      high: r.high,
-      mood: moodFromScore(r.score),
-      change: r.change
-    }));
+    const points = series.map((r) => {
+      /* Un cubo puede mezclar lecturas con índice y sin él. Si
+         ninguna lo tiene, se devuelve null en vez de un promedio
+         de nada. */
+      const idx = Number(r.index_n) > 0 ? r.index_score : null;
+
+      return {
+        ts: new Date(r.t).getTime(),
+        score: r.score,
+        index_score: idx,
+        low: r.low,
+        high: r.high,
+        /* El mood sale del índice cuando existe: si la curva se
+           dibuja con index_score, la etiqueta tiene que venir del
+           mismo sitio. */
+        mood: moodFromScore(idx ?? r.score),
+        change: r.change
+      };
+    });
 
     /* ---------- Estadísticas ---------- */
 
