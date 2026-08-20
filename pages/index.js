@@ -584,8 +584,8 @@ export default function Home({ ogImageUrl }) {
 
                       SUBIDOS AQUI desde el final del bloque hero.
 
-                      Antes vivian despues del gauge, el espectro y el
-                      heartbeat: para ver en que ventana estabas mirando
+                      Antes vivian despues del gauge y del espectro:
+                      para ver en que ventana estabas mirando
                       habia que pasar por delante de tres modulos. El
                       orden decia que el timeframe era un detalle, cuando
                       en realidad es lo que da sentido a todo lo de
@@ -675,37 +675,6 @@ export default function Home({ ogImageUrl }) {
                     </div>
                   </section>
 
-                  {/* ── SIGNOS VITALES: la firma ── */}
-                  <div className="heartbeat-wrap" id="heartbeatWrap">
-                    <div className="heartbeat-chart">
-                      {/* MONITOR DE SIGNOS VITALES.
-
-                          La traza se DESPLAZA en bucle en vez de
-                          estar clavada. Se logra con dos copias
-                          seguidas: la segunda es un <use> de la
-                          primera, así que script.js sigue
-                          escribiendo un solo `d` y las dos cambian
-                          a la vez.
-
-                          Empalma sin costura porque todos los
-                          trazos de HEARTBEAT_PATHS empiezan y
-                          terminan a la misma altura, y el
-                          desplazamiento es exactamente el ancho
-                          del viewBox. */}
-                      <svg viewBox="0 0 320 56" preserveAspectRatio="none" aria-hidden="true">
-                        <g id="heartbeatScroll">
-                          <path id="heartbeatPath" d=""></path>
-                          <use href="#heartbeatPath" x="320"></use>
-                          <use href="#heartbeatPath" x="640"></use>
-                        </g>
-                      </svg>
-
-                      {/* Barra de barrido: el borde luminoso que
-                          deja el haz al pasar. Es lo que convierte
-                          una línea que se mueve en un monitor. */}
-                      <span className="heartbeat-sweep" aria-hidden="true"></span>
-                    </div>
-                  </div>
 
                   <div className="hero-share-row">
                     <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
@@ -713,120 +682,12 @@ export default function Home({ ogImageUrl }) {
                     </button>
                   </div>
 
-                  {/* ── PANEL AVANZADO ──
-                      <details> nativo: accesible por teclado y funciona
-                      sin JS. Antes esto bloqueaba la lectura. */}
-                  <details className="hero-advanced" id="heroAdvanced">
-                    <summary className="hero-advanced-toggle">
-                      How this score is built
-                    </summary>
-
-                    <div className="hero-advanced-body">
-                      <div className="hero-modes" id="heroModes">
-                        <button
-                          type="button"
-                          className="hero-mode-btn active"
-                          data-hero-mode="raw"
-                          id="heroModeRaw"
-                        >
-                          Raw Market
-                        </button>
-                        <button
-                          type="button"
-                          className="hero-mode-btn"
-                          data-hero-mode="composite"
-                          id="heroModeComposite"
-                        >
-                          Composite
-                        </button>
-                        <button
-                          type="button"
-                          className="hero-mode-btn"
-                          data-hero-mode="custom"
-                          id="heroModeCustom"
-                        >
-                          Custom Layers
-                        </button>
-                      </div>
-
-                      <section className="wm-layers disabled-layers" id="wmLayers">
-                        <div className="layer-title">
-                          Toggle layers to see how each force affects the hero
-                        </div>
-                        <div className="layer-buttons" id="layerButtons">
-                          <button type="button" className="layer-btn active" data-layer="market" id="toggleLayerMarket">Market Mood</button>
-                          <button type="button" className="layer-btn" data-layer="social" id="toggleLayerSocial">Social Mood</button>
-                          <button type="button" className="layer-btn" data-layer="driver" id="toggleLayerDriver">Market Driver</button>
-                          <button type="button" className="layer-btn" data-layer="pulse" id="toggleLayerPulse">Emotion Pulse</button>
-                        </div>
-                        <div className="layer-grid">
-                          <div className="layer-card">
-                            <span className="layer-card-label">Market</span>
-                            <strong className="layer-card-score" id="layerScoreMarket">50</strong>
-                            <div className="layer-mini-bar"><span id="layerBarMarket"></span></div>
-                            <div className="layer-impact" id="layerImpactMarket">Base</div>
-                          </div>
-                          <div className="layer-card">
-                            <span className="layer-card-label">Social</span>
-                            <strong className="layer-card-score" id="layerScoreSocial">50</strong>
-                            <div className="layer-mini-bar"><span id="layerBarSocial"></span></div>
-                            <div className="layer-impact" id="layerImpactSocial">+0</div>
-                          </div>
-                          <div className="layer-card">
-                            <span className="layer-card-label">Driver</span>
-                            <strong className="layer-card-score" id="layerScoreDriver">50</strong>
-                            <div className="layer-mini-bar"><span id="layerBarDriver"></span></div>
-                            <div className="layer-impact" id="layerImpactDriver">+0</div>
-                          </div>
-                          <div className="layer-card">
-                            <span className="layer-card-label">Pulse</span>
-                            <strong className="layer-card-score" id="layerScorePulse">50</strong>
-                            <div className="layer-mini-bar"><span id="layerBarPulse"></span></div>
-                            <div className="layer-impact" id="layerImpactPulse">+0</div>
-                          </div>
-                        </div>
-                      </section>
-                    </div>
-                  </details>
+                  {/* El panel avanzado (Composite, Custom Layers) se
+                      retiró en la limpieza: eran controles que pedían
+                      al visitante decidir cómo calcular el índice
+                      antes de haberlo entendido. El índice es uno. */}
                 </div>
 
-                {/* ── DRIVERS ── */}
-                <section className="drivers-card card">
-                  <div className="section-head"><h3>Market Drivers</h3></div>
-
-                  <div className="drivers-controls">
-                    <label htmlFor="macroDriver">Main macro driver</label>
-                    <select id="macroDriver" defaultValue="market_flow">
-                      <option value="market_flow">Market flow / price action</option>
-                      <option value="etf_adoption">ETF / institutional adoption</option>
-                      <option value="rate_hike">Rate hike fears</option>
-                      <option value="rate_cut">Rate cut hopes</option>
-                      <option value="regulation_crackdown">Regulation crackdown</option>
-                      <option value="crypto_hack">Crypto hack / insolvency</option>
-                      <option value="war_escalation">War escalation</option>
-                      <option value="neutral_macro">Neutral macro environment</option>
-                    </select>
-                  </div>
-
-                  <div className="driver-list">
-                    <div className="driver-item">
-                      <span>Macro Driver</span>
-                      <strong id="driverMacro">Market flow / price action</strong>
-                    </div>
-                    <div className="driver-item">
-                      <span>Main Narrative</span>
-                      <strong id="driverNarrative">Reading live market data.</strong>
-                    </div>
-                    <div className="driver-item">
-                      <span>Timeframe Reaction</span>
-                      <strong id="driverTimeframeReaction">Balanced reaction</strong>
-                    </div>
-                    <div className="driver-item">
-                      <span>Risk Tone</span>
-                      <strong id="driverRiskTone">Neutral</strong>
-                    </div>
-                  </div>
-                </section>
               </div>
             </section>
 
