@@ -573,6 +573,11 @@
     state.windowScore = w ? w.score : null;
     state.windowDelta = w ? w.delta : 0;
 
+    if (state.score !== null) {
+      window.WM_CANONICAL_INDEX = state.windowScore ?? state.score;
+      publishAndRefresh();
+    }
+
     loadHistory();
   }
 
@@ -697,6 +702,14 @@
 
       stage()?.classList.remove("wm-rig-idle");
 
+      /* ── SE PUBLICA EL INDICE ──
+
+         script.js lo lee en getEffectiveHeroScore() y lo reparte
+         por toda la pagina. Es lo que sustituye a interceptar once
+         elementos uno por uno: ahora el numero correcto sale del
+         origen y no hay nada que corregir despues. */
+      window.WM_CANONICAL_INDEX = data.score;
+
       state.score = data.score;
       state.streakSeconds = Number(data.streakSeconds || 0);
       state.windows = data.windows || null;
@@ -711,6 +724,14 @@
       const w0 = state.windows?.[state.range];
       state.windowScore = w0 ? w0.score : null;
       state.windowDelta = w0 ? w0.delta : 0;
+
+      /* Lo que se PUBLICA es lo que se ve: si la ventana manda,
+         script.js tiene que repartir esa misma cifra. Publicar el
+         indice del momento mientras el heroe muestra la media de
+         30 dias reproduciria la contradiccion que esto viene a
+         eliminar. */
+      window.WM_CANONICAL_INDEX = state.windowScore ?? data.score;
+      publishAndRefresh();
 
       /* El gráfico viejo de script.js se apaga en cuanto el índice
          nuevo está vivo: hasta ahora se dibujaban los dos, uno
@@ -816,6 +837,20 @@
      casi plana; uno en panico, en 1,2s y a plena amplitud. Es la
      diferencia entre un adorno y un instrumento.
      --------------------------------------------------------- */
+  /* Se pide a script.js que reparta el numero nuevo. Sin esto,
+     la pagina esperaria a su proximo ciclo —hasta un minuto— para
+     enterarse de que el indice cambio. */
+  function publishAndRefresh() {
+    try {
+      if (typeof window.recomputeHeroSystem === "function") {
+        window.recomputeHeroSystem();
+      }
+      if (typeof window.updateHeaderMetrics === "function") {
+        window.updateHeaderMetrics();
+      }
+    } catch {}
+  }
+
   /* ---------------------------------------------------------
      AVANCE DE FOTOGRAMA — IDA Y VUELTA
 
@@ -835,6 +870,24 @@
   function advanceIdle(now) {
     const el = $("heroSprite");
     if (!el || !stage()?.classList.contains("wm-has-sprite")) return;
+
+    /* Se apagan las animaciones de rejilla del CSS, UNA sola vez.
+
+       Una animación CSS gana siempre sobre un estilo inline
+       mientras corre, así que si la hoja de estilos sigue
+       animando background-position, todo lo que escriba este
+       bucle se ignora. Sobrescribiendo la propiedad `animation`
+       aquí, el avance de fotograma pasa a ser cosa del JS y el
+       CSS conserva solo el temblor.
+
+       Va inline y no en globals.css para que el cambio quepa en
+       un único archivo. */
+    if (!el.__animOff) {
+      el.__animOff = true;
+      el.style.animation =
+        "hero-idle-shake calc(.10s + (1 - var(--idle-shake, 0)) * .26s) " +
+        "linear infinite";
+    }
 
     const dur = state.idleDur || 3000;
     const t = (now % dur) / dur;                 // 0 … 1
@@ -970,78 +1023,52 @@
        Es una funcion de nivel superior de un script clasico, asi
        que vive en window. Si no estuviera, no se hace nada: el
        gauge se queda como estaba en lugar de romperse. */
-    /* ── LA BARRA SUPERIOR, ENTERA ──
+    /* ── YA NO SE INTERCEPTAN LA BARRA, EL GAUGE, EL PUNTERO NI
+           BUBBLE MAPS ──
 
-       BUG QUE ARREGLA: la barra decía "Euphoria" mientras el héroe
-       mostraba Content.
+       Los pintaba script.js con su formula vieja y aqui se
+       reescribian uno a uno: headerScore, headerMoodLabel,
+       headerRegime, gaugeScore, bubbleGlobalScore, emotionPointer
+       y emotionPointerImg. Siete elementos y una lista que habia
+       que ampliar cada vez que aparecia una discrepancia nueva.
 
-       Yo imponía solo el NÚMERO y me dejé la etiqueta de emoción y
-       el régimen, que script.js sigue escribiendo con la fórmula
-       vieja. Como el número y la palabra viven en la misma fila,
-       el resultado era una fila que se contradecía a sí misma.
+       Ahora el indice se publica en window.WM_CANONICAL_INDEX y
+       script.js lo reparte desde el origen, asi que salen bien
+       sin que nadie los corrija. Lo que queda aqui es solo lo que
+       script.js NO sabe calcular: la subemocion, su narrativa y
+       las capas del sprite.
 
-       Las tres salen del mismo `shown`, igual que todo lo demás.
-       No basta con arreglar la cifra que se ve mal: hay que
-       arreglar TODO lo que esa cifra describe. */
-    const head = $("headerScore");
-    if (head && head.textContent !== String(shown)) {
-      head.textContent = String(shown);
-    }
+       Si vuelve a aparecer una discrepancia, el sitio donde mirar
+       es getEffectiveHeroScore(), no esta funcion. */
 
-    const headMood = $("headerMoodLabel");
-    if (headMood && headMood.textContent !== label) {
-      headMood.textContent = label;
-      headMood.className = `mood-${mood[0]}`;
-    }
+    /* El bucle animado y su modulacion. La imagen plana de arriba
+       se sigue actualizando SIEMPRE, aunque haya sprite: es el
+       respaldo, y tiene que estar en la emocion correcta el dia
+       que el sprite falle. */
+    ensureIdle(mood[0]);
+    applyIdleFx(sub, mood[0]);
 
-    /* Mismos cortes que script.js: si divergieran, la barra diría
-       "Greed" con un índice de zona de "Extreme greed". */
-    const regime =
-      shown >= 80 ? "Extreme greed" :
-      shown >= 62 ? "Greed" :
-      shown >= 45 ? "Balanced" :
-      shown >= 30 ? "Fear" : "Extreme fear";
+    /* ── EL GAUGE, TAMBIEN EL CANONICO ──
 
-    const regimeEl = $("headerRegime");
-    if (regimeEl && regimeEl.textContent !== regime) {
-      regimeEl.textContent = regime;
-      regimeEl.className = `mood-${mood[0]}`;
-    }
+       BUG QUE ARREGLA: el heroe decia "Content 78" y el gauge, tres
+       centimetros mas abajo, "60 Optimism". El gauge lo pinta
+       script.js con su formula vieja, que no es el indice.
 
-    /* Bubble Maps enseña el MISMO sujeto —la emoción global— en
-       otra vista, así que también tiene que coincidir. Estaba
-       saliendo de la fórmula vieja. */
-    /* ── PUNTERO DEL ESPECTRO ──
-       Estaba en la posición del score viejo y con la cara de OTRA
-       emoción: el gauge marcaba Content 77 y el puntero enseñaba
-       la cara de Euphoria en el extremo verde. Es el mismo fallo
-       que la etiqueta del header, en versión gráfica. */
-    const pointer = $("emotionPointer");
-    if (pointer) {
-      const left = `${clamp(shown, 0, 100)}%`;
-      if (pointer.style.left !== left) pointer.style.left = left;
-    }
+       En la revision anterior di por hecho que el gauge ya mostraba
+       el canonico porque en aquella captura coincidian — coincidian
+       POR CASUALIDAD. Comprobar dos numeros iguales no demuestra que
+       vengan de la misma fuente, y eso fue un error de metodo por mi
+       parte.
 
-    const pointerImg = $("emotionPointerImg");
-    if (pointerImg) {
-      const psrc = `/assets/icons/${heroStyle()}/${mood[0]}.png`;
-      if (!String(pointerImg.src).endsWith(psrc)) pointerImg.src = psrc;
-    }
+       Se llama a la MISMA funcion de script.js en vez de reescribir
+       los textos: updateGauge pinta la aguja, el arco, el color y
+       las dos cifras de una pasada. Tocar solo el texto dejaria la
+       aguja apuntando a otro sitio, que es peor que la
+       contradiccion original.
 
-    const bubble = $("bubbleGlobalScore");
-    if (bubble && bubble.textContent !== String(shown)) {
-      bubble.textContent = String(shown);
-    }
-
-    const gauge = $("gaugeScore");
-    if (gauge && gauge.textContent !== String(shown)
-        && typeof window.updateGauge === "function"
-        && typeof window.getMoodByScore === "function") {
-      try {
-        window.updateGauge(shown, window.getMoodByScore(shown));
-      } catch {}
-    }
-
+       Es una funcion de nivel superior de un script clasico, asi
+       que vive en window. Si no estuviera, no se hace nada: el
+       gauge se queda como estaba en lugar de romperse. */
     /* El overlay de subemocion, GOBERNADO en vez de apagado: el
        craneo-verde-con-cara-neutra venia de dos sistemas eligiendo
        cada uno por su lado. Aqui base y overlay salen del mismo

@@ -953,7 +953,37 @@ function computeCustomLayersScore() {
   return weight ? roundScore(total / weight) : s.market;
 }
 
+/* ===========================================================
+   EL ÍNDICE CANÓNICO, PUBLICADO PARA TODA LA PÁGINA
+
+   Lo escribe public/hero-rig.js en cuanto responde
+   /api/index-score. Mientras valga null, se usa la fórmula
+   antigua: la página funciona igual el día que el endpoint falle
+   o antes de que el cron haya guardado la primera lectura.
+
+   POR QUÉ ESTA VARIABLE EXISTE:
+   había DOS motores de score conviviendo. Este archivo calculaba
+   el suyo y lo repartía por media página —gauge, barra superior,
+   etiqueta de emoción, régimen, puntero del espectro, bubble
+   maps—, mientras el índice nuevo decía otra cosa. El resultado
+   eran hasta cuatro cifras distintas en la misma pantalla, y el
+   parche consistía en que hero-rig.js interceptara once
+   elementos uno por uno, comparando textContent en cada frame.
+
+   Ese parche tenía un defecto de fondo: cada elemento NUEVO que
+   se pintara aquí volvería a divergir, y solo se descubriría en
+   producción. Publicando el índice en el origen, todo lo que
+   dependa de currentGlobalScore queda bien de nacimiento.
+   =========================================================== */
+window.WM_CANONICAL_INDEX = null;
+
 function getEffectiveHeroScore() {
+  /* El índice manda cuando existe. Los modos Composite y Custom
+     Layers se retiraron de la interfaz, así que solo queda RAW
+     como respaldo. */
+  const canon = Number(window.WM_CANONICAL_INDEX);
+  if (Number.isFinite(canon)) return roundScore(canon);
+
   if (heroMode === HERO_MODE_RAW)       return roundScore(currentMarketScore);
   if (heroMode === HERO_MODE_COMPOSITE) return computeCompositeScore();
   return computeCustomLayersScore();
