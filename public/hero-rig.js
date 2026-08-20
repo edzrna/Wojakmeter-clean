@@ -96,7 +96,27 @@
      0,1,…,23,22,…,1 y otra vez 0. Son 46, no 48: contar 48
      mostraria el fotograma 23 y el 0 dos veces seguidas, y esa
      doble exposicion se ve como un tiron justo en el giro. */
+  /* Pasos de un ciclo de IDA Y VUELTA sin repetir los extremos.
+     46 y no 48: contar 48 mostraria el ultimo fotograma y el
+     primero dos veces seguidas, y esa doble exposicion se ve como
+     un tiron justo en el giro. */
   const IDLE_STEPS = IDLE_FRAMES * 2 - 2;
+
+  /* ---------------------------------------------------------
+     QUIEN SE REPRODUCE DE IDA Y VUELTA
+
+     Solo `content`. Su hoja va de reposo a extremo, asi que al
+     saltar del ultimo fotograma al primero se ve un brinco;
+     yendo y viniendo, el bucle cierra solo.
+
+     Las demas estan dibujadas como ciclos cerrados —el ultimo
+     fotograma ya enlaza con el primero— y forzarles el vaiven
+     duplicaria su duracion y las haria ir a la mitad de
+     velocidad, ademas de invertir gestos que solo tienen sentido
+     en un sentido: el sudor de `concern` subiria por la cara
+     durante la vuelta.
+     --------------------------------------------------------- */
+  const IDLE_PINGPONG = new Set(["content"]);
 
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
@@ -783,6 +803,7 @@
 
     if (idleKey === key) return;
     idleKey = key;
+    state.idleKeyMood = mood;
 
     /* Se corta el bucle anterior en el acto. Sin esto, entre que
        cambia la emoción y termina de descargar la nueva, la capa
@@ -889,12 +910,26 @@
         "linear infinite";
     }
 
-    const dur = state.idleDur || 3000;
-    const t = (now % dur) / dur;                 // 0 … 1
-    const step = Math.floor(t * IDLE_STEPS);
+    /* El mood actual sale de la clave de carga —"estilo/mood"—,
+       que es la unica fuente que garantiza estar sincronizada con
+       la hoja que se esta mostrando ahora mismo. */
+    const moodKey = String(state.idleKeyMood || "");
+    const pingpong = IDLE_PINGPONG.has(moodKey);
 
-    /* Ida hasta el ultimo, vuelta hasta el primero. */
-    const frame = step < IDLE_FRAMES
+    const dur = state.idleDur || 3000;
+
+    /* En ida y vuelta el ciclo dura el DOBLE, porque recorre la
+       hoja dos veces. Sin esta correccion, `content` pasaria los
+       24 fotogramas en la mitad de tiempo que las demas y se
+       veria acelerada. */
+    const cycle = pingpong ? dur : dur / 2;
+    const steps = pingpong ? IDLE_STEPS : IDLE_FRAMES;
+
+    const t = (now % cycle) / cycle;             // 0 … 1
+    const step = Math.floor(t * steps);
+
+    /* Bucle simple para casi todas; ida y vuelta para `content`. */
+    const frame = (!pingpong || step < IDLE_FRAMES)
       ? step
       : IDLE_STEPS - step;
 
