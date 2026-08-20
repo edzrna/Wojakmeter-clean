@@ -812,96 +812,6 @@
      casi plana; uno en panico, en 1,2s y a plena amplitud. Es la
      diferencia entre un adorno y un instrumento.
      --------------------------------------------------------- */
-  /* ---------------------------------------------------------
-     ELECTROCARDIOGRAMA DE VERDAD
-
-     Las rutas de script.js son zigzags: picos alternos arriba y
-     abajo, sin linea de base. Un ECG no se parece a eso.
-
-     Un latido real tiene morfologia: linea isoelectrica, onda P
-     pequena, complejo QRS —una bajada minima, una espiga alta y
-     estrecha, otra bajada—, y onda T ancha y baja. Lo que hace
-     que se lea como un electrocardiograma es el CONTRASTE entre
-     el tramo plano y la espiga: si todo el trazo tiene picos, es
-     una sierra.
-
-     Se genera aqui en vez de en tablas fijas porque el numero de
-     latidos por pantalla depende del ritmo del mercado, y eso no
-     se puede tabular.
-     --------------------------------------------------------- */
-  function ecgPath(beats, amp) {
-    const W = 320, MID = 28;
-    const seg = W / beats;
-    let d = `M0 ${MID}`;
-
-    for (let b = 0; b < beats; b++) {
-      const x = b * seg;
-      /* Cada onda como fraccion del segmento, para que la forma
-         se conserve al cambiar el numero de latidos. */
-      const P  = x + seg * 0.16;
-      const Q  = x + seg * 0.29;
-      const R  = x + seg * 0.33;
-      const S  = x + seg * 0.37;
-      const J  = x + seg * 0.42;
-      const T1 = x + seg * 0.55;
-      const T2 = x + seg * 0.68;
-      const T3 = x + seg * 0.80;
-
-      d += ` L${(x + seg * 0.08).toFixed(1)} ${MID}`;
-      /* Onda P: pequena y redondeada. */
-      d += ` Q${P.toFixed(1)} ${(MID - 4 * amp).toFixed(1)} ${(x + seg * 0.22).toFixed(1)} ${MID}`;
-      /* QRS: lo que da el caracter. La espiga R sube mucho y en
-         muy poco recorrido horizontal; sin esa relacion no se lee
-         como latido. */
-      d += ` L${Q.toFixed(1)} ${(MID + 3 * amp).toFixed(1)}`;
-      d += ` L${R.toFixed(1)} ${(MID - 22 * amp).toFixed(1)}`;
-      d += ` L${S.toFixed(1)} ${(MID + 9 * amp).toFixed(1)}`;
-      d += ` L${J.toFixed(1)} ${MID}`;
-      /* Onda T: ancha, baja y siempre despues de una pausa. */
-      d += ` L${T1.toFixed(1)} ${MID}`;
-      d += ` Q${T2.toFixed(1)} ${(MID - 7 * amp).toFixed(1)} ${T3.toFixed(1)} ${MID}`;
-    }
-
-    return d + ` L${W} ${MID}`;
-  }
-
-  function applyVitals() {
-    const a = state.axes.arousal;
-    const t = state.axes.tension;
-
-    /* Suelo de 1,2s: por debajo, la traza se mueve mas rapido de
-       lo que el ojo puede seguir y se convierte en una mancha. */
-    const dur = clamp(6.0 - a * 4.8, 1.2, 6.0);
-
-    /* La amplitud no baja de 0,45: a cero seria una linea recta y
-       parecerian constantes vitales de un muerto, que no es lo que
-       significa un mercado tranquilo. */
-    const amp = clamp(0.45 + a * 0.5 + t * 0.35, 0.45, 1.45);
-
-    /* EN EL PROPIO CONTENEDOR, no en el escenario del héroe.
-
-       Las variables CSS solo bajan por el árbol, y el monitor está
-       FUERA de #heroStage —comprobado en el marcado: 17.000
-       caracteres más abajo y en otra rama—. Escribirlas en el
-       escenario habría dejado el pulso con los valores por defecto
-       para siempre, sin ningún error visible. */
-    const wrap = $("heartbeatWrap");
-    if (!wrap) return;
-
-    wrap.style.setProperty("--hb-dur", dur.toFixed(2) + "s");
-    wrap.style.setProperty("--hb-amp", amp.toFixed(2));
-
-    /* Latidos por pantalla: pocos y espaciados en calma, muchos y
-       juntos en panico. Es la lectura de un monitor real —lo que
-       cambia es la separacion entre espigas, no su forma. */
-    const beats = Math.round(2 + a * 4);          // 2 … 6
-    const path = $("heartbeatPath");
-    if (path && path.__beats !== beats) {
-      path.__beats = beats;
-      path.setAttribute("d", ecgPath(beats, 1));
-    }
-  }
-
   /* Traduce la subemocion a como se reproduce el bucle. */
   function applyIdleFx(sub, moodKey) {
     const el = stage();
@@ -989,7 +899,6 @@
        que el sprite falle. */
     ensureIdle(mood[0]);
     applyIdleFx(sub, mood[0]);
-    applyVitals();
 
     /* ── EL GAUGE, TAMBIEN EL CANONICO ──
 
