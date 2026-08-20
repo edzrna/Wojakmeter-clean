@@ -134,6 +134,7 @@ export default function Home({ ogImageUrl }) {
       <Script src="/script.js?v=13" strategy="afterInteractive" />
       <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
       <Script src="/hero-rig.js?v=1" strategy="afterInteractive" />
+      <script src="/bag-mood-rig.js?v=1" defer></script>
       <Script src="/wm-organism.js?v=2" strategy="afterInteractive" />
 
       <div className="style-classic">
