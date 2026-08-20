@@ -106,6 +106,69 @@ export default async function handler(req, res) {
       )))::bigint AS seconds;
     `;
 
+    /* ── LAS VENTANAS, CALCULADAS AQUÍ ──
+
+       El cliente las derivaba de /api/history, y eso resultó ser
+       frágil por dos motivos: ese endpoint no devuelve
+       index_score, así que el promedio salía de la columna `score`
+       —la fórmula vieja— o no salía en absoluto, y entonces las
+       tres pills mostraban el mismo número.
+
+       Se calculan sobre emotion_history directamente, donde
+       index_score sí existe, y viajan con el resto. El cliente
+       deja de tener que reconstruir un dato que la base ya sabe.
+
+       AVG para el nivel y primera/última lectura para el
+       movimiento: la media dice cómo se sintió la ventana, el
+       delta dice hacia dónde iba. */
+    const [win] = await sql`
+      WITH w AS (
+        SELECT
+          ts, index_score,
+          CASE
+            WHEN ts > NOW() - INTERVAL '24 hours' THEN '24h'
+            WHEN ts > NOW() - INTERVAL '7 days'   THEN '7d'
+            ELSE '30d'
+          END AS bucket
+        FROM emotion_history
+        WHERE index_score IS NOT NULL
+          AND ts > NOW() - INTERVAL '30 days'
+      )
+      SELECT
+        ROUND(AVG(index_score) FILTER (WHERE ts > NOW() - INTERVAL '24 hours'))::int AS avg_24h,
+        ROUND(AVG(index_score) FILTER (WHERE ts > NOW() - INTERVAL '7 days'))::int   AS avg_7d,
+        ROUND(AVG(index_score))::int                                                  AS avg_30d,
+        COUNT(*) FILTER (WHERE ts > NOW() - INTERVAL '24 hours')                      AS n_24h,
+        COUNT(*) FILTER (WHERE ts > NOW() - INTERVAL '7 days')                        AS n_7d,
+        COUNT(*)                                                                      AS n_30d,
+        (SELECT index_score FROM w WHERE ts > NOW() - INTERVAL '24 hours'
+           ORDER BY ts ASC LIMIT 1)                                                   AS first_24h,
+        (SELECT index_score FROM w WHERE ts > NOW() - INTERVAL '7 days'
+           ORDER BY ts ASC LIMIT 1)                                                   AS first_7d,
+        (SELECT index_score FROM w ORDER BY ts ASC LIMIT 1)                            AS first_30d
+      FROM w;
+    `;
+
+    /* Una ventana con menos de 3 lecturas no es una media, es una
+       lectura suelta con pretensiones: se devuelve null y el
+       cliente usa el índice del momento. */
+    const ventana = (avg, first, n) => {
+      const a = Number(avg);
+      if (!Number.isFinite(a) || Number(n) < 3) return null;
+      const f = Number(first);
+      return {
+        score: a,
+        delta: Number.isFinite(f) ? canonical - f : 0,
+        samples: Number(n)
+      };
+    };
+
+    const windows = {
+      "24h": ventana(win?.avg_24h, win?.first_24h, win?.n_24h),
+      "7d":  ventana(win?.avg_7d,  win?.first_7d,  win?.n_7d),
+      "30d": ventana(win?.avg_30d, win?.first_30d, win?.n_30d)
+    };
+
     const parts = latest.index_parts || {};
     const volatilityZ = Number(latest.volatility) || 0;
 
@@ -142,6 +205,11 @@ export default async function handler(req, res) {
 
       /* Movimiento reciente: es lo que produce la reacción */
       delta,
+
+      /* Media y movimiento por ventana. Es lo que mueven las pills
+         del héroe; si una viene null, no hay datos suficientes y
+         el cliente debe usar el índice del momento. */
+      windows,
       streakSeconds: Number(streak?.seconds || 0),
 
       /* ── LA LENTE ── cambia con el perfil, nunca es el dato */
