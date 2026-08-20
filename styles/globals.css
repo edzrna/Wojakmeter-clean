@@ -9666,9 +9666,17 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
      imagen plana, que es el respaldo. */
   opacity: 0;
 
+  /* El AVANCE DE FOTOGRAMA lo lleva public/hero-rig.js, no CSS.
+
+     Con dos animaciones —una para columnas y otra para filas— no
+     hay forma de reproducir la hoja de ida y vuelta: `alternate`
+     invertiría cada eje por su cuenta y los fotogramas saldrían en
+     desorden (0,1,2… luego 5,4,3 dentro de la fila equivocada).
+
+     El rig ya corre un bucle por frame, así que calcula el índice
+     correcto —de ida y de vuelta— y escribe background-position.
+     Solo toca el DOM cuando el índice cambia de verdad. */
   animation:
-    hero-idle-cols calc(var(--idle-dur, 3s) / 4) steps(6, jump-none) infinite,
-    hero-idle-rows var(--idle-dur, 3s) steps(4, jump-none) infinite,
     hero-idle-shake calc(.10s + (1 - var(--idle-shake, 0)) * .26s) linear infinite;
 
   rotate: var(--idle-tilt, 0deg);
@@ -9684,15 +9692,7 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   backface-visibility: hidden;
 }
 
-@keyframes hero-idle-cols {
-  from { background-position-x: 0%; }
-  to   { background-position-x: 100%; }
-}
 
-@keyframes hero-idle-rows {
-  from { background-position-y: 0%; }
-  to   { background-position-y: 100%; }
-}
 
 /* Temblor: amplitud 0 con tensión 0, así que desaparece solo en
    los estados tranquilos en vez de tener que apagarlo. */
