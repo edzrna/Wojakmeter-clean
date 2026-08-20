@@ -71,20 +71,10 @@ export default async function handler(req, res) {
         ROUND(AVG(score))::int AS score,
         MIN(score)::int        AS low,
         MAX(score)::int        AS high,
-        /* EL ÍNDICE NUEVO, aparte del score viejo.
-
-           emotion_history guarda las dos mediciones en columnas
-           distintas y hasta ahora esta consulta solo devolvía
-           `score`, la fórmula antigua. El cliente dibujaba la
-           curva del héroe con ella creyendo que era el índice:
-           dos cifras plausibles de 0 a 100, así que el error no
-           saltaba por ningún lado.
-
-           Va en su propia columna y no sustituyendo a `score`
-           porque durante la transición interesa poder comparar
-           las dos series. NULL en las lecturas anteriores al
-           despliegue del motor nuevo, y el cliente ya sabe caer
-           al score del momento cuando falta. */
+        -- index_score es el motor NUEVO; score es la fórmula
+        -- antigua. Van en columnas separadas a propósito: durante
+        -- la transición interesa poder comparar las dos series.
+        -- index_n cuenta cuántas lecturas del cubo lo tienen.
         ROUND(AVG(index_score))::int AS index_score,
         COUNT(index_score)           AS index_n,
         ROUND(AVG(change_24h)::numeric, 2)::float AS change
