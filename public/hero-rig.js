@@ -86,6 +86,18 @@
   const IDLE_SPRITE = (mood) =>
     `/assets/hero/idle/${heroStyle()}/${mood}_idle.webp`;
 
+  /* Rejilla de la hoja de reposo: 24 fotogramas en 6 columnas por
+     4 filas. */
+  const IDLE_COLS = 6;
+  const IDLE_ROWS = 4;
+  const IDLE_FRAMES = IDLE_COLS * IDLE_ROWS;
+
+  /* Pasos de un ciclo de IDA Y VUELTA sin repetir los extremos:
+     0,1,…,23,22,…,1 y otra vez 0. Son 46, no 48: contar 48
+     mostraria el fotograma 23 y el 0 dos veces seguidas, y esa
+     doble exposicion se ve como un tiron justo en el giro. */
+  const IDLE_STEPS = IDLE_FRAMES * 2 - 2;
+
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
 
@@ -282,8 +294,13 @@
     /* Vista integrada */
     view: "both",
     range: "24h",
+    /* Ciclo completo del sprite en ms (ida + vuelta). Declarado
+       aqui con un valor sensato: si el avance de fotograma corre
+       antes de la primera lectura del indice, sin esto dependeria
+       de un respaldo implicito. */
+    idleDur: 6000,
     windowScore: null,
-    warnedCoverage: false,
+    windows: null,
     windowDelta: 0,
     history: [],
     scrubbing: false,
@@ -393,7 +410,10 @@
      --------------------------------------------------------- */
   const target = { valence: 0, arousal: 0, tension: 0, fatigue: 0 };
 
-  function tick() {
+  /* rAF pasa la marca de tiempo. Sin recibirla aqui, advanceIdle
+     lanzaba un ReferenceError en CADA frame y se llevaba por
+     delante enforceCanonical, que va justo despues. */
+  function tick(now) {
     let moved = false;
 
     for (const k of Object.keys(target)) {
@@ -405,6 +425,7 @@
     }
 
     if (moved) writeAxes();
+    advanceIdle(now);
     enforceCanonical();
     state.rafId = requestAnimationFrame(tick);
   }
@@ -468,58 +489,27 @@
          mientras la curva cambiaba de ventana — coherente sobre el
          papel, pero partia la seccion en dos mitades que no se
          hablaban.) */
-      const pts = visibleSeries();
-      const cover = indexCoverage(pts);
+      /* LA VENTANA VIENE DEL SERVIDOR.
 
-      /* Si la mayoría de la ventana AÚN NO tiene índice nuevo —el
-         cron lleva poco tiempo rellenando esa columna—, mezclar
-         las dos mediciones daría una media sin significado. En ese
-         caso se renuncia a la ventana y manda el índice del
-         momento, que sí es una cifra real.
+         Antes se promediaba aquí la serie de /api/history, que no
+         trae index_score: el promedio salía de la fórmula vieja o
+         no salía, y entonces las tres pills mostraban el mismo
+         número. Ahora /api/index-score las calcula sobre la
+         columna correcta y llegan ya hechas.
 
-         Es la diferencia entre un número peor y un número falso. */
-      if (cover < 0.6) {
+         Si una ventana viene null —menos de 3 lecturas— manda el
+         índice del momento. Un número peor antes que uno falso. */
+      const w = state.windows?.[state.range];
+      if (w) {
+        state.windowScore = w.score;
+        state.windowDelta = w.delta;
+        target.arousal = Math.max(target.arousal,
+          clamp(Math.abs(w.delta) / 20, 0, 1));
+      } else {
         state.windowScore = null;
         state.windowDelta = 0;
-
-        /* Aviso UNA vez. Sin esto, el sintoma en pantalla —"las
-           pills no mueven el score"— es indistinguible de un fallo
-           del rig, cuando la causa real esta en el endpoint. */
-        if (!state.warnedCoverage) {
-          state.warnedCoverage = true;
-          console.warn(
-            "WM hero-rig: /api/history no trae index_score " +
-            `(cobertura ${Math.round(cover * 100)}%). El heroe usa el ` +
-            "indice del momento y las pills no moveran el numero. " +
-            "Anade index_score al SELECT y al objeto de la serie en " +
-            "pages/api/history.js."
-          );
-        }
       }
 
-      const scores = cover >= 0.6
-        ? pts.map(pointIndex).filter(Number.isFinite)
-        : [];
-
-      if (scores.length >= 2) {
-        /* La media de la ventana ya NO se muestra como score —ver
-           la nota en enforceCanonical—, pero se conserva porque el
-           subtitulo la usa para decir de donde viene el numero. */
-        state.windowScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-        state.windowDelta = Math.round(scores[scores.length - 1] - scores[0]);
-        /* El movimiento de la ventana alimenta la reaccion: una
-           semana que subio 20 puntos se ve mas encendida que una
-           plana, aunque la media sea parecida. */
-        target.arousal = Math.max(target.arousal,
-          clamp(Math.abs(state.windowDelta) / 20, 0, 1));
-      }
-
-      /* La etiqueta lleva tambien CUANTO se movio el indice en la
-         ventana elegida. Es lo que reconecta las pills con el
-         personaje sin volver al comportamiento viejo: la cara
-         sigue siendo el AHORA (cambiarla por ventana era lo que
-         producia dos emociones contradiciendose en pantalla), pero
-         la ventana si te dice que camino trajo hasta aqui. */
       const tag = $("heroRangeTag");
       if (tag) {
         const pts = visibleSeries();
@@ -570,17 +560,19 @@
     return Number.isFinite(legacy) ? legacy : null;
   }
 
-  /* Cuántos puntos de la ventana traen ya el índice nuevo. */
-  function indexCoverage(pts) {
-    if (!pts.length) return 0;
-    const n = pts.filter((p) =>
-      Number.isFinite(Number(p?.index_score ?? p?.indexScore))).length;
-    return n / pts.length;
-  }
-
   function setRange(range) {
     if (!TF[range] || state.range === range) return;
     state.range = range;
+
+    /* El score de la ventana ya está en memoria: se aplica EN EL
+       ACTO, sin esperar a que baje el histórico. Antes el número
+       no se movía hasta que respondía la red, y con la caché fría
+       eso son cientos de milisegundos en los que la pill parecía
+       no hacer nada. */
+    const w = state.windows?.[range];
+    state.windowScore = w ? w.score : null;
+    state.windowDelta = w ? w.delta : 0;
+
     loadHistory();
   }
 
@@ -707,6 +699,18 @@
 
       state.score = data.score;
       state.streakSeconds = Number(data.streakSeconds || 0);
+      state.windows = data.windows || null;
+
+      /* Se aplica AQUÍ, no solo al recargar el histórico.
+
+         Antes dependía de loadHistory(), que puede no haber
+         corrido todavía en la primera carga: el héroe arrancaba
+         con el índice del momento y solo pasaba a la ventana
+         cuando bajaba la curva. Las ventanas ya vienen en esta
+         misma respuesta, así que no hay razón para esperar. */
+      const w0 = state.windows?.[state.range];
+      state.windowScore = w0 ? w0.score : null;
+      state.windowDelta = w0 ? w0.delta : 0;
 
       /* El gráfico viejo de script.js se apaga en cuanto el índice
          nuevo está vivo: hasta ahora se dibujaban los dos, uno
@@ -813,93 +817,42 @@
      diferencia entre un adorno y un instrumento.
      --------------------------------------------------------- */
   /* ---------------------------------------------------------
-     ELECTROCARDIOGRAMA DE VERDAD
+     AVANCE DE FOTOGRAMA — IDA Y VUELTA
 
-     Las rutas de script.js son zigzags: picos alternos arriba y
-     abajo, sin linea de base. Un ECG no se parece a eso.
+     Va aqui y no en CSS porque la hoja es una REJILLA. Con dos
+     animaciones, una por eje, `alternate` invertiria columnas y
+     filas por separado y los fotogramas saldrian en desorden.
 
-     Un latido real tiene morfologia: linea isoelectrica, onda P
-     pequena, complejo QRS —una bajada minima, una espiga alta y
-     estrecha, otra bajada—, y onda T ancha y baja. Lo que hace
-     que se lea como un electrocardiograma es el CONTRASTE entre
-     el tramo plano y la espiga: si todo el trazo tiene picos, es
-     una sierra.
+     Al llegar al ultimo, la secuencia vuelve sobre sus pasos hasta
+     el primero. Con un bucle simple, el salto del fotograma 23 al
+     0 es un corte; yendo y viniendo no hay corte que disimular,
+     porque nunca se pasa de un extremo al otro.
 
-     Se genera aqui en vez de en tablas fijas porque el numero de
-     latidos por pantalla depende del ritmo del mercado, y eso no
-     se puede tabular.
+     Solo se escribe en el DOM cuando el indice cambia de verdad:
+     a 24 fotogramas por ciclo son unas decenas de escrituras por
+     segundo, no una por frame.
      --------------------------------------------------------- */
-  function ecgPath(beats, amp) {
-    const W = 320, MID = 28;
-    const seg = W / beats;
-    let d = `M0 ${MID}`;
+  function advanceIdle(now) {
+    const el = $("heroSprite");
+    if (!el || !stage()?.classList.contains("wm-has-sprite")) return;
 
-    for (let b = 0; b < beats; b++) {
-      const x = b * seg;
-      /* Cada onda como fraccion del segmento, para que la forma
-         se conserve al cambiar el numero de latidos. */
-      const P  = x + seg * 0.16;
-      const Q  = x + seg * 0.29;
-      const R  = x + seg * 0.33;
-      const S  = x + seg * 0.37;
-      const J  = x + seg * 0.42;
-      const T1 = x + seg * 0.55;
-      const T2 = x + seg * 0.68;
-      const T3 = x + seg * 0.80;
+    const dur = state.idleDur || 3000;
+    const t = (now % dur) / dur;                 // 0 … 1
+    const step = Math.floor(t * IDLE_STEPS);
 
-      d += ` L${(x + seg * 0.08).toFixed(1)} ${MID}`;
-      /* Onda P: pequena y redondeada. */
-      d += ` Q${P.toFixed(1)} ${(MID - 4 * amp).toFixed(1)} ${(x + seg * 0.22).toFixed(1)} ${MID}`;
-      /* QRS: lo que da el caracter. La espiga R sube mucho y en
-         muy poco recorrido horizontal; sin esa relacion no se lee
-         como latido. */
-      d += ` L${Q.toFixed(1)} ${(MID + 3 * amp).toFixed(1)}`;
-      d += ` L${R.toFixed(1)} ${(MID - 22 * amp).toFixed(1)}`;
-      d += ` L${S.toFixed(1)} ${(MID + 9 * amp).toFixed(1)}`;
-      d += ` L${J.toFixed(1)} ${MID}`;
-      /* Onda T: ancha, baja y siempre despues de una pausa. */
-      d += ` L${T1.toFixed(1)} ${MID}`;
-      d += ` Q${T2.toFixed(1)} ${(MID - 7 * amp).toFixed(1)} ${T3.toFixed(1)} ${MID}`;
-    }
+    /* Ida hasta el ultimo, vuelta hasta el primero. */
+    const frame = step < IDLE_FRAMES
+      ? step
+      : IDLE_STEPS - step;
 
-    return d + ` L${W} ${MID}`;
-  }
+    if (el.__frame === frame) return;
+    el.__frame = frame;
 
-  function applyVitals() {
-    const a = state.axes.arousal;
-    const t = state.axes.tension;
+    const col = frame % IDLE_COLS;
+    const row = Math.floor(frame / IDLE_COLS);
 
-    /* Suelo de 1,2s: por debajo, la traza se mueve mas rapido de
-       lo que el ojo puede seguir y se convierte en una mancha. */
-    const dur = clamp(6.0 - a * 4.8, 1.2, 6.0);
-
-    /* La amplitud no baja de 0,45: a cero seria una linea recta y
-       parecerian constantes vitales de un muerto, que no es lo que
-       significa un mercado tranquilo. */
-    const amp = clamp(0.45 + a * 0.5 + t * 0.35, 0.45, 1.45);
-
-    /* EN EL PROPIO CONTENEDOR, no en el escenario del héroe.
-
-       Las variables CSS solo bajan por el árbol, y el monitor está
-       FUERA de #heroStage —comprobado en el marcado: 17.000
-       caracteres más abajo y en otra rama—. Escribirlas en el
-       escenario habría dejado el pulso con los valores por defecto
-       para siempre, sin ningún error visible. */
-    const wrap = $("heartbeatWrap");
-    if (!wrap) return;
-
-    wrap.style.setProperty("--hb-dur", dur.toFixed(2) + "s");
-    wrap.style.setProperty("--hb-amp", amp.toFixed(2));
-
-    /* Latidos por pantalla: pocos y espaciados en calma, muchos y
-       juntos en panico. Es la lectura de un monitor real —lo que
-       cambia es la separacion entre espigas, no su forma. */
-    const beats = Math.round(2 + a * 4);          // 2 … 6
-    const path = $("heartbeatPath");
-    if (path && path.__beats !== beats) {
-      path.__beats = beats;
-      path.setAttribute("d", ecgPath(beats, 1));
-    }
+    el.style.backgroundPosition =
+      `${(col / (IDLE_COLS - 1)) * 100}% ${(row / (IDLE_ROWS - 1)) * 100}%`;
   }
 
   /* Traduce la subemocion a como se reproduce el bucle. */
@@ -921,6 +874,12 @@
     const dur = clamp(base, 0.9, 4.2);
 
     el.style.setProperty("--idle-dur", dur.toFixed(2) + "s");
+
+    /* En ms para el avance de fotograma, que no lee CSS. El ciclo
+       completo es la ida MAS la vuelta, asi que se duplica: la
+       duracion configurada sigue significando "lo que tarda en
+       llegar al extremo". */
+    state.idleDur = dur * 2000;
     el.style.setProperty("--idle-shake",
       clamp(fx.shake + state.axes.tension * 0.35, 0, 1).toFixed(2));
     el.style.setProperty("--idle-tilt",
@@ -989,7 +948,6 @@
        que el sprite falle. */
     ensureIdle(mood[0]);
     applyIdleFx(sub, mood[0]);
-    applyVitals();
 
     /* ── EL GAUGE, TAMBIEN EL CANONICO ──
 
