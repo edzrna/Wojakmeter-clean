@@ -51,11 +51,7 @@ const HERO_MODE_RAW       = "raw";
 const HERO_MODE_COMPOSITE = "composite";
 const HERO_MODE_CUSTOM    = "custom";
 
-/* 1h y 4h se retiraron: con el cron de 15 minutos son 4 y 16
-   lecturas, y ademas no tienen ventana equivalente en el historico
-   (HISTORY_RANGES). Cada pill de aqui DEBE existir alli, porque el
-   score canonico sale de esa ventana. */
-const HERO_ALLOWED_TIMEFRAMES  = ["24h", "7d", "30d"];
+const HERO_ALLOWED_TIMEFRAMES  = ["1h", "4h", "24h", "7d", "30d"];
 const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 
@@ -957,93 +953,7 @@ function computeCustomLayersScore() {
   return weight ? roundScore(total / weight) : s.market;
 }
 
-/* ===========================================================
-   EL INDICE CANONICO
-
-   Aqui estaba la causa de que gauge, barra superior y puntero
-   del espectro dijeran numeros distintos: script.js calculaba su
-   propia cifra y lib/market-index.js otra, y cada discrepancia
-   se tapaba en la pieza concreta donde se veia.
-
-   Ahora hay UNA fuente. `getEffectiveHeroScore` es el unico
-   punto de entrada de todo lo que se pinta del score global, asi
-   que basta con que devuelva el indice para que todo lo que
-   dependa de `currentGlobalScore` quede bien de nacimiento —
-   incluido lo que aun no existe.
-
-   La cifra es la MEDIA del indice en la ventana de la pill
-   activa, que es lo que se decidio: la pill gobierna grafico y
-   personaje juntos.
-
-   UNA SOLA COLUMNA POR VENTANA. El indice solo manda si cubre
-   casi toda la ventana. Con cobertura parcial, la media saldria
-   del motor nuevo y la curva de detras del personaje del viejo:
-   dos afirmaciones distintas sobre el mismo periodo, que es
-   exactamente el bug que estamos cerrando. Mientras el motor
-   nuevo no cubra el rango, manda el viejo en LOS DOS sitios.
-   =========================================================== */
-const INDEX_MIN_SAMPLES  = 4;
-const INDEX_MIN_COVERAGE = 0.8;
-
-/* ¿Puede la ventana cargada hablar con el indice nuevo?
-   Lo deciden `samples` (filas del periodo) e `indexSamples`
-   (filas que ya traen index_score), ambos de /api/history. */
-function historyWindowUsesIndex() {
-  const stats = historyData?.stats;
-  if (!stats) return false;
-
-  const samples = Number(stats.samples || 0);
-  const indexed = Number(stats.indexSamples || 0);
-
-  if (!samples || indexed < INDEX_MIN_SAMPLES) return false;
-  return (indexed / samples) >= INDEX_MIN_COVERAGE;
-}
-
-/* Valor de un punto de la serie segun la columna que mande en
-   esta ventana. Lo usan el score y la curva, para que no puedan
-   discrepar. */
-function historyPointValue(point, useIndex) {
-  if (!point) return null;
-
-  const raw = useIndex ? point.index_score : point.score;
-
-  /* null y undefined se descartan ANTES de Number(): `Number(null)`
-     es 0, y 0 es finito. Sin este guarda, un punto sin indice se
-     dibujaba pegado al suelo del grafico como si el mercado
-     hubiera marcado frustracion absoluta. Lo cazo el arnes. */
-  if (raw === null || raw === undefined || raw === "") return null;
-
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : null;
-}
-
-/* Devuelve el indice canonico de la ventana activa, o null si
-   todavia no se puede confiar en el. Null NO es un error: es
-   "aun no", y el que llama sigue con la formula de siempre. */
-function getCanonicalIndexScore() {
-  if (!historyWindowUsesIndex()) return null;
-
-  const avg = Number(historyData?.stats?.avgIndex);
-  if (Number.isFinite(avg)) return roundScore(avg);
-
-  /* Respaldo: media a mano sobre los puntos servidos, por si el
-     endpoint es una version anterior que trae `index_score` en la
-     serie pero todavia no `avgIndex` en las estadisticas. */
-  const values = (historyData?.series || [])
-    .map((p) => historyPointValue(p, true))
-    .filter((v) => v !== null);
-
-  if (!values.length) return null;
-  return roundScore(values.reduce((a, b) => a + b, 0) / values.length);
-}
-
 function getEffectiveHeroScore() {
-  /* El indice manda siempre que exista. Lo de abajo es el
-     respaldo mientras el motor nuevo llena la ventana, no una
-     alternativa entre iguales. */
-  const canonical = getCanonicalIndexScore();
-  if (canonical !== null) return canonical;
-
   if (heroMode === HERO_MODE_RAW)       return roundScore(currentMarketScore);
   if (heroMode === HERO_MODE_COMPOSITE) return computeCompositeScore();
   return computeCustomLayersScore();
@@ -1561,20 +1471,10 @@ function buildHeroTimeline(series) {
   let points;
 
   if (useEmotion) {
-    /* Misma columna que el score del personaje, decidida en un
-       solo sitio: si la ventana habla con el indice nuevo, la
-       curva tambien. Nunca una cosa de cada. */
-    const useIndex = historyWindowUsesIndex();
-
-    const pts = emotionSeries
-      .filter((p) => historyPointValue(p, useIndex) !== null)
-      .slice(-60);
-
-    if (pts.length < 2) return clear();
-
+    const pts = emotionSeries.slice(-60);
     points = pts.map((p, i) => [
       (i / (pts.length - 1)) * w,
-      pad + (1 - clamp(historyPointValue(p, useIndex), 0, 100) / 100) * (h - pad * 2)
+      pad + (1 - clamp(p.score, 0, 100) / 100) * (h - pad * 2)
     ]);
   } else {
     // Fallback al precio mientras el histórico se llena.
@@ -1632,15 +1532,8 @@ function buildHeroTimeline(series) {
     mid.setAttribute("d", "");
   }
 
-  /* El color sale del score que se esta pintando, no de otro:
-     antes leia siempre `.score` aunque la curva fuera del indice. */
   const color = useEmotion
-    ? getMoodColor(getMoodByScore(
-        historyPointValue(
-          emotionSeries[emotionSeries.length - 1],
-          historyWindowUsesIndex()
-        ) ?? 50
-      ).key)
+    ? getMoodColor(getMoodByScore(points.length ? emotionSeries[emotionSeries.length - 1].score : 50).key)
     : getMoodColor(currentGlobalMood?.key || "neutral");
 
   line.style.stroke = color;
@@ -1656,21 +1549,6 @@ function recomputeHeroSystem() {
   currentGlobalScore = getEffectiveHeroScore();
   currentGlobalMood  = getMoodByScore(currentGlobalScore);
   currentRiskTone    = getRiskToneFromMood(currentGlobalMood.key);
-
-  /* Publicado para hero-rig.js: mientras el rig siga imponiendo
-     elemento por elemento, que al menos tenga de donde leer LA
-     cifra en vez de recalcular la suya. Es el gancho por el que
-     se retiran esas imposiciones cuando toque. */
-  window.WM_CANONICAL_SCORE = currentGlobalScore;
-  window.WM_CANONICAL_MOOD  = currentGlobalMood?.key || null;
-  window.dispatchEvent(new CustomEvent("wm:score", {
-    detail: {
-      score: currentGlobalScore,
-      mood: currentGlobalMood?.key || null,
-      timeframe: globalTimeframe,
-      fromIndex: historyWindowUsesIndex()
-    }
-  }));
 
   updateHero(currentGlobalScore, currentGlobalMood);
   updateSocial(currentSocialScore);
@@ -6906,6 +6784,7 @@ function renderScale() {
 
 let historyRange = "7d";
 let historyData = null;
+let isLoadingHistory = false;
 
 const HISTORY_RANGES = ["24h", "7d", "30d", "90d"];
 
@@ -7381,47 +7260,17 @@ function renderHistory() {
   section.classList.toggle("history-thin", samples < 6);
 }
 
-/* Token de peticion en vez de `if (isLoadingHistory) return`.
-
-   Ese guarda DESCARTABA la carga en vez de encolarla, y ahora que
-   las pills del heroe disparan `loadHistory`, un refresco
-   periodico en vuelo se comia el click: la pill se marcaba y el
-   numero no se movia. Con token, la ultima peticion gana y las
-   que llegan tarde se tiran solas. */
-let historyRequestToken = 0;
-
 async function loadHistory() {
-  const token = ++historyRequestToken;
-  const requested = historyRange;
-
-  const res = await fetchJson(
-    `/api/history?range=${encodeURIComponent(requested)}`, null
-  );
-
-  // Respuesta de una ventana que el usuario ya abandono.
-  if (token !== historyRequestToken) return;
-
-  if (res?.ok) historyData = res;
-  renderHistory();
-
-  /* Aqui es donde el indice entra en el sistema: el score canonico
-     sale de esta ventana, asi que en cuanto llega hay que
-     recalcular el heroe. Sin esto el numero solo cambiaria en el
-     siguiente ciclo, que es hasta 5 minutos despues.
-
-     `recomputeHeroSystem` ya se protege de la vista previa del
-     Pulse por dentro. */
-  recomputeHeroSystem();
-
-  /* Aviso, no excepcion: si el endpoint no trae la columna nueva
-     el sitio funciona con la formula vieja, pero conviene saberlo
-     en vez de preguntarse por que el numero no se mueve. */
-  if (res?.ok && res.hasIndex === false) {
-    console.warn(
-      "[wm] /api/history sin columna index_score: " +
-      "¿se ejecuto market-index.sql en Neon? " +
-      "El heroe usa la formula vieja mientras tanto."
+  if (isLoadingHistory) return;
+  isLoadingHistory = true;
+  try {
+    const res = await fetchJson(
+      `/api/history?range=${encodeURIComponent(historyRange)}`, null
     );
+    if (res?.ok) historyData = res;
+    renderHistory();
+  } finally {
+    isLoadingHistory = false;
   }
 }
 
@@ -7522,24 +7371,9 @@ function setupHeroTimeframes() {
     setText("globalMarketTimeframe", globalTimeframe);
     setTimeframeBusy(true);
 
-    /* LA PILL MUEVE TAMBIEN EL HISTORICO.
-
-       Antes solo cambiaba `globalTimeframe`: `historyRange` se
-       quedaba clavado en su valor por defecto, asi que pulsar 30D
-       dejaba al personaje leyendo la ventana de 7 dias. Como el
-       score canonico es la media del indice EN LA VENTANA, sin
-       esto las pills no pueden mover el numero por mucho que el
-       endpoint devuelva ya `index_score`. */
-    if (HISTORY_RANGES.includes(tf)) {
-      historyRange = tf;
-      qsa("[data-history-range]").forEach((b) => {
-        b.classList.toggle("active", b.dataset.historyRange === historyRange);
-      });
-    }
-
-    /* En paralelo, no en serie: son endpoints independientes y
-       encadenarlos multiplicaba la espera sin ninguna razon. */
-    await Promise.all([loadGlobalMarket(), loadSentiment(), loadHistory()]);
+    /* En paralelo, no en serie: son dos endpoints independientes
+       y encadenarlos doblaba la espera sin ninguna razon. */
+    await Promise.all([loadGlobalMarket(), loadSentiment()]);
     setTimeframeBusy(false);
   });
 }
@@ -7627,28 +7461,6 @@ function setupStudioTabs() {
       setTimeout(() => { btn.textContent = original; }, 1200);
     });
   });
-}
-
-/* ===========================================================
-   MODOS Y CAPAS: FUERA DE LA UI
-
-   Con el indice canonico mandando, RAW / COMPOSITE / CUSTOM
-   enseñarian los tres el mismo numero: tres mandos que no mandan.
-   Mismo criterio que con Boyak, Minimal y los perfiles del heroe
-   — se retiran de la interfaz y el motor se queda dentro, que
-   aqui ademas sigue vivo como respaldo mientras el indice llena
-   la ventana.
-
-   Se ocultan por JS y no borrando el marcado, para que esto sea
-   reversible en una linea y no haya que tocar index.js.
-   =========================================================== */
-function hideHeroModeControls() {
-  heroMode = HERO_MODE_RAW;
-  activeLayers = { market: true, social: false, driver: false, pulse: false };
-
-  byId("heroModes")?.classList.add("hidden");
-  byId("layerButtons")?.classList.add("hidden");
-  byId("wmLayers")?.classList.add("hidden");
 }
 
 function setupHeroModes() {
@@ -8067,7 +7879,6 @@ function setupButtons() {
   setupStudioTabs();
   setupHeroModes();
   setupLayerButtons();
-  hideHeroModeControls();
   setupMarketControls();
   setupMacroDriver();
   setupStyleSelector();
