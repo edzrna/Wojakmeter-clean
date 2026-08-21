@@ -21,7 +21,7 @@ export function LegalSection({ id, title, children }) {
   return (
     <section className="legal-section" id={id}>
       <h2>
-        <a className="legal-anchor" href={`#${id}`} aria-label={title}>
+        <a className="legal-anchor" href={`#${id}`}>
           {title}
         </a>
       </h2>
