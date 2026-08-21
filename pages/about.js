@@ -104,8 +104,8 @@ export default function AboutPage() {
               index describes conditions that already happened — that is the
               whole design. It is also a work in progress: the methodology gets
               revised, features get removed when they confuse more than they
-              help, and some parts are held together by scripts I would not
-              hand to a client without cleaning first.
+              help, and some parts are held together by scripts I would not hand
+              to a client without cleaning first.
             </p>
             <p>
               Saying that costs nothing. What the site claims to measure, it
