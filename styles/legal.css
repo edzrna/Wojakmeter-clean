@@ -1,0 +1,401 @@
+/* ============================================================
+   WOJAKMETER — PÁGINAS LEGALES
+   Archivo autocontenido: define sus propias variables --lg-*
+   para no depender de los nombres de token de globals.css.
+
+   Impórtalo en pages/_app.js DESPUÉS de globals.css:
+     import "../styles/globals.css";
+     import "../styles/legal.css";
+
+   Y borra el bloque .legal-* que ya tengas en globals.css,
+   para que no queden dos definiciones peleando.
+   ============================================================ */
+
+.legal-page {
+  --lg-ink: #f4f1e8;
+  --lg-dim: #a5a08f;
+  --lg-faint: #6f6a5c;
+  --lg-bg: #0a0a0c;
+  --lg-panel: rgba(255, 255, 255, 0.028);
+  --lg-line: rgba(212, 175, 90, 0.16);
+  --lg-gold: #d4af5a;
+  --lg-gold-soft: #e8cd8a;
+  --lg-radius: 18px;
+
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(212, 175, 90, 0.07), transparent 62%),
+    var(--lg-bg);
+  color: var(--lg-ink);
+  padding: 0 20px 80px;
+}
+
+.legal-shell {
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+/* ---------- Cabecera ---------- */
+
+.legal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.legal-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.legal-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.legal-brand-copy strong {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.legal-brand-copy span {
+  font-size: 12px;
+  color: var(--lg-faint);
+}
+
+.legal-back {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lg-dim);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.legal-back:hover {
+  color: var(--lg-gold);
+  border-color: var(--lg-line);
+}
+
+/* ---------- Hero ---------- */
+
+.legal-hero {
+  padding: 52px 0 34px;
+}
+
+.legal-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lg-gold);
+  margin-bottom: 16px;
+}
+
+.legal-title {
+  margin: 0 0 14px;
+  font-size: clamp(34px, 6vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.legal-subtitle {
+  margin: 0;
+  max-width: 56ch;
+  font-size: clamp(16px, 2.2vw, 19px);
+  line-height: 1.6;
+  color: var(--lg-dim);
+}
+
+.legal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.legal-pill {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--lg-line);
+  background: rgba(212, 175, 90, 0.06);
+  color: var(--lg-gold-soft);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Pestañas entre documentos ---------- */
+
+.legal-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 28px;
+  padding: 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--lg-panel);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.legal-tab {
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lg-dim);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.legal-tab:hover {
+  color: var(--lg-ink);
+}
+
+.legal-tab.is-current {
+  background: linear-gradient(135deg, var(--lg-gold-soft), var(--lg-gold));
+  color: #17140c;
+}
+
+/* ---------- Cuerpo: índice + documento ---------- */
+
+.legal-body {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding-top: 20px;
+}
+
+.legal-toc {
+  position: sticky;
+  top: 28px;
+  padding-right: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legal-toc-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lg-faint);
+  margin-bottom: 14px;
+}
+
+.legal-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: toc;
+}
+
+.legal-toc li {
+  margin-bottom: 9px;
+}
+
+.legal-toc a {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--lg-dim);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.legal-toc a:hover {
+  color: var(--lg-gold);
+}
+
+/* ---------- Secciones ---------- */
+
+.legal-section {
+  padding: 26px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* Deja aire al saltar desde el índice, para que el título
+     no quede pegado al borde superior de la ventana. */
+  scroll-margin-top: 28px;
+}
+
+.legal-section:last-child {
+  border-bottom: none;
+}
+
+.legal-section h2 {
+  margin: 0 0 14px;
+  font-size: clamp(19px, 2.6vw, 23px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.legal-anchor {
+  color: inherit;
+  text-decoration: none;
+}
+
+.legal-anchor:hover {
+  color: var(--lg-gold);
+}
+
+.legal-doc p {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: #cfcabb;
+  max-width: 68ch;
+}
+
+.legal-doc p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-doc strong {
+  color: var(--lg-ink);
+  font-weight: 700;
+}
+
+.legal-doc ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  max-width: 68ch;
+}
+
+.legal-doc li {
+  margin-bottom: 9px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #cfcabb;
+}
+
+.legal-doc li::marker {
+  color: var(--lg-gold);
+}
+
+.legal-doc a:not(.legal-anchor) {
+  color: var(--lg-gold-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.legal-doc a:not(.legal-anchor):hover {
+  color: var(--lg-gold);
+}
+
+/* Lo que no debe pasar desapercibido: el conflicto de interés
+   del token y el resumen de privacidad. */
+.legal-callout {
+  padding: 18px 20px;
+  border-radius: var(--lg-radius);
+  border: 1px solid var(--lg-line);
+  border-left: 3px solid var(--lg-gold);
+  background: rgba(212, 175, 90, 0.05);
+  color: var(--lg-ink) !important;
+}
+
+.legal-contact {
+  color: var(--lg-gold-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Pie ---------- */
+
+.legal-foot {
+  margin-top: 44px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.legal-foot p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lg-dim);
+}
+
+.legal-foot-note {
+  color: var(--lg-faint) !important;
+  font-size: 13px !important;
+  max-width: 70ch;
+}
+
+/* ---------- Móvil ---------- */
+
+@media (max-width: 860px) {
+  .legal-body {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* El índice pasa a ser un bloque plegable arriba del documento:
+     una columna fija de 210px no cabe en un teléfono. */
+  .legal-toc {
+    position: static;
+    border-right: none;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--lg-radius);
+    background: var(--lg-panel);
+    padding: 18px;
+    margin-bottom: 24px;
+  }
+
+  .legal-toc ol {
+    columns: 2;
+    column-gap: 18px;
+  }
+
+  .legal-toc li {
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 520px) {
+  .legal-hero {
+    padding: 36px 0 26px;
+  }
+
+  .legal-toc ol {
+    columns: 1;
+  }
+
+  .legal-tabs {
+    width: 100%;
+  }
+
+  .legal-tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal-page * {
+    transition-duration: 0.01ms !important;
+  }
+}
