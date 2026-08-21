@@ -2958,17 +2958,193 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 .style-minimal .coin-emoji img,
 .style-minimal .scale-face img { filter: grayscale(0.06) brightness(1.02); }
 
+/* ===========================================================
+   29 · RESPONSIVE
+   =========================================================== */
 
+@media (max-width: 1100px) {
+  .coins-grid          { grid-template-columns: repeat(3, 1fr); }
+  .scale-grid          { grid-template-columns: repeat(4, 1fr); }
+  .mood-token-grid     { grid-template-columns: 1fr; }
+  .mood-stage          { min-height: 360px; }
+  .bag-mood-grid       { grid-template-columns: 1fr; }
+  .bag-row             { grid-template-columns: 1fr; gap: var(--sp-2); }
+  .bag-search-box      { grid-template-columns: 1fr; }
+  .emotion-radar-grid  { grid-template-columns: 1fr; }
+}
 
+@media (max-width: 980px) {
+  .market-exchange-layout { grid-template-columns: 1fr; }
+  .layer-grid             { grid-template-columns: repeat(2, 1fr); }
+}
 
+/* --- Header móvil: sticky con logo centrado --- */
+@media (max-width: 900px) {
+  .wm-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    padding: var(--sp-2) var(--sp-3);
+    background: rgba(5, 8, 12, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: padding 0.3s var(--ease), background 0.3s var(--ease);
+  }
 
+  .wm-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    grid-column: 1;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: var(--ink-200);
+    color: var(--bone);
+    font-size: 20px;
+  }
 
+  .wm-logo-wrap,
+  .wm-logo-link {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
 
+  .logo-img { height: 60px; max-width: 200px; }
 
+  .wm-header-content {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: var(--sp-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 120px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.3s var(--ease), opacity 0.24s ease, margin-top 0.3s var(--ease);
+  }
 
+  .topbar-center,
+  .topbar-right { justify-content: center; width: 100%; }
+  .topbar-center { text-align: center; }
 
+  body.header-scrolled .wm-sticky-header {
+    padding-top: var(--sp-1);
+    padding-bottom: var(--sp-1);
+    background: rgba(5, 8, 12, 0.96);
+  }
 
+  body.header-scrolled .logo-img { height: 44px; max-width: 170px; }
 
+  body.header-scrolled .wm-header-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+  }
+
+  .wm-mobile-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 12px;
+    right: 12px;
+    display: none;
+    flex-direction: column;
+    gap: var(--sp-1);
+    padding: var(--sp-3);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--line);
+    background: rgba(5, 8, 12, 0.98);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow);
+  }
+
+  .wm-mobile-menu.open { display: flex; }
+
+  .wm-mobile-menu a {
+    padding: 11px 13px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line-soft);
+    background: rgba(232,233,236,0.03);
+    text-decoration: none;
+    font-family: var(--font-data);
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    color: var(--bone-dim);
+  }
+
+  .wm-mobile-menu a:hover { background: var(--ink-300); color: var(--bone); }
+
+  .wm-footer-inner { flex-direction: column; align-items: center; gap: var(--sp-4); }
+  .wm-footer-links-wrap { width: 100%; justify-content: center; gap: var(--sp-4); }
+}
+
+@media (max-width: 780px) {
+  .app-shell        { width: min(100% - 16px, 1240px); }
+  .coins-grid       { grid-template-columns: repeat(2, 1fr); }
+  .scale-grid       { grid-template-columns: repeat(3, 1fr); }
+  .market-intervals { grid-template-columns: repeat(3, 1fr); }
+  .studio-grid      { grid-template-columns: 1fr; }
+  .radar-output-grid{ grid-template-columns: 1fr; }
+  .section-head     { flex-direction: column; align-items: flex-start; }
+  .market-section-tools { width: 100%; justify-content: flex-start; }
+  .chart-topbar     { flex-direction: column; }
+  .chart-toolbar    { width: 100%; align-items: flex-start; }
+  .bubble-map-head  { flex-direction: column; }
+  .bubble-map-info-row { grid-template-columns: 1fr; }
+  .mood-token-score-row { grid-template-columns: 1fr; }
+  .exchange-card-head { flex-direction: column; align-items: flex-start; gap: var(--sp-1); }
+  .exchange-card-head .muted { max-width: 100%; text-align: left; }
+}
+
+@media (max-width: 720px) {
+  .heartbeat-chart { height: 76px; }
+  .heartbeat-wrap::before { font-size: 0.52rem; top: 8px; left: 11px; }
+  .bubble-map-stage { height: 520px; }
+  .driver-item { grid-template-columns: 1fr; }
+  .driver-item strong { text-align: left; }
+  .hero-market-line { flex-direction: column; gap: var(--sp-2); }
+  .hero-line-sep { display: none; }
+  .emotion-pulse-toggle { right: 12px; left: 12px; bottom: 12px; justify-content: center; }
+  .emotion-pulse-panel  { right: 12px; left: 12px; bottom: 66px; width: auto; }
+}
+
+@media (max-width: 560px) {
+  .hero, .top-coins, .chart-card, .scale-card, .drivers-card,
+  .studio-card, .about-section, .bag-mood-section,
+  .mood-token-card, .emotion-radar { padding: var(--sp-3); }
+
+  .coins-grid       { grid-template-columns: 1fr; }
+  .scale-grid       { grid-template-columns: repeat(2, 1fr); }
+  .market-intervals { grid-template-columns: repeat(2, 1fr); }
+  .layer-grid       { grid-template-columns: 1fr; }
+  .mood-stats-grid  { grid-template-columns: repeat(2, 1fr); }
+  .bag-mood-score-row { grid-template-columns: 1fr; }
+  .bag-mode-tabs    { flex-direction: column; }
+  .bag-actions      { flex-direction: column; }
+  .mood-ca-row      { flex-direction: column; align-items: stretch; }
+  .mood-search-box  { grid-template-columns: 1fr; }
+  .mood-actions-row { flex-direction: column; }
+  .mood-buy-btn, .mood-secondary-btn { width: 100%; }
+  .chart-inline-moods { flex-direction: column; }
+  .chart-mood-chip-performance { margin-left: 0; }
+  .chart-placeholder { height: 240px; }
+  .mood-stage { min-height: 300px; }
+  .hero-face-wrap { width: min(230px, 82%); }
+  .wm-gauge-wrap  { width: min(290px, 100%); }
+  #gaugeScore     { font-size: 2.1rem; }
+  .wm-footer-links-wrap { flex-direction: column; align-items: center; text-align: center; }
+  .wm-footer-col { align-items: center; }
+  .wm-footer-col a { justify-content: center; }
+  .pulse-summary { grid-template-columns: 1fr; }
+}
 
 /* ===========================================================
    30 · MOVIMIENTO REDUCIDO
@@ -3097,7 +3273,10 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   flex: 0 0 auto;
 }
 
-
+@media (max-width: 720px) {
+  .news-banner { flex-direction: column; align-items: flex-start; gap: var(--sp-1); }
+  .news-banner-label { border-right: none; padding-right: 0; }
+}
 
 /* ===========================================================
    31 · HISTÓRICO DE EMOCIÓN
@@ -3225,7 +3404,11 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   color: var(--bone);
 }
 
-
+@media (max-width: 720px) {
+  .history-chart { height: 210px; }
+  .history-stats { grid-template-columns: repeat(2, 1fr); }
+  .history-bands text { font-size: 8px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   #historyLine,
@@ -3697,7 +3880,20 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   font-variant-numeric: tabular-nums;
 }
 
+/* -----------------------------------------------------------
+   MÓVIL
+   El arrastre horizontal debe desplazar el gráfico, no hacer
+   scroll de la página. touch-action: none dentro del SVG lo
+   consigue sin bloquear el scroll vertical del contenedor.
+   ----------------------------------------------------------- */
 
+@media (max-width: 720px) {
+  .chart-plot { height: 300px; }
+  .chart-plot svg { touch-action: none; }
+  .chart-time-label { font-size: 0.5rem; right: 62px; }
+  .chart-axis text { font-size: 9px; }
+  .chart-tooltip { min-width: 130px; font-size: 0.68rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .chart-line { filter: none; }
@@ -4066,9 +4262,35 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 
 .mood-trades-feed { max-height: 130px; margin-top: var(--sp-2); }
 
+/* -----------------------------------------------------------
+   MÓVIL
+   ----------------------------------------------------------- */
 
+@media (max-width: 720px) {
+  .mood-search-row { grid-template-columns: 1fr auto auto; }
+  .mood-search-row .mood-input { min-width: 0; }
 
+  /* La cabecera pasa a dos filas: con cuatro columnas el nombre
+     del token quedaba en tres caracteres. */
+  .mood-token-header {
+    grid-template-columns: auto 1fr auto;
+    row-gap: var(--sp-2);
+  }
 
+  .mood-token-links { grid-column: 1 / -1; justify-content: flex-start; }
+
+  .mood-stage { min-height: 240px; }
+  .mood-hero-img { width: min(200px, 60%); }
+
+  .mood-metric-row { min-height: 34px; padding: 0 var(--sp-2); }
+  .mood-metric-row span { font-size: 0.58rem; }
+  .mood-metric-row strong { font-size: 0.78rem; }
+}
+
+@media (max-width: 420px) {
+  .mood-token-price-block strong { font-size: 0.95rem; }
+  .mood-actions-row { grid-template-columns: 1fr; }
+}
 
 /* -----------------------------------------------------------
    BOTÓN DE MOOD CON LOGO
@@ -4122,7 +4344,10 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   filter: brightness(0) invert(0);
 }
 
-
+@media (max-width: 420px) {
+  .mood-logo-btn { padding: 6px 11px; }
+  .mood-logo-btn img { height: 17px; }
+}
 
 /* ===========================================================
    35 · MOOD — GRÁFICO CON CROMO REAL
@@ -4212,7 +4437,15 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 
 .mood-hero-img { z-index: 3; }
 
+@media (max-width: 720px) {
+  /* LA MÁSCARA MÓVIL TAMBIÉN ELIMINADA.
 
+     Al quitar la de escritorio se me pasó esta copia dentro del
+     media query. Seguía abriendo el agujero elíptico en el
+     centro del gráfico en pantallas pequeñas — que es donde más
+     se notaba. Mismo bug, distinto sitio. */
+  .mood-chart-axis text { font-size: 8px; }
+}
 
 /* ===========================================================
    37 · FEED DE FLUJO
@@ -4251,7 +4484,10 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   letter-spacing: 0.08em;
 }
 
-
+@media (max-width: 480px) {
+  .mood-trade { grid-template-columns: 38px 1fr auto; }
+  .mood-trade .trade-time { display: none; }
+}
 
 /* ===========================================================
    38 · CABECERA REESTRUCTURADA
@@ -4565,9 +4801,59 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   .wm-menu-toggle { display: none; }
 }
 
+@media (max-width: 980px) {
+  .wm-desktop-nav { display: none; }
+  .wm-brand { margin: 0 auto; }
+  .wm-tagline { display: none; }
 
+  .wm-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: var(--ink-200);
+    color: var(--bone);
+    font-size: 19px;
+    flex-shrink: 0;
+  }
 
+  .wm-brand .logo-img { height: 40px; max-width: 170px; }
 
+  .wm-header-metrics { gap: var(--sp-3); }
+  .wm-metric > strong,
+  .wm-metric-copy strong { font-size: 0.74rem; }
+  .wm-dom-ring { width: 28px; height: 28px; }
+
+  /* Al hacer scroll se ocultan las métricas: la cabecera pegajosa
+     no debe comerse un tercio de la pantalla en móvil. */
+  body.header-scrolled .wm-header-metrics {
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-top-color: transparent;
+  }
+
+  .wm-header-metrics {
+    max-height: 60px;
+    opacity: 1;
+    transition: max-height 0.3s var(--ease), opacity 0.24s ease,
+                margin-top 0.3s var(--ease), padding-top 0.3s var(--ease);
+  }
+
+  body.header-scrolled .wm-brand .logo-img { height: 32px; max-width: 140px; }
+}
+
+@media (max-width: 560px) {
+  .topbar { padding: var(--sp-2) var(--sp-3); }
+  .wm-header-metrics { gap: var(--sp-3); }
+  .wm-metric > span,
+  .wm-metric-copy span { font-size: 0.5rem; }
+}
 
 /* ===========================================================
    39 · BAG MOOD — REDISEÑADA
@@ -4958,15 +5244,373 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   margin-top: var(--sp-3);
 }
 
+/* -----------------------------------------------------------
+   MÓVIL
+   ----------------------------------------------------------- */
 
+@media (max-width: 720px) {
+  .bag-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--sp-2);
+  }
 
+  .bag-hero { width: 120px; height: 120px; margin: 0 auto; }
+  .bag-pnl-hero { justify-content: center; }
+  .bag-headline-sub { justify-content: center; }
 
+  .bag-add-form { grid-template-columns: 1fr 1fr; }
+  .bag-search-wrap { grid-column: 1 / -1; }
 
+  /* Dos filas por posición: con cinco columnas el símbolo
+     quedaba en dos caracteres. */
+  .bag-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: var(--sp-1);
+  }
 
+  .bag-row-value,
+  .bag-row-pnl {
+    text-align: left;
+    grid-row: 2;
+  }
 
+  .bag-row-value { grid-column: 1; }
+  .bag-row-pnl { grid-column: 2 / -1; text-align: right; }
+  .bag-row-mood { grid-row: 1; }
+}
 
+@media (max-width: 420px) {
+  .bag-actions { flex-direction: column; }
+  .bag-headline-sub { gap: var(--sp-2); font-size: 0.58rem; }
+}
 
+/* ===========================================================
+   40 · AUDITORÍA MÓVIL
+   Añadir al FINAL de globals.css, después de todo lo demás.
 
+   CAUSA COMÚN DE TODO LO QUE SIGUE:
+   Varias secciones usan rejillas con columnas `auto` o `1fr`
+   que a 400px de ancho colapsan. Los elementos no se truncan
+   con elegancia: se SOLAPAN. El caso más grave era la lista de
+   exchanges, donde "Liquidity" quedaba debajo de la cara del
+   mood y el nombre se reducía a "B...".
+   =========================================================== */
+
+@media (max-width: 720px) {
+
+  /* -----------------------------------------------------------
+     1. LISTA DE EXCHANGES  (lo más roto)
+
+     La rejilla de dos columnas comprimía la izquierda hasta
+     dejar el nombre en tres caracteres, y el bloque derecho
+     se montaba encima del texto. Ahora es una fila con la cara
+     como ancla y el resto fluyendo debajo.
+     ----------------------------------------------------------- */
+
+  .exchange-item {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo name  action"
+      "logo meta  action";
+    align-items: center;
+    gap: 4px var(--sp-2);
+    padding: var(--sp-2);
+  }
+
+  .exchange-left {
+    display: contents;   /* los hijos pasan a la rejilla del padre */
+  }
+
+  .exchange-logo {
+    grid-area: logo;
+    width: 34px;
+    height: 34px;
+  }
+
+  .exchange-copy {
+    grid-area: name;
+    min-width: 0;
+  }
+
+  .exchange-name {
+    max-width: 100%;
+    font-size: 0.78rem;
+  }
+
+  .exchange-pair { font-size: 0.6rem; }
+
+  .exchange-meta {
+    margin-top: 2px;
+    gap: 5px;
+  }
+
+  .exchange-volume { font-size: 0.58rem; }
+  .exchange-trust { font-size: 0.55rem; padding: 1px 5px; }
+
+  .exchange-right {
+    grid-area: action;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  /* La cara y el nombre del mood se apilan en vertical: en
+     horizontal no caben sin invadir el texto de la izquierda. */
+  .exchange-mood { gap: 5px; }
+  .exchange-mood img { width: 18px; height: 18px; }
+  .exchange-mood-label strong { font-size: 0.6rem; }
+  .exchange-score { font-size: 0.55rem; margin-top: 1px; }
+
+  .exchange-trade-btn {
+    min-width: 44px;
+    padding: 5px 8px;
+    font-size: 0.56rem;
+  }
+
+  /* -----------------------------------------------------------
+     2. CABECERA DEL CHART
+
+     Precio, volumen y market cap ocupaban una línea cada uno, y
+     los timeframes rompían en dos filas. La tarjeta medía más
+     que el propio gráfico.
+     ----------------------------------------------------------- */
+
+  .chart-topbar { gap: var(--sp-2); }
+
+  .chart-coin-meta { gap: var(--sp-2); }
+
+  .chart-coin-icon-wrap { width: 38px; height: 38px; }
+
+  .chart-coin-title-line { margin-bottom: 5px; gap: var(--sp-1); }
+  .chart-coin-title-line h3 { font-size: 0.92rem; }
+  .chart-coin-title-line .muted { font-size: 0.62rem; }
+
+  /* Antes: una fila desplazable con la barra oculta. En un
+     telefono estrecho "MARKET CAP" quedaba cortado a "MARKET CAF"
+     y nada indicaba que se podia deslizar — un scroll invisible
+     es un corte, no un scroll.
+
+     Ahora: rejilla. El precio ocupa la primera fila entera — es
+     la cifra por la que se abre la tarjeta — y volumen y market
+     cap comparten la segunda. Nada se corta a ningun ancho. */
+  .chart-coin-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-1) var(--sp-3);
+  }
+
+  .chart-mini-stat:first-child {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+
+  .chart-mini-stat:first-child strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chart-mini-stat span { font-size: 0.55rem; }
+  .chart-mini-stat strong { font-size: 0.74rem; }
+
+  .chart-toolbar { align-items: stretch; gap: var(--sp-1); }
+
+  /* Los cinco timeframes en una fila. Antes 30D caía sola a una
+     segunda línea. */
+  #chartTimeframes {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  #chartTimeframes button {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 4px;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+
+  .chart-mode-switch { display: flex; gap: 4px; }
+  .chart-mode-switch button { flex: 1; padding: 7px; font-size: 0.6rem; }
+
+  /* Technical y Social lado a lado: ocupaban ancho completo cada
+     uno y sumaban 180px de alto para dos palabras. */
+  .chart-inline-moods {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+  }
+
+  .chart-mood-chip {
+    flex: 1;
+    min-width: 0;
+    padding: var(--sp-1) var(--sp-2);
+    gap: var(--sp-1);
+  }
+
+  .chart-mood-chip-icon { width: 26px; height: 26px; }
+  .chart-mood-chip span { font-size: 0.52rem; }
+  .chart-mood-chip strong { font-size: 0.72rem; }
+
+  .chart-mood-chip-performance {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  /* -----------------------------------------------------------
+     3. PESTAÑAS  (Studio y Market Sections)
+
+     Cuatro pestañas con padding de escritorio se rompían en
+     cuatro filas. Ocupaban media pantalla antes del contenido.
+     ----------------------------------------------------------- */
+
+  .tabs-row {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .tabs-row::-webkit-scrollbar { display: none; }
+
+  .tabs-row .tab-btn {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* -----------------------------------------------------------
+     4. BAG — formulario desbordado
+
+     Los campos se salían del contenedor: "Search BTC, SOL, MOOD
+     or paste a contr" cortado a media palabra y "Entry p"
+     invisible fuera de pantalla.
+     ----------------------------------------------------------- */
+
+  .bag-add-form {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-1);
+  }
+
+  .bag-search-wrap { grid-column: 1 / -1; }
+
+  /* min-width:0 es lo que evita que un input se niegue a
+     encogerse por debajo de su contenido y desborde la rejilla. */
+  .bag-add-form input,
+  .bag-search-wrap input {
+    min-width: 0;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .bag-add-form .bag-add-btn { grid-column: 1 / -1; }
+
+  .bag-header { padding: var(--sp-2); }
+  .bag-hero { width: 96px; height: 96px; }
+  .bag-headline > strong { font-size: 1.5rem; }
+  .bag-pnl-hero strong { font-size: 1.4rem; }
+
+  .bag-style-control { display: flex; align-items: center; gap: var(--sp-1); }
+  .bag-style-control label { margin-bottom: 0; white-space: nowrap; }
+
+  /* -----------------------------------------------------------
+     5. RADAR — cajas gigantes para una palabra
+
+     Modifier, Intensity y Momentum ocupaban 110px de alto cada
+     una para mostrar un valor de una línea.
+     ----------------------------------------------------------- */
+
+  .radar-output-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .radar-output-grid > div { padding: var(--sp-1) var(--sp-2); }
+  .radar-output-grid span { font-size: 0.5rem; }
+  .radar-output-grid strong { font-size: 0.68rem; }
+
+  .radar-face-wrap { width: 62px; height: 62px; flex-basis: 62px; }
+  #radarMoodLabel { font-size: 1.6rem; }
+
+  #emotionRadarInput { min-height: 96px; }
+
+  .emotion-radar-actions { gap: var(--sp-1); }
+  .emotion-radar-actions button { flex: 1; }
+
+  /* -----------------------------------------------------------
+     6. ESCALA EMOCIONAL
+     Siete estados en dos columnas dejaban uno huérfano y la
+     sección medía 900px. Con cuatro columnas caben en dos filas.
+     ----------------------------------------------------------- */
+
+  .scale-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .scale-item { padding: var(--sp-2) 4px; }
+  .scale-face { width: 38px; height: 38px; }
+  .scale-item strong { font-size: 0.55rem; letter-spacing: 0.02em; }
+
+  /* -----------------------------------------------------------
+     7. STUDIO — salida monoespaciada enorme
+     ----------------------------------------------------------- */
+
+  .studio-output { font-size: 0.76rem; min-height: 110px; padding: var(--sp-2); }
+  pre.studio-output { font-size: 0.68rem; }
+  .studio-box { padding: var(--sp-2); }
+  .studio-box-head h4 { font-size: 0.84rem; }
+
+  /* -----------------------------------------------------------
+     8. MÉTRICAS DE CABECERA
+     El anillo de dominancia salía vacío porque no había datos
+     todavía; se le da un mínimo visible para que no parezca roto.
+     ----------------------------------------------------------- */
+
+  .wm-header-metrics { gap: var(--sp-3); padding-bottom: 2px; }
+  .wm-metric > span, .wm-metric-copy span { font-size: 0.48rem; }
+  .wm-metric > strong, .wm-metric-copy strong { font-size: 0.7rem; }
+  .wm-dom-ring { width: 26px; height: 26px; }
+
+  /* -----------------------------------------------------------
+     9. ABOUT — texto a ancho completo
+     ----------------------------------------------------------- */
+
+  .about-text { font-size: 0.88rem; line-height: 1.6; }
+  .about-title { font-size: 1.5rem; }
+  .seo-subtitle { font-size: 1rem; }
+}
+
+/* -----------------------------------------------------------
+   10. PANTALLAS MUY ESTRECHAS
+   ----------------------------------------------------------- */
+
+@media (max-width: 420px) {
+  .scale-grid { grid-template-columns: repeat(3, 1fr); }
+  .radar-output-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .exchange-item { grid-template-columns: 30px minmax(0, 1fr) auto; }
+  .exchange-logo { width: 30px; height: 30px; }
+  .exchange-name { font-size: 0.72rem; }
+
+  .chart-coin-title-line h3 { font-size: 0.84rem; }
+  #chartTimeframes button { font-size: 0.55rem; padding: 6px 2px; }
+}
+
+/* -----------------------------------------------------------
+   11. EL BOTÓN FLOTANTE TAPA CONTENIDO
+
+   "Emotion Pulse" está fijo abajo y en varias capturas se come
+   la última fila de la sección visible. Se añade un colchón al
+   final de la página.
+   ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .dashboard { padding-bottom: 64px; }
+}
 
 /* ===========================================================
    41 · BAG — CORRECCIONES VISIBLES
@@ -5076,14 +5720,22 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   max-width: 260px;
 }
 
+@media (max-width: 980px) {
+  .wm-brand .logo-img { height: 54px; max-width: 220px; }
+  body.header-scrolled .wm-brand .logo-img { height: 42px; max-width: 180px; }
+}
 
-
-
+@media (max-width: 560px) {
+  .wm-brand .logo-img { height: 46px; max-width: 190px; }
+  body.header-scrolled .wm-brand .logo-img { height: 36px; max-width: 150px; }
+}
 
 /* El logo del footer acompaña al del header. */
 .wm-footer-logo-img { width: 200px; }
 
-
+@media (max-width: 720px) {
+  .wm-footer-logo-img { width: 170px; }
+}
 
 /* -----------------------------------------------------------
    BAG — CABECERA
@@ -5142,9 +5794,53 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   border-left: none;
 }
 
+/* -----------------------------------------------------------
+   BAG — MÓVIL
 
+   Centrado real. Antes el bloque se centraba pero el texto
+   seguía alineado a la izquierda dentro de su columna, así que
+   quedaba descolgado bajo el avatar.
+   ----------------------------------------------------------- */
 
+@media (max-width: 720px) {
+  .bag-header {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    text-align: center;
+  }
 
+  .bag-hero {
+    width: 168px;
+    height: 168px;
+    margin: 0 auto;
+  }
+
+  .bag-headline { text-align: center; }
+
+  .bag-pnl-hero {
+    justify-content: center;
+    margin-bottom: var(--sp-2);
+  }
+
+  .bag-headline-sub {
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: var(--sp-1);
+  }
+
+  /* En dos líneas los divisores confunden más que ayudan. */
+  .bag-headline-sub span {
+    padding: 0 var(--sp-2);
+    border-left: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .bag-hero { width: 140px; height: 140px; }
+  .bag-headline > strong { font-size: 1.6rem; }
+  .bag-pnl-hero strong { font-size: 1.5rem; }
+}
 
 /* ===========================================================
    43 · EMOTION RADAR — REDISEÑADA
@@ -5443,7 +6139,19 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 
 .radar-source-link:hover { color: var(--bone); }
 
+/* -----------------------------------------------------------
+   MÓVIL
+   Una columna, titulares primero. La lectura aparece debajo, así
+   que tras pulsar un titular basta un gesto corto para verla.
+   ----------------------------------------------------------- */
 
+@media (max-width: 900px) {
+  .radar-layout { grid-template-columns: 1fr; }
+  .radar-news-list { max-height: 300px; }
+  .radar-face-wrap { width: 64px; height: 64px; flex-basis: 64px; }
+  #radarMoodLabel { font-size: 1.5rem; }
+  .radar-news-headline { font-size: 0.78rem; }
+}
 
 /* ===========================================================
    44 · MOOD — GRÁFICO CON MÉTRICAS
@@ -5612,9 +6320,25 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 /* El score de la esquina reemplaza la caja anterior. */
 .mood-score-corner { display: none; }
 
+@media (max-width: 720px) {
+  .mood-stage { min-height: 280px; }
+  #moodChartSvg { touch-action: none; }
 
+  .mood-hero-corner { right: 8px; bottom: 8px; }
+  .mood-hero-corner .mood-hero-img { width: 88px; }
+  .mood-hero-caption { padding: 3px 8px; }
+  .mood-hero-caption span { font-size: 0.78rem; }
+  .mood-hero-caption strong { font-size: 0.52rem; }
 
+  .mood-chart-axis text { font-size: 9px; }
+  .mood-chart-bar { gap: var(--sp-1); }
+  .mood-chart-bar .timeframes button { padding: 6px 9px; font-size: 0.6rem; }
+}
 
+@media (max-width: 480px) {
+  .mood-hero-corner .mood-hero-img { width: 70px; }
+  .mood-stage-glow { display: none; }
+}
 
 /* ===========================================================
    45 · MOOD — RETRATO CON ANILLO DE SCORE
@@ -5735,9 +6459,19 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
 .mood-score-corner,
 .mood-hero-caption { display: none; }
 
+@media (max-width: 720px) {
+  .mood-hero-corner { right: 10px; bottom: 10px; gap: 4px; }
+  .mood-hero-portrait { width: 96px; height: 96px; }
+  .mood-ring-track, .mood-ring-fill { stroke-width: 5; }
+  .mood-ring-score { padding: 1px 9px; bottom: -5px; }
+  .mood-ring-score strong { font-size: 0.78rem; }
+  .mood-hero-label { font-size: 0.54rem; }
+}
 
-
-
+@media (max-width: 480px) {
+  .mood-hero-portrait { width: 78px; height: 78px; }
+  .mood-ring-score strong { font-size: 0.7rem; }
+}
 
 /* ===========================================================
    46 · MOOD — RETRATO A LA IZQUIERDA
@@ -5773,9 +6507,13 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
    algún resto en el marcado. */
 .mood-token-badge { display: none; }
 
+@media (max-width: 720px) {
+  .mood-hero-corner { left: 10px; bottom: 28px; }
+}
 
-
-
+@media (max-width: 480px) {
+  .mood-hero-corner { left: 8px; bottom: 26px; }
+}
 
 /* ===========================================================
    47 · MOOD — LIMPIEZA DEL ESCENARIO
@@ -5906,9 +6644,32 @@ body.bubble-map-expanded #bubbleMapStage { height: calc(100vh - 240px); }
   white-space: nowrap;
 }
 
+@media (max-width: 900px) {
+  /* En móvil el detalle pasa a su propia fila completa: con seis
+     columnas los números quedaban en dos caracteres. */
+  .bag-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: var(--sp-1);
+  }
 
+  .bag-row-value { grid-column: 1; grid-row: 2; text-align: left; }
+  .bag-row-pnl   { grid-column: 2 / -1; grid-row: 2; text-align: right; }
 
+  .bag-row-detail {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: space-between;
+    padding-top: var(--sp-1);
+    border-top: 1px solid var(--line-soft);
+  }
 
+  .bag-row-mood { grid-row: 1; }
+}
+
+@media (max-width: 420px) {
+  .bag-row-detail { gap: var(--sp-2); }
+  .bag-row-detail strong { font-size: 0.66rem; }
+}
 
 /* ===========================================================
    49 · ESQUELETOS DE CARGA
@@ -6078,7 +6839,10 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   }
 }
 
-
+@media (max-width: 720px) {
+  .sk-card { min-height: 92px; padding: var(--sp-2); }
+  .sk-chip { width: 74px; height: 27px; }
+}
 
 /* ===========================================================
    50 · HISTÓRICO — MÉTRICAS Y EJES
@@ -6262,9 +7026,23 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   margin-top: 2px;
 }
 
+/* -----------------------------------------------------------
+   MÓVIL
+   ----------------------------------------------------------- */
 
+@media (max-width: 900px) {
+  .history-metrics { grid-template-columns: repeat(3, 1fr); }
+  .history-chart { height: 240px; }
+  #historySvg { touch-action: none; }
+}
 
-
+@media (max-width: 480px) {
+  .history-metrics { grid-template-columns: repeat(2, 1fr); }
+  .history-now strong { font-size: 1.9rem; }
+  .history-metric strong { font-size: 0.88rem; }
+  .history-bands text { font-size: 8px; }
+  .history-axis text { font-size: 9px; }
+}
 
 /* ===========================================================
    51 · ESTADO "MIDIENDO" DE LOS TIMEFRAMES
@@ -7242,7 +8020,20 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   padding: var(--sp-2);
 }
 
+/* ---------- Movil ---------- */
 
+@media (max-width: 640px) {
+  .rush-shell { padding: var(--sp-3); }
+  .rush-stage { min-height: 380px; padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+  .rush-hud { gap: var(--sp-3); }
+  .rush-head-side { flex-direction: row; align-items: center; }
+  .rush-final-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* El pulgar llega mejor a una cuadricula que no ocupe todo el
+     ancho: 320px la mantiene dentro del arco natural. */
+  .rush-grid { max-width: 320px; }
+  .rush-cell-name { font-size: 0.5rem; }
+}
 
 /* ---------- Movimiento reducido ----------
 
@@ -7469,7 +8260,15 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   min-height: 0;
 }
 
-
+@media (max-width: 640px) {
+  .rush-scale-guide { gap: 2px; }
+  .rush-scale-step { padding: 4px 1px; }
+  .rush-scale-step img { width: 16px; height: 16px; }
+  .rush-scale-step strong { font-size: 0.5rem; }
+  /* El nombre sobra en movil: el icono y el rango ya identifican
+     cada tramo, y siete etiquetas de 7px no las lee nadie. */
+  .rush-scale-step span { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .rush-cell-range-hint,
@@ -8152,9 +8951,27 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 .rush-modal-close:hover { color: var(--bone); border-color: var(--line-hard); }
 
+/* ---------- Movil ---------- */
 
+@media (max-width: 860px) {
+  .rush-card { grid-template-columns: 1fr; }
+  .rush-card-main { order: -1; }
+}
 
+@media (max-width: 640px) {
+  /* A pantalla completa: el tablero necesita cada pixel y los
+     margenes solo servian para dejar ver un fondo que ya esta
+     tapado por el backdrop. */
+  .rush-modal { padding: 0; }
 
+  .rush-modal-panel {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .rush-modal-panel { animation: none; }
@@ -8745,7 +9562,10 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 .hero-scrub-readout span { text-transform: capitalize; }
 .hero-scrub-date { color: var(--bone-faint); text-transform: none !important; }
 
-
+@media (max-width: 640px) {
+  .hero-scrub-readout { font-size: .64rem; gap: 6px; padding: 4px 10px; }
+  .hero-view-modes button { padding: 4px 9px; font-size: .58rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .hero-history,
@@ -8798,7 +9618,31 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
    dice la ventana. */
 .chart-time-label { display: none !important; }
 
+/* Logo EXACTAMENTE centrado en móvil. Centrado geométrico
+   respecto a la pantalla, no al hueco que deja la hamburguesa:
+   con flex quedaba unos píxeles a la derecha del centro real. */
+@media (max-width: 900px) {
+  /* El ancestro posicionado tiene que ser LA FILA DEL LOGO
+     (.wm-header-top), no el header entero. La primera version
+     apuntaba a .wm-topbar — una clase que no existe — asi que el
+     absoluto subia hasta el header completo y el logo caia
+     centrado sobre la fila de metricas, tapandola. */
+  .wm-header-top { position: relative; }
 
+  .wm-brand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    margin: 0;
+    /* El centrado no debe robarle el tap a la hamburguesa. */
+    pointer-events: none;
+  }
+
+  .wm-brand img, .wm-brand span { pointer-events: auto; }
+
+  .logo-img { height: 64px; max-width: min(320px, 62vw); }
+}
 
 
 .wm-mobile-menu .wm-mobile-play { color: #E9A733; }
@@ -8906,7 +9750,11 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
   .rush-cell-fx.playing { opacity: .96; }
 }
 
-
+@media (max-width: 700px) {
+  /* Un poco más rápida en el teléfono: la pantalla es más pequeña,
+     el recorrido aparente es menor y a 0,26s se siente lenta. */
+  .rush-cell-fx { --fx-dur: .22s; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .rush-cell-fx.playing {
@@ -9067,968 +9915,4 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 @media (prefers-reduced-motion: reduce) {
   #heartbeatScroll,
   .heartbeat-wrap { animation: none; }
-}
-
-
-/* ===========================================================
-   ADAPTACIONES A PANTALLA PEQUEÑA
-
-   TODOS los bloques @media (max-width: ...) viven aqui abajo, y
-   tienen que seguir viviendo aqui.
-
-   POR QUE. Este archivo crecio por el final: cada seccion nueva
-   se añadio despues de la anterior. Varias de esas secciones
-   vuelven a declarar selectores que ya tenian una adaptacion
-   movil mas arriba —.bag-row, .mood-stage, .bag-hero,
-   .radar-face-wrap, .history-chart, .wm-brand .logo-img...— y
-   como la especificidad es la misma, en CSS gana el que va
-   DESPUES. Resultado: 29 reglas de escritorio anulaban a su
-   propia version movil, y en el movil se veia el diseño de
-   escritorio encogido.
-
-   Eso no da ningun error. No aparece en consola, no rompe el
-   parseo, no lo detecta `node --check`. Solo se ve mirando la
-   pagina en un telefono.
-
-   REGLA: si añades una seccion nueva, su bloque movil va al
-   FINAL de este archivo, no junto a la seccion. `smoke-css.mjs`
-   falla si alguno se queda arriba.
-   =========================================================== */
-
-/* ===========================================================
-   29 · RESPONSIVE
-   =========================================================== */
-
-@media (max-width: 1100px) {
-  .coins-grid          { grid-template-columns: repeat(3, 1fr); }
-  .scale-grid          { grid-template-columns: repeat(4, 1fr); }
-  .mood-token-grid     { grid-template-columns: 1fr; }
-  .mood-stage          { min-height: 360px; }
-  .bag-mood-grid       { grid-template-columns: 1fr; }
-  .bag-row             { grid-template-columns: 1fr; gap: var(--sp-2); }
-  .bag-search-box      { grid-template-columns: 1fr; }
-  .emotion-radar-grid  { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 980px) {
-  .market-exchange-layout { grid-template-columns: 1fr; }
-  .layer-grid             { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* --- Header móvil: sticky con logo centrado --- */
-@media (max-width: 900px) {
-  .wm-sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    display: grid;
-    grid-template-columns: 44px 1fr 44px;
-    align-items: center;
-    padding: var(--sp-2) var(--sp-3);
-    background: rgba(5, 8, 12, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: padding 0.3s var(--ease), background 0.3s var(--ease);
-  }
-
-  .wm-menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    grid-column: 1;
-    border-radius: var(--r-md);
-    border: 1px solid var(--line);
-    background: var(--ink-200);
-    color: var(--bone);
-    font-size: 20px;
-  }
-
-  .wm-logo-wrap,
-  .wm-logo-link {
-    grid-column: 2;
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .logo-img { height: 60px; max-width: 200px; }
-
-  .wm-header-content {
-    grid-column: 1 / -1;
-    width: 100%;
-    margin-top: var(--sp-2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-height: 120px;
-    opacity: 1;
-    overflow: hidden;
-    transition: max-height 0.3s var(--ease), opacity 0.24s ease, margin-top 0.3s var(--ease);
-  }
-
-  .topbar-center,
-  .topbar-right { justify-content: center; width: 100%; }
-  .topbar-center { text-align: center; }
-
-  body.header-scrolled .wm-sticky-header {
-    padding-top: var(--sp-1);
-    padding-bottom: var(--sp-1);
-    background: rgba(5, 8, 12, 0.96);
-  }
-
-  body.header-scrolled .logo-img { height: 44px; max-width: 170px; }
-
-  body.header-scrolled .wm-header-content {
-    max-height: 0;
-    opacity: 0;
-    margin-top: 0;
-    pointer-events: none;
-  }
-
-  .wm-mobile-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 12px;
-    right: 12px;
-    display: none;
-    flex-direction: column;
-    gap: var(--sp-1);
-    padding: var(--sp-3);
-    border-radius: var(--r-lg);
-    border: 1px solid var(--line);
-    background: rgba(5, 8, 12, 0.98);
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow);
-  }
-
-  .wm-mobile-menu.open { display: flex; }
-
-  .wm-mobile-menu a {
-    padding: 11px 13px;
-    border-radius: var(--r-md);
-    border: 1px solid var(--line-soft);
-    background: rgba(232,233,236,0.03);
-    text-decoration: none;
-    font-family: var(--font-data);
-    font-size: 0.76rem;
-    letter-spacing: 0.06em;
-    color: var(--bone-dim);
-  }
-
-  .wm-mobile-menu a:hover { background: var(--ink-300); color: var(--bone); }
-
-  .wm-footer-inner { flex-direction: column; align-items: center; gap: var(--sp-4); }
-  .wm-footer-links-wrap { width: 100%; justify-content: center; gap: var(--sp-4); }
-}
-
-@media (max-width: 780px) {
-  .app-shell        { width: min(100% - 16px, 1240px); }
-  .coins-grid       { grid-template-columns: repeat(2, 1fr); }
-  .scale-grid       { grid-template-columns: repeat(3, 1fr); }
-  .market-intervals { grid-template-columns: repeat(3, 1fr); }
-  .studio-grid      { grid-template-columns: 1fr; }
-  .radar-output-grid{ grid-template-columns: 1fr; }
-  .section-head     { flex-direction: column; align-items: flex-start; }
-  .market-section-tools { width: 100%; justify-content: flex-start; }
-  .chart-topbar     { flex-direction: column; }
-  .chart-toolbar    { width: 100%; align-items: flex-start; }
-  .bubble-map-head  { flex-direction: column; }
-  .bubble-map-info-row { grid-template-columns: 1fr; }
-  .mood-token-score-row { grid-template-columns: 1fr; }
-  .exchange-card-head { flex-direction: column; align-items: flex-start; gap: var(--sp-1); }
-  .exchange-card-head .muted { max-width: 100%; text-align: left; }
-}
-
-@media (max-width: 720px) {
-  .heartbeat-chart { height: 76px; }
-  .heartbeat-wrap::before { font-size: 0.52rem; top: 8px; left: 11px; }
-  .bubble-map-stage { height: 520px; }
-  .driver-item { grid-template-columns: 1fr; }
-  .driver-item strong { text-align: left; }
-  .hero-market-line { flex-direction: column; gap: var(--sp-2); }
-  .hero-line-sep { display: none; }
-  .emotion-pulse-toggle { right: 12px; left: 12px; bottom: 12px; justify-content: center; }
-  .emotion-pulse-panel  { right: 12px; left: 12px; bottom: 66px; width: auto; }
-}
-
-@media (max-width: 560px) {
-  .hero, .top-coins, .chart-card, .scale-card, .drivers-card,
-  .studio-card, .about-section, .bag-mood-section,
-  .mood-token-card, .emotion-radar { padding: var(--sp-3); }
-
-  .coins-grid       { grid-template-columns: 1fr; }
-  .scale-grid       { grid-template-columns: repeat(2, 1fr); }
-  .market-intervals { grid-template-columns: repeat(2, 1fr); }
-  .layer-grid       { grid-template-columns: 1fr; }
-  .mood-stats-grid  { grid-template-columns: repeat(2, 1fr); }
-  .bag-mood-score-row { grid-template-columns: 1fr; }
-  .bag-mode-tabs    { flex-direction: column; }
-  .bag-actions      { flex-direction: column; }
-  .mood-ca-row      { flex-direction: column; align-items: stretch; }
-  .mood-search-box  { grid-template-columns: 1fr; }
-  .mood-actions-row { flex-direction: column; }
-  .mood-buy-btn, .mood-secondary-btn { width: 100%; }
-  .chart-inline-moods { flex-direction: column; }
-  .chart-mood-chip-performance { margin-left: 0; }
-  .chart-placeholder { height: 240px; }
-  .mood-stage { min-height: 300px; }
-  .hero-face-wrap { width: min(230px, 82%); }
-  .wm-gauge-wrap  { width: min(290px, 100%); }
-  #gaugeScore     { font-size: 2.1rem; }
-  .wm-footer-links-wrap { flex-direction: column; align-items: center; text-align: center; }
-  .wm-footer-col { align-items: center; }
-  .wm-footer-col a { justify-content: center; }
-  .pulse-summary { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 720px) {
-  .news-banner { flex-direction: column; align-items: flex-start; gap: var(--sp-1); }
-  .news-banner-label { border-right: none; padding-right: 0; }
-}
-
-@media (max-width: 720px) {
-  .history-chart { height: 210px; }
-  .history-stats { grid-template-columns: repeat(2, 1fr); }
-  .history-bands text { font-size: 8px; }
-}
-
-/* -----------------------------------------------------------
-   MÓVIL
-   El arrastre horizontal debe desplazar el gráfico, no hacer
-   scroll de la página. touch-action: none dentro del SVG lo
-   consigue sin bloquear el scroll vertical del contenedor.
-   ----------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  .chart-plot { height: 300px; }
-  .chart-plot svg { touch-action: none; }
-  .chart-time-label { font-size: 0.5rem; right: 62px; }
-  .chart-axis text { font-size: 9px; }
-  .chart-tooltip { min-width: 130px; font-size: 0.68rem; }
-}
-
-/* -----------------------------------------------------------
-   MÓVIL
-   ----------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  .mood-search-row { grid-template-columns: 1fr auto auto; }
-  .mood-search-row .mood-input { min-width: 0; }
-
-  /* La cabecera pasa a dos filas: con cuatro columnas el nombre
-     del token quedaba en tres caracteres. */
-  .mood-token-header {
-    grid-template-columns: auto 1fr auto;
-    row-gap: var(--sp-2);
-  }
-
-  .mood-token-links { grid-column: 1 / -1; justify-content: flex-start; }
-
-  .mood-stage { min-height: 240px; }
-  .mood-hero-img { width: min(200px, 60%); }
-
-  .mood-metric-row { min-height: 34px; padding: 0 var(--sp-2); }
-  .mood-metric-row span { font-size: 0.58rem; }
-  .mood-metric-row strong { font-size: 0.78rem; }
-}
-
-@media (max-width: 420px) {
-  .mood-token-price-block strong { font-size: 0.95rem; }
-  .mood-actions-row { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 420px) {
-  .mood-logo-btn { padding: 6px 11px; }
-  .mood-logo-btn img { height: 17px; }
-}
-
-@media (max-width: 720px) {
-  /* LA MÁSCARA MÓVIL TAMBIÉN ELIMINADA.
-
-     Al quitar la de escritorio se me pasó esta copia dentro del
-     media query. Seguía abriendo el agujero elíptico en el
-     centro del gráfico en pantallas pequeñas — que es donde más
-     se notaba. Mismo bug, distinto sitio. */
-  .mood-chart-axis text { font-size: 8px; }
-}
-
-@media (max-width: 480px) {
-  .mood-trade { grid-template-columns: 38px 1fr auto; }
-  .mood-trade .trade-time { display: none; }
-}
-
-@media (max-width: 980px) {
-  .wm-desktop-nav { display: none; }
-  .wm-brand { margin: 0 auto; }
-  .wm-tagline { display: none; }
-
-  .wm-menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--r-md);
-    border: 1px solid var(--line);
-    background: var(--ink-200);
-    color: var(--bone);
-    font-size: 19px;
-    flex-shrink: 0;
-  }
-
-  .wm-brand .logo-img { height: 40px; max-width: 170px; }
-
-  .wm-header-metrics { gap: var(--sp-3); }
-  .wm-metric > strong,
-  .wm-metric-copy strong { font-size: 0.74rem; }
-  .wm-dom-ring { width: 28px; height: 28px; }
-
-  /* Al hacer scroll se ocultan las métricas: la cabecera pegajosa
-     no debe comerse un tercio de la pantalla en móvil. */
-  body.header-scrolled .wm-header-metrics {
-    max-height: 0;
-    margin-top: 0;
-    padding-top: 0;
-    opacity: 0;
-    overflow: hidden;
-    border-top-color: transparent;
-  }
-
-  .wm-header-metrics {
-    max-height: 60px;
-    opacity: 1;
-    transition: max-height 0.3s var(--ease), opacity 0.24s ease,
-                margin-top 0.3s var(--ease), padding-top 0.3s var(--ease);
-  }
-
-  body.header-scrolled .wm-brand .logo-img { height: 32px; max-width: 140px; }
-}
-
-@media (max-width: 560px) {
-  .topbar { padding: var(--sp-2) var(--sp-3); }
-  .wm-header-metrics { gap: var(--sp-3); }
-  .wm-metric > span,
-  .wm-metric-copy span { font-size: 0.5rem; }
-}
-
-/* -----------------------------------------------------------
-   MÓVIL
-   ----------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  .bag-header {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: var(--sp-2);
-  }
-
-  .bag-hero { width: 120px; height: 120px; margin: 0 auto; }
-  .bag-pnl-hero { justify-content: center; }
-  .bag-headline-sub { justify-content: center; }
-
-  .bag-add-form { grid-template-columns: 1fr 1fr; }
-  .bag-search-wrap { grid-column: 1 / -1; }
-
-  /* Dos filas por posición: con cinco columnas el símbolo
-     quedaba en dos caracteres. */
-  .bag-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    row-gap: var(--sp-1);
-  }
-
-  .bag-row-value,
-  .bag-row-pnl {
-    text-align: left;
-    grid-row: 2;
-  }
-
-  .bag-row-value { grid-column: 1; }
-  .bag-row-pnl { grid-column: 2 / -1; text-align: right; }
-  .bag-row-mood { grid-row: 1; }
-}
-
-@media (max-width: 420px) {
-  .bag-actions { flex-direction: column; }
-  .bag-headline-sub { gap: var(--sp-2); font-size: 0.58rem; }
-}
-
-/* ===========================================================
-   40 · AUDITORÍA MÓVIL
-   Añadir al FINAL de globals.css, después de todo lo demás.
-
-   CAUSA COMÚN DE TODO LO QUE SIGUE:
-   Varias secciones usan rejillas con columnas `auto` o `1fr`
-   que a 400px de ancho colapsan. Los elementos no se truncan
-   con elegancia: se SOLAPAN. El caso más grave era la lista de
-   exchanges, donde "Liquidity" quedaba debajo de la cara del
-   mood y el nombre se reducía a "B...".
-   =========================================================== */
-
-@media (max-width: 720px) {
-
-  /* -----------------------------------------------------------
-     1. LISTA DE EXCHANGES  (lo más roto)
-
-     La rejilla de dos columnas comprimía la izquierda hasta
-     dejar el nombre en tres caracteres, y el bloque derecho
-     se montaba encima del texto. Ahora es una fila con la cara
-     como ancla y el resto fluyendo debajo.
-     ----------------------------------------------------------- */
-
-  .exchange-item {
-    grid-template-columns: 34px minmax(0, 1fr) auto;
-    grid-template-areas:
-      "logo name  action"
-      "logo meta  action";
-    align-items: center;
-    gap: 4px var(--sp-2);
-    padding: var(--sp-2);
-  }
-
-  .exchange-left {
-    display: contents;   /* los hijos pasan a la rejilla del padre */
-  }
-
-  .exchange-logo {
-    grid-area: logo;
-    width: 34px;
-    height: 34px;
-  }
-
-  .exchange-copy {
-    grid-area: name;
-    min-width: 0;
-  }
-
-  .exchange-name {
-    max-width: 100%;
-    font-size: 0.78rem;
-  }
-
-  .exchange-pair { font-size: 0.6rem; }
-
-  .exchange-meta {
-    margin-top: 2px;
-    gap: 5px;
-  }
-
-  .exchange-volume { font-size: 0.58rem; }
-  .exchange-trust { font-size: 0.55rem; padding: 1px 5px; }
-
-  .exchange-right {
-    grid-area: action;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
-
-  /* La cara y el nombre del mood se apilan en vertical: en
-     horizontal no caben sin invadir el texto de la izquierda. */
-  .exchange-mood { gap: 5px; }
-  .exchange-mood img { width: 18px; height: 18px; }
-  .exchange-mood-label strong { font-size: 0.6rem; }
-  .exchange-score { font-size: 0.55rem; margin-top: 1px; }
-
-  .exchange-trade-btn {
-    min-width: 44px;
-    padding: 5px 8px;
-    font-size: 0.56rem;
-  }
-
-  /* -----------------------------------------------------------
-     2. CABECERA DEL CHART
-
-     Precio, volumen y market cap ocupaban una línea cada uno, y
-     los timeframes rompían en dos filas. La tarjeta medía más
-     que el propio gráfico.
-     ----------------------------------------------------------- */
-
-  .chart-topbar { gap: var(--sp-2); }
-
-  .chart-coin-meta { gap: var(--sp-2); }
-
-  .chart-coin-icon-wrap { width: 38px; height: 38px; }
-
-  .chart-coin-title-line { margin-bottom: 5px; gap: var(--sp-1); }
-  .chart-coin-title-line h3 { font-size: 0.92rem; }
-  .chart-coin-title-line .muted { font-size: 0.62rem; }
-
-  /* Antes: una fila desplazable con la barra oculta. En un
-     telefono estrecho "MARKET CAP" quedaba cortado a "MARKET CAF"
-     y nada indicaba que se podia deslizar — un scroll invisible
-     es un corte, no un scroll.
-
-     Ahora: rejilla. El precio ocupa la primera fila entera — es
-     la cifra por la que se abre la tarjeta — y volumen y market
-     cap comparten la segunda. Nada se corta a ningun ancho. */
-  .chart-coin-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-1) var(--sp-3);
-  }
-
-  .chart-mini-stat:first-child {
-    grid-column: 1 / -1;
-    flex-direction: column;
-    gap: 2px;
-    align-items: flex-start;
-  }
-
-  .chart-mini-stat:first-child strong {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .chart-mini-stat span { font-size: 0.55rem; }
-  .chart-mini-stat strong { font-size: 0.74rem; }
-
-  .chart-toolbar { align-items: stretch; gap: var(--sp-1); }
-
-  /* Los cinco timeframes en una fila. Antes 30D caía sola a una
-     segunda línea. */
-  #chartTimeframes {
-    display: flex;
-    gap: 4px;
-    justify-content: space-between;
-  }
-
-  #chartTimeframes button {
-    flex: 1;
-    min-width: 0;
-    padding: 7px 4px;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
-  }
-
-  .chart-mode-switch { display: flex; gap: 4px; }
-  .chart-mode-switch button { flex: 1; padding: 7px; font-size: 0.6rem; }
-
-  /* Technical y Social lado a lado: ocupaban ancho completo cada
-     uno y sumaban 180px de alto para dos palabras. */
-  .chart-inline-moods {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: var(--sp-1);
-  }
-
-  .chart-mood-chip {
-    flex: 1;
-    min-width: 0;
-    padding: var(--sp-1) var(--sp-2);
-    gap: var(--sp-1);
-  }
-
-  .chart-mood-chip-icon { width: 26px; height: 26px; }
-  .chart-mood-chip span { font-size: 0.52rem; }
-  .chart-mood-chip strong { font-size: 0.72rem; }
-
-  .chart-mood-chip-performance {
-    flex-basis: 100%;
-    margin-left: 0;
-  }
-
-  /* -----------------------------------------------------------
-     3. PESTAÑAS  (Studio y Market Sections)
-
-     Cuatro pestañas con padding de escritorio se rompían en
-     cuatro filas. Ocupaban media pantalla antes del contenido.
-     ----------------------------------------------------------- */
-
-  .tabs-row {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    flex-wrap: nowrap;
-  }
-
-  .tabs-row::-webkit-scrollbar { display: none; }
-
-  .tabs-row .tab-btn {
-    flex: 0 0 auto;
-    padding: 7px 11px;
-    font-size: 0.6rem;
-    letter-spacing: 0.06em;
-  }
-
-  /* -----------------------------------------------------------
-     4. BAG — formulario desbordado
-
-     Los campos se salían del contenedor: "Search BTC, SOL, MOOD
-     or paste a contr" cortado a media palabra y "Entry p"
-     invisible fuera de pantalla.
-     ----------------------------------------------------------- */
-
-  .bag-add-form {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-1);
-  }
-
-  .bag-search-wrap { grid-column: 1 / -1; }
-
-  /* min-width:0 es lo que evita que un input se niegue a
-     encogerse por debajo de su contenido y desborde la rejilla. */
-  .bag-add-form input,
-  .bag-search-wrap input {
-    min-width: 0;
-    width: 100%;
-    font-size: 0.8rem;
-  }
-
-  .bag-add-form .bag-add-btn { grid-column: 1 / -1; }
-
-  .bag-header { padding: var(--sp-2); }
-  .bag-hero { width: 96px; height: 96px; }
-  .bag-headline > strong { font-size: 1.5rem; }
-  .bag-pnl-hero strong { font-size: 1.4rem; }
-
-  .bag-style-control { display: flex; align-items: center; gap: var(--sp-1); }
-  .bag-style-control label { margin-bottom: 0; white-space: nowrap; }
-
-  /* -----------------------------------------------------------
-     5. RADAR — cajas gigantes para una palabra
-
-     Modifier, Intensity y Momentum ocupaban 110px de alto cada
-     una para mostrar un valor de una línea.
-     ----------------------------------------------------------- */
-
-  .radar-output-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-  }
-
-  .radar-output-grid > div { padding: var(--sp-1) var(--sp-2); }
-  .radar-output-grid span { font-size: 0.5rem; }
-  .radar-output-grid strong { font-size: 0.68rem; }
-
-  .radar-face-wrap { width: 62px; height: 62px; flex-basis: 62px; }
-  #radarMoodLabel { font-size: 1.6rem; }
-
-  #emotionRadarInput { min-height: 96px; }
-
-  .emotion-radar-actions { gap: var(--sp-1); }
-  .emotion-radar-actions button { flex: 1; }
-
-  /* -----------------------------------------------------------
-     6. ESCALA EMOCIONAL
-     Siete estados en dos columnas dejaban uno huérfano y la
-     sección medía 900px. Con cuatro columnas caben en dos filas.
-     ----------------------------------------------------------- */
-
-  .scale-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
-  .scale-item { padding: var(--sp-2) 4px; }
-  .scale-face { width: 38px; height: 38px; }
-  .scale-item strong { font-size: 0.55rem; letter-spacing: 0.02em; }
-
-  /* -----------------------------------------------------------
-     7. STUDIO — salida monoespaciada enorme
-     ----------------------------------------------------------- */
-
-  .studio-output { font-size: 0.76rem; min-height: 110px; padding: var(--sp-2); }
-  pre.studio-output { font-size: 0.68rem; }
-  .studio-box { padding: var(--sp-2); }
-  .studio-box-head h4 { font-size: 0.84rem; }
-
-  /* -----------------------------------------------------------
-     8. MÉTRICAS DE CABECERA
-     El anillo de dominancia salía vacío porque no había datos
-     todavía; se le da un mínimo visible para que no parezca roto.
-     ----------------------------------------------------------- */
-
-  .wm-header-metrics { gap: var(--sp-3); padding-bottom: 2px; }
-  .wm-metric > span, .wm-metric-copy span { font-size: 0.48rem; }
-  .wm-metric > strong, .wm-metric-copy strong { font-size: 0.7rem; }
-  .wm-dom-ring { width: 26px; height: 26px; }
-
-  /* -----------------------------------------------------------
-     9. ABOUT — texto a ancho completo
-     ----------------------------------------------------------- */
-
-  .about-text { font-size: 0.88rem; line-height: 1.6; }
-  .about-title { font-size: 1.5rem; }
-  .seo-subtitle { font-size: 1rem; }
-}
-
-/* -----------------------------------------------------------
-   10. PANTALLAS MUY ESTRECHAS
-   ----------------------------------------------------------- */
-
-@media (max-width: 420px) {
-  .scale-grid { grid-template-columns: repeat(3, 1fr); }
-  .radar-output-grid { grid-template-columns: repeat(2, 1fr); }
-
-  .exchange-item { grid-template-columns: 30px minmax(0, 1fr) auto; }
-  .exchange-logo { width: 30px; height: 30px; }
-  .exchange-name { font-size: 0.72rem; }
-
-  .chart-coin-title-line h3 { font-size: 0.84rem; }
-  #chartTimeframes button { font-size: 0.55rem; padding: 6px 2px; }
-}
-
-/* -----------------------------------------------------------
-   11. EL BOTÓN FLOTANTE TAPA CONTENIDO
-
-   "Emotion Pulse" está fijo abajo y en varias capturas se come
-   la última fila de la sección visible. Se añade un colchón al
-   final de la página.
-   ----------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  .dashboard { padding-bottom: 64px; }
-}
-
-@media (max-width: 980px) {
-  .wm-brand .logo-img { height: 54px; max-width: 220px; }
-  body.header-scrolled .wm-brand .logo-img { height: 42px; max-width: 180px; }
-}
-
-@media (max-width: 560px) {
-  .wm-brand .logo-img { height: 46px; max-width: 190px; }
-  body.header-scrolled .wm-brand .logo-img { height: 36px; max-width: 150px; }
-}
-
-@media (max-width: 720px) {
-  .wm-footer-logo-img { width: 170px; }
-}
-
-/* -----------------------------------------------------------
-   BAG — MÓVIL
-
-   Centrado real. Antes el bloque se centraba pero el texto
-   seguía alineado a la izquierda dentro de su columna, así que
-   quedaba descolgado bajo el avatar.
-   ----------------------------------------------------------- */
-
-@media (max-width: 720px) {
-  .bag-header {
-    grid-template-columns: 1fr;
-    gap: var(--sp-3);
-    padding: var(--sp-3);
-    text-align: center;
-  }
-
-  .bag-hero {
-    width: 168px;
-    height: 168px;
-    margin: 0 auto;
-  }
-
-  .bag-headline { text-align: center; }
-
-  .bag-pnl-hero {
-    justify-content: center;
-    margin-bottom: var(--sp-2);
-  }
-
-  .bag-headline-sub {
-    justify-content: center;
-    flex-wrap: wrap;
-    row-gap: var(--sp-1);
-  }
-
-  /* En dos líneas los divisores confunden más que ayudan. */
-  .bag-headline-sub span {
-    padding: 0 var(--sp-2);
-    border-left: none;
-  }
-}
-
-@media (max-width: 420px) {
-  .bag-hero { width: 140px; height: 140px; }
-  .bag-headline > strong { font-size: 1.6rem; }
-  .bag-pnl-hero strong { font-size: 1.5rem; }
-}
-
-/* -----------------------------------------------------------
-   MÓVIL
-   Una columna, titulares primero. La lectura aparece debajo, así
-   que tras pulsar un titular basta un gesto corto para verla.
-   ----------------------------------------------------------- */
-
-@media (max-width: 900px) {
-  .radar-layout { grid-template-columns: 1fr; }
-  .radar-news-list { max-height: 300px; }
-  .radar-face-wrap { width: 64px; height: 64px; flex-basis: 64px; }
-  #radarMoodLabel { font-size: 1.5rem; }
-  .radar-news-headline { font-size: 0.78rem; }
-}
-
-@media (max-width: 720px) {
-  .mood-stage { min-height: 280px; }
-  #moodChartSvg { touch-action: none; }
-
-  .mood-hero-corner { right: 8px; bottom: 8px; }
-  .mood-hero-corner .mood-hero-img { width: 88px; }
-  .mood-hero-caption { padding: 3px 8px; }
-  .mood-hero-caption span { font-size: 0.78rem; }
-  .mood-hero-caption strong { font-size: 0.52rem; }
-
-  .mood-chart-axis text { font-size: 9px; }
-  .mood-chart-bar { gap: var(--sp-1); }
-  .mood-chart-bar .timeframes button { padding: 6px 9px; font-size: 0.6rem; }
-}
-
-@media (max-width: 480px) {
-  .mood-hero-corner .mood-hero-img { width: 70px; }
-  .mood-stage-glow { display: none; }
-}
-
-@media (max-width: 720px) {
-  .mood-hero-corner { right: 10px; bottom: 10px; gap: 4px; }
-  .mood-hero-portrait { width: 96px; height: 96px; }
-  .mood-ring-track, .mood-ring-fill { stroke-width: 5; }
-  .mood-ring-score { padding: 1px 9px; bottom: -5px; }
-  .mood-ring-score strong { font-size: 0.78rem; }
-  .mood-hero-label { font-size: 0.54rem; }
-}
-
-@media (max-width: 480px) {
-  .mood-hero-portrait { width: 78px; height: 78px; }
-  .mood-ring-score strong { font-size: 0.7rem; }
-}
-
-@media (max-width: 720px) {
-  .mood-hero-corner { left: 10px; bottom: 28px; }
-}
-
-@media (max-width: 480px) {
-  .mood-hero-corner { left: 8px; bottom: 26px; }
-}
-
-@media (max-width: 900px) {
-  /* En móvil el detalle pasa a su propia fila completa: con seis
-     columnas los números quedaban en dos caracteres. */
-  .bag-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    row-gap: var(--sp-1);
-  }
-
-  .bag-row-value { grid-column: 1; grid-row: 2; text-align: left; }
-  .bag-row-pnl   { grid-column: 2 / -1; grid-row: 2; text-align: right; }
-
-  .bag-row-detail {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-content: space-between;
-    padding-top: var(--sp-1);
-    border-top: 1px solid var(--line-soft);
-  }
-
-  .bag-row-mood { grid-row: 1; }
-}
-
-@media (max-width: 420px) {
-  .bag-row-detail { gap: var(--sp-2); }
-  .bag-row-detail strong { font-size: 0.66rem; }
-}
-
-@media (max-width: 720px) {
-  .sk-card { min-height: 92px; padding: var(--sp-2); }
-  .sk-chip { width: 74px; height: 27px; }
-}
-
-/* -----------------------------------------------------------
-   MÓVIL
-   ----------------------------------------------------------- */
-
-@media (max-width: 900px) {
-  .history-metrics { grid-template-columns: repeat(3, 1fr); }
-  .history-chart { height: 240px; }
-  #historySvg { touch-action: none; }
-}
-
-@media (max-width: 480px) {
-  .history-metrics { grid-template-columns: repeat(2, 1fr); }
-  .history-now strong { font-size: 1.9rem; }
-  .history-metric strong { font-size: 0.88rem; }
-  .history-bands text { font-size: 8px; }
-  .history-axis text { font-size: 9px; }
-}
-
-/* ---------- Movil ---------- */
-
-@media (max-width: 640px) {
-  .rush-shell { padding: var(--sp-3); }
-  .rush-stage { min-height: 380px; padding: var(--sp-3) var(--sp-2) var(--sp-2); }
-  .rush-hud { gap: var(--sp-3); }
-  .rush-head-side { flex-direction: row; align-items: center; }
-  .rush-final-stats { grid-template-columns: repeat(2, 1fr); }
-
-  /* El pulgar llega mejor a una cuadricula que no ocupe todo el
-     ancho: 320px la mantiene dentro del arco natural. */
-  .rush-grid { max-width: 320px; }
-  .rush-cell-name { font-size: 0.5rem; }
-}
-
-@media (max-width: 640px) {
-  .rush-scale-guide { gap: 2px; }
-  .rush-scale-step { padding: 4px 1px; }
-  .rush-scale-step img { width: 16px; height: 16px; }
-  .rush-scale-step strong { font-size: 0.5rem; }
-  /* El nombre sobra en movil: el icono y el rango ya identifican
-     cada tramo, y siete etiquetas de 7px no las lee nadie. */
-  .rush-scale-step span { display: none; }
-}
-
-/* ---------- Movil ---------- */
-
-@media (max-width: 860px) {
-  .rush-card { grid-template-columns: 1fr; }
-  .rush-card-main { order: -1; }
-}
-
-@media (max-width: 640px) {
-  /* A pantalla completa: el tablero necesita cada pixel y los
-     margenes solo servian para dejar ver un fondo que ya esta
-     tapado por el backdrop. */
-  .rush-modal { padding: 0; }
-
-  .rush-modal-panel {
-    width: 100%;
-    height: 100dvh;
-    max-height: none;
-    border: 0;
-    border-radius: 0;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero-scrub-readout { font-size: .64rem; gap: 6px; padding: 4px 10px; }
-  .hero-view-modes button { padding: 4px 9px; font-size: .58rem; }
-}
-
-/* Logo EXACTAMENTE centrado en móvil. Centrado geométrico
-   respecto a la pantalla, no al hueco que deja la hamburguesa:
-   con flex quedaba unos píxeles a la derecha del centro real. */
-@media (max-width: 900px) {
-  /* El ancestro posicionado tiene que ser LA FILA DEL LOGO
-     (.wm-header-top), no el header entero. La primera version
-     apuntaba a .wm-topbar — una clase que no existe — asi que el
-     absoluto subia hasta el header completo y el logo caia
-     centrado sobre la fila de metricas, tapandola. */
-  .wm-header-top { position: relative; }
-
-  .wm-brand {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    translate: -50% -50%;
-    margin: 0;
-    /* El centrado no debe robarle el tap a la hamburguesa. */
-    pointer-events: none;
-  }
-
-  .wm-brand img, .wm-brand span { pointer-events: auto; }
-
-  .logo-img { height: 64px; max-width: min(320px, 62vw); }
-}
-
-@media (max-width: 700px) {
-  /* Un poco más rápida en el teléfono: la pantalla es más pequeña,
-     el recorrido aparente es menor y a 0,26s se siente lenta. */
-  .rush-cell-fx { --fx-dur: .22s; }
 }
