@@ -94,6 +94,16 @@ export default function Home({ ogImageUrl }) {
         <meta name="robots" content="index, follow" />
         <meta name="author" content="WojakMeter" />
 
+        {/* Next pone por defecto `width=device-width` a secas.
+            Se declara aquí completo para añadir `initial-scale=1`
+            —sin él, Safari en iOS escala la página al girar el
+            teléfono— y `viewport-fit=cover`, que deja el fondo
+            llegar hasta el borde en pantallas con muesca. */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+
         {/* Debe coincidir con --wm-ink-050 del tema. */}
         <meta name="theme-color" content="#0A0F16" />
 
@@ -131,10 +141,32 @@ export default function Home({ ogImageUrl }) {
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      {/* ===========================================================
+          SCRIPTS
+
+          Todos con <Script> de next/script, no con <script> a pelo.
+          Una etiqueta <script> escrita dentro del JSX se ejecuta en
+          el HTML que llega del servidor, pero React NO la vuelve a
+          ejecutar al hidratar ni en una navegacion de cliente: el
+          modulo funciona al cargar la pagina y deja de funcionar al
+          volver a ella desde /play. Es un fallo intermitente y muy
+          dificil de reproducir a mano.
+
+          `hero-rig.js` sube a ?v=2: cambio la lista de emociones
+          que se reproducen de ida y vuelta. Sin subir la version,
+          los navegadores que ya visitaron el sitio siguen con la
+          copia vieja en cache y el cambio no se ve.
+          =========================================================== */}
       <Script src="/script.js?v=13" strategy="afterInteractive" />
       <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=1" strategy="afterInteractive" />
-      <script src="/bag-mood-rig.js?v=1" defer></script>
+      <Script src="/hero-rig.js?v=2" strategy="afterInteractive" />
+      <Script src="/bag-mood-rig.js?v=1" strategy="afterInteractive" />
+
+      {/* El panel LED es fondo: no hay nada que esperar de el, asi
+          que entra despues de todo lo demas. Se apaga sin desplegar
+          con ?led=off. */}
+      <Script src="/mood-led.js?v=1" strategy="lazyOnload" />
+
       <Script src="/wm-organism.js?v=2" strategy="afterInteractive" />
 
       <div className="style-classic">
