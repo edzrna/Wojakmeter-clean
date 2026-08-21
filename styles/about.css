@@ -1,28 +1,18 @@
-/* ============================================================
-   WOJAKMETER — /about
-   Autocontenido, igual que legal.css. Importar en pages/_app.js:
-     import "../styles/about.css";
-   ============================================================ */
+/* ===========================================================
+   WOJAKMETER · /about
+   Mismos tokens que el resto del sitio. El único permiso que se
+   toma esta página es un titular más grande que el estándar:
+   la frase ES el argumento.
+   Importar en pages/_app.js DESPUÉS de globals.css.
+   =========================================================== */
 
 .about-page {
-  --ab-ink: #f4f1e8;
-  --ab-dim: #b3ad9c;
-  --ab-faint: #6f6a5c;
-  --ab-bg: #0a0a0c;
-  --ab-gold: #d4af5a;
-  --ab-gold-soft: #e8cd8a;
-  --ab-line: rgba(212, 175, 90, 0.16);
-
   min-height: 100vh;
-  background:
-    radial-gradient(130% 70% at 50% -5%, rgba(212, 175, 90, 0.09), transparent 60%),
-    var(--ab-bg);
-  color: var(--ab-ink);
-  padding: 0 20px 90px;
+  padding: var(--sp-4) 0 var(--sp-6);
 }
 
 .about-shell {
-  max-width: 860px;
+  width: min(880px, calc(100% - 24px));
   margin: 0 auto;
 }
 
@@ -30,159 +20,174 @@
 
 .about-topbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
 }
 
 .about-brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sp-3);
   text-decoration: none;
   color: inherit;
   min-width: 0;
 }
 
 .about-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
+  height: 44px;
   flex-shrink: 0;
 }
 
 .about-brand-copy {
   display: flex;
   flex-direction: column;
-  line-height: 1.25;
   min-width: 0;
 }
 
 .about-brand-copy strong {
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.3;
 }
 
 .about-brand-copy span {
-  font-size: 12px;
-  color: var(--ab-faint);
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
 }
 
 .about-back {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ab-dim);
-  text-decoration: none;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
+  background: var(--ink-200);
+  color: var(--bone-dim);
+  border-radius: var(--r-pill);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 15px;
   white-space: nowrap;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  transition: color 0.18s ease, border-color 0.18s ease;
 }
 
 .about-back:hover {
-  color: var(--ab-gold);
-  border-color: var(--ab-line);
+  color: var(--bone);
+  border-color: var(--line-hard);
 }
 
 /* ---------- Hero ---------- */
 
 .about-hero {
-  padding: 72px 0 44px;
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+  margin-bottom: var(--sp-4);
 }
 
 .about-label {
   display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ab-gold);
-  margin-bottom: 20px;
+  color: var(--bone-faint);
+  margin-bottom: var(--sp-3);
 }
 
-/* La frase es el argumento entero: que ocupe el espacio de un titular. */
 .about-title {
-  margin: 0 0 26px;
-  font-size: clamp(42px, 9vw, 78px);
-  line-height: 0.94;
-  letter-spacing: -0.045em;
-  font-weight: 800;
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  /* Un escalón por encima del título legal, no dos. */
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
 }
 
 .about-lede {
   margin: 0;
-  max-width: 60ch;
-  font-size: clamp(17px, 2.4vw, 21px);
-  line-height: 1.62;
-  color: var(--ab-dim);
+  max-width: 58ch;
+  font-size: 1.05rem;
+  line-height: 1.68;
+  color: var(--bone-dim);
 }
 
 /* ---------- Bloques de construcción ---------- */
 
 .about-build {
-  display: grid;
-  gap: 2px;
-  margin-top: 56px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+  margin-bottom: var(--sp-4);
 }
 
 .about-block {
-  padding: 34px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.about-block:last-child {
+  border-bottom: none;
 }
 
 .about-kicker {
   display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ab-gold);
-  margin-bottom: 12px;
+  color: var(--bone-faint);
+  margin-bottom: var(--sp-2);
 }
 
 .about-block h2 {
-  margin: 0 0 14px;
-  font-size: clamp(21px, 3.2vw, 28px);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  font-weight: 700;
-  max-width: 24ch;
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  max-width: 26ch;
 }
 
 .about-block p {
   margin: 0;
   max-width: 68ch;
-  font-size: 16px;
   line-height: 1.75;
-  color: #cfcabb;
+  color: var(--bone-dim);
 }
 
 /* ---------- Lo que no es ---------- */
 
 .about-honest {
-  margin-top: 48px;
-  padding: 28px 30px;
-  border-radius: 20px;
-  border: 1px solid var(--ab-line);
-  border-left: 3px solid var(--ab-gold);
-  background: rgba(212, 175, 90, 0.05);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-hard);
+  background: rgba(232, 233, 236, 0.03);
+  margin-bottom: var(--sp-4);
 }
 
 .about-honest h2 {
-  margin: 0 0 14px;
-  font-size: 20px;
-  font-weight: 700;
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
 }
 
 .about-honest p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--sp-2);
   max-width: 68ch;
-  font-size: 16px;
   line-height: 1.75;
-  color: #cfcabb;
+  color: var(--bone-dim);
 }
 
 .about-honest p:last-child {
@@ -192,62 +197,62 @@
 /* ---------- Quién ---------- */
 
 .about-me {
-  margin-top: 56px;
-  padding-top: 40px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
 }
 
 .about-me h2 {
-  margin: 0 0 18px;
-  font-size: clamp(24px, 4vw, 32px);
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
   letter-spacing: -0.02em;
-  font-weight: 700;
 }
 
 .about-me p {
-  margin: 0 0 16px;
+  margin: 0 0 var(--sp-2);
   max-width: 68ch;
-  font-size: 17px;
-  line-height: 1.72;
-  color: #cfcabb;
+  line-height: 1.75;
+  color: var(--bone-dim);
 }
 
 .about-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 30px;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
 }
 
 .about-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 26px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: linear-gradient(135deg, var(--ab-gold-soft), var(--ab-gold));
-  color: #17140c;
-  font-size: 15px;
-  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-hard);
+  background: var(--ink-300);
+  color: var(--bone);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-decoration: none;
-  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: border-color 0.18s ease, background 0.18s ease;
 }
 
 .about-cta:hover {
-  transform: translateY(-2px);
+  border-color: var(--bone-faint);
 }
 
 .about-cta--ghost {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.14);
-  color: var(--ab-dim);
-  font-weight: 600;
+  border-color: var(--line);
+  color: var(--bone-dim);
 }
 
 .about-cta--ghost:hover {
-  color: var(--ab-ink);
-  border-color: var(--ab-line);
+  color: var(--bone);
 }
 
 /* ---------- Pie ---------- */
@@ -256,32 +261,45 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-top: 60px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  font-size: 14px;
-  color: var(--ab-faint);
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: rgba(232, 233, 236, 0.018);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
 }
 
 .about-foot a {
-  color: var(--ab-dim);
+  color: var(--bone-dim);
   text-decoration: none;
 }
 
 .about-foot a:hover {
-  color: var(--ab-gold);
+  color: var(--bone);
 }
 
 /* ---------- Móvil ---------- */
 
-@media (max-width: 560px) {
-  .about-hero {
-    padding: 48px 0 32px;
+@media (max-width: 520px) {
+  .about-topbar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .about-honest {
-    padding: 22px 20px;
+  .about-hero {
+    padding: var(--sp-4) var(--sp-3);
+  }
+
+  .about-build,
+  .about-honest,
+  .about-me {
+    padding-left: var(--sp-3);
+    padding-right: var(--sp-3);
   }
 
   .about-actions {
@@ -290,11 +308,5 @@
 
   .about-cta {
     width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .about-page * {
-    transition-duration: 0.01ms !important;
   }
 }
