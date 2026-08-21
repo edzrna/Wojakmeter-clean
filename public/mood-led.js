@@ -65,7 +65,7 @@
   function stage() {
     const el = document.querySelector("[data-mood-led]")
       || $("heroStage")
-      || document.querySelector(".wojak-stage")
+      || document.querySelector(".dashboard")
       || null;
     return el?.dataset?.moodLed === "off" ? null : el;
   }
