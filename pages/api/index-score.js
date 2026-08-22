@@ -108,15 +108,90 @@ export default async function handler(req, res) {
 
     const parts = latest.index_parts || {};
     const volatilityZ = Number(latest.volatility) || 0;
+    const streakSeconds = Number(streak?.seconds || 0);
+    const disagreement = disagreementFrom(parts);
 
     const expression = deriveAxes({
       canonicalScore: canonical,
       delta,
       volatilityZ,
-      streakSeconds: Number(streak?.seconds || 0),
-      disagreement: disagreementFrom(parts),
+      streakSeconds,
+      disagreement,
       profileId
     });
+
+    /* ===========================================================
+       LAS VENTANAS
+
+       El personaje no solo enseña un numero por ventana: enseña una
+       REACCION por ventana. Y la reaccion sale de los ejes, no del
+       score. Devolviendo solo `axes` —los del momento— las tres
+       pills mostraban la misma agitacion aunque 24H hubiera caido
+       40 puntos y 7D apenas 8: el numero cambiaba de sitio y la
+       cara seguia temblando igual.
+
+       Asi que cada ventana trae su score, su delta y SUS PROPIOS
+       ejes, calculados con la misma `deriveAxes` que el momento. No
+       hay una segunda formula: es la misma funcion con la entrada
+       de esa ventana.
+
+       Una sola consulta para las tres. Tres consultas separadas
+       serian tres viajes a Neon para el mismo escaneo de tabla.
+       =========================================================== */
+    const windowRows = await sql`
+      SELECT
+        w.key                                              AS key,
+        ROUND(AVG(e.index_score))::int                     AS score,
+        AVG(e.volatility)                                  AS volatility,
+        COUNT(*)::int                                      AS samples,
+        (array_agg(e.index_score ORDER BY e.ts ASC))[1]    AS first_score,
+        (array_agg(e.index_score ORDER BY e.ts DESC))[1]   AS last_score
+      FROM (VALUES
+        ('24h', '24 hours'),
+        ('7d',  '7 days'),
+        ('30d', '30 days')
+      ) AS w(key, span)
+      JOIN emotion_history e
+        ON e.ts > NOW() - w.span::interval
+       AND e.index_score IS NOT NULL
+      GROUP BY w.key;
+    `;
+
+    /* Menos de tres lecturas no es una ventana, es una anecdota: se
+       devuelve null y el cliente se queda con el indice del momento.
+       Un numero peor antes que uno inventado. */
+    const MIN_SAMPLES = 3;
+
+    const windows = {};
+    for (const row of windowRows) {
+      if (Number(row.samples) < MIN_SAMPLES) continue;
+
+      const wScore = Number(row.score);
+      const wDelta = Math.round(Number(row.last_score) - Number(row.first_score));
+      const wVol = row.volatility === null ? volatilityZ : Number(row.volatility);
+
+      const wExpr = deriveAxes({
+        canonicalScore: wScore,
+        delta: wDelta,
+        volatilityZ: wVol,
+        /* La racha y el desacuerdo son del estado actual y no se
+           pueden recortar por ventana con lo que hay guardado.
+           Se pasan tal cual en vez de inventar una version por
+           ventana que nadie ha medido. */
+        streakSeconds,
+        disagreement,
+        profileId
+      });
+
+      windows[row.key] = {
+        score: wScore,
+        delta: wDelta,
+        samples: Number(row.samples),
+        mood: moodFromScore(wScore),
+        expressive: wExpr.expressive,
+        axes: wExpr.axes
+      };
+    }
 
     res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
 
@@ -142,7 +217,11 @@ export default async function handler(req, res) {
 
       /* Movimiento reciente: es lo que produce la reacción */
       delta,
-      streakSeconds: Number(streak?.seconds || 0),
+      streakSeconds,
+
+      /* Cada pill del heroe lee de aqui: score, delta y ejes
+         propios. Si una ventana falta, el cliente usa el momento. */
+      windows,
 
       /* ── LA LENTE ── cambia con el perfil, nunca es el dato */
       profile: {
