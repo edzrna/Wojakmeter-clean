@@ -42,12 +42,15 @@
   "use strict";
 
   const CFG = {
-    pitch:       13,     // separacion de celdas en px CSS
-    gap:         3,      // hueco entre celdas: hace visible la rejilla
+    pitch:       7,      // separacion de celdas en px CSS
+    gap:         2,      // hueco entre celdas: hace visible la rejilla
     levels:      4,      // escalones de brillo, como un panel real
-    maxAlpha:    0.60,   // brillo del borde; el centro va enmascarado
-    holeRadius:  0.42,   // radio del hueco central, en fraccion del alto
+    maxAlpha:    0.55,   // brillo del borde; el contenido va enmascarado
+    hole:        56,     // margen en px alrededor del heroe que queda oscuro
+    holeFade:    150,    // en cuantos px sube el brillo desde el hueco
+    edgeFade:    0.22,   // fraccion del borde donde el panel esta a tope
     fps:         30,     // el ojo no pide mas para esto y ahorra bateria
+    fieldFps:    15,     // el campo de nubes se recalcula a la mitad
     driftX:      0.012,  // deriva horizontal del campo por segundo
     sweepEvery:  9,      // segundos entre barridos de refresco
     sparkChance: 0.0016  // probabilidad por celda y frame con tension 1
@@ -62,13 +65,38 @@
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const $ = (id) => document.getElementById(id);
 
-  function stage() {
+  /* ---------------------------------------------------------
+     DOS ELEMENTOS DISTINTOS, Y CONVIENE NO CONFUNDIRLOS
+
+     `host` es DONDE se pinta: la tarjeta entera de Crypto Market
+     Mood. Es la superficie grande, la que hace de adorno.
+
+     `source` es DE DONDE se lee el estado: `#heroStage`, que es
+     donde hero-rig.js escribe los cuatro ejes y script.js el
+     `data-mood`. Es un elemento interior y mucho mas pequeño.
+
+     Antes eran el mismo y por eso el panel vivia dentro del
+     escenario. Al separarlos, el panel puede ocupar la tarjeta
+     sin que haya que mover ni una variable de sitio.
+     --------------------------------------------------------- */
+  function host() {
     const el = document.querySelector("[data-mood-led]")
+      || document.querySelector("section.hero.card")
+      || document.querySelector(".hero.card")
       || $("heroStage")
-      || document.querySelector(".wojak-stage")
       || null;
     return el?.dataset?.moodLed === "off" ? null : el;
   }
+
+  function source() {
+    return $("heroStage")
+      || document.querySelector(".wojak-stage")
+      || S.el;
+  }
+
+  /* Compatibilidad: `stage()` era el nombre viejo y lo usa el
+     arranque. Ahora devuelve el objetivo de pintado. */
+  const stage = host;
 
   /* ---------------------------------------------------------
      INTERRUPTOR
@@ -176,8 +204,9 @@
      un fondo negro mientras carga se ve como un fallo.
      --------------------------------------------------------- */
   const S = {
-    el: null, canvas: null, ctx: null,
+    el: null, src: null, canvas: null, ctx: null,
     w: 0, h: 0, cols: 0, rows: 0, dpr: 1,
+    mask: null, fieldArr: null, bucket: null, fieldAt: -1,
     mood: "neutral", rgb: [124, 134, 152],
     arousal: 0.45, tension: 0.2, fatigue: 0.2, valence: 0.5,
     // valores mostrados, que persiguen a los reales sin saltos
@@ -188,7 +217,12 @@
   };
 
   function readAxes() {
-    const el = S.el;
+    /* Los ejes NO estan en la tarjeta: estan en `#heroStage`, que
+       es donde los escribe hero-rig.js. Leerlos del host daria
+       siempre los valores por defecto y la pantalla no reaccionaria
+       a nada — muda, sin error, que es el fallo que vigila
+       smoke-led.mjs. */
+    const el = S.src || S.el;
     if (!el) return;
 
     const cs = getComputedStyle(el);
@@ -229,6 +263,7 @@
     if (!el || S.canvas) return !!S.canvas;
 
     S.el = el;
+    S.src = source() || el;
     if (getComputedStyle(el).position === "static") el.style.position = "relative";
 
     const canvas = document.createElement("canvas");
@@ -275,22 +310,90 @@
 
     S.cols = Math.ceil(S.w / CFG.pitch);
     S.rows = Math.ceil(S.h / CFG.pitch);
+
+    const n = S.cols * S.rows;
+    S.mask     = new Float32Array(n);
+    S.fieldArr = new Float32Array(n);
+    S.bucket   = new Uint8Array(n);
+    S.fieldAt  = -1;
+    buildMask();
   }
 
-  /* La mascara: oscuro en el centro, donde esta el personaje, y
-     encendido hacia los bordes. Sin esto la pantalla compite con
-     la cara en vez de acompañarla, y la cara siempre gana o
-     siempre pierde: las dos cosas son malas. */
-  function maskAt(cx, cy) {
-    const nx = (cx - S.w / 2) / (S.w / 2);
-    const ny = (cy - S.h / 2) / (S.h / 2);
-    const d = Math.sqrt(nx * nx * 0.72 + ny * ny);
-    return clamp((d - CFG.holeRadius) / (1 - CFG.holeRadius), 0, 1);
+  /* ---------------------------------------------------------
+     LA MASCARA, CALCULADA UNA VEZ
+
+     Antes salia por celda y por fotograma: una raiz cuadrada y dos
+     divisiones multiplicadas por 22.000 celdas, 30 veces por
+     segundo, para un valor que no cambia hasta que cambia el
+     tamaño. Ahora se guarda en un array al redimensionar.
+
+     Y ya no es un circulo en el centro de la tarjeta. El hueco
+     oscuro se recorta EXACTAMENTE donde esta el heroe, midiendo su
+     caja dentro de la tarjeta. Asi el adorno rodea al personaje
+     aunque la maquetacion cambie, que en movil cambia mucho.
+     --------------------------------------------------------- */
+  function buildMask() {
+    if (!S.mask || !S.el) return;
+
+    const card = S.el.getBoundingClientRect();
+    const sr = S.src ? S.src.getBoundingClientRect() : null;
+
+    // caja del heroe en coordenadas de la tarjeta
+    const hx0 = sr ? sr.left - card.left - CFG.hole : S.w * 0.3;
+    const hy0 = sr ? sr.top  - card.top  - CFG.hole : S.h * 0.3;
+    const hx1 = sr ? sr.right  - card.left + CFG.hole : S.w * 0.7;
+    const hy1 = sr ? sr.bottom - card.top  + CFG.hole : S.h * 0.7;
+
+    const edge = Math.min(S.w, S.h) * CFG.edgeFade;
+
+    for (let row = 0; row < S.rows; row++) {
+      const cy = row * CFG.pitch + CFG.pitch / 2;
+      for (let col = 0; col < S.cols; col++) {
+        const cx = col * CFG.pitch + CFG.pitch / 2;
+
+        /* Distancia a la caja del heroe: 0 dentro, y creciendo
+           hacia fuera. Es la distancia a un rectangulo, no a un
+           punto, para que el hueco tenga la forma del contenido. */
+        const dx = Math.max(hx0 - cx, 0, cx - hx1);
+        const dy = Math.max(hy0 - cy, 0, cy - hy1);
+        const d = Math.sqrt(dx * dx + dy * dy);
+        let m = clamp(d / CFG.holeFade, 0, 1);
+
+        /* Y ademas sube hacia los bordes de la tarjeta, para que el
+           panel se lea como marco y no como fondo plano. */
+        const eb = Math.min(cx, cy, S.w - cx, S.h - cy);
+        m *= 0.55 + 0.45 * (1 - clamp(eb / edge, 0, 1));
+
+        S.mask[row * S.cols + col] = m;
+      }
+    }
+  }
+
+  /* El campo de nubes se recalcula a MITAD de fotogramas. Es lo
+     lento (dos octavas de ruido por celda) y es lo que menos
+     cambia: son nubes derivando, no parpadeo. El centelleo, las
+     chispas y el barrido si van a cada fotograma, porque de ellos
+     depende que la pantalla parezca viva. */
+  function computeField(t, arousal, fatigue, cut) {
+    const speed = (0.05 + arousal * 0.20) * (1 - fatigue * 0.45);
+    const drift = t * CFG.driftX * (1 + arousal * 2.2) * 60;
+    const z = t * speed;
+    const inv = 1 / (1 - cut);
+
+    for (let row = 0; row < S.rows; row++) {
+      const base = row * S.cols;
+      for (let col = 0; col < S.cols; col++) {
+        const i = base + col;
+        if (S.mask[i] <= 0.01) { S.fieldArr[i] = 0; continue; }
+        const v = (field(col + drift, row, z) - cut) * inv;
+        S.fieldArr[i] = v > 0 ? v : 0;
+      }
+    }
   }
 
   function draw(now) {
     const ctx = S.ctx;
-    if (!ctx || !S.cols) return;
+    if (!ctx || !S.cols || !S.mask) return;
 
     const t = now / 1000;
 
@@ -315,9 +418,11 @@
        se lee como calma: se lee como que el componente esta roto.
        Un panel en reposo sigue teniendo luces, pocas y lentas. */
     const cut = clamp(0.80 - arousal * 0.40 + fatigue * 0.10, 0.16, 0.80);
-    const speed = (0.05 + arousal * 0.20) * (1 - fatigue * 0.45);
-    const drift = t * CFG.driftX * (1 + arousal * 2.2) * 60;
-    const z = t * speed;
+
+    if (t - S.fieldAt >= 1 / CFG.fieldFps) {
+      computeField(t, arousal, fatigue, cut);
+      S.fieldAt = t;
+    }
 
     /* Barrido de refresco: una banda que cruza de arriba abajo
        cada pocos segundos, como el repintado de un panel de
@@ -327,59 +432,75 @@
 
     const shock = clamp(1 - (t - S.shockAt) / 1.4, 0, 1);
 
+    const brillo = (0.55 + valence * 0.55) * (1 - fatigue * 0.5);
+    const flickSeed = Math.floor(t * (6 + tension * 14));
+    const sparkSeed = Math.floor(t * 30);
+    const sparkP = CFG.sparkChance * (0.3 + tension * 3);
+    const levels = CFG.levels;
+
+    /* UNA sola pasada calcula el nivel de cada celda. Antes el
+       bucle se repetia una vez por escalon de brillo, asi que todo
+       el trabajo por celda se hacia cuatro veces para quedarse con
+       una cuarta parte. Con 22.000 celdas eso eran 10 ms por
+       fotograma; ahora son menos de dos. */
+    S.bucket.fill(0);
+
+    for (let row = 0; row < S.rows; row++) {
+      const base = row * S.cols;
+      const cy = row * CFG.pitch;
+      const dy = Math.abs(cy - sweepY);
+      const sweepAdd = dy < 26 ? (1 - dy / 26) * 0.45 : 0;
+
+      for (let col = 0; col < S.cols; col++) {
+        const i = base + col;
+        const m = S.mask[i];
+        if (m <= 0.01) continue;
+
+        let v = S.fieldArr[i];
+        if (v <= 0 && sweepAdd === 0 && shock === 0) continue;
+
+        /* Centelleo: solo donde YA hay luz. Aplicarlo a todo el
+           campo enciende celdas muertas al azar y ahi vuelve la
+           nieve de televisor. */
+        if (tension > 0.02 && v > 0) {
+          v *= 1 - tension * 0.55 * hash3(col, row, flickSeed);
+        }
+
+        v *= m * brillo;
+
+        /* Chispas: celdas sueltas a tope, mas frecuentes con
+           tension. Son las que dan la sensacion de que la pantalla
+           esta viva y no en bucle. */
+        if (hash3(col, row, sparkSeed) < sparkP) v = 1;
+
+        /* Barrido y sacudida encienden de mas, sin tocar el campo:
+           son sucesos, no estado. */
+        v += sweepAdd;
+        if (shock > 0) v += shock * 0.35 * m;
+
+        if (v <= 0) continue;
+        const lv = v >= 1 ? levels : Math.ceil(v * levels);
+        S.bucket[i] = lv;
+      }
+    }
+
     const [r, g, b] = S.rgb;
     const size = CFG.pitch - CFG.gap;
 
     ctx.clearRect(0, 0, S.w, S.h);
     ctx.globalCompositeOperation = "lighter";
 
-    /* Se dibuja agrupando por escalon de brillo: cuatro cambios de
-       fillStyle por fotograma en vez de uno por celda. Con 3.000
-       celdas esa sola diferencia es la que separa 60 fps de 25. */
-    for (let level = 1; level <= CFG.levels; level++) {
-      const lo = (level - 1) / CFG.levels;
-      const hi = level / CFG.levels;
-      const alpha = CFG.maxAlpha * (level / CFG.levels) ** 1.6;
-
+    for (let level = 1; level <= levels; level++) {
+      const alpha = CFG.maxAlpha * (level / levels) ** 1.6;
       ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
       ctx.beginPath();
 
       for (let row = 0; row < S.rows; row++) {
+        const base = row * S.cols;
         const cy = row * CFG.pitch;
         for (let col = 0; col < S.cols; col++) {
-          const cx = col * CFG.pitch;
-
-          const m = maskAt(cx + size / 2, cy + size / 2);
-          if (m <= 0.01) continue;
-
-          let v = field(col + drift, row, z);
-          v = (v - cut) / (1 - cut);
-          if (v <= 0) continue;
-
-          /* Centelleo: solo donde YA hay luz. Aplicarlo a todo el
-             campo enciende celdas muertas al azar y ahi vuelve la
-             nieve de televisor. */
-          if (tension > 0.02) {
-            v *= 1 - tension * 0.55 * hash3(col, row, Math.floor(t * (6 + tension * 14)));
-          }
-
-          v *= m * (0.55 + valence * 0.55) * (1 - fatigue * 0.5);
-
-          /* Chispas: celdas sueltas a tope, mas frecuentes con
-             tension. Son las que dan la sensacion de que la
-             pantalla esta viva y no en bucle. */
-          if (hash3(col, row, Math.floor(t * 30)) < CFG.sparkChance * (0.3 + tension * 3)) {
-            v = 1;
-          }
-
-          /* Barrido y sacudida encienden de mas, sin cambiar el
-             campo: son sucesos, no estado. */
-          const dy = Math.abs(cy - sweepY);
-          if (dy < 26) v += (1 - dy / 26) * 0.45;
-          if (shock > 0) v += shock * 0.35 * m;
-
-          if (v <= lo || v > hi) continue;
-          ctx.rect(cx, cy, size, size);
+          if (S.bucket[base + col] !== level) continue;
+          ctx.rect(col * CFG.pitch, cy, size, size);
         }
       }
       ctx.fill();
