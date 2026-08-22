@@ -329,6 +329,7 @@
        antes de la primera lectura del indice, sin esto dependeria
        de un respaldo implicito. */
     idleDur: 6000,
+    momentAxes: null,
     windowScore: null,
     windows: null,
     windowDelta: 0,
@@ -529,16 +530,7 @@
 
          Si una ventana viene null —menos de 3 lecturas— manda el
          índice del momento. Un número peor antes que uno falso. */
-      const w = state.windows?.[state.range];
-      if (w) {
-        state.windowScore = w.score;
-        state.windowDelta = w.delta;
-        target.arousal = Math.max(target.arousal,
-          clamp(Math.abs(w.delta) / 20, 0, 1));
-      } else {
-        state.windowScore = null;
-        state.windowDelta = 0;
-      }
+      applyWindow();
 
       const tag = $("heroRangeTag");
       if (tag) {
@@ -590,6 +582,34 @@
     return Number.isFinite(legacy) ? legacy : null;
   }
 
+  /* ---------------------------------------------------------
+     LA VENTANA MANDA EN LA REACCION, NO SOLO EN EL NUMERO
+
+     Aqui estaba el fallo que hacia que las tres pills reaccionaran
+     igual. Lo que gobierna la REACCION —velocidad, temblor, ladeo,
+     apagado, respiracion, parpadeo— son los cuatro ejes, y los ejes
+     llegaban solo del momento: cambiar de pill movia el score y
+     dejaba la agitacion intacta.
+
+     Ahora el endpoint manda ejes por ventana y se aplican aqui. Si
+     una ventana no los trae —pocas lecturas, o un endpoint aun sin
+     desplegar— se cae a los del momento, que es lo que habia antes.
+
+     Y se ASIGNA, no se hace `Math.max`. Aquel maximo era un
+     trinquete: la agitacion solo podia subir, asi que despues de un
+     dia violento ninguna ventana mas tranquila conseguia bajarla
+     hasta que recargabas la pagina.
+     --------------------------------------------------------- */
+  function applyWindow() {
+    const w = state.windows?.[state.range];
+
+    state.windowScore = w ? w.score : null;
+    state.windowDelta = w ? w.delta : 0;
+
+    const axes = w?.axes || state.momentAxes;
+    if (axes) Object.assign(target, axes);
+  }
+
   function setRange(range) {
     if (!TF[range] || state.range === range) return;
     state.range = range;
@@ -599,9 +619,10 @@
        no se movía hasta que respondía la red, y con la caché fría
        eso son cientos de milisegundos en los que la pill parecía
        no hacer nada. */
-    const w = state.windows?.[range];
-    state.windowScore = w ? w.score : null;
-    state.windowDelta = w ? w.delta : 0;
+    /* Los ejes se recolocan EN EL ACTO, no al volver el histórico.
+       Antes solo `loadHistory` los tocaba, asi que la reaccion
+       tardaba en cambiar lo que tardara la red. */
+    applyWindow();
 
     if (state.score !== null) {
       window.WM_CANONICAL_INDEX = state.windowScore ?? state.score;
@@ -751,9 +772,11 @@
          con el índice del momento y solo pasaba a la ventana
          cuando bajaba la curva. Las ventanas ya vienen en esta
          misma respuesta, así que no hay razón para esperar. */
-      const w0 = state.windows?.[state.range];
-      state.windowScore = w0 ? w0.score : null;
-      state.windowDelta = w0 ? w0.delta : 0;
+      /* Los ejes del momento se guardan como RESPALDO, no se
+         aplican a ciegas: si la ventana activa trae los suyos,
+         mandan los suyos. */
+      state.momentAxes = data.axes || null;
+      applyWindow();
 
       /* Lo que se PUBLICA es lo que se ve: si la ventana manda,
          script.js tiene que repartir esa misma cifra. Publicar el
@@ -771,7 +794,6 @@
       state.mood = data.mood;
       state.expressive = data.expressive;
 
-      Object.assign(target, data.axes || {});
       handleEvents(data);
     } catch {
       /* Sin conexion el personaje no se congela: se queda con los
