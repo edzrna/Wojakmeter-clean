@@ -159,7 +159,7 @@ export default function Home({ ogImageUrl }) {
           =========================================================== */}
       <Script src="/script.js?v=13" strategy="afterInteractive" />
       <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=3" strategy="afterInteractive" />
+      <Script src="/hero-rig.js?v=4" strategy="afterInteractive" />
       <Script src="/bag-mood-rig.js?v=1" strategy="afterInteractive" />
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
