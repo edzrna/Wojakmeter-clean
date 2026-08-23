@@ -101,32 +101,58 @@
   /* ---------------------------------------------------------
      QUIEN SE REPRODUCE DE IDA Y VUELTA
 
-     Ahora TODAS menos `concern` y `frustration`. Las hojas nuevas
-     estan dibujadas como `content`: van de reposo a extremo, asi
-     que el salto del ultimo fotograma al primero seria un brinco.
-     Yendo y viniendo, el bucle cierra solo y no hay corte que
-     disimular.
+     Ahora TODAS menos tres, y la lista va por ESTILO Y EMOCION,
+     no solo por emocion. Las hojas nuevas estan dibujadas como
+     `content`: van de reposo a extremo, asi que el salto del
+     ultimo fotograma al primero seria un brinco. Yendo y
+     viniendo, el bucle cierra solo y no hay corte que disimular.
 
-     `concern` queda fuera porque su sudor RESBALA. Medido sobre
-     la hoja, el centroide del cambio baja en 15 de los 24 pasos y
-     sube en 7: es la unica con una direccion vertical marcada.
-     Del derecho el sudor cae; del reves subiria por la cara.
+     `concern` queda fuera en los DOS estilos porque su sudor
+     RESBALA. Medido sobre la hoja classic, el centroide del cambio
+     baja en 15 de los 24 pasos y sube en 7: es la unica con una
+     direccion vertical marcada. Del derecho el sudor cae; del
+     reves subiria por la cara.
 
-     `frustration` queda fuera por decision del autor. La medicion
-     no la señalaba —su movimiento sale casi mitad y mitad, y las
-     lagrimas estan pintadas, no viajan—, pero el grito tiene un
-     sentido que la cifra no captura: se abre y se descarga. Del
-     reves la boca se cierra sola y el grito se traga, que es lo
-     contrario de lo que cuenta esa emocion.
+     `frustration` queda fuera SOLO EN CLASSIC, por decision del
+     autor. La medicion no la señalaba —su movimiento sale casi
+     mitad y mitad, y las lagrimas estan pintadas, no viajan—, pero
+     el grito de la cara clasica tiene un sentido que la cifra no
+     captura: se abre y se descarga. Del reves la boca se cierra
+     sola y el grito se traga, que es lo contrario de lo que cuenta
+     esa emocion.
 
-     La lista es de EXCEPCIONES, no de incluidos: una emocion
-     nueva entra por defecto en ida y vuelta, que es lo que
-     quieren casi todas. Se añade aqui lo que tenga direccion,
-     medida o dramatica.
+     En SYNTH esa objecion no aplica y el autor pidio el vaiven. La
+     cara synth no es una boca que se abre: es una rejilla de LEDs
+     que se enciende y se apaga, y encenderse hacia atras es tan
+     legible como hacia delante. Que la misma emocion se comporte
+     distinto en cada estilo no es una incoherencia: son dos
+     dibujos distintos con reglas distintas.
+
+     Por eso la clave es "estilo/emocion". Con la lista antigua,
+     por emocion sola, era imposible expresar esto sin duplicar el
+     motor.
+
+     La lista es de EXCEPCIONES, no de incluidos: una emocion nueva
+     entra por defecto en ida y vuelta, que es lo que quieren casi
+     todas. Se añade aqui lo que tenga direccion, medida o
+     dramatica.
      --------------------------------------------------------- */
-  const IDLE_NO_PINGPONG = new Set(["concern", "frustration"]);
+  const IDLE_NO_PINGPONG = new Set([
+    "classic/concern",
+    "classic/frustration",
+    "synth/concern"
+    /* `synth/frustration` NO esta aqui a proposito: va de ida y
+       vuelta. Ver el comentario de arriba. */
+  ]);
 
-  const isPingPong = (mood) => !IDLE_NO_PINGPONG.has(String(mood || ""));
+  /* La excepcion se busca primero por "estilo/emocion" y despues
+     por la emocion sola, para que una entrada como "concern" siga
+     valiendo para los dos estilos si alguna vez se escribe asi. */
+  const isPingPong = (mood, style) => {
+    const m = String(mood || "");
+    const st = String(style || heroStyle());
+    return !IDLE_NO_PINGPONG.has(`${st}/${m}`) && !IDLE_NO_PINGPONG.has(m);
+  };
 
   /* ---------------------------------------------------------
      LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
@@ -532,19 +558,7 @@
          índice del momento. Un número peor antes que uno falso. */
       applyWindow();
 
-      const tag = $("heroRangeTag");
-      if (tag) {
-        const pts = visibleSeries();
-        const first = Number(pts[0]?.score);
-        const last = Number(pts[pts.length - 1]?.score);
-        const d = Number.isFinite(first) && Number.isFinite(last)
-          ? Math.round(last - first) : null;
-        const arrow = d > 0 ? `▲${d}` : d < 0 ? `▼${Math.abs(d)}` : "—";
-        tag.textContent = d === null
-          ? `EMOTION · ${tf.label}`
-          : `EMOTION · ${tf.label} · ${arrow}`;
-        tag.dataset.dir = d > 0 ? "up" : d < 0 ? "down" : "flat";
-      }
+      updateRangeTag();
     } catch {}
   }
 
@@ -610,6 +624,51 @@
     if (axes) Object.assign(target, axes);
   }
 
+  /* ---------------------------------------------------------
+     LA PASTILLA DEL RANGO — UN SOLO DELTA
+
+     Aqui habia DOS cifras para lo mismo. La pastilla decia "▼10"
+     y el subtitulo, dos dedos mas abajo, "Index down 7 over 24H".
+     Ninguna estaba mal calculada: median cosas distintas sin
+     decirlo.
+
+     La pastilla restaba el primer y el ultimo punto de la serie
+     leyendo `p.score` — la columna VIEJA de emotion_history, la de
+     la formula de script.js. Todo lo demas de esta seccion usa
+     `index_score`. Es exactamente la trampa de las dos columnas
+     que ya costo un bug largo: las dos son cifras plausibles de 0
+     a 100, asi que confundirlas no da error, da una contradiccion
+     creible.
+
+     Ahora la pastilla usa `state.windowDelta`, el MISMO numero que
+     el subtitulo, que viene del endpoint calculado sobre la
+     columna correcta. Si esa cifra no esta —endpoint viejo, o
+     ventana con pocas lecturas— se calcula de la serie con
+     `pointIndex`, nunca con `.score`.
+     --------------------------------------------------------- */
+  function updateRangeTag() {
+    const tag = $("heroRangeTag");
+    if (!tag) return;
+
+    const tf = TF[state.range] || TF["24h"];
+    let d = Number(state.windowDelta);
+
+    if (!Number.isFinite(d) || d === 0) {
+      const pts = visibleSeries();
+      const first = pointIndex(pts[0]);
+      const last = pointIndex(pts[pts.length - 1]);
+      d = (first === null || last === null) ? null : Math.round(last - first);
+    }
+
+    const arrow = d > 0 ? `▲${d}` : d < 0 ? `▼${Math.abs(d)}` : "—";
+    const text = d === null
+      ? `EMOTION · ${tf.label}`
+      : `EMOTION · ${tf.label} · ${arrow}`;
+
+    if (tag.textContent !== text) tag.textContent = text;
+    tag.dataset.dir = d > 0 ? "up" : d < 0 ? "down" : "flat";
+  }
+
   function setRange(range) {
     if (!TF[range] || state.range === range) return;
     state.range = range;
@@ -623,6 +682,7 @@
        Antes solo `loadHistory` los tocaba, asi que la reaccion
        tardaba en cambiar lo que tardara la red. */
     applyWindow();
+    updateRangeTag();
 
     if (state.score !== null) {
       window.WM_CANONICAL_INDEX = state.windowScore ?? state.score;
@@ -656,6 +716,8 @@
     path.setAttribute("d", d);
     area.setAttribute("d", `${d} L${W} ${H} L0 ${H} Z`);
 
+    paintHistoryColors(pts);
+
     const mid = $("heroHistoryMid");
     if (mid) {
       const y = PAD + 0.5 * (H - PAD * 2);
@@ -663,6 +725,125 @@
     }
 
     state.drawn = xy;
+  }
+
+  /* ---------------------------------------------------------
+     LA CURVA SE PINTA DEL COLOR DE LO QUE CUENTA
+
+     Un trazo gris del mismo tono de punta a punta obliga a leer la
+     altura para saber si aquel martes fue bueno o malo. Con el
+     color de la emocion en cada tramo, el mes se lee de un vistazo:
+     donde se pone rojo hubo miedo y donde verdea hubo euforia, sin
+     mirar el eje.
+
+     Es un degradado horizontal con una parada por punto, no un
+     trazo por tramo: un solo `path` y un `linearGradient`, en vez
+     de noventa lineas sueltas que habria que crear y destruir en
+     cada redibujo.
+
+     El color sale de la MISMA tabla MOODS y del MISMO `pointIndex`
+     que la cara y el numero. Si un dia el trazo y el personaje no
+     coincidieran, seria que discrepan los datos, no las paletas.
+     --------------------------------------------------------- */
+
+  /* Las paradas se recortan a 48: por encima de eso el degradado no
+     gana detalle visible y el SVG se llena de nodos que hay que
+     reescribir en cada actualizacion. */
+  const GRAD_STOPS = 48;
+
+  function ensureGradient(id, vertical) {
+    const svg = $("heroHistorySvg");
+    if (!svg) return null;
+
+    let grad = document.getElementById(id);
+    if (grad) return grad;
+
+    let defs = svg.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      svg.insertBefore(defs, svg.firstChild);
+    }
+
+    grad = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+    grad.setAttribute("id", id);
+    grad.setAttribute("x1", "0");
+    grad.setAttribute("y1", "0");
+    grad.setAttribute("x2", vertical ? "0" : "1");
+    grad.setAttribute("y2", vertical ? "1" : "0");
+    defs.appendChild(grad);
+    return grad;
+  }
+
+  function setStops(grad, stops) {
+    if (!grad) return;
+
+    /* Se reutilizan los nodos que ya hay en vez de vaciar y volver
+       a crear: esto corre en cada redibujo y crear 48 elementos SVG
+       cada vez es basura que el recolector acaba pagando en un
+       tiron. */
+    while (grad.childNodes.length > stops.length) grad.removeChild(grad.lastChild);
+    while (grad.childNodes.length < stops.length) {
+      grad.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "stop"));
+    }
+
+    stops.forEach((st, i) => {
+      const node = grad.childNodes[i];
+      node.setAttribute("offset", `${st.offset.toFixed(2)}%`);
+      node.setAttribute("stop-color", st.color);
+      node.setAttribute("stop-opacity", String(st.opacity ?? 1));
+    });
+  }
+
+  function paintHistoryColors(pts) {
+    const path = $("heroHistoryLine");
+    const area = $("heroHistoryArea");
+    if (!path || pts.length < 2) return;
+
+    const step = Math.max(1, Math.ceil(pts.length / GRAD_STOPS));
+    const stops = [];
+
+    for (let i = 0; i < pts.length; i += step) {
+      const v = pointIndex(pts[i]);
+      if (v === null) continue;
+      stops.push({
+        offset: (i / (pts.length - 1)) * 100,
+        color: moodFor(clamp(v, 0, 100))[3]
+      });
+    }
+
+    /* El ultimo punto siempre entra: es el estado de AHORA y es el
+       que el ojo busca primero. Con el recorte por pasos se
+       quedaba fuera cuando la serie no era multiplo del paso. */
+    const lastV = pointIndex(pts[pts.length - 1]);
+    if (lastV !== null) {
+      const last = { offset: 100, color: moodFor(clamp(lastV, 0, 100))[3] };
+      if (stops.length && stops[stops.length - 1].offset >= 99.9) stops[stops.length - 1] = last;
+      else stops.push(last);
+    }
+
+    if (stops.length < 2) return;
+
+    const line = ensureGradient("heroHistoryStroke", false);
+    setStops(line, stops);
+    /* En estilo inline porque globals.css fija `stroke: var(--bone)`
+       en `#heroHistoryLine` y un atributo no le ganaria. */
+    path.style.stroke = "url(#heroHistoryStroke)";
+    path.style.opacity = ".9";
+
+    /* El relleno tiñe la zona con el color del estado ACTUAL, no
+       con el degradado: repetirlo abajo con transparencia
+       convertia el fondo en un arcoiris y le quitaba la lectura al
+       trazo, que es donde esta la informacion. */
+    if (area) {
+      const fill = ensureGradient("heroHistoryTint", true);
+      const now = stops[stops.length - 1].color;
+      setStops(fill, [
+        { offset: 0,   color: now, opacity: 0.55 },
+        { offset: 100, color: now, opacity: 0 }
+      ]);
+      area.style.fill = "url(#heroHistoryTint)";
+      area.style.opacity = ".22";
+    }
   }
 
   /* ---------------------------------------------------------
@@ -777,6 +958,15 @@
          mandan los suyos. */
       state.momentAxes = data.axes || null;
       applyWindow();
+
+      /* Y se repinta la pastilla. `loadHistory` puede haber corrido
+         ANTES que esta peticion, y entonces dibujo el delta con el
+         respaldo —restando extremos de la serie— en vez de con el
+         del servidor. Sin esta linea la pastilla se quedaba con esa
+         cifra provisional y contradecia al subtitulo, que si usa la
+         del servidor. Es la misma discrepancia de siempre, ahora
+         por orden de llegada en vez de por columna. */
+      updateRangeTag();
 
       /* Lo que se PUBLICA es lo que se ve: si la ventana manda,
          script.js tiene que repartir esa misma cifra. Publicar el
@@ -946,7 +1136,15 @@
        que es la unica fuente que garantiza estar sincronizada con
        la hoja que se esta mostrando ahora mismo. */
     const moodKey = String(state.idleKeyMood || "");
-    const pingpong = isPingPong(moodKey);
+
+    /* El estilo sale de `idleKey` —la clave "estilo/emocion" con la
+       que se cargo la hoja— y no de leer el selector otra vez: si
+       el usuario acaba de cambiarlo, el selector ya dice el estilo
+       nuevo mientras en pantalla sigue la hoja vieja, y el bucle se
+       reproduciria con la regla que no toca durante esa fraccion de
+       segundo. */
+    const styleKey = String(idleKey || "").split("/")[0];
+    const pingpong = isPingPong(moodKey, styleKey);
 
     const dur = state.idleDur || 3000;
 
@@ -960,8 +1158,8 @@
     const t = (now % cycle) / cycle;             // 0 … 1
     const step = Math.floor(t * steps);
 
-    /* Ida y vuelta para casi todas; bucle simple para las de la
-       lista de excepciones. */
+    /* Ida y vuelta para casi todas; bucle simple para las tres de
+       la lista de excepciones. */
     const frame = (!pingpong || step < IDLE_FRAMES)
       ? step
       : IDLE_STEPS - step;
@@ -1063,34 +1261,6 @@
       if (!String(face.src).endsWith(src)) face.src = src;
     }
 
-    /* El bucle animado y su modulacion. La imagen plana de arriba
-       se sigue actualizando SIEMPRE, aunque haya sprite: es el
-       respaldo, y tiene que estar en la emocion correcta el dia
-       que el sprite falle. */
-    ensureIdle(mood[0]);
-    applyIdleFx(sub, mood[0]);
-
-    /* ── EL GAUGE, TAMBIEN EL CANONICO ──
-
-       BUG QUE ARREGLA: el heroe decia "Content 78" y el gauge, tres
-       centimetros mas abajo, "60 Optimism". El gauge lo pinta
-       script.js con su formula vieja, que no es el indice.
-
-       En la revision anterior di por hecho que el gauge ya mostraba
-       el canonico porque en aquella captura coincidian — coincidian
-       POR CASUALIDAD. Comprobar dos numeros iguales no demuestra que
-       vengan de la misma fuente, y eso fue un error de metodo por mi
-       parte.
-
-       Se llama a la MISMA funcion de script.js en vez de reescribir
-       los textos: updateGauge pinta la aguja, el arco, el color y
-       las dos cifras de una pasada. Tocar solo el texto dejaria la
-       aguja apuntando a otro sitio, que es peor que la
-       contradiccion original.
-
-       Es una funcion de nivel superior de un script clasico, asi
-       que vive en window. Si no estuviera, no se hace nada: el
-       gauge se queda como estaba en lugar de romperse. */
     /* ── YA NO SE INTERCEPTAN LA BARRA, EL GAUGE, EL PUNTERO NI
            BUBBLE MAPS ──
 
