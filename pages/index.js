@@ -295,6 +295,13 @@ export default function Home({ ogImageUrl }) {
               <a href="#emotionScale">Emotional Scale</a>
               <a href="#emotionRush" className="wm-mobile-play">Play Emotion Rush</a>
               <a href="#about">About</a>
+              {/* La PAGINA /about no es la seccion de la portada, y por
+                  eso no se llama igual. La seccion explica el indice;
+                  la pagina explica quien lo construyo. Dos enlaces con
+                  el mismo nombre a dos sitios distintos habrian sido la
+                  version de UI del bug que llevamos toda la semana
+                  cerrando. */}
+              <a href="/about">Who built this</a>
               <a href="/terms">Terms</a>
               <a href="/privacy">Privacy</a>
               <a href="/disclaimer">Disclaimer</a>
@@ -1874,6 +1881,9 @@ export default function Home({ ogImageUrl }) {
                   <Link href="/terms">Terms</Link>
                   <Link href="/privacy">Privacy</Link>
                   <Link href="/disclaimer">Disclaimer</Link>
+                  {/* Con <Link> y no con <a>, como sus vecinos: es una
+                      pagina del propio sitio y asi navega sin recargar. */}
+                  <Link href="/about">Who built this</Link>
                 </div>
 
                 <div className="wm-footer-col">
