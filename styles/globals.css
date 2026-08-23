@@ -2344,17 +2344,37 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
    =========================================================== */
 
 .studio-panel { display: none; }
-.studio-panel.active { display: block; }
 
+/* Altura minima comun: sin esto, pasar de "Meme Generator" (dos
+   cajas) a "Daily Market Meme" (una) encogia la tarjeta de golpe y
+   la pagina daba un salto bajo el dedo. */
+.studio-panel.active {
+  display: block;
+  min-height: 320px;
+}
+
+/* `auto-fit` en vez de dos columnas fijas: el panel de X Post tiene
+   TRES cajas y en una rejilla de dos quedaba una suelta abajo
+   ocupando el doble de ancho que sus hermanas. Ahora cada panel se
+   acomoda al numero de cajas que tenga sin una regla por panel. */
 .studio-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--sp-2);
+  align-items: stretch;
 }
 
 .studio-grid-single { grid-template-columns: 1fr; }
 
-.studio-box { padding: var(--sp-3); }
+/* Columna: la cabecera arriba y la salida ocupando el resto. Asi
+   dos cajas de la misma fila terminan a la misma altura aunque una
+   traiga tres lineas y la otra treinta. */
+.studio-box {
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 
 .studio-box-head {
   display: flex;
@@ -2362,28 +2382,102 @@ body[data-subemotion*="pullback"] .hero-face-wrap {
   justify-content: space-between;
   gap: var(--sp-2);
   margin-bottom: var(--sp-2);
-  flex-wrap: wrap;
+  /* Sin `wrap`: el boton Copy caia a una segunda linea en cuanto el
+     titulo era largo y descuadraba la altura de esa caja frente a
+     su vecina. El titulo se recorta con puntos suspensivos, que es
+     mejor que romper la fila. */
+  flex-wrap: nowrap;
 }
 
-.studio-box-head h4 { font-size: 0.95rem; }
+.studio-box-head h4 {
+  font-size: 0.95rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.studio-copy-btn { padding: 7px 12px; font-size: 0.64rem; }
+.studio-copy-btn { padding: 7px 12px; font-size: 0.64rem; flex-shrink: 0; }
 
+/* AQUI ESTABA EL MURO DE TEXTO.
+
+   Habia `min-height` y ningun tope, asi que un prompt largo estiraba
+   la caja, estiraba la tarjeta y empujaba media pagina hacia abajo.
+   Cambiar de pestaña movia el resto de la pagina de sitio.
+
+   Ahora crece hasta 300px y a partir de ahi hace scroll dentro. El
+   minimo se queda para que una salida de dos lineas —los hashtags—
+   no deje una caja enana al lado de una llena.
+
+   `flex: 1` hace que dentro de una fila todas las salidas midan lo
+   mismo: es lo que hace que se lea como un panel y no como cajas
+   sueltas. */
 .studio-output {
   margin: 0;
+  flex: 1;
   min-height: 140px;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--sp-3);
   border-radius: var(--r-sm);
   border: 1px solid var(--line-soft);
-  background: var(--ink-000);
   color: var(--bone-dim);
   font-size: 0.88rem;
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
+
+  /* SOMBRAS DE SCROLL QUE SE DETECTAN SOLAS.
+
+     Un texto cortado a media palabra no dice si hay mas debajo o si
+     ahi se acaba. Estas sombras aparecen SOLO cuando hay desborde y
+     desaparecen al llegar al extremo, sin una linea de JavaScript.
+
+     El truco es la mezcla de `local` y `scroll`: las dos primeras
+     capas viajan con el contenido y tapan a las dos siguientes
+     cuando estas arriba o abajo del todo; las otras dos se quedan
+     fijas al marco y solo asoman cuando queda contenido por ese
+     lado. Con contenido corto no se ve ninguna. */
+  background:
+    linear-gradient(var(--ink-000) 30%, transparent) top    / 100% 26px no-repeat local,
+    linear-gradient(transparent, var(--ink-000) 70%) bottom / 100% 26px no-repeat local,
+    /* La pista es CLARA, no oscura: sobre un fondo casi negro una
+       sombra negra no se ve. Es la misma razon por la que el volumen
+       nunca va en verde aqui — el color tiene que significar algo en
+       ESTE tema, no en el de la receta de la que sale el truco. */
+    radial-gradient(farthest-side at 50% 0,    rgba(232, 233, 236, 0.16), transparent) top    / 100% 14px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgba(232, 233, 236, 0.16), transparent) bottom / 100% 14px no-repeat scroll,
+    var(--ink-000);
+
+  /* Barra fina y discreta. Con la del sistema, en Windows salia una
+     franja clara de 17px que partia la caja en dos. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-hard) transparent;
 }
 
-pre.studio-output { font-family: var(--font-data); font-size: 0.8rem; overflow: auto; }
+.studio-output::-webkit-scrollbar { width: 8px; }
+.studio-output::-webkit-scrollbar-track { background: transparent; }
+.studio-output::-webkit-scrollbar-thumb {
+  background: var(--line-hard);
+  border-radius: 99px;
+  /* El borde transparente deja aire a los lados del pulgar sin
+     necesidad de un carril aparte. */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.studio-output:hover::-webkit-scrollbar-thumb { background: var(--bone-faint); background-clip: content-box; }
+
+/* El prompt es lo unico que NO se parte por palabras: es texto para
+   pegar en otra herramienta y conviene verlo tal cual, con scroll
+   horizontal si hace falta, en vez de reordenado. */
+pre.studio-output {
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
 
 .prose-output strong { color: var(--bone); font-weight: 600; }
 .prose-output .story-block { margin-bottom: var(--sp-2); }
@@ -9075,6 +9169,306 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 
 /* ===========================================================
+   PAGINA /about
+
+   Estilos de la pagina propia, NO de la seccion About de la
+   portada. Van todos colgando de `.about-page`, que es la clase
+   del <main> de esa pagina.
+
+   POR QUE ACOTADOS. Las dos comparten dos nombres de clase,
+   `.about-label` y `.about-title`, y no quieren decir lo mismo: en
+   la pagina el titular es de 3,4rem porque la frase ES el
+   argumento, y en la portada es de 2,4rem porque es una seccion
+   mas. Sin acotar, la ultima que se cargara le cambiaria el tamaño
+   a la otra sin que nadie tocara ese archivo.
+
+   Vienen de un `about.css` suelto que no estaba importado en
+   ningun sitio: en Pages Router una hoja global solo se puede
+   importar desde _app, asi que la pagina se veia sin estilos. Al
+   traerlos aqui, se cargan con el resto y no hay un segundo
+   archivo que recordar.
+   =========================================================== */
+
+.about-page {
+  min-height: 100vh;
+  padding: var(--sp-4) 0 var(--sp-6);
+}
+
+.about-page .about-shell {
+  width: min(880px, calc(100% - 24px));
+  margin: 0 auto;
+}
+
+/* ---------- Cabecera ---------- */
+
+.about-page .about-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+}
+
+.about-page .about-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.about-page .about-logo {
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.about-page .about-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.about-page .about-brand-copy strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.about-page .about-brand-copy span {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.about-page .about-back {
+  border: 1px solid var(--line);
+  background: var(--ink-200);
+  color: var(--bone-dim);
+  border-radius: var(--r-pill);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 15px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.about-page .about-back:hover {
+  color: var(--bone);
+  border-color: var(--line-hard);
+}
+
+/* ---------- Hero ---------- */
+
+.about-page .about-hero {
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+  margin-bottom: var(--sp-4);
+}
+
+.about-page .about-label {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  margin-bottom: var(--sp-3);
+}
+
+.about-page .about-title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  /* Un escalón por encima del título legal, no dos. */
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.about-page .about-lede {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 1.05rem;
+  line-height: 1.68;
+  color: var(--bone-dim);
+}
+
+/* ---------- Bloques de construcción ---------- */
+
+.about-page .about-build {
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+  margin-bottom: var(--sp-4);
+}
+
+.about-page .about-block {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.about-page .about-block:last-child {
+  border-bottom: none;
+}
+
+.about-page .about-kicker {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  margin-bottom: var(--sp-2);
+}
+
+.about-page .about-block h2 {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  max-width: 26ch;
+}
+
+.about-page .about-block p {
+  margin: 0;
+  max-width: 68ch;
+  line-height: 1.75;
+  color: var(--bone-dim);
+}
+
+/* ---------- Lo que no es ---------- */
+
+.about-page .about-honest {
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-hard);
+  background: rgba(232, 233, 236, 0.03);
+  margin-bottom: var(--sp-4);
+}
+
+.about-page .about-honest h2 {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.about-page .about-honest p {
+  margin: 0 0 var(--sp-2);
+  max-width: 68ch;
+  line-height: 1.75;
+  color: var(--bone-dim);
+}
+
+.about-page .about-honest p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Quién ---------- */
+
+.about-page .about-me {
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--ink-100);
+}
+
+.about-page .about-me h2 {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  letter-spacing: -0.02em;
+}
+
+.about-page .about-me p {
+  margin: 0 0 var(--sp-2);
+  max-width: 68ch;
+  line-height: 1.75;
+  color: var(--bone-dim);
+}
+
+.about-page .about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.about-page .about-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-hard);
+  background: var(--ink-300);
+  color: var(--bone);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.about-page .about-cta:hover {
+  border-color: var(--bone-faint);
+}
+
+.about-page .about-cta--ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--bone-dim);
+}
+
+.about-page .about-cta--ghost:hover {
+  color: var(--bone);
+}
+
+/* ---------- Pie ---------- */
+
+.about-page .about-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: rgba(232, 233, 236, 0.018);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.about-page .about-foot a {
+  color: var(--bone-dim);
+  text-decoration: none;
+}
+
+.about-page .about-foot a:hover {
+  color: var(--bone);
+}
+
+/* ---------- Móvil ---------- */
+
+/* ===========================================================
    ADAPTACIONES A PANTALLA PEQUEÑA
 
    TODOS los bloques @media (max-width: ...) viven aqui abajo, y
@@ -9795,10 +10189,31 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
      7. STUDIO — salida monoespaciada enorme
      ----------------------------------------------------------- */
 
-  .studio-output { font-size: 0.76rem; min-height: 110px; padding: var(--sp-2); }
+  .studio-output {
+    font-size: 0.76rem;
+    min-height: 110px;
+    /* Tope mas bajo que en escritorio: en una pantalla de 700px de
+       alto, 300px de caja son casi la mitad de la pantalla para un
+       solo bloque de texto. */
+    max-height: 230px;
+    padding: var(--sp-2);
+  }
   pre.studio-output { font-size: 0.68rem; }
   .studio-box { padding: var(--sp-2); }
   .studio-box-head h4 { font-size: 0.84rem; }
+  .studio-panel.active { min-height: 0; }
+
+  /* Las cuatro pestañas en una sola fila deslizable en vez de
+     apiladas en dos: se lee como una barra de herramientas y no
+     como una lista, y no roba dos dedos de alto. */
+  #studioTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #studioTabs::-webkit-scrollbar { display: none; }
+  #studioTabs .tab-btn { flex-shrink: 0; }
 
   /* -----------------------------------------------------------
      8. MÉTRICAS DE CABECERA
@@ -10133,4 +10548,35 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
     max-height: 36px;
     max-width: min(150px, calc(100vw - 224px));
   }
+}
+
+
+/* --- /about, pantalla pequeña --- */
+
+@media (max-width: 520px) {
+
+  .about-page .about-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .about-page .about-hero {
+    padding: var(--sp-4) var(--sp-3);
+  }
+
+  .about-page .about-build,
+.about-page .about-honest,
+.about-page .about-me {
+    padding-left: var(--sp-3);
+    padding-right: var(--sp-3);
+  }
+
+  .about-page .about-actions {
+    flex-direction: column;
+  }
+
+  .about-page .about-cta {
+    width: 100%;
+  }
+
 }
