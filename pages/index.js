@@ -208,7 +208,9 @@ export default function Home({ ogImageUrl }) {
                 <a href="#bagMoodSection">Bag</a>
                 <a href="#emotionRadarSection">Radar</a>
                 <a href="#wojak-studio">Studio</a>
-                <a href="#about">About</a>
+                {/* Con <Link>, como en el menu movil y el pie: es una
+                    pagina del sitio, no un ancla de esta. */}
+                <Link href="/about">About</Link>
 
                 {/* El juego lleva tratamiento propio en el nav, como
                     MOOD: no es una seccion mas de la lista, es lo
@@ -294,14 +296,9 @@ export default function Home({ ogImageUrl }) {
               <a href="#wojak-studio">Wojak Studio</a>
               <a href="#emotionScale">Emotional Scale</a>
               <a href="#emotionRush" className="wm-mobile-play">Play Emotion Rush</a>
-              <a href="#about">About</a>
-              {/* La PAGINA /about no es la seccion de la portada, y por
-                  eso no se llama igual. La seccion explica el indice;
-                  la pagina explica quien lo construyo. Dos enlaces con
-                  el mismo nombre a dos sitios distintos habrian sido la
-                  version de UI del bug que llevamos toda la semana
-                  cerrando. */}
-              <a href="/about">Who built this</a>
+              {/* Ya no hay seccion About en la portada: About es la
+                  pagina. Un solo destino, un solo nombre. */}
+              <Link href="/about">About</Link>
               <a href="/terms">Terms</a>
               <a href="/privacy">Privacy</a>
               <a href="/disclaimer">Disclaimer</a>
@@ -1728,15 +1725,26 @@ export default function Home({ ogImageUrl }) {
             </section>
 
             {/* ===========================================================
-                9. ABOUT + FAQ
-                Antes eran dos secciones seguidas diciendo lo mismo, y una
-                de ellas se titulaba "SEO" en público. Fusionadas: mismo
-                contenido sin duplicar, y las preguntas ahora llevan
-                marcado FAQPage para rich results.
+                9. FAQ
+
+                Antes esto era "About + FAQ" y llevaba tambien el relato
+                del proyecto. El relato se mudo a /about, que es una
+                pagina propia.
+
+                LAS TRES PREGUNTAS SE QUEDAN AQUI, Y NO ES OPCIONAL. El
+                JSON-LD de arriba declara un FAQPage con `@id`
+                ".../#faq" sobre ESTA pagina, y Google exige que el
+                contenido marcado sea visible en la pagina que lo
+                declara. Llevarselas a /about dejaria el marcado
+                describiendo algo que no esta: se pierde el rich result
+                y se arriesga una accion manual.
+
+                Si algun dia se mueven, hay que mover el bloque JSON-LD
+                con ellas, no solo el texto.
             =========================================================== */}
-            <section className="about-section card" id="about">
+            <section className="about-section card" id="faq">
               <div className="about-container">
-                <span className="about-label">About</span>
+                <span className="about-label">FAQ</span>
                 <h2 className="about-title">The Crypto Emotion Index.</h2>
 
                 <p className="about-text">
@@ -1746,24 +1754,8 @@ export default function Home({ ogImageUrl }) {
                   anything.
                 </p>
 
-                <p className="about-text about-text-strong">
-                  No noise. No complexity.<br />
-                  Just the emotional state of the market.
-                </p>
-
-                <div className="about-divider"></div>
-
-                <p className="about-text">
-                  Wojak, the <strong>&quot;Feel Guy&quot;</strong>, represents raw human
-                  emotion: fear, doubt, confidence, euphoria. Crypto markets move the
-                  same way.
-                </p>
-
-                <p className="about-text about-text-strong">
-                  Wojak isn&apos;t just a meme.<br />
-                  He is the market.
-                </p>
-
+                {/* El ancla vieja se conserva: puede estar enlazada desde
+                    fuera y romperla no arregla nada. */}
                 <div className="about-divider" id="what-is-wojakmeter"></div>
 
                 <h3 className="seo-subtitle">What is WojakMeter?</h3>
@@ -1785,6 +1777,19 @@ export default function Home({ ogImageUrl }) {
                   A chart shows what happened. WojakMeter shows how the market reacted to
                   it. Two days with identical price action can carry completely different
                   emotional weight, and that difference is what the index measures.
+                </p>
+
+                {/* La referencia que pediste dejar en la portada: una
+                    linea, no un resumen. Un resumen aqui volveria a ser
+                    dos sitios contando lo mismo, que es de lo que
+                    veniamos. */}
+                <div className="about-divider"></div>
+                <p className="about-text">
+                  Built end to end by one person — the index engine, the character
+                  and the game.{" "}
+                  <Link href="/about" className="about-text-strong">
+                    Read how it works and who made it →
+                  </Link>
                 </p>
               </div>
             </section>
@@ -1873,7 +1878,8 @@ export default function Home({ ogImageUrl }) {
                   <a href="#wojak-studio">Wojak Studio</a>
                   <a href="#emotionScale">Emotional Scale</a>
                   <a href="#emotionRush">Emotion Rush</a>
-                  <a href="#about">About</a>
+                  <a href="#faq">FAQ</a>
+                  <Link href="/about">About</Link>
                 </div>
 
                 <div className="wm-footer-col">
@@ -1881,9 +1887,6 @@ export default function Home({ ogImageUrl }) {
                   <Link href="/terms">Terms</Link>
                   <Link href="/privacy">Privacy</Link>
                   <Link href="/disclaimer">Disclaimer</Link>
-                  {/* Con <Link> y no con <a>, como sus vecinos: es una
-                      pagina del propio sitio y asi navega sin recargar. */}
-                  <Link href="/about">Who built this</Link>
                 </div>
 
                 <div className="wm-footer-col">
