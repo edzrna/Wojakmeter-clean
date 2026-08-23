@@ -36,12 +36,24 @@
   const FRAMES = COLS * ROWS;
   const STEPS = FRAMES * 2 - 2;              // 46: sin repetir extremos
 
-  /* Lista de EXCEPCIONES al vaiven, no de incluidos.
-     concern: su sudor resbala y del reves subiria por la cara.
-     frustration: el grito se abre y se descarga; del reves la
-     boca se cerraria sola y se lo tragaria. */
-  const NO_PINGPONG = new Set(["concern", "frustration"]);
-  const isPingPong = (mood) => !NO_PINGPONG.has(mood);
+  /* Lista de EXCEPCIONES al vaiven, no de incluidos, y por
+     ESTILO Y EMOCION.
+
+     concern: su sudor resbala y del reves subiria por la cara, en
+     los dos estilos.
+     classic/frustration: el grito se abre y se descarga; del reves
+     la boca se cerraria sola y se lo tragaria.
+     synth/frustration NO esta: la cara synth no es una boca que se
+     abre sino una rejilla de LEDs, y encenderse hacia atras se lee
+     igual de bien. */
+  const NO_PINGPONG = new Set([
+    "classic/concern",
+    "classic/frustration",
+    "synth/concern"
+  ]);
+
+  const isPingPong = (mood, style) =>
+    !NO_PINGPONG.has(`${style}/${mood}`) && !NO_PINGPONG.has(mood);
 
   /* Solo las siete base. Bag Mood no tiene subemociones y no debe
      tenerlas: los cuatro ejes del rig describen el MERCADO, y
@@ -77,6 +89,7 @@
     sprite: null,
     key: null,        // "estilo/emocion" de la hoja montada
     mood: null,
+    style: null,
     durMs: 6000,
     frame: -1,
     visible: true,
@@ -149,13 +162,27 @@
     return true;
   }
 
+  /* La caja NO es la del <img>: es el cuadrado centrado mas grande
+     que cabe dentro.
+
+     En globals.css, `.bag-mood-hero-img` es `width:100%;
+     height:100%; object-fit:contain`, asi que la imagen plana se
+     dibuja centrada y con su proporcion dentro de una caja que no
+     tiene por que ser cuadrada. Los fotogramas SI son cuadrados
+     (640x640). Copiando la caja del <img> a secas, la cara
+     animada saldria mas grande que la plana y estirada, y el
+     cambio de una a otra daria un salto. */
   function syncBox() {
     const { img, sprite } = state;
     if (!img || !sprite) return;
-    sprite.style.left   = img.offsetLeft + "px";
-    sprite.style.top    = img.offsetTop + "px";
-    sprite.style.width  = img.offsetWidth + "px";
-    sprite.style.height = img.offsetHeight + "px";
+
+    const w = img.offsetWidth, h = img.offsetHeight;
+    const side = Math.min(w, h);
+
+    sprite.style.left   = (img.offsetLeft + (w - side) / 2) + "px";
+    sprite.style.top    = (img.offsetTop  + (h - side) / 2) + "px";
+    sprite.style.width  = side + "px";
+    sprite.style.height = side + "px";
   }
 
   /* Emocion y estilo salen de /assets/hero/<estilo>/<emocion>.png */
@@ -193,6 +220,14 @@
   function mount() {
     if (!ensureLayer()) return;
 
+    /* La caja se recalcula en cada repintado, no solo al crear la
+       capa. Si la maquetacion cambia sin que cambie el tamaño de
+       la seccion —una fila que pasa a dos lineas, una fuente que
+       termina de cargar— el ResizeObserver no se entera y la capa
+       se quedaria descolocada respecto a la cara. Son dos lecturas
+       y cuatro escrituras cada diez segundos. */
+    syncBox();
+
     const read = readFromImage();
     if (!read) return;
 
@@ -210,6 +245,7 @@
     show(false);
     state.key = key;
     state.mood = mood;
+    state.style = style;
     state.frame = -1;
 
     if (failed.has(key)) return;
@@ -255,7 +291,11 @@
     state.raf = requestAnimationFrame(tick);
     if (!state.visible || !isOn()) return;
 
-    const pingpong = isPingPong(state.mood);
+    /* El estilo sale del estado de la hoja MONTADA, no de volver a
+       leer la ruta: entre que cambia el selector y termina de bajar
+       la hoja nueva, el bucle se reproduciria con la regla del
+       estilo que aun no se ve. */
+    const pingpong = isPingPong(state.mood, state.style);
     const cycle = pingpong ? state.durMs : state.durMs / 2;
     const steps = pingpong ? STEPS : FRAMES;
 
@@ -303,6 +343,7 @@
       const ro = new ResizeObserver(syncBox);
       const target = $("bagMoodSection");
       if (target) ro.observe(target);
+      if (state.img) ro.observe(state.img);
     }
     window.addEventListener("resize", syncBox, { passive: true });
 
