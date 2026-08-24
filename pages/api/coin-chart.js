@@ -32,12 +32,54 @@ import { cachedJson, cgHeaders, cgUrl, fetchJsonWithRetry } from "../../lib/data
    puntos a ciegas.
    =========================================================== */
 
-/* Mapa timeframe → días que se le piden a CoinGecko. */
+/* ===========================================================
+   ARREGLADO (v4) — "7D y 30D no cargan nada".
+
+   NO era un fallo de este archivo: era el limite de peticiones.
+
+   Cada pestaña dispara DOS llamadas a CoinGecko (linea + velas).
+   Con el mapa anterior habia TRES grupos de dias —1, 7 y 30—, o
+   sea seis llamadas por moneda si recorres las pestañas, encima
+   de las que ya gasta la portada en top coins, trending, memes y
+   global. En el plan demo eso llega al 429; los reintentos se
+   agotan, `Promise.allSettled` devuelve `rejected`, y el handler
+   respondia `ok: true` con `prices: []`.
+
+   Ese `ok: true` es lo que hacia el fallo INVISIBLE: el cliente
+   recibia una respuesta valida y vacia, limpiaba el lienzo y ya
+   esta. Y como el cliente cachea la respuesta 60 s, volver a
+   pulsar tampoco arreglaba nada.
+
+   24H seguia funcionando porque su grupo (d1) ya estaba caliente
+   desde la primera carga. 7D y 30D entraban en frio, justo cuando
+   quedaba menos cuota. De ahi que fallaran esas dos y no otra.
+
+   DOS CAMBIOS:
+
+   1. DOS GRUPOS DE DIAS, NO TRES. `7d` pasa a servirse del mismo
+      dato que `30d` y se recorta por tiempo. No se pierde
+      resolucion: CoinGecko devuelve granularidad HORARIA para
+      cualquier peticion de 2 a 90 dias, asi que 7 dias sacados de
+      days=30 traen exactamente los mismos puntos que days=7. Lo
+      mismo con las velas, que son de 4 horas en todo ese rango.
+      Resultado: dos grupos (d1 y d30) en vez de tres, y 7D sale
+      instantaneo si ya miraste 30D, y al reves.
+
+   2. SI NO HAY DATOS, SE DICE. Cuando las dos peticiones fallan,
+      la respuesta ya no es `ok: true` con arrays vacios: es
+      `ok: false` con el motivo. Un fallo que se ve se arregla; uno
+      que se calla se convierte en "la pagina esta rota".
+   =========================================================== */
+
+/* Mapa timeframe → días que se le piden a CoinGecko.
+
+   `7d` pide 30 a proposito: comparte grupo con `30d` y se recorta
+   despues. Ver el punto 1 de arriba antes de "optimizarlo" a 7. */
 const TIMEFRAME_DAYS = {
   "1h":  1,
   "4h":  1,
   "24h": 1,
-  "7d":  7,
+  "7d":  30,
   "30d": 30
 };
 
@@ -174,6 +216,40 @@ export default async function handler(req, res) {
         Number.isFinite(c.low)  && Number.isFinite(c.close)
       );
 
+    /* NADA QUE DIBUJAR = FALLO, y se dice.
+
+       Antes esto salia como `ok: true` con `prices: []`, que para
+       el cliente es indistinguible de "esta moneda no tiene
+       historial". El lienzo se quedaba en negro sin una sola
+       pista, ni en pantalla ni en la consola.
+
+       Se mira `rawPrices`, no `prices`: si la peticion trajo datos
+       pero el recorte los dejo fuera, el problema es otro y hay
+       que poder distinguirlo. */
+    if (!prices.length && !candles.length) {
+      const motivo = lineResult.status === "rejected"
+        ? (lineResult.reason?.message || "upstream_failed")
+        : rawPrices.length
+          ? "window_empty"
+          : "upstream_empty";
+
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({
+        ok: false,
+        timeframe,
+        days,
+        prices: [],
+        candles: [],
+        hasCandles: false,
+        points: 0,
+        /* `no-store` arriba y este aviso aqui: un vacio NO se
+           cachea. Guardar media hora un fallo pasajero de cuota
+           convierte un tropiezo de diez segundos en media hora de
+           grafico roto. */
+        error: motivo
+      });
+    }
+
     res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=300");
 
     res.status(200).json({
@@ -200,6 +276,7 @@ export default async function handler(req, res) {
       stale: Boolean(lineResult.value?.stale)
     });
   } catch (error) {
+    res.setHeader("Cache-Control", "no-store");
     res.status(200).json({
       ok: false,
       timeframe,
