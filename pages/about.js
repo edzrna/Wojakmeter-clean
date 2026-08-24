@@ -32,10 +32,22 @@ const BUILD = [
   },
 ];
 
+/* Las tres caras que ilustran la reseña. Se usan los mismos PNG
+   planos que el héroe del índice, no ilustraciones nuevas: la
+   página tiene que enseñar el vocabulario REAL del producto. */
+/* Perfil de freelance. Vacío = no se muestra el botón. */
+const PROFILE_URL = "";
+
+const FACES = [
+  { mood: "frustration", label: "Frustration", note: "Liquidated. The red one." },
+  { mood: "neutral", label: "Neutral", note: "Waiting. The original feel." },
+  { mood: "euphoria", label: "Euphoria", note: "Laser eyes. The green one." },
+];
+
 export default function AboutPage() {
   const title = "About | WojakMeter";
   const description =
-    "WojakMeter is an independent crypto emotion index built by one person. Here is what runs underneath it.";
+    "Wojak, the Feel Guy, and the crypto emotion index built around him. What runs underneath WojakMeter, and who built it.";
 
   return (
     <>
@@ -87,6 +99,79 @@ export default function AboutPage() {
             </p>
           </header>
 
+          {/* ===========================================================
+              WOJAK — antes de la ingeniería, a propósito.
+
+              Quien llega aquí necesita entender POR QUÉ hay una cara
+              antes de leer con qué está hecha. El meme no es la
+              decoración del proyecto: es la premisa de la que sale
+              todo lo demás.
+          =========================================================== */}
+          <section className="about-wojak">
+            <span className="about-kicker">The Feel Guy</span>
+            <h2>Before the index, there was the face.</h2>
+
+            <p>
+              Wojak — Polish for <em>soldier</em> — is a bald, blank-eyed figure
+              drawn in MS Paint that surfaced on European imageboards around
+              2010 and spread from there to everywhere else. He was never a
+              punchline. He was posted alongside four words that explain the
+              whole thing: <strong>I know that feel bro</strong>.
+            </p>
+
+            <p>
+              That is what made him last. Other memes are jokes you get or you
+              don&rsquo;t. Wojak is a way of saying <em>this is what it feels
+              like right now</em>, and trusting that someone else has felt it
+              too. Over fifteen years he grew into a vocabulary — the doomer,
+              the bloomer, the pink one who just got liquidated, the green one
+              with laser eyes — and crypto adopted it wholesale, because crypto
+              is a market where the feeling arrives before the analysis does.
+            </p>
+
+            <div className="about-faces">
+              {FACES.map((f) => (
+                <figure className="about-face" key={f.mood}>
+                  <img
+                    src={`/assets/hero/classic/${f.mood}.png`}
+                    alt={`Wojak expressing ${f.label.toLowerCase()}`}
+                    loading="lazy"
+                    width="160"
+                    height="160"
+                  />
+                  <figcaption>
+                    <strong>{f.label}</strong>
+                    <span>{f.note}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+
+            <p>
+              Traders were already narrating the market through that face long
+              before this site existed. Green candles, laser eyes. A bad week,
+              the pink one. The reading was there — it was just anecdotal,
+              scattered across timelines, and nobody was keeping score.
+            </p>
+
+            <p className="about-wojak-thesis">
+              WojakMeter measures what the meme was already saying.
+            </p>
+
+            <p>
+              That is the entire idea. The index does the arithmetic; Wojak does
+              the talking. He is not a mascot bolted onto a dashboard — he is
+              the reason the dashboard reports an emotion instead of a
+              percentage, and the reason a score of 19 reads as something you
+              feel in your stomach rather than a number you have to interpret.
+            </p>
+
+            <p className="about-note">
+              Wojak belongs to the internet, not to this project. The drawings
+              here are original artwork in that tradition, made for this site.
+            </p>
+          </section>
+
           <section className="about-build">
             {BUILD.map((item) => (
               <article className="about-block" key={item.kicker}>
@@ -117,10 +202,12 @@ export default function AboutPage() {
           <section className="about-me">
             <h2>Who</h2>
             <p>
-              I&rsquo;m Edzrna — a graphic designer turned developer, working as
-              a solo builder. That combination is why this site looks the way it
-              does: the same person drew the character, wrote the normalization
-              math, built the game and set up the deployment.
+              I&rsquo;m <strong>Eduardo Cerna</strong>, and I go by{" "}
+              <strong>Edzrna</strong> online — a graphic designer turned
+              developer, working as a solo builder. That combination is why this
+              site looks the way it does: the same person drew the character,
+              wrote the normalization math, built the game and set up the
+              deployment.
             </p>
             <p>
               Most of what you see here would be a team&rsquo;s worth of work in
@@ -139,15 +226,22 @@ export default function AboutPage() {
                 contact@wojakmeter.com
               </a>
               {/* Enlace secundario a propósito: quien llega aquí ya vio el
-                  trabajo. El perfil de marketplace va al final, no de entrada. */}
-              <a
-                className="about-cta about-cta--ghost"
-                href="https://www.upwork.com/freelancers/~YOUR_ID"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                Freelance profile
-              </a>
+                  trabajo. El perfil de marketplace va al final, no de entrada.
+
+                  SE PINTA SOLO SI HAY URL. Antes estaba fijo apuntando a
+                  `~YOUR_ID`, un marcador de posición: un enlace roto en la
+                  página que pide trabajo cuesta más que no tener enlace.
+                  Pon la URL real arriba, en PROFILE_URL, y aparece. */}
+              {PROFILE_URL && (
+                <a
+                  className="about-cta about-cta--ghost"
+                  href={PROFILE_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Freelance profile
+                </a>
+              )}
             </div>
           </section>
 
