@@ -51,6 +51,8 @@
     edgeFade:    0.22,   // fraccion del borde donde el panel esta a tope
     fps:         30,     // el ojo no pide mas para esto y ahorra bateria
     fieldFps:    15,     // el campo de nubes se recalcula a la mitad
+    patternStrength: 1,  // 0 = solo nubes, 1 = el patron al peso previsto
+    patternFade: 1.6,    // segundos de cruce al cambiar de emocion
     driftX:      0.012,  // deriva horizontal del campo por segundo
     sweepEvery:  9,      // segundos entre barridos de refresco
     sparkChance: 0.0016  // probabilidad por celda y frame con tension 1
@@ -154,6 +156,111 @@
          + noise3(x * 0.44, y * 0.58, t * 1.7) * 0.32;
   }
 
+  /* ===========================================================
+     UN PATRON POR EMOCION
+
+     El campo de nubes dice CUANTA luz hay; el patron dice DONDE se
+     coloca. Los dos se mezclan antes del umbral, asi que el patron
+     da la forma y los ejes siguen gobernando la cantidad: un
+     mercado muerto en frustration enseña las mismas bandas rotas
+     que uno agitado, solo que con cuatro luces en vez de media
+     pantalla. Si el patron sustituyera al campo en vez de
+     mezclarse, la pantalla dejaria de reaccionar y pasaria a ser
+     una animacion en bucle.
+
+     Cada funcion devuelve 0..1 y recibe:
+       c, r   columna y fila
+       t      segundos
+       a      activacion ya suavizada (0..1)
+     Y usa `S.cx/S.cy/S.radius`, el centro del heroe en celdas.
+
+     La forma de cada una sale de lo que cuenta la emocion, no de
+     lo que quedaba bonito:
+     ========================================================== */
+  const PATTERNS = {
+    /* Bandas rotas y desplazadas: un panel con daño. Las filas
+       saltan de sitio a tirones, como una señal que se corta. */
+    frustration(c, r, t, a) {
+      const band = Math.floor(r / 3);
+      const glitch = hash3(band, Math.floor(t * (2 + a * 6)), 7);
+      if (glitch > 0.86) return 0;                    // fila apagada
+      const shift = (glitch - 0.5) * 26 * (0.4 + a);
+      return 0.35 + 0.65 * (0.5 + 0.5 * Math.sin((c + shift) * 0.55 + band * 1.7));
+    },
+
+    /* Gotas que CAEN. Es el mismo gesto que el sudor del sprite y
+       por la misma razon: concern tiene direccion. */
+    concern(c, r, t, a) {
+      const lane = hash3(c, 0, 11);
+      if (lane > 0.55) return 0.12;                   // calle vacia
+      const speed = 2.5 + a * 6 + lane * 3;
+      const drop = (r / S.rows - t * speed * 0.06 + lane) % 1;
+      const d = drop < 0 ? drop + 1 : drop;
+      return d < 0.16 ? 1 - d / 0.16 : 0.08;
+    },
+
+    /* Dos frentes de onda cruzados que interfieren. El moire que
+       sale es, literalmente, señales mezcladas. */
+    doubt(c, r, t, a) {
+      const w1 = Math.sin(c * 0.42 + r * 0.16 - t * (0.5 + a));
+      const w2 = Math.sin(c * 0.31 - r * 0.27 + t * (0.35 + a * 0.8));
+      return 0.5 + 0.5 * w1 * w2;
+    },
+
+    /* Barrido lento y casi plano: un panel en espera. Deliberadamente
+       el mas aburrido de los siete. */
+    neutral(c, r, t) {
+      return 0.45 + 0.22 * Math.sin(r * 0.5 - t * 0.5) + 0.1 * Math.sin(c * 0.12);
+    },
+
+    /* Ascenso. Mismo motor que la lluvia de concern, del reves y mas
+       despacio: no cae, sube. */
+    optimism(c, r, t, a) {
+      const lane = hash3(c, 0, 23);
+      if (lane > 0.62) return 0.15;
+      const speed = 1.6 + a * 3.4 + lane * 2;
+      const rise = (r / S.rows + t * speed * 0.05 + lane) % 1;
+      const d = rise < 0 ? rise + 1 : rise;
+      return d < 0.2 ? 1 - d / 0.2 : 0.1;
+    },
+
+    /* Anillos que salen del personaje, sin prisa. Respiracion. */
+    content(c, r, t, a) {
+      const dx = c - S.cx, dy = r - S.cy;
+      const d = Math.sqrt(dx * dx + dy * dy) - S.radius;
+      return 0.5 + 0.5 * Math.sin(d * 0.34 - t * (0.8 + a * 1.2));
+    },
+
+    /* Rayos que salen de la cara y giran despacio. El unico patron
+       que mira al centro y no a la rejilla. */
+    euphoria(c, r, t, a) {
+      const dx = c - S.cx, dy = r - S.cy;
+      const ang = Math.atan2(dy, dx);
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const rays = 0.5 + 0.5 * Math.sin(ang * 14 + t * (0.6 + a * 1.4));
+      const pulse = 0.5 + 0.5 * Math.sin(d * 0.22 - t * (1.6 + a * 2.4));
+      return rays * 0.65 + pulse * 0.35;
+    }
+  };
+
+  /* Cuanto manda el patron sobre el campo, por emocion. No todas
+     quieren lo mismo: neutral casi no debe notarse —es un mercado
+     sin nada que decir— y euphoria puede permitirse gritar. */
+  const PATTERN_MIX = {
+    frustration: 0.62,
+    concern:     0.55,
+    doubt:       0.50,
+    neutral:     0.22,
+    optimism:    0.52,
+    content:     0.45,
+    euphoria:    0.68
+  };
+
+  function patternAt(mood, c, r, t, a) {
+    const fn = PATTERNS[mood];
+    return fn ? clamp(fn(c, r, t, a), 0, 1) : 0.5;
+  }
+
   /* ---------------------------------------------------------
      COLOR
 
@@ -208,6 +315,8 @@
     w: 0, h: 0, cols: 0, rows: 0, dpr: 1,
     mask: null, fieldArr: null, bucket: null, fieldAt: -1,
     mood: "neutral", rgb: [124, 134, 152],
+    cx: 0, cy: 0, radius: 1,
+    patFrom: "neutral", patTo: "neutral", patAt: -99,
     arousal: 0.45, tension: 0.2, fatigue: 0.2, valence: 0.5,
     // valores mostrados, que persiguen a los reales sin saltos
     aShown: 0.45, tShown: 0.2, fShown: 0.2, vShown: 0.5,
@@ -243,6 +352,14 @@
        durante medio segundo. */
     const mood = el.dataset.mood || S.mood;
     if (mood !== S.mood) {
+      /* El color puede saltar —lo tapa el suavizado de los ejes—
+         pero el PATRON no: pasar de lluvia a rayos de un fotograma
+         al siguiente se ve como un corte de emision. Se cruzan
+         durante segundo y medio. */
+      S.patFrom = S.mood;
+      S.patTo = mood;
+      S.patAt = performance.now() / 1000;
+
       S.mood = mood;
       S.rgb = moodRGB(mood);
     }
@@ -367,6 +484,15 @@
         S.mask[row * S.cols + col] = m;
       }
     }
+
+    /* Centro del heroe en coordenadas de CELDA. Los patrones
+       radiales —anillos, rayos— tienen que salir de la cara, no del
+       centro geometrico de la tarjeta: si salen del centro de la
+       tarjeta, en movil el personaje queda descolocado respecto a
+       sus propios rayos. */
+    S.cx = ((hx0 + hx1) / 2) / CFG.pitch;
+    S.cy = ((hy0 + hy1) / 2) / CFG.pitch;
+    S.radius = Math.max(hx1 - hx0, hy1 - hy0) / 2 / CFG.pitch;
   }
 
   /* El campo de nubes se recalcula a MITAD de fotogramas. Es lo
@@ -380,12 +506,37 @@
     const z = t * speed;
     const inv = 1 / (1 - cut);
 
+    /* Cruce entre el patron viejo y el nuevo. Fuera de esa ventana
+       solo se evalua uno, que es el caso normal y el barato. */
+    const fade = clamp((t - S.patAt) / CFG.patternFade, 0, 1);
+    const crossing = fade < 1 && S.patFrom !== S.patTo;
+    const mixTo = (PATTERN_MIX[S.patTo] ?? 0.4) * CFG.patternStrength;
+    const mixFrom = (PATTERN_MIX[S.patFrom] ?? 0.4) * CFG.patternStrength;
+
     for (let row = 0; row < S.rows; row++) {
       const base = row * S.cols;
       for (let col = 0; col < S.cols; col++) {
         const i = base + col;
         if (S.mask[i] <= 0.01) { S.fieldArr[i] = 0; continue; }
-        const v = (field(col + drift, row, z) - cut) * inv;
+        const nube = field(col + drift, row, z);
+
+        /* El campo dice CUANTA luz hay; el patron dice DONDE. Se
+           mezclan ANTES del umbral, asi que el patron da la forma y
+           los ejes siguen gobernando la cantidad: un mercado muerto
+           en frustration enseña las mismas bandas rotas que uno
+           agitado, solo que con cuatro luces. */
+        let raw;
+        if (crossing) {
+          const a = patternAt(S.patFrom, col, row, t, arousal);
+          const b = patternAt(S.patTo, col, row, t, arousal);
+          const pat = a + (b - a) * fade;
+          const mix = mixFrom + (mixTo - mixFrom) * fade;
+          raw = nube * (1 - mix) + pat * mix;
+        } else {
+          raw = nube * (1 - mixTo) + patternAt(S.patTo, col, row, t, arousal) * mixTo;
+        }
+
+        const v = (raw - cut) * inv;
         S.fieldArr[i] = v > 0 ? v : 0;
       }
     }
