@@ -2848,7 +2848,15 @@ async function fetchCoinChart(coinId, timeframe) {
     null
   );
 
-  if (res) _chartCache.set(key, { ts: Date.now(), data: res });
+  /* NO se cachea un fallo. Antes bastaba con que `res` no fuera
+     null, asi que una respuesta vacia por limite de cuota se
+     guardaba 60 segundos: volver a pulsar el boton no reintentaba
+     nada y el grafico seguia en negro un minuto entero. Ahora solo
+     entra en cache lo que trae algo que dibujar. */
+  const util = res && res.ok !== false &&
+    ((res.prices?.length || 0) >= 2 || (res.candles?.length || 0) >= 2);
+
+  if (util) _chartCache.set(key, { ts: Date.now(), data: res });
   return res;
 }
 
@@ -2949,6 +2957,19 @@ async function loadCoinDetails() {
       .filter((e) => Array.isArray(e)
         ? Number.isFinite(Number(e[1]))
         : Number.isFinite(Number(e)));
+
+    /* Un lienzo vacio hace pensar que la pagina esta rota. Un
+       aviso dice que paso y en que ventana. El titulo es el unico
+       sitio donde el usuario ya esta mirando cuando pulsa el
+       boton. */
+    const vacio = prices.length < 2 && (chartRes?.candles?.length || 0) < 2;
+
+    if (vacio) {
+      setText("chartTitle",
+        `${activeCoinSymbol} · no data for ${String(requestedTf).toUpperCase()}`);
+      console.warn("WM: /api/coin-chart sin datos",
+        { coin: coin.id, timeframe: requestedTf, error: chartRes?.error });
+    }
 
     drawChart({
       prices,
