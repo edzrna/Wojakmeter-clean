@@ -9351,6 +9351,113 @@ body.wm-loading .wm-dom-fill { opacity: 0.25; }
 
 /* ---------- Lo que no es ---------- */
 
+/* -----------------------------------------------------------
+   LA RESEÑA DE WOJAK
+
+   Va antes que los bloques de ingenieria y se separa de ellos con
+   un aire mayor: no es un apartado mas de la lista, es la premisa.
+   Por eso no lleva el borde inferior de `.about-block` — cerrarla
+   con una linea la convertiria en el primer item de una
+   enumeracion.
+   ----------------------------------------------------------- */
+.about-page .about-wojak {
+  padding: var(--sp-4) 0 var(--sp-5);
+  margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.about-page .about-wojak h2 {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3.2vw, 2rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  max-width: 20ch;
+}
+
+.about-page .about-wojak p {
+  margin: 0 0 var(--sp-3);
+  max-width: 68ch;
+  line-height: 1.8;
+  color: var(--bone-dim);
+}
+
+.about-page .about-wojak strong { color: var(--bone); font-weight: 600; }
+.about-page .about-wojak em { font-style: italic; color: var(--bone-dim); }
+
+/* La frase que sostiene el proyecto entero. Se le da tamaño y aire
+   porque si se lee como un parrafo mas, se pierde. */
+.about-page .about-wojak-thesis {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.6vw, 1.6rem);
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--bone);
+  padding: var(--sp-3) 0 var(--sp-3) var(--sp-3);
+  border-left: 2px solid var(--bone-faint);
+  margin: var(--sp-4) 0;
+  max-width: 30ch;
+}
+
+/* Las tres caras. `auto-fit` para que en movil caigan a una
+   columna sin una media query aparte. */
+.about-page .about-faces {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0;
+}
+
+.about-page .about-face {
+  margin: 0;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-soft);
+  background: rgba(232, 233, 236, 0.02);
+  text-align: center;
+}
+
+.about-page .about-face img {
+  width: 100%;
+  max-width: 132px;
+  height: auto;
+  /* Los renders vienen con fondo transparente y sombra propia; el
+     filtro solo les da algo de peso sobre el fondo oscuro. */
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
+}
+
+.about-page .about-face figcaption {
+  display: block;
+  margin-top: var(--sp-2);
+}
+
+.about-page .about-face figcaption strong {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.about-page .about-face figcaption span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--bone-faint);
+}
+
+/* La nota de autoria del meme: presente pero sin competir. */
+.about-page .about-note {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--bone-faint);
+  border-top: 1px solid var(--line-soft);
+  padding-top: var(--sp-3);
+  max-width: 62ch;
+}
+
 .about-page .about-honest {
   padding: var(--sp-4);
   border-radius: var(--r-lg);
