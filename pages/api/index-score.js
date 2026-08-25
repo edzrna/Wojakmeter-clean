@@ -141,7 +141,7 @@ export default async function handler(req, res) {
     const windowRows = await sql`
       SELECT
         w.key                                              AS key,
-        ROUND(AVG(e.index_score))::int                     AS score,
+        ROUND(AVG(e.index_score))::int                     AS avg_score,
         AVG(e.volatility)                                  AS volatility,
         COUNT(*)::int                                      AS samples,
         (array_agg(e.index_score ORDER BY e.ts ASC))[1]    AS first_score,
@@ -166,7 +166,39 @@ export default async function handler(req, res) {
     for (const row of windowRows) {
       if (Number(row.samples) < MIN_SAMPLES) continue;
 
-      const wScore = Number(row.score);
+      /* ===========================================================
+         EL SCORE DE LA VENTANA ES EL DE AHORA, NO LA MEDIA.
+
+         Esto era la MEDIA del periodo, y producia contradicciones
+         que en pantalla se leen como una averia:
+
+           "Index up 37 over 24H"   ·   SCORE: 31   ·   Concern
+
+         Las dos cifras eran correctas por separado y no podian
+         convivir. La media del dia era 31; el delta era del primer
+         punto al ultimo, +37. Para que ambas fueran ciertas el dia
+         tenia que haber empezado en -6, que no existe. Lo que
+         pasaba de verdad: empezo en 15, esta en 52, y la media de
+         ese recorrido es 31. El personaje enseñaba el promedio del
+         dia mientras el mercado ya estaba veinte puntos mas
+         arriba.
+
+         Asi que la ventana ya no decide QUE numero es, decide
+         SOBRE QUE PERIODO se mide el cambio. Es como funciona
+         cualquier ficha de precio: el precio es el de ahora y el
+         porcentaje es de las ultimas 24 horas. Nadie enseña el
+         precio medio del dia.
+
+         Las tres pills muestran el mismo score —el actual, que es
+         el unico que hay— y se diferencian en el delta, en el
+         grafico y en los EJES, que siguen saliendo de cada ventana
+         y son los que cambian la reaccion del personaje.
+
+         La media sigue viajando como `avgScore` por si algun dia
+         se quiere enseñar "como se sintio la semana", pero
+         etiquetada como lo que es. */
+      const wScore = Number(row.last_score);
+      const wAvg = Number(row.avg_score);
       const wDelta = Math.round(Number(row.last_score) - Number(row.first_score));
       const wVol = row.volatility === null ? volatilityZ : Number(row.volatility);
 
@@ -185,6 +217,7 @@ export default async function handler(req, res) {
 
       windows[row.key] = {
         score: wScore,
+        avgScore: Number.isFinite(wAvg) ? wAvg : null,
         delta: wDelta,
         samples: Number(row.samples),
         mood: moodFromScore(wScore),
