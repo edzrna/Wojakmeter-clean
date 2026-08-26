@@ -162,6 +162,12 @@ export default async function handler(req, res) {
        Un numero peor antes que uno inventado. */
     const MIN_SAMPLES = 3;
 
+    /* Cuanto movimiento cuenta como "mucho" en cada ventana. Un
+       salto de 18 puntos en un dia es historico; en un mes es
+       normal. Sin esto las tres pills saturaban la agitacion y el
+       personaje reaccionaba igual en las tres. */
+    const DELTA_SCALE = { "24h": 18, "7d": 34, "30d": 58 };
+
     const windows = {};
     for (const row of windowRows) {
       if (Number(row.samples) < MIN_SAMPLES) continue;
@@ -212,7 +218,8 @@ export default async function handler(req, res) {
            ventana que nadie ha medido. */
         streakSeconds,
         disagreement,
-        profileId
+        profileId,
+        deltaScale: DELTA_SCALE[row.key] || 18
       });
 
       windows[row.key] = {
