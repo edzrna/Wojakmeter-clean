@@ -377,7 +377,14 @@ export default function Home({ ogImageUrl }) {
                           role="button"
                           tabIndex={0}
                         >
-                          <div className="hero-social-badge-label">𝕏</div>
+                          {/* Dice SOCIAL, no solo la X. Esta insignia
+                              enseña el sentimiento SOCIAL, que es otro
+                              sujeto y otro numero que el indice del
+                              personaje. Sin etiqueta parecia una segunda
+                              lectura del mismo indice contradiciendo a la
+                              primera: costo dias de depuracion perseguir
+                              una discrepancia que no existia. */}
+                          <div className="hero-social-badge-label">𝕏 SOCIAL</div>
                           <div className="hero-social-badge-icon">
                             <img
                               id="socialIconImg"
