@@ -335,15 +335,21 @@
     if (!el) return;
 
     const cs = getComputedStyle(el);
-    const num = (name, def) => {
+    /* Tres de los cuatro ejes van de 0 a 1, pero `valence` va de -1
+       a 1: es el score centrado en el 50. Recortarlo a 0 convertia
+       todo el lado triste de la escala en el mismo valor, asi que
+       la pantalla brillaba igual en frustration que en neutral.
+       Se remapea a 0..1 en vez de recortarse. */
+    const num = (name, def, bipolar) => {
       const v = parseFloat(cs.getPropertyValue(name));
-      return Number.isFinite(v) ? clamp(v, 0, 1) : def;
+      if (!Number.isFinite(v)) return def;
+      return bipolar ? clamp((v + 1) / 2, 0, 1) : clamp(v, 0, 1);
     };
 
     S.arousal = num("--wm-arousal", S.arousal);
     S.tension = num("--wm-tension", S.tension);
     S.fatigue = num("--wm-fatigue", S.fatigue);
-    S.valence = num("--wm-valence", S.valence);
+    S.valence = num("--wm-valence", S.valence, true);
 
     /* `data-mood` lo escribe script.js sobre el escenario, no
        hero-rig.js. Si todavia no esta, se mantiene el ultimo
