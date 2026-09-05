@@ -5347,6 +5347,16 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
     `/api/token-resolve?address=${encodeURIComponent(cleaned)}`, null
   );
 
+  /* Si no se resuelve, se DICE. Antes se seguia adelante en
+     silencio y la tarjeta se quedaba con "Live Token", "$---" y
+     todas las filas en "Reading" indefinidamente, que se lee como
+     que la pagina esta rota en vez de como que el token no esta
+     disponible. */
+  if (!resolved?.ok) {
+    console.warn("WM: /api/token-resolve no resolvió", cleaned, resolved);
+    setText("moodTokenSource", "Unavailable");
+  }
+
   if (resolved?.ok) {
     moodResolvedAddress = resolved?.token?.address || cleaned;
     moodPairAddress     = resolved?.pair?.pairAddress || "";
@@ -5647,6 +5657,12 @@ async function loadTrendingTokens() {
 
   if (!trendingTokens.length) {
     console.warn("WM: /api/token-trending sin tokens utilizables", api);
+    /* "Loading…" eterno es la peor de las tres opciones: promete
+       algo que no va a llegar. */
+    const strip = byId("moodTrendingStrip");
+    if (strip && !strip.querySelector("[data-token-address]")) {
+      strip.textContent = "No trending tokens right now";
+    }
   }
 
   renderTrendingTokens();
@@ -8114,11 +8130,35 @@ async function boot() {
   setupHistory();
   setupVisibilityHandling();
 
-  await initMoodToken();
+  /* ===========================================================
+     EL PANEL DEL TOKEN YA NO BLOQUEA EL ARRANQUE.
+
+     Esto era `await initMoodToken()` ANTES de `loadAll()`, y esa
+     linea encadenaba cinco peticiones a DexScreener —tendencias,
+     resolucion, mercado, grafico y velas— con siete segundos de
+     tiempo de espera cada una, antes de pedir el primer dato del
+     MERCADO, que es de lo que va la pagina.
+
+     Si DexScreener iba lento, la portada entera se quedaba en
+     "Reading" esperando a una seccion secundaria. Y si alguna de
+     esas llamadas lanzaba, `boot()` moria ahi: sin `loadAll`, sin
+     Bag Mood, sin historico, sin refresco automatico.
+
+     Ahora el mercado va primero y el token se carga por su cuenta.
+     Que tarde o falle solo afecta a su propia tarjeta. El `catch`
+     esta a proposito: es la frontera entre una seccion y el resto
+     de la pagina. */
   await loadAll();
 
   initBagMood();
   await loadHistory();
+
+  initMoodToken().catch((err) => {
+    console.warn("WM: el panel del token no arrancó", err);
+    setText("moodTokenSource", "Unavailable");
+    const hint = qs(".mood-strip-hint");
+    if (hint) hint.textContent = "Token feed unavailable";
+  });
 
   startAutoRefresh();
   startBagMoodLiveRefresh();
