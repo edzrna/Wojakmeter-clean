@@ -1,11 +1,9 @@
+import WorkspaceScripts from "../components/WorkspaceScripts";
 import Head from "next/head";
 import Script from "next/script";
-import Link from "next/link";
-
 function clamp(num, min, max) {
   return Math.max(min, Math.min(max, num));
 }
-
 function scoreToMood(score) {
   if (score >= 85) return "euphoria";
   if (score >= 70) return "content";
@@ -15,78 +13,69 @@ function scoreToMood(score) {
   if (score >= 20) return "concern";
   return "frustration";
 }
-
 function formatCompactVolume(volumeUsd) {
   const value = Number(volumeUsd || 0);
   if (!Number.isFinite(value) || value <= 0) return "$--";
   if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9)  return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6)  return `$${(value / 1e6).toFixed(2)}M`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
   return `$${value.toFixed(0)}`;
 }
-
-export default function Home({ ogImageUrl }) {
+export default function Home({
+  ogImageUrl
+}) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://wojakmeter.com/#website",
-        name: "WojakMeter",
-        url: "https://wojakmeter.com",
-        description:
-          "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
-        publisher: { "@id": "https://wojakmeter.com/#org" }
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://wojakmeter.com/#org",
-        name: "WojakMeter",
-        url: "https://wojakmeter.com",
-        logo: {
-          "@type": "ImageObject",
-          url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png"
-        },
-        sameAs: ["https://x.com/wojakmeterx"]
-      },
-      {
-        /* Marcado FAQ: hace elegible el bloque de preguntas para
-           rich results en Google. Debe coincidir palabra por palabra
-           con lo que se ve en pantalla. */
-        "@type": "FAQPage",
-        "@id": "https://wojakmeter.com/#faq",
-        mainEntity: [
-          {
-            "@type": "Question",
-            name: "What is WojakMeter?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "WojakMeter is a crypto sentiment tool that converts market data into a real-time emotional index. It reads price momentum, social sentiment and macro trends, then reports a single score for how the market feels."
-            }
-          },
-          {
-            "@type": "Question",
-            name: "How does the score work?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Multiple signals are aggregated into a 0-100 reading, mapped across seven emotional states from Frustration to Euphoria. You can view the raw market reading or blend in social, macro and community layers."
-            }
-          },
-          {
-            "@type": "Question",
-            name: "Why use it instead of a price chart?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "A chart shows what happened. WojakMeter shows how the market reacted to it. Two days with identical price action can carry completely different emotional weight, and that difference is what the index measures."
-            }
-          }
-        ]
+    "@graph": [{
+      "@type": "WebSite",
+      "@id": "https://wojakmeter.com/#website",
+      name: "WojakMeter",
+      url: "https://wojakmeter.com",
+      description: "WojakMeter is a real-time crypto emotion index that translates market data into sentiment.",
+      publisher: {
+        "@id": "https://wojakmeter.com/#org"
       }
-    ]
+    }, {
+      "@type": "Organization",
+      "@id": "https://wojakmeter.com/#org",
+      name: "WojakMeter",
+      url: "https://wojakmeter.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://wojakmeter.com/assets/logo/wojakmeter_logo.png"
+      },
+      sameAs: ["https://x.com/wojakmeterx"]
+    }, {
+      /* Marcado FAQ: hace elegible el bloque de preguntas para
+         rich results en Google. Debe coincidir palabra por palabra
+         con lo que se ve en pantalla. */
+      "@type": "FAQPage",
+      "@id": "https://wojakmeter.com/#faq",
+      mainEntity: [{
+        "@type": "Question",
+        name: "What is WojakMeter?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "WojakMeter is a crypto sentiment tool that converts market data into a real-time emotional index. It reads price momentum, social sentiment and macro trends, then reports a single score for how the market feels."
+        }
+      }, {
+        "@type": "Question",
+        name: "How does the score work?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Multiple signals are aggregated into a 0-100 reading, mapped across seven emotional states from Frustration to Euphoria. You can view the raw market reading or blend in social, macro and community layers."
+        }
+      }, {
+        "@type": "Question",
+        name: "Why use it instead of a price chart?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A chart shows what happened. WojakMeter shows how the market reacted to it. Two days with identical price action can carry completely different emotional weight, and that difference is what the index measures."
+        }
+      }]
+    }]
   };
-
-  return (
-    <>
+  return <>
       <Head>
         <title>WojakMeter – Crypto Emotion Index | Market Sentiment Tracker</title>
         <meta name="description" content="Track real-time crypto market emotion with WojakMeter. A sentiment index powered by price action, social signals and macro trends." />
@@ -99,10 +88,7 @@ export default function Home({ ogImageUrl }) {
             —sin él, Safari en iOS escala la página al girar el
             teléfono— y `viewport-fit=cover`, que deja el fondo
             llegar hasta el borde en pantallas con muesca. */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
         {/* Debe coincidir con --wm-ink-050 del tema. */}
         <meta name="theme-color" content="#0A0F16" />
@@ -112,10 +98,7 @@ export default function Home({ ogImageUrl }) {
 
         {/* Archivo = display. Inter = cuerpo. IBM Plex Mono = lecturas.
             Rajdhani y Space Grotesk eliminadas. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
+        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
         <link rel="canonical" href="https://wojakmeter.com" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2" />
@@ -135,101 +118,60 @@ export default function Home({ ogImageUrl }) {
         <meta name="twitter:creator" content="@wojakmeterx" />
       </Head>
 
-      <Script
-        id="wm-structured-data"
-        type="application/ld+json"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
+      <Script id="wm-structured-data" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{
+      __html: JSON.stringify(structuredData)
+    }} />
       {/* ===========================================================
           SCRIPTS
-
-          Todos con <Script> de next/script, no con <script> a pelo.
+           Todos con <Script> de next/script, no con <script> a pelo.
           Una etiqueta <script> escrita dentro del JSX se ejecuta en
           el HTML que llega del servidor, pero React NO la vuelve a
           ejecutar al hidratar ni en una navegacion de cliente: el
           modulo funciona al cargar la pagina y deja de funcionar al
           volver a ella desde /play. Es un fallo intermitente y muy
           dificil de reproducir a mano.
-
-          `hero-rig.js` sube a ?v=2: cambio la lista de emociones
+           `hero-rig.js` sube a ?v=2: cambio la lista de emociones
           que se reproducen de ida y vuelta. Sin subir la version,
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=13" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=4" strategy="afterInteractive" />
-      <Script src="/bag-mood-rig.js?v=1" strategy="afterInteractive" />
+      <WorkspaceScripts />
+      
+      
+      
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
           que entra despues de todo lo demas. Se apaga sin desplegar
           con ?led=off. */}
-      <Script src="/mood-led.js?v=1" strategy="lazyOnload" />
+      
 
-      <Script src="/wm-organism.js?v=2" strategy="afterInteractive" />
+      
 
-      <div className="style-classic">
+      <div className="style-classic pro-app" data-view="overview"><aside className="pro-sidebar" aria-label="Workspace"><nav><a className="pro-brand" href="#market" aria-label="WojakMeter overview"><img src="/assets/icons/classic/neutral.png" alt="" width="42" height="42" decoding="async" loading="lazy" /><div>wojak<span>meter</span><small>THE CRYPTO EMOTION INDEX</small></div></a><p className="pro-nav-label">WORKSPACE</p><a href="#market" data-nav="overview" className="pro-nav-link"><span aria-hidden="true">◫</span>Overview</a><a href="#top-coins" data-nav="markets" className="pro-nav-link"><span aria-hidden="true">↗</span>Markets</a><a href="#bagMoodSection" data-nav="bag" className="pro-nav-link"><span aria-hidden="true">◈</span>My bag</a><a href="#emotionRadarSection" data-nav="radar" className="pro-nav-link"><span aria-hidden="true">◎</span>Emotion radar</a><a href="#moodSection" data-nav="token" className="pro-nav-link"><span aria-hidden="true">ϟ</span>MOOD live<i>LIVE</i></a><a href="#wojak-studio" data-nav="studio" className="pro-nav-link"><span aria-hidden="true">✳</span>Wojak Studio</a><p className="pro-nav-label">EXPLORE</p><a href="#emotionScale" data-nav="scale" className="pro-nav-link"><span aria-hidden="true">◒</span>Emotional scale</a><a href="#emotionRush" data-nav="play" className="pro-nav-link"><span aria-hidden="true">◇</span>Emotion Rush</a><a href="#faq" data-nav="about" className="pro-nav-link"><span aria-hidden="true">ⓘ</span>How it works</a><div className="pro-nav-bottom"><a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer">𝕏 <span>Join the conversation</span> ↗</a><div className="pro-note">A little emotion.<br />A lot of market context.</div><small>© 2026 WojakMeter</small></div></nav></aside>
         <div className="app-shell">
 
           {/* ===========================================================
               HEADER
-          =========================================================== */}
-          <header className="topbar cardless wm-sticky-header" id="market">
+           =========================================================== */}
+          <header className="topbar cardless wm-sticky-header pro-header" id="market">
             {/* ---------- FILA 1: marca, navegación, estilo ----------
                 Antes todo iba en una rejilla de tres columnas que
                 metía las métricas EN MEDIO del logo y la nav. El
                 resultado era el solapamiento que se veía en móvil.
                 Ahora son dos filas con papeles claros. */}
             <div className="wm-header-top">
-              <button
-                type="button"
-                className="wm-menu-toggle"
-                id="wmMenuToggle"
-                aria-label="Open navigation menu"
-                aria-expanded="false"
-              >
+              <button type="button" className="wm-menu-toggle" id="wmMenuToggle" aria-label="Open workspace navigation" aria-expanded="false">
                 ☰
               </button>
 
               <a href="#market" className="wm-brand">
-                <img
-                  src="/assets/logo/wojakmeter_logo.png"
-                  alt="WojakMeter"
-                  className="logo-img"
-                />
+                <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter" className="logo-img" decoding="async" loading="lazy" />
                 {/* El eslogan explica qué es el sitio a quien llega
                     por primera vez. El logo solo no lo dice. */}
                 <span className="wm-tagline">The Crypto Emotion Index</span>
               </a>
 
-              <nav className="wm-desktop-nav" aria-label="Main navigation">
-                <a href="#top-coins">Markets</a>
-                <a href="#bagMoodSection">Bag</a>
-                <a href="#emotionRadarSection">Radar</a>
-                <a href="#wojak-studio">Studio</a>
-                {/* Con <Link>, como en el menu movil y el pie: es una
-                    pagina del sitio, no un ancla de esta. */}
-                <Link href="/about">About</Link>
-
-                {/* El juego lleva tratamiento propio en el nav, como
-                    MOOD: no es una seccion mas de la lista, es lo
-                    unico de la pagina con lo que se puede JUGAR. Un
-                    enlace de texto plano entre otros seis se pierde. */}
-                <a href="#emotionRush" className="wm-nav-play">
-                  <span className="wm-nav-play-dot" aria-hidden="true"></span>
-                  <span>Play</span>
-                </a>
-
-                {/* MOOD al final y destacado: es el token del
-                    proyecto, no una sección más de la lista. */}
-                {/* Solo el logo: el logotipo ya dice MOOD, y el texto
-                    al lado lo repetía. El aria-label mantiene el nombre
-                    para lectores de pantalla. */}
-                <a href="#moodSection" className="wm-nav-mood" aria-label="MOOD token">
-                  <img src="/moodlogo.png" alt="MOOD" />
-                </a>
-              </nav>
+              
 
               <div className="wm-header-style">
                 <label className="style-label" htmlFor="styleSelector">Style</label>
@@ -298,12 +240,12 @@ export default function Home({ ogImageUrl }) {
               <a href="#emotionRush" className="wm-mobile-play">Play Emotion Rush</a>
               {/* Ya no hay seccion About en la portada: About es la
                   pagina. Un solo destino, un solo nombre. */}
-              <Link href="/about">About</Link>
+              <a href="/about">About</a>
               <a href="/terms">Terms</a>
               <a href="/privacy">Privacy</a>
               <a href="/disclaimer">Disclaimer</a>
             </nav>
-          </header>
+          <div className="pro-connection" role="status"><span id="proConnection">Connecting to market data…</span><button type="button" id="proRetry" hidden>Retry</button></div></header>
 
           <div className="ticker-bar" id="tickerBar">
             <span>Reading market…</span>
@@ -328,40 +270,105 @@ export default function Home({ ogImageUrl }) {
                 Orden: eyebrow → título → cara → lectura → gauge →
                 espectro → vitals → ventana → contexto → avanzado.
                 Los controles de modo bajan a un <details> cerrado.
-            =========================================================== */}
-            <section className="hero card">
+             =========================================================== */}
+            <section className="hero card" data-workspace="overview">
 
-              <div className="hero-eyebrow">
+              <div className="hero-eyebrow pro-driver">
                 <span className="hero-eyebrow-dot" aria-hidden="true"></span>
                 <span id="heroDriverLabel">Market flow / price action</span>
               </div>
 
-              <h2 id="heroTitle">Crypto Market Mood</h2>
+              <h1 id="heroTitle">Market overview</h1>
 
               <div className="hero-grid hero-grid-stack">
                 <div className="hero-main">
 
-                  <div className="hero-view-toggle" id="heroViewToggle">
-                    <button
-                      type="button"
-                      className="hero-view-btn active"
-                      data-hero-view="mood"
-                      id="heroViewMoodBtn"
-                    >
-                      Hero Mood
-                    </button>
-                    <button
-                      type="button"
-                      className="hero-view-btn"
-                      data-hero-view="bubble"
-                      id="heroViewBubbleBtn"
-                    >
-                      Bubble Maps
-                    </button>
-                  </div>
+                  
 
                   {/* ── VISTA: CARA ── */}
-                  <div id="heroMoodView" className="hero-mood-view">
+                  
+
+                  {/* ── VISTA: MAPA ── */}
+                  
+
+                  {/* ── LA LECTURA ── */}
+                  
+
+                  
+
+                  {/* Conservado por compatibilidad con script.js.
+                      El tema lo reduce a línea de contexto: el número
+                      grande vive solo en el gauge. */}
+                  <div className="hero-score hero-score-compact sr-only" id="heroScoreWrap">
+                    Score: <span id="heroScore">50</span> / 100
+                  </div>
+
+                  {/* ── EL ÍNDICE Y LA LENTE ──
+                       El número canónico va SIEMPRE visible junto al
+                      perfil. En cuanto se pueda confundir cuál es el
+                      dato real y cuál la interpretación, el índice
+                      deja de ser una medición.
+                       Los dos huecos los rellena public/hero-rig.js;
+                      si el cron aún no ha guardado ninguna lectura
+                      del índice nuevo, se quedan vacíos y la página
+                      sigue funcionando como siempre. */}
+                  {/* Tres modos, porque los tres son legítimos: quien
+                      viene a leer el dato quiere la curva limpia, quien
+                      viene a mirar quiere la cara, y la mayoría quiere
+                      las dos. */}
+                  
+
+                  {/* Los perfiles (Moon Boy, Crypto Bro...) se
+                      retiraron de la UI: cinco numeros alrededor del
+                      indice creaban la confusion que el indice unico
+                      vino a resolver. El motor sigue en
+                      lib/hero-profiles.js por si vuelven como feature
+                      de compartir, separada de la lectura principal. */}
+
+                  {/* ── VENTANA TEMPORAL Y CONTEXTO ──
+                       SUBIDOS AQUI desde el final del bloque hero.
+                       Antes vivian despues del gauge y del espectro:
+                      para ver en que ventana estabas mirando
+                      habia que pasar por delante de tres modulos. El
+                      orden decia que el timeframe era un detalle, cuando
+                      en realidad es lo que da sentido a todo lo de
+                      arriba —la cara y el score responden a esa ventana.
+                       Ahora la secuencia se lee entera: cara, estado,
+                      score, en que ventana, y cuanto se movio. */}
+                  {/* Sin 1H ni 4H: el indice se muestrea cada 15
+                      minutos, asi que 1H son cuatro puntos — ruido
+                      con forma de dato. El grafico de monedas si
+                      conserva esas ventanas porque su proveedor
+                      tiene granularidad de minutos. */}
+                  
+
+                  
+
+                  {/* ── GAUGE: lectura principal ── */}
+                  
+
+                  {/* ── ESPECTRO ── */}
+                  
+
+
+                  
+
+                  {/* El panel avanzado (Composite, Custom Layers) se
+                      retiró en la limpieza: eran controles que pedían
+                      al visitante decidir cómo calcular el índice
+                      antes de haberlo entendido. El índice es uno. */}
+                <div className="pro-visual"><div className="pro-visual-controls"><div className="hero-view-toggle" id="heroViewToggle">
+                    <button type="button" className="hero-view-btn active" data-hero-view="mood" id="heroViewMoodBtn">
+                      Hero Mood
+                    </button>
+                    <button type="button" className="hero-view-btn" data-hero-view="bubble" id="heroViewBubbleBtn">
+                      Bubble Maps
+                    </button>
+                  </div><div className="timeframes hero-timeframes" id="heroTimeframes"><button type="button" data-timeframe="1h">1h</button><button type="button" data-timeframe="4h">4h</button>
+                    <button data-timeframe="24h" className="active">24h</button>
+                    <button data-timeframe="7d">7d</button>
+                    <button data-timeframe="30d">30d</button>
+                  </div></div><div id="heroMoodView" className="hero-mood-view">
                     {/* id explícito: tanto script.js como
                         public/hero-rig.js lo buscan primero por id y
                         solo después por clase. Con el id puesto, la
@@ -370,13 +377,7 @@ export default function Home({ ogImageUrl }) {
                     <div className="wojak-stage" id="heroStage">
 
                       <div className="hero-social-wrapper" id="socialWrapper">
-                        <div
-                          className="hero-social-badge social-neutral"
-                          id="socialBubble"
-                          aria-label="Social sentiment"
-                          role="button"
-                          tabIndex={0}
-                        >
+                        <div className="hero-social-badge social-neutral" id="socialBubble" aria-label="Social sentiment" role="button" tabIndex={0}>
                           {/* Dice SOCIAL, no solo la X. Esta insignia
                               enseña el sentimiento SOCIAL, que es otro
                               sujeto y otro numero que el indice del
@@ -386,12 +387,7 @@ export default function Home({ ogImageUrl }) {
                               una discrepancia que no existia. */}
                           <div className="hero-social-badge-label">𝕏 SOCIAL</div>
                           <div className="hero-social-badge-icon">
-                            <img
-                              id="socialIconImg"
-                              className="mood-icon-img anim-float"
-                              src="/assets/icons/classic/neutral.png"
-                              alt="Social mood"
-                            />
+                            <img id="socialIconImg" className="mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="Social mood" decoding="async" loading="lazy" />
                           </div>
                           <div className="hero-social-badge-text">
                             <span id="socialMoodMini">Neutral</span>
@@ -447,27 +443,18 @@ export default function Home({ ogImageUrl }) {
                       </div>
 
                       {/* ── HISTÓRICO DETRÁS DEL PERSONAJE ──
-
-                          La curva y la cara cuentan la misma historia,
+                           La curva y la cara cuentan la misma historia,
                           así que van en el mismo sitio. Se puede
                           arrastrar sobre ella para recorrer los días:
                           la cara cambia al estado que tenía el mercado
                           esa fecha.
-
-                          Escala fija de 0 a 100, no autoescalada: con
+                           Escala fija de 0 a 100, no autoescalada: con
                           autoescala un mes plano entre 48 y 52 parece
                           una montaña rusa. Así la altura significa algo
                           y dos capturas de meses distintos se pueden
                           comparar.
-
-                          Lo dibuja y lo gobierna public/hero-rig.js. */}
-                      <svg
-                        className="hero-history"
-                        id="heroHistorySvg"
-                        viewBox="0 0 900 280"
-                        preserveAspectRatio="none"
-                        aria-label="Emotion history — drag to scrub"
-                      >
+                           Lo dibuja y lo gobierna public/hero-rig.js. */}
+                      <svg className="hero-history" id="heroHistorySvg" viewBox="0 0 900 280" preserveAspectRatio="none" aria-label="Emotion history — drag to scrub">
                         <defs>
                           <linearGradient id="heroHistoryFill" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#E8E9EC" stopOpacity="0.5" />
@@ -489,56 +476,30 @@ export default function Home({ ogImageUrl }) {
                           por encima: así no hay que sincronizar nada con
                           la imagen que gestiona script.js — al soltar,
                           esta se desvanece y vuelve la de en vivo. */}
-                      <img
-                        className="hero-scrub-face"
-                        id="heroScrubFace"
-                        alt=""
-                        aria-hidden="true"
-                      />
+                      <img className="hero-scrub-face" id="heroScrubFace" alt="" aria-hidden="true" decoding="async" loading="lazy" />
                       <div className="hero-scrub-readout" id="heroScrubReadout"></div>
 
                       <div id="heroFaceWrap" className="hero-face-wrap anim-float">
-                        <img
-                          id="heroFaceImg"
-                          className="hero-face-img"
-                          src="/assets/hero/classic/neutral.png"
-                          alt="Global market mood"
-                        />
-                        <img
-                          id="heroFaceOverlayImg"
-                          className="hero-face-overlay hidden"
-                          src=""
-                          alt=""
-                          aria-hidden="true"
-                        />
+                        <img id="heroFaceImg" className="hero-face-img" src="/assets/hero/classic/neutral.png" alt="Global market mood" decoding="async" />
+                        <img id="heroFaceOverlayImg" className="hero-face-overlay hidden" alt="" aria-hidden="true" decoding="async" loading="lazy" />
 
                         {/* ── BUCLE ANIMADO ──
-
-                            Va ENCIMA de la imagen plana, no en su
+                             Va ENCIMA de la imagen plana, no en su
                             lugar. La imagen plana sigue ahí abajo
                             como respaldo: si el sprite no ha
                             cargado todavía —o falla, o el usuario
                             pidió menos movimiento— se ve el render
                             fijo de siempre y no un hueco.
-
-                            El cambio a sprite solo ocurre cuando
+                             El cambio a sprite solo ocurre cuando
                             la imagen ha terminado de descargarse,
                             así que nunca hay un fotograma en
                             blanco. Lo gobierna public/hero-rig.js.
-
-                            Los archivos: /assets/hero/idle/<mood>_idle.webp
+                             Los archivos: /assets/hero/idle/<mood>_idle.webp
                             24 fotogramas de 640px en rejilla 6x4. */}
-                        <div
-                          id="heroSprite"
-                          className="hero-sprite"
-                          aria-hidden="true"
-                        ></div>
+                        <div id="heroSprite" className="hero-sprite" aria-hidden="true"></div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* ── VISTA: MAPA ── */}
-                  <div id="bubbleMapsView" className="bubble-maps-view hidden">
+                  </div><div id="bubbleMapsView" className="bubble-maps-view hidden">
                     <div className="bubble-map-head">
                       <div>
                         <span className="bubble-map-eyebrow">Emotional gravity</span>
@@ -580,75 +541,45 @@ export default function Home({ ogImageUrl }) {
                       <div className="bubble-zone bubble-zone-mid">Neutral / Doubt</div>
                       <div className="bubble-zone bubble-zone-bottom">Concern / Frustration</div>
                     </div>
-                  </div>
-
-                  {/* ── LA LECTURA ── */}
-                  <div className="hero-mood mood-neutral" id="heroMood">Neutral</div>
-
-                  <div className="hero-subtitle" id="heroSubtitle">
-                    Market emotion is balanced for now.
-                  </div>
-
-                  {/* Conservado por compatibilidad con script.js.
-                      El tema lo reduce a línea de contexto: el número
-                      grande vive solo en el gauge. */}
-                  <div className="hero-score hero-score-compact" id="heroScoreWrap">
-                    Score: <span id="heroScore">50</span> / 100
-                  </div>
-
-                  {/* ── EL ÍNDICE Y LA LENTE ──
-
-                      El número canónico va SIEMPRE visible junto al
-                      perfil. En cuanto se pueda confundir cuál es el
-                      dato real y cuál la interpretación, el índice
-                      deja de ser una medición.
-
-                      Los dos huecos los rellena public/hero-rig.js;
-                      si el cron aún no ha guardado ninguna lectura
-                      del índice nuevo, se quedan vacíos y la página
-                      sigue funcionando como siempre. */}
-                  {/* Tres modos, porque los tres son legítimos: quien
-                      viene a leer el dato quiere la curva limpia, quien
-                      viene a mirar quiere la cara, y la mayoría quiere
-                      las dos. */}
-                  <div className="hero-view-modes">
+                  </div><div className="hero-view-modes">
                     <button type="button" data-view-mode="chart" aria-pressed="false">Chart</button>
                     <button type="button" data-view-mode="both" aria-pressed="true">Both</button>
                     <button type="button" data-view-mode="hero" aria-pressed="false">Hero</button>
-                  </div>
-
-                  {/* Los perfiles (Moon Boy, Crypto Bro...) se
-                      retiraron de la UI: cinco numeros alrededor del
-                      indice creaban la confusion que el indice unico
-                      vino a resolver. El motor sigue en
-                      lib/hero-profiles.js por si vuelven como feature
-                      de compartir, separada de la lectura principal. */}
-
-                  {/* ── VENTANA TEMPORAL Y CONTEXTO ──
-
-                      SUBIDOS AQUI desde el final del bloque hero.
-
-                      Antes vivian despues del gauge y del espectro:
-                      para ver en que ventana estabas mirando
-                      habia que pasar por delante de tres modulos. El
-                      orden decia que el timeframe era un detalle, cuando
-                      en realidad es lo que da sentido a todo lo de
-                      arriba —la cara y el score responden a esa ventana.
-
-                      Ahora la secuencia se lee entera: cara, estado,
-                      score, en que ventana, y cuanto se movio. */}
-                  {/* Sin 1H ni 4H: el indice se muestrea cada 15
-                      minutos, asi que 1H son cuatro puntos — ruido
-                      con forma de dato. El grafico de monedas si
-                      conserva esas ventanas porque su proveedor
-                      tiene granularidad de minutos. */}
-                  <div className="timeframes hero-timeframes" id="heroTimeframes">
-                    <button data-timeframe="24h" className="active">24h</button>
-                    <button data-timeframe="7d">7d</button>
-                    <button data-timeframe="30d">30d</button>
-                  </div>
-
-                  <div className="hero-market-line">
+                  </div></div><aside className="pro-summary" aria-label="Market emotion summary"><div className="pro-kicker">THE CRYPTO EMOTION INDEX</div><div className="hero-mood mood-neutral" id="heroMood">Neutral</div><div className="hero-subtitle" id="heroSubtitle">
+                    Market emotion is balanced for now.
+                  </div><section className="wm-gauge-shell" id="wmGaugeShell">
+                    <div className="wm-gauge-head">
+                      <div className="wm-gauge-title">WojakMeter Engine</div>
+                      <div className="wm-gauge-score">
+                        Final Score <strong id="gaugeScoreHead">50</strong>/100
+                      </div>
+                    </div>
+                    <div className="wm-gauge-wrap">
+                      <svg className="wm-gauge-svg" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <path className="gauge-track" d="M30 150 A120 120 0 0 1 270 150"></path>
+                        <path id="gaugeFill" d="M30 150 A120 120 0 0 1 270 150"></path>
+                      </svg>
+                      <div className="gauge-needle-wrap">
+                        <div className="gauge-needle" id="gaugeNeedle"></div>
+                      </div>
+                      <div className="gauge-center-cap"></div>
+                      <div className="gauge-score-center">
+                        <div id="gaugeScore">50</div>
+                        <div id="gaugeMood">Neutral</div>
+                      </div>
+                    </div>
+                  </section><section className="emotion-bar-inline emotion-bar-inline-minimal" id="emotionBarSection">
+                    <div className="emotion-track-wrap">
+                      <div className="emotion-track emotion-track-gradient" id="emotionTrack">
+                        <div className="emotion-pointer" id="emotionPointer" aria-label="Current position on the emotional spectrum">
+                          <div className="emotion-pointer-arrow"></div>
+                          <div className="emotion-pointer-face">
+                            <img id="emotionPointerImg" src="/assets/icons/classic/neutral.png" alt="Current emotional state" decoding="async" loading="lazy" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section><div className="hero-market-line">
                     <div className="hero-line-item">
                       <span>Market Change</span>
                       <strong id="globalMarketChange">Reading</strong>
@@ -663,81 +594,18 @@ export default function Home({ ogImageUrl }) {
                       <span>Timeframe</span>
                       <strong id="globalMarketTimeframe">24h</strong>
                     </div>
-                  </div>
-
-                  {/* ── GAUGE: lectura principal ── */}
-                  <section className="wm-gauge-shell" id="wmGaugeShell">
-                    <div className="wm-gauge-head">
-                      <div className="wm-gauge-title">WojakMeter Engine</div>
-                      <div className="wm-gauge-score">
-                        Final Score <strong id="gaugeScoreHead">50</strong>/100
-                      </div>
-                    </div>
-                    <div className="wm-gauge-wrap">
-                      <svg
-                        className="wm-gauge-svg"
-                        viewBox="0 0 300 190"
-                        preserveAspectRatio="xMidYMid meet"
-                        aria-hidden="true"
-                      >
-                        <path className="gauge-track" d="M30 150 A120 120 0 0 1 270 150"></path>
-                        <path id="gaugeFill" d="M30 150 A120 120 0 0 1 270 150"></path>
-                      </svg>
-                      <div className="gauge-needle-wrap">
-                        <div className="gauge-needle" id="gaugeNeedle"></div>
-                      </div>
-                      <div className="gauge-center-cap"></div>
-                      <div className="gauge-score-center">
-                        <div id="gaugeScore">50</div>
-                        <div id="gaugeMood">Neutral</div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* ── ESPECTRO ── */}
-                  <section
-                    className="emotion-bar-inline emotion-bar-inline-minimal"
-                    id="emotionBarSection"
-                  >
-                    <div className="emotion-track-wrap">
-                      <div className="emotion-track emotion-track-gradient" id="emotionTrack">
-                        <div
-                          className="emotion-pointer"
-                          id="emotionPointer"
-                          aria-label="Current position on the emotional spectrum"
-                        >
-                          <div className="emotion-pointer-arrow"></div>
-                          <div className="emotion-pointer-face">
-                            <img
-                              id="emotionPointerImg"
-                              src="/assets/icons/classic/neutral.png"
-                              alt="Current emotional state"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-
-                  <div className="hero-share-row">
+                  </div><div className="hero-share-row">
                     <button id="shareMoodBtn" className="action-btn share-x-btn" type="button">
                       Share mood on X
                     </button>
-                  </div>
-
-                  {/* El panel avanzado (Composite, Custom Layers) se
-                      retiró en la limpieza: eran controles que pedían
-                      al visitante decidir cómo calcular el índice
-                      antes de haberlo entendido. El índice es uno. */}
-                </div>
+                  </div></aside></div>
 
               </div>
             </section>
 
             {/* ===========================================================
                 3. HISTÓRICO DE EMOCIÓN
-            {/* La sección Market Mood History se retiró: el
+             {/* La sección Market Mood History se retiró: el
                 histórico vive ahora DETRÁS del personaje, en el
                 mismo escenario, gobernado por las pills de
                 timeframe del hero. Tener la misma curva dos veces
@@ -746,8 +614,8 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 2. MARKET SECTIONS + CHART
-            =========================================================== */}
-            <section className="top-coins card" id="top-coins">
+             =========================================================== */}
+            <section className="top-coins card" id="top-coins" data-workspace="overview markets">
               <div className="section-head">
                 <h3>Market Sections</h3>
                 <div className="market-section-tools">
@@ -795,7 +663,7 @@ export default function Home({ ogImageUrl }) {
                   <div className="chart-topbar">
                     <div className="chart-coin-meta">
                       <div className="chart-coin-icon-wrap">
-                        <img id="chartCoinIcon" className="chart-coin-icon" src="" alt="" />
+                        <img id="chartCoinIcon" className="chart-coin-icon" alt="" decoding="async" loading="lazy" />
                       </div>
                       <div className="chart-coin-copy">
                         <div className="chart-coin-title-line">
@@ -827,21 +695,11 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="chart-inline-moods">
                     <div className="chart-mood-chip">
-                      <img
-                        id="coinMoodIconImg"
-                        className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/icons/classic/neutral.png"
-                        alt=""
-                      />
+                      <img id="coinMoodIconImg" className="chart-mood-chip-icon mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="" decoding="async" loading="lazy" />
                       <div><span>Technical</span><strong id="coinMoodLabel">Neutral</strong></div>
                     </div>
                     <div className="chart-mood-chip">
-                      <img
-                        id="detailSocialIconImg"
-                        className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/icons/classic/neutral.png"
-                        alt=""
-                      />
+                      <img id="detailSocialIconImg" className="chart-mood-chip-icon mood-icon-img anim-float" src="/assets/icons/classic/neutral.png" alt="" decoding="async" loading="lazy" />
                       <div><span>Social</span><strong id="detailSocialLabel">Neutral</strong></div>
                     </div>
                     <div className="chart-mood-chip chart-mood-chip-performance">
@@ -885,7 +743,7 @@ export default function Home({ ogImageUrl }) {
                     <div className="interval-box"><span>30d</span><strong id="perf30d">Reading</strong></div>
                   </div>
 
-                  <div className="market-exchange-layout">
+                  <div className="market-exchange-layout" data-workspace="markets">
                     <section className="exchange-card card">
                       <div className="exchange-card-head">
                         <div>
@@ -918,8 +776,8 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 3. BAG MOOD
-            =========================================================== */}
-            <section className="bag-mood-section card" id="bagMoodSection">
+             =========================================================== */}
+            <section className="bag-mood-section card" id="bagMoodSection" data-workspace="bag">
               <div className="section-head">
                 <div>
                   <h3>Bag Mood</h3>
@@ -946,12 +804,7 @@ export default function Home({ ogImageUrl }) {
                   en cuatro cajas. */}
               <div className="bag-header">
                 <div className="bag-hero">
-                  <img
-                    id="bagMoodHeroImg"
-                    className="bag-mood-hero-img anim-float"
-                    src="/assets/hero/classic/neutral.png"
-                    alt="Your bag mood"
-                  />
+                  <img id="bagMoodHeroImg" className="bag-mood-hero-img anim-float" src="/assets/hero/classic/neutral.png" alt="Your bag mood" decoding="async" loading="lazy" />
                 </div>
 
                 <div className="bag-headline">
@@ -990,12 +843,7 @@ export default function Home({ ogImageUrl }) {
                   filas apiladas incluso con espacio de sobra. */}
               <div className="bag-add-form">
                 <div className="bag-search-wrap">
-                  <input
-                    id="bagSearchInput"
-                    type="text"
-                    placeholder="Search BTC, SOL, MOOD or paste a contract"
-                    autoComplete="off"
-                  />
+                  <input id="bagSearchInput" type="text" placeholder="Search BTC, SOL, MOOD or paste a contract" autoComplete="off" />
                   {/* Capa flotante: no empuja el contenido. */}
                   <div id="bagSearchResults" className="bag-search-results"></div>
                 </div>
@@ -1027,8 +875,8 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 4. EMOTION RADAR
-            =========================================================== */}
-            <section className="emotion-radar card" id="emotionRadarSection">
+             =========================================================== */}
+            <section className="emotion-radar card" id="emotionRadarSection" data-workspace="radar">
               <div className="emotion-radar-head">
                 <span className="section-kicker">Live narrative pulse</span>
                 <h2>Internet Emotion Radar</h2>
@@ -1058,11 +906,7 @@ export default function Home({ ogImageUrl }) {
                   <details className="radar-custom">
                     <summary>Test your own text</summary>
 
-                    <textarea
-                      id="emotionRadarInput"
-                      placeholder="Paste a headline, tweet or narrative…"
-                      rows={4}
-                    ></textarea>
+                    <textarea id="emotionRadarInput" placeholder="Paste a headline, tweet or narrative…" rows={4}></textarea>
 
                     <div className="emotion-radar-actions">
                       <button id="translateEmotionBtn" className="action-btn" type="button">
@@ -1086,7 +930,7 @@ export default function Home({ ogImageUrl }) {
                 <div className="radar-result" id="emotionRadarResult">
                   <div className="radar-result-top">
                     <div className="radar-face-wrap">
-                      <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" />
+                      <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" decoding="async" loading="lazy" />
                     </div>
                     <div className="radar-result-id">
                       <span className="radar-label">Detected emotion</span>
@@ -1126,19 +970,18 @@ export default function Home({ ogImageUrl }) {
                       lectura dejaba de ser verificable. */}
                   <div className="radar-context hidden" id="radarContext"></div>
 
-                  <a href="#" id="radarSourceLink" className="radar-source-link hidden"
-                     target="_blank" rel="noopener noreferrer">Read source</a>
+                  <a href="#" id="radarSourceLink" className="radar-source-link hidden" target="_blank" rel="noopener noreferrer">Read source</a>
                 </div>
               </div>
             </section>
 
             {/* ===========================================================
                 5. MOOD TOKEN
-            =========================================================== */}
-            <section className="mood-token-card card" id="moodSection">
+             =========================================================== */}
+            <section className="mood-token-card card" id="moodSection" data-workspace="token">
               <div className="section-head">
                 <div className="mood-section-logo-wrap">
-                  <img src="/moodlogo.png" alt="MOOD" className="mood-section-logo" />
+                  <img src="/moodlogo.png" alt="MOOD" className="mood-section-logo" decoding="async" loading="lazy" />
                 </div>
                 <span className="muted">Reactive token mood engine</span>
               </div>
@@ -1150,25 +993,14 @@ export default function Home({ ogImageUrl }) {
 
               {/* ---------- BUSCADOR ---------- */}
               <div className="mood-search-row">
-                <input
-                  id="tokenSearchInput"
-                  type="text"
-                  placeholder="Paste a Solana token address"
-                  className="mood-input"
-                />
+                <input id="tokenSearchInput" type="text" placeholder="Paste a Solana token address" className="mood-input" />
                 <button id="tokenSearchBtn" className="action-btn" type="button">Load</button>
                 {/* El logo en vez del texto: es la marca del token, y como
                     botón se reconoce antes que una palabra en mayúsculas.
                     El aria-label mantiene la accesibilidad, porque una
                     imagen sola no dice nada a un lector de pantalla. */}
-                <button
-                  id="loadMoodMain"
-                  className="action-btn mood-logo-btn"
-                  type="button"
-                  aria-label="Load MOOD token"
-                  title="Load MOOD token"
-                >
-                  <img src="/moodlogo.png" alt="MOOD" />
+                <button id="loadMoodMain" className="action-btn mood-logo-btn" type="button" aria-label="Load MOOD token" title="Load MOOD token">
+                  <img src="/moodlogo.png" alt="MOOD" decoding="async" loading="lazy" />
                 </button>
               </div>
 
@@ -1198,7 +1030,7 @@ export default function Home({ ogImageUrl }) {
                   Identidad, precio y cambio en una fila. Antes eran dos
                   cajas de 140px. */}
               <div className="mood-token-header">
-                <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="" />
+                <img id="moodTokenImg" src="/assets/logo/wojakmeter_logo.png" alt="" decoding="async" loading="lazy" />
 
                 <div className="mood-token-id">
                   <strong id="moodTokenName">Live Token</strong>
@@ -1211,17 +1043,14 @@ export default function Home({ ogImageUrl }) {
                 </div>
 
                 <div className="mood-token-links">
-                  <a id="moodLinkDex" href="https://dexscreener.com" target="_blank"
-                     rel="noopener noreferrer" className="mood-link-btn" title="DexScreener" aria-label="View on DexScreener">
-                    <img src="/assets/brands/dexscreener.png" alt="" loading="lazy" />
+                  <a id="moodLinkDex" href="https://dexscreener.com" target="_blank" rel="noopener noreferrer" className="mood-link-btn" title="DexScreener" aria-label="View on DexScreener">
+                    <img src="/assets/brands/dexscreener.png" alt="" loading="lazy" decoding="async" />
                   </a>
-                  <a id="moodLinkPump" href="https://pump.fun" target="_blank"
-                     rel="noopener noreferrer" className="mood-link-btn hidden" title="Pump.fun" aria-label="View on Pump.fun">
-                    <img src="/assets/brands/pumpfun.png" alt="" loading="lazy" />
+                  <a id="moodLinkPump" href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="mood-link-btn hidden" title="Pump.fun" aria-label="View on Pump.fun">
+                    <img src="/assets/brands/pumpfun.png" alt="" loading="lazy" decoding="async" />
                   </a>
-                  <a id="moodLinkSolscan" href="https://solscan.io" target="_blank"
-                     rel="noopener noreferrer" className="mood-link-btn" title="Solscan" aria-label="View on Solscan">
-                    <img src="/assets/brands/solscan.png" alt="" loading="lazy" />
+                  <a id="moodLinkSolscan" href="https://solscan.io" target="_blank" rel="noopener noreferrer" className="mood-link-btn" title="Solscan" aria-label="View on Solscan">
+                    <img src="/assets/brands/solscan.png" alt="" loading="lazy" decoding="async" />
                   </a>
                 </div>
               </div>
@@ -1290,12 +1119,7 @@ export default function Home({ ogImageUrl }) {
                         <circle className="mood-ring-fill" id="moodScoreRing" cx="50" cy="50" r="46"></circle>
                       </svg>
 
-                      <img
-                        id="moodHeroImg"
-                        className="mood-hero-img anim-float"
-                        src="/assets/hero/classic/neutral.png"
-                        alt="Token sentiment"
-                      />
+                      <img id="moodHeroImg" className="mood-hero-img anim-float" src="/assets/hero/classic/neutral.png" alt="Token sentiment" decoding="async" loading="lazy" />
 
                       <div className="mood-ring-score">
                         <strong id="moodTokenScore">50</strong>
@@ -1359,8 +1183,8 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 6. WOJAK STUDIO
-            =========================================================== */}
-            <section className="studio-card card" id="wojak-studio">
+             =========================================================== */}
+            <section className="studio-card card" id="wojak-studio" data-workspace="studio">
               <div className="section-head">
                 <h3>Wojak Studio</h3>
                 <span className="muted">Create content from live market sentiment</span>
@@ -1445,8 +1269,8 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 7. EMOTIONAL SCALE
-            =========================================================== */}
-            <section className="scale-card card" id="emotionScale">
+             =========================================================== */}
+            <section className="scale-card card" id="emotionScale" data-workspace="scale">
               <h3>Emotional Scale</h3>
               <div className="scale-grid" id="scaleGrid"></div>
             </section>
@@ -1454,30 +1278,25 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 8. EMOTION RUSH
-
-                El juego va DESPUES de la escala emocional a proposito: para
+                 El juego va DESPUES de la escala emocional a proposito: para
                 entonces el visitante ya ha visto las siete caras y el juego
                 es una invitacion a probar si las ha entendido, no un examen
                 sorpresa.
-
-                Todo el estado vive en public/wojak-game.js. Este bloque solo
+                 Todo el estado vive en public/wojak-game.js. Este bloque solo
                 declara los huecos.
                 =========================================================== */}
-            <section className="rush-section" id="emotionRush" data-market-mood="neutral">
+            <section className="rush-section" id="emotionRush" data-market-mood="neutral" data-workspace="play">
 
               {/* ── TARJETA DE PRESENTACION ──
-
-                  El juego ya NO se despliega aqui. Esta tarjeta cuenta
+                   El juego ya NO se despliega aqui. Esta tarjeta cuenta
                   que existe y como funciona; el tablero vive en el
                   lightbox de abajo.
-
-                  El motivo es de espacio real: en un movil, la seccion
+                   El motivo es de espacio real: en un movil, la seccion
                   completa dejaba la ultima fila de casillas fuera de
                   pantalla y el boton flotante de Emotion Pulse se le
                   montaba encima. Un tablero que se sale de la pantalla
                   no se puede jugar por muy bien hecho que este.
-
-                  Y de paso separa las dos intenciones: quien pasa por
+                   Y de paso separa las dos intenciones: quien pasa por
                   aqui leyendo, lee; quien quiere jugar, entra a algo que
                   ocupa toda la pantalla y no compite con nada. */}
               <div className="rush-shell rush-card">
@@ -1517,15 +1336,7 @@ export default function Home({ ogImageUrl }) {
 
                 {/* ── LOGO Y ENTRADA ── */}
                 <div className="rush-card-main">
-                  <img
-                    src="/assets/game/emotion-rush-logo.webp"
-                    alt="Emotion Rush"
-                    className="rush-logo"
-                    width="520"
-                    height="347"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <img src="/assets/game/emotion-rush-logo.webp" alt="Emotion Rush" className="rush-logo" width="520" height="347" loading="lazy" decoding="async" />
 
                   <button type="button" className="rush-play-btn" id="rushOpen">
                     <span className="rush-play-word">Play</span>
@@ -1552,12 +1363,10 @@ export default function Home({ ogImageUrl }) {
 
               {/* ===========================================================
                   LIGHTBOX
-
-                  hidden de verdad, no display:none por CSS: un dialogo
+                   hidden de verdad, no display:none por CSS: un dialogo
                   oculto que sigue en el arbol de accesibilidad deja
                   botones tabulables invisibles por toda la pagina.
-
-                  aria-modal y role=dialog los necesita el lector de
+                   aria-modal y role=dialog los necesita el lector de
                   pantalla para anunciar que el resto de la pagina queda
                   detras. El foco, el Escape y el bloqueo del scroll los
                   gestiona wojak-game.js.
@@ -1565,22 +1374,15 @@ export default function Home({ ogImageUrl }) {
               <div className="rush-modal" id="rushModal" hidden>
                 <div className="rush-modal-backdrop" id="rushModalBackdrop"></div>
 
-                <div
-                  className="rush-modal-panel"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="rushModalTitle"
-                >
+                <div className="rush-modal-panel" role="dialog" aria-modal="true" aria-labelledby="rushModalTitle">
                   {/* ── PUERTA DE NOMBRE ──
-
-                      Se muestra al pulsar Play solo si aun no hay
+                       Se muestra al pulsar Play solo si aun no hay
                       nombre. Va DENTRO del dialogo y no como un paso
                       previo en la tarjeta: quien pulsa Play quiere
                       jugar, y sacarle a otra pantalla antes de entrar
                       se siente como un formulario. Aqui ya esta dentro,
                       y el nombre es lo ultimo antes de la cuenta atras.
-
-                      Se puede saltar. Un juego que no deja jugar sin
+                       Se puede saltar. Un juego que no deja jugar sin
                       dar un nombre pierde justo a quien solo queria
                       probarlo. */}
                   <div className="rush-name-gate" id="rushNameGate" hidden>
@@ -1589,15 +1391,7 @@ export default function Home({ ogImageUrl }) {
                         Who&rsquo;s playing?
                       </span>
 
-                      <input
-                        type="text"
-                        id="rushNameInput"
-                        className="rush-name-input"
-                        placeholder="Your name for the board"
-                        maxLength={18}
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
+                      <input type="text" id="rushNameInput" className="rush-name-input" placeholder="Your name for the board" maxLength={18} autoComplete="off" spellCheck={false} />
 
                       <span className="rush-gate-note">
                         Shown on the leaderboard. Nothing else is stored.
@@ -1614,12 +1408,7 @@ export default function Home({ ogImageUrl }) {
 
                   <div className="rush-modal-bar">
                     <span className="rush-modal-title" id="rushModalTitle">Emotion Rush</span>
-                    <button
-                      type="button"
-                      className="rush-modal-close"
-                      id="rushClose"
-                      aria-label="Close game"
-                    >
+                    <button type="button" className="rush-modal-close" id="rushClose" aria-label="Close game">
                       &times;
                     </button>
                   </div>
@@ -1672,12 +1461,7 @@ export default function Home({ ogImageUrl }) {
                     {/* Guia consultable durante la partida. El reloj no se
                         detiene: el coste de mirar es el tiempo. */}
                     <div className="rush-peek" id="rushPeekWrap">
-                      <button
-                        type="button"
-                        className="rush-peek-toggle"
-                        id="rushPeekToggle"
-                        aria-expanded="false"
-                      >
+                      <button type="button" className="rush-peek-toggle" id="rushPeekToggle" aria-expanded="false">
                         Scale
                       </button>
                       <div className="rush-scale-guide rush-scale-peek" id="rushScalePeek"></div>
@@ -1688,8 +1472,7 @@ export default function Home({ ogImageUrl }) {
                         para empezar a jugar —Play y luego Start— es una
                         de mas, y su tarjeta de record duplicaba los ids
                         de la que ahora vive en la seccion.
-
-                        La escala completa que vivia aqui pasa a la tira
+                         La escala completa que vivia aqui pasa a la tira
                         desplegable de abajo, que ya cumple esa funcion
                         y ademas esta disponible durante la partida. */}
 
@@ -1709,14 +1492,7 @@ export default function Home({ ogImageUrl }) {
                         </div>
 
                         <div className="rush-final-actions">
-                          <input
-                            type="text"
-                            id="rushName"
-                            className="rush-name-input"
-                            placeholder="Name for the board (optional)"
-                            maxLength={18}
-                            autoComplete="off"
-                          />
+                          <input type="text" id="rushName" className="rush-name-input" placeholder="Name for the board (optional)" maxLength={18} autoComplete="off" />
                           <button type="button" className="rush-btn rush-btn-primary" id="rushRestart">
                             Play again
                           </button>
@@ -1733,23 +1509,20 @@ export default function Home({ ogImageUrl }) {
 
             {/* ===========================================================
                 9. FAQ
-
-                Antes esto era "About + FAQ" y llevaba tambien el relato
+                 Antes esto era "About + FAQ" y llevaba tambien el relato
                 del proyecto. El relato se mudo a /about, que es una
                 pagina propia.
-
-                LAS TRES PREGUNTAS SE QUEDAN AQUI, Y NO ES OPCIONAL. El
+                 LAS TRES PREGUNTAS SE QUEDAN AQUI, Y NO ES OPCIONAL. El
                 JSON-LD de arriba declara un FAQPage con `@id`
                 ".../#faq" sobre ESTA pagina, y Google exige que el
                 contenido marcado sea visible en la pagina que lo
                 declara. Llevarselas a /about dejaria el marcado
                 describiendo algo que no esta: se pierde el rich result
                 y se arriesga una accion manual.
-
-                Si algun dia se mueven, hay que mover el bloque JSON-LD
+                 Si algun dia se mueven, hay que mover el bloque JSON-LD
                 con ellas, no solo el texto.
-            =========================================================== */}
-            <section className="about-section card" id="faq">
+             =========================================================== */}
+            <section className="about-section card" id="faq" data-workspace="about">
               <div className="about-container">
                 <span className="about-label">FAQ</span>
                 <h2 className="about-title">The Crypto Emotion Index.</h2>
@@ -1794,16 +1567,16 @@ export default function Home({ ogImageUrl }) {
                 <p className="about-text">
                   Built end to end by one person — the index engine, the character
                   and the game.{" "}
-                  <Link href="/about" className="about-text-strong">
+                  <a href="/about" className="about-text-strong">
                     Read how it works and who made it →
-                  </Link>
+                  </a>
                 </p>
               </div>
             </section>
 
             {/* ===========================================================
                 EMOTION PULSE — flotante
-            =========================================================== */}
+             =========================================================== */}
             <div className="emotion-pulse-toggle" id="pulseToggle" role="button" tabIndex={0}>
               <span className="pulse-toggle-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1823,25 +1596,25 @@ export default function Home({ ogImageUrl }) {
 
               <div className="pulse-grid">
                 <button data-vote="frustration" type="button" aria-label="Vote frustration">
-                  <img src="/assets/icons/classic/frustration.png" alt="" />
+                  <img src="/assets/icons/classic/frustration.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="concern" type="button" aria-label="Vote concern">
-                  <img src="/assets/icons/classic/concern.png" alt="" />
+                  <img src="/assets/icons/classic/concern.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="doubt" type="button" aria-label="Vote doubt">
-                  <img src="/assets/icons/classic/doubt.png" alt="" />
+                  <img src="/assets/icons/classic/doubt.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="neutral" type="button" aria-label="Vote neutral">
-                  <img src="/assets/icons/classic/neutral.png" alt="" />
+                  <img src="/assets/icons/classic/neutral.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="optimism" type="button" aria-label="Vote optimism">
-                  <img src="/assets/icons/classic/optimism.png" alt="" />
+                  <img src="/assets/icons/classic/optimism.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="content" type="button" aria-label="Vote content">
-                  <img src="/assets/icons/classic/content.png" alt="" />
+                  <img src="/assets/icons/classic/content.png" alt="" decoding="async" loading="lazy" />
                 </button>
                 <button data-vote="euphoria" type="button" aria-label="Vote euphoria">
-                  <img src="/assets/icons/classic/euphoria.png" alt="" />
+                  <img src="/assets/icons/classic/euphoria.png" alt="" decoding="async" loading="lazy" />
                 </button>
               </div>
 
@@ -1858,15 +1631,11 @@ export default function Home({ ogImageUrl }) {
 
           {/* ===========================================================
               FOOTER
-          =========================================================== */}
+           =========================================================== */}
           <footer className="wm-footer">
             <div className="wm-footer-inner">
               <div className="wm-footer-brand">
-                <img
-                  src="/assets/logo/wojakmeter_logo.png"
-                  alt="WojakMeter"
-                  className="wm-footer-logo-img"
-                />
+                <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter" className="wm-footer-logo-img" decoding="async" loading="lazy" />
                 <span className="wm-footer-tagline">The Crypto Emotion Index</span>
               </div>
 
@@ -1886,48 +1655,30 @@ export default function Home({ ogImageUrl }) {
                   <a href="#emotionScale">Emotional Scale</a>
                   <a href="#emotionRush">Emotion Rush</a>
                   <a href="#faq">FAQ</a>
-                  <Link href="/about">About</Link>
+                  <a href="/about">About</a>
                 </div>
 
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Legal</h4>
-                  <Link href="/terms">Terms</Link>
-                  <Link href="/privacy">Privacy</Link>
-                  <Link href="/disclaimer">Disclaimer</Link>
+                  <a href="/terms">Terms</a>
+                  <a href="/privacy">Privacy</a>
+                  <a href="/disclaimer">Disclaimer</a>
                 </div>
 
                 <div className="wm-footer-col">
                   <h4 className="wm-footer-title">Community</h4>
-                  <a
-                    href="https://x.com/wojakmeterx"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="footer-link"
-                  >
+                  <a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer" className="footer-link">
                     <span className="x-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24">
-                        <path
-                          fill="currentColor"
-                          d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z"
-                        />
+                        <path fill="currentColor" d="M18.244 2H21.5l-7.19 8.22L22 22h-6.84l-5.36-6.99L3.5 22H.244l7.68-8.77L2 2h6.93l4.85 6.41L18.244 2zm-1.2 18h1.9L7.02 4h-2l12.02 16z" />
                       </svg>
                     </span>
                     @wojakmeterx
                   </a>
-                  <a
-                    href="https://t.me/WojakMeter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="footer-link"
-                  >
+                  <a href="https://t.me/WojakMeter" target="_blank" rel="noopener noreferrer" className="footer-link">
                     Telegram Channel
                   </a>
-                  <a
-                    href="https://t.me/WojakMeter_bot"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="footer-link"
-                  >
+                  <a href="https://t.me/WojakMeter_bot" target="_blank" rel="noopener noreferrer" className="footer-link">
                     Telegram Bot
                   </a>
                   <a href="mailto:contact@wojakmeter.com" className="footer-link">
@@ -1944,50 +1695,32 @@ export default function Home({ ogImageUrl }) {
 
         </div>
       </div>
-    </>
-  );
+    </>;
 }
-
-export async function getServerSideProps({ req }) {
-  const protocol =
-    req.headers["x-forwarded-proto"] ||
-    (req.headers.host?.includes("localhost") ? "http" : "https");
-  const host    = req.headers.host;
+export async function getServerSideProps({
+  req
+}) {
+  const protocol = req.headers["x-forwarded-proto"] || (req.headers.host?.includes("localhost") ? "http" : "https");
+  const host = req.headers.host;
   const baseUrl = `${protocol}://${host}`;
-
   try {
-    const [globalRes, sentimentRes] = await Promise.all([
-      fetch(`${baseUrl}/api/global`),
-      fetch(`${baseUrl}/api/sentiment`)
-    ]);
-
-    const globalJson    = await globalRes.json().catch(() => null);
+    const [globalRes, sentimentRes] = await Promise.all([fetch(`${baseUrl}/api/global`), fetch(`${baseUrl}/api/sentiment`)]);
+    const globalJson = await globalRes.json().catch(() => null);
     const sentimentJson = await sentimentRes.json().catch(() => null);
-
     const rawGlobal = globalJson?.raw || {};
-    const change = Number(
-      globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0
-    );
-    const volumeUsd     = Number(rawGlobal?.total_volume?.usd ?? 0);
-    const score         = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
-    const mood          = scoreToMood(score);
+    const change = Number(globalJson?.change ?? rawGlobal?.market_cap_change_percentage_24h_usd ?? 0);
+    const volumeUsd = Number(rawGlobal?.total_volume?.usd ?? 0);
+    const score = Number(sentimentJson?.score ?? clamp(50 + change * 10, 0, 100));
+    const mood = scoreToMood(score);
     const volumeCompact = formatCompactVolume(volumeUsd);
-    const driver        = sentimentJson?.driver || "Market flow / price action";
-    const risk          = sentimentJson?.risk   || "Balanced";
-
-    const ogImageUrl =
-      `${baseUrl}/api/og` +
-      `?mood=${encodeURIComponent(mood)}` +
-      `&score=${encodeURIComponent(score)}` +
-      `&tf=24h` +
-      `&change=${encodeURIComponent(change.toFixed(2))}` +
-      `&volume=${encodeURIComponent(volumeCompact)}` +
-      `&coin=${encodeURIComponent("MARKET")}` +
-      `&driver=${encodeURIComponent(driver)}` +
-      `&risk=${encodeURIComponent(risk)}` +
-      `&style=${encodeURIComponent("classic")}`;
-
-    return { props: { ogImageUrl } };
+    const driver = sentimentJson?.driver || "Market flow / price action";
+    const risk = sentimentJson?.risk || "Balanced";
+    const ogImageUrl = `${baseUrl}/api/og` + `?mood=${encodeURIComponent(mood)}` + `&score=${encodeURIComponent(score)}` + `&tf=24h` + `&change=${encodeURIComponent(change.toFixed(2))}` + `&volume=${encodeURIComponent(volumeCompact)}` + `&coin=${encodeURIComponent("MARKET")}` + `&driver=${encodeURIComponent(driver)}` + `&risk=${encodeURIComponent(risk)}` + `&style=${encodeURIComponent("classic")}`;
+    return {
+      props: {
+        ogImageUrl
+      }
+    };
   } catch {
     return {
       props: {

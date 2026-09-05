@@ -9,48 +9,46 @@ import Link from "next/link";
  * antes de enterarse de que hay alguien disponible detrás.
  */
 
-const BUILD = [
-  {
-    kicker: "The index",
-    title: "Six components, not one number pulled from the air",
-    body: "Return, breadth, volatility regime, volume anomaly, dominance rotation and headline tone, each measured separately and weighted (0.30 / 0.22 / 0.15 / 0.13 / 0.10 / 0.10). Every component is normalized with a robust z-score against a 90-day window, then mapped through a fixed tanh curve so the scale stays comparable over time. When a signal goes missing its weight is redistributed; when too much is missing the engine returns nothing rather than inventing a 50.",
-  },
-  {
-    kicker: "The character",
-    title: "One face, twenty-one readings",
-    body: "A four-axis rig — valence, activation, tension, fatigue — picks a sub-emotion from seven base moods and modulates speed, tremor, tilt and desaturation to produce twenty-one distinct readings from seven sprite sheets per style. Idle loops run at 24 frames on a 6×4 grid, generated with a mesh-deformation script for the Classic style and per-cell LED switching for Synth.",
-  },
-  {
-    kicker: "The game",
-    title: "Emotion Rush, with the scores verified server-side",
-    body: "A reaction game where the market's live state tints the board and sets the tempo. Scores are validated on the server before they reach the leaderboard, because a client-side high score is just a number someone typed. The break-up sprites — seven strips of eight frames — are generated in code with a Voronoi fracture, the core separated from the shell and the incandescence baked into the fragment edges.",
-  },
-  {
-    kicker: "The plumbing",
-    title: "Test harnesses, because a syntax check is not a test",
-    body: "Several smoke harnesses load the real modules against a simulated DOM and assert their behaviour — the game, the hero rig, the canonical index, the history endpoint, the preview workshop. Together they run around 170 checks. They have caught a stub that made tests pass while the code was broken, and live functions deleted during a cleanup. Snapshots are written every fifteen minutes by a scheduled job.",
-  },
-];
+const BUILD = [{
+  kicker: "The index",
+  title: "Six components, not one number pulled from the air",
+  body: "Return, breadth, volatility regime, volume anomaly, dominance rotation and headline tone, each measured separately and weighted (0.30 / 0.22 / 0.15 / 0.13 / 0.10 / 0.10). Every component is normalized with a robust z-score against a 90-day window, then mapped through a fixed tanh curve so the scale stays comparable over time. When a signal goes missing its weight is redistributed; when too much is missing the engine returns nothing rather than inventing a 50."
+}, {
+  kicker: "The character",
+  title: "One face, twenty-one readings",
+  body: "A four-axis rig — valence, activation, tension, fatigue — picks a sub-emotion from seven base moods and modulates speed, tremor, tilt and desaturation to produce twenty-one distinct readings from seven sprite sheets per style. Idle loops run at 24 frames on a 6×4 grid, generated with a mesh-deformation script for the Classic style and per-cell LED switching for Synth."
+}, {
+  kicker: "The game",
+  title: "Emotion Rush, with the scores verified server-side",
+  body: "A reaction game where the market's live state tints the board and sets the tempo. Scores are validated on the server before they reach the leaderboard, because a client-side high score is just a number someone typed. The break-up sprites — seven strips of eight frames — are generated in code with a Voronoi fracture, the core separated from the shell and the incandescence baked into the fragment edges."
+}, {
+  kicker: "The plumbing",
+  title: "Test harnesses, because a syntax check is not a test",
+  body: "Several smoke harnesses load the real modules against a simulated DOM and assert their behaviour — the game, the hero rig, the canonical index, the history endpoint, the preview workshop. Together they run around 170 checks. They have caught a stub that made tests pass while the code was broken, and live functions deleted during a cleanup. Snapshots are written every fifteen minutes by a scheduled job."
+}];
 
 /* Las tres caras que ilustran la reseña. Se usan los mismos PNG
    planos que el héroe del índice, no ilustraciones nuevas: la
    página tiene que enseñar el vocabulario REAL del producto. */
 /* Perfil de freelance. Vacío = no se muestra el botón. */
 const PROFILE_URL = "";
-
-const FACES = [
-  { mood: "frustration", label: "Frustration", note: "Liquidated. The red one." },
-  { mood: "neutral", label: "Neutral", note: "Waiting. The original feel." },
-  { mood: "euphoria", label: "Euphoria", note: "Laser eyes. The green one." },
-];
-
+const FACES = [{
+  mood: "frustration",
+  label: "Frustration",
+  note: "Liquidated. The red one."
+}, {
+  mood: "neutral",
+  label: "Neutral",
+  note: "Waiting. The original feel."
+}, {
+  mood: "euphoria",
+  label: "Euphoria",
+  note: "Laser eyes. The green one."
+}];
 export default function AboutPage() {
   const title = "About | WojakMeter";
-  const description =
-    "Wojak, the Feel Guy, and the crypto emotion index built around him. What runs underneath WojakMeter, and who built it.";
-
-  return (
-    <>
+  const description = "Wojak, the Feel Guy, and the crypto emotion index built around him. What runs underneath WojakMeter, and who built it.";
+  return <>
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -66,21 +64,17 @@ export default function AboutPage() {
       <main className="about-page">
         <div className="about-shell">
           <div className="about-topbar">
-            <Link href="/" className="about-brand">
-              <img
-                src="/assets/logo/wojakmeter_logo.png"
-                className="about-logo"
-                alt="WojakMeter"
-              />
+            <a href="/" className="about-brand">
+              <img src="/assets/logo/wojakmeter_logo.png" className="about-logo" alt="WojakMeter" />
               <div className="about-brand-copy">
                 <strong>WojakMeter</strong>
                 <span>The Crypto Emotion Index</span>
               </div>
-            </Link>
+            </a>
 
-            <Link href="/" className="about-back">
+            <a href="/" className="about-back">
               ← Back to site
-            </Link>
+            </a>
           </div>
 
           <header className="about-hero">
@@ -101,12 +95,11 @@ export default function AboutPage() {
 
           {/* ===========================================================
               WOJAK — antes de la ingeniería, a propósito.
-
-              Quien llega aquí necesita entender POR QUÉ hay una cara
+               Quien llega aquí necesita entender POR QUÉ hay una cara
               antes de leer con qué está hecha. El meme no es la
               decoración del proyecto: es la premisa de la que sale
               todo lo demás.
-          =========================================================== */}
+           =========================================================== */}
           <section className="about-wojak">
             <span className="about-kicker">The Feel Guy</span>
             <h2>Before the index, there was the face.</h2>
@@ -130,21 +123,13 @@ export default function AboutPage() {
             </p>
 
             <div className="about-faces">
-              {FACES.map((f) => (
-                <figure className="about-face" key={f.mood}>
-                  <img
-                    src={`/assets/hero/classic/${f.mood}.png`}
-                    alt={`Wojak expressing ${f.label.toLowerCase()}`}
-                    loading="lazy"
-                    width="160"
-                    height="160"
-                  />
+              {FACES.map(f => <figure className="about-face" key={f.mood}>
+                  <img src={`/assets/hero/classic/${f.mood}.png`} alt={`Wojak expressing ${f.label.toLowerCase()}`} loading="lazy" width="160" height="160" />
                   <figcaption>
                     <strong>{f.label}</strong>
                     <span>{f.note}</span>
                   </figcaption>
-                </figure>
-              ))}
+                </figure>)}
             </div>
 
             <p>
@@ -173,13 +158,11 @@ export default function AboutPage() {
           </section>
 
           <section className="about-build">
-            {BUILD.map((item) => (
-              <article className="about-block" key={item.kicker}>
+            {BUILD.map(item => <article className="about-block" key={item.kicker}>
                 <span className="about-kicker">{item.kicker}</span>
                 <h2>{item.title}</h2>
                 <p>{item.body}</p>
-              </article>
-            ))}
+              </article>)}
           </section>
 
           <section className="about-honest">
@@ -219,34 +202,23 @@ export default function AboutPage() {
             </p>
 
             <div className="about-actions">
-              <a
-                className="about-cta"
-                href="mailto:contact@wojakmeter.com?subject=Project%20enquiry"
-              >
+              <a className="about-cta" href="mailto:contact@wojakmeter.com?subject=Project%20enquiry">
                 contact@wojakmeter.com
               </a>
               {/* Enlace secundario a propósito: quien llega aquí ya vio el
                   trabajo. El perfil de marketplace va al final, no de entrada.
-
-                  SE PINTA SOLO SI HAY URL. Antes estaba fijo apuntando a
+                   SE PINTA SOLO SI HAY URL. Antes estaba fijo apuntando a
                   `~YOUR_ID`, un marcador de posición: un enlace roto en la
                   página que pide trabajo cuesta más que no tener enlace.
                   Pon la URL real arriba, en PROFILE_URL, y aparece. */}
-              {PROFILE_URL && (
-                <a
-                  className="about-cta about-cta--ghost"
-                  href={PROFILE_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
+              {PROFILE_URL && <a className="about-cta about-cta--ghost" href={PROFILE_URL} target="_blank" rel="noreferrer noopener">
                   Freelance profile
-                </a>
-              )}
+                </a>}
             </div>
           </section>
 
           <footer className="about-foot">
-            <Link href="/">wojakmeter.com</Link>
+            <a href="/">wojakmeter.com</a>
             <span>·</span>
             <Link href="/terms">Terms</Link>
             <span>·</span>
@@ -256,6 +228,5 @@ export default function AboutPage() {
           </footer>
         </div>
       </main>
-    </>
-  );
+    </>;
 }
