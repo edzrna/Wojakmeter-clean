@@ -5183,7 +5183,7 @@ function connectMoodStream() {
 
       const delay = Math.min(30000, 2000 * Math.pow(2, _moodReconnectAttempt - 1));
       moodStreamReconnectTimer = setTimeout(() => {
-        if (moodResolvedAddress && document.querySelector('.pro-app')?.dataset.view === 'token') connectMoodStream();
+        if (moodResolvedAddress) connectMoodStream();
       }, delay);
     };
   } catch (err) {
@@ -7969,22 +7969,6 @@ function initBagMood() {
   renderBagMood();
 }
 
-// Initialize token feeds only when the MOOD workspace is requested.
-let proTokenStarted = false;
-function setupLazyTokenWorkspace() {
-  const start = () => {
-    if (proTokenStarted || document.querySelector('.pro-app')?.dataset.view !== 'token') return;
-    proTokenStarted = true;
-    initMoodToken().catch(console.error);
-  };
-  window.addEventListener('wm:view', () => {
-    if (document.querySelector('.pro-app')?.dataset.view !== 'token') { cleanupMoodStream(); return; }
-    if (proTokenStarted && moodResolvedAddress) connectMoodStream();
-    start();
-  });
-  start();
-}
-
 // ===============================
 // TIMERS
 // ===============================
@@ -7997,13 +7981,7 @@ const _timers = {};
 
 function setTimer(name, fn, ms) {
   clearInterval(_timers[name]);
-  _timers[name] = setInterval(() => {
-    if (document.hidden) return;
-    const view = document.querySelector('.pro-app')?.dataset.view || 'overview';
-    const scope = {moodMarket:['token'],moodOhlcv:['token'],moodChart:['token'],moodFlow:['token'],trendingTokens:['token'],coinDetails:['overview','markets'],trending:['overview','markets'],memes:['overview','markets'],bagMood:['bag']};
-    if (scope[name] && !scope[name].includes(view)) return;
-    fn();
-  }, ms);
+  _timers[name] = setInterval(fn, ms);
 }
 
 function startAutoRefresh() {
@@ -8056,11 +8034,11 @@ function setupVisibilityHandling() {
     }
 
     startAutoRefresh();
-    if (proTokenStarted) startMoodPolling();
+    startMoodPolling();
     startBagMoodLiveRefresh();
 
     await loadGlobalMarket();
-    if (moodResolvedAddress && document.querySelector('.pro-app')?.dataset.view === 'token') connectMoodStream();
+    if (moodResolvedAddress) connectMoodStream();
   });
 }
 
@@ -8136,9 +8114,10 @@ async function boot() {
   setupHistory();
   setupVisibilityHandling();
 
-  initBagMood();
-  setupLazyTokenWorkspace();
+  await initMoodToken();
   await loadAll();
+
+  initBagMood();
   await loadHistory();
 
   startAutoRefresh();
