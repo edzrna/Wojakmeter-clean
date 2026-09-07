@@ -1,5 +1,5 @@
 /* ===========================================================
-   BAG MOOD RIG — el personaje de la cartera, animado
+   BAG MOOD RIG — el personaje de la cartera, animado. 
 
    Pone la misma capa de bucle que ya tiene el heroe sobre el
    personaje de Bag Mood, que hasta ahora era una imagen plana.
