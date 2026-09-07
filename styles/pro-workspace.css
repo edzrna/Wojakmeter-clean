@@ -126,8 +126,38 @@ body:has(.pro-app) .pro-brand {
   letter-spacing:-1px;
 }
 
+/* ===========================================================
+   LA MARCA: EL LOGO, NO UNA PALABRA
+
+   El rediseño escondia `logo-img` y escribia "wojakmeter" con la
+   tipografia del sistema. Una marca dibujada no se sustituye por
+   texto: es lo unico de la pagina que no se puede rehacer con CSS,
+   y ademas es lo que la gente reconoce en una pestaña.
+
+   Se muestra el logo completo en la barra ancha y la cara sola
+   cuando la barra se encoge a 74px, donde un logotipo apaisado no
+   se leeria. Los dos estan en el marcado; aqui se decide cual.
+   =========================================================== */
+body:has(.pro-app) .pro-brand {
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+  letter-spacing:normal;
+}
+
 body:has(.pro-app) .pro-brand img {
   object-fit:contain;
+  height:auto;
+}
+
+body:has(.pro-app) .pro-brand-mark {
+  display:block;
+  width:100%;
+  max-width:176px;
+}
+
+body:has(.pro-app) .pro-brand-icon {
+  display:none;
 }
 
 body:has(.pro-app) .pro-brand span {
@@ -364,7 +394,24 @@ body:has(.pro-app) .pro-connection button {
   text-decoration:underline;
 }
 
-body:has(.pro-app) .ticker-bar {
+/* ===========================================================
+   COLISION DE NOMBRES — ARREGLADO
+
+   `.ticker-bar` son DOS cosas distintas en este proyecto:
+
+     #tickerBar            la tira horizontal de monedas
+     .ticker-item .ticker-bar   la barrita de score de 2px que va
+                                bajo CADA moneda
+
+   La regla del rediseño iba por clase, asi que le ponia a cada
+   barrita de dos pixeles un borde, un fondo y 34px de alto
+   minimo. El resultado en pantalla eran bloques de color tapando
+   los precios: exactamente lo que se ve en la captura.
+
+   Se apunta al id, que es el contenedor de verdad. La barrita
+   interior vuelve a ser lo que era.
+   =========================================================== */
+body:has(.pro-app) #tickerBar {
   border:1px solid var(--line);
   background:var(--ink-100);
   border-radius:8px;
@@ -1189,7 +1236,14 @@ body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspac
     gap:4px;
   }
 
-  body:has(.pro-app) .pro-brand img {
+  /* Los 35px eran para la carita del rediseño. Aplicados al
+     logotipo lo dejaban en un sello ilegible: aqui solo se
+     estrecha, manteniendo su proporcion. */
+  body:has(.pro-app) .pro-brand-mark {
+    max-width:150px;
+  }
+
+  body:has(.pro-app) .pro-brand-icon {
     width:35px;
   }
 
@@ -1245,7 +1299,14 @@ body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspac
 
   body:has(.pro-app) .pro-brand {
     padding:0 8px 28px;
+    align-items:center;
   }
+
+  /* Barra de 74px: el logotipo apaisado no cabe ni se leeria, asi
+     que manda la cara. Es la misma marca, en su version corta. */
+  body:has(.pro-app) .pro-brand-mark { display:none; }
+  body:has(.pro-app) .pro-brand-icon { display:block; width:38px; }
+  body:has(.pro-app) .pro-brand small { display:none; }
 
   body:has(.pro-app) .pro-brand>div,
   body:has(.pro-app) .pro-nav-label,
@@ -1354,7 +1415,12 @@ body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspac
 
   body:has(.pro-app) .pro-sidebar .pro-brand {
     font-size:22px;
+    align-items:flex-start;
   }
+
+  body:has(.pro-app) .pro-sidebar .pro-brand-mark { display:block; }
+  body:has(.pro-app) .pro-sidebar .pro-brand-icon { display:none; }
+  body:has(.pro-app) .pro-sidebar .pro-brand small { display:block; }
 
   body:has(.pro-app) .pro-sidebar .pro-brand small {
     font-size:8px;
@@ -1418,7 +1484,7 @@ body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspac
     font-size:11px;
   }
 
-  body:has(.pro-app) .ticker-bar {
+  body:has(.pro-app) #tickerBar {
     margin-top:6px;
     margin-bottom:12px;
   }
