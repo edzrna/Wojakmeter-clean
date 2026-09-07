@@ -295,11 +295,22 @@ body:has(.pro-app) .wm-brand .logo-img {
   display:none;
 }
 
+/* ===========================================================
+   EL ESLOGAN, UNA SOLA VEZ
+
+   "The Crypto Emotion Index" salia TRES veces en la misma
+   pantalla: dibujado dentro del logo, escrito debajo del logo en
+   la barra, y otra vez arriba del panel. Un eslogan repetido no
+   refuerza la marca, la abarata: deja de leerse como una
+   afirmacion y pasa a leerse como relleno.
+
+   Se queda el del LOGO, que es donde va dibujado y donde no se
+   puede quitar. El de la cabecera ya estaba oculto en el diseño
+   original; el rediseño lo forzaba a la vista con `!important`, y
+   eso es lo que se quita aqui.
+   =========================================================== */
 body:has(.pro-app) .wm-tagline {
-  display:block!important;
-  font-size:14px!important;
-  color:var(--bone-dim)!important;
-  letter-spacing:0!important;
+  display:none!important;
 }
 
 body:has(.pro-app) .wm-header-style {
@@ -485,6 +496,12 @@ body:has(.pro-app) .hero h1 {
   margin:0 0 22px;
   font-weight:600;
   text-align:left;
+  /* "Crypto Market Mood" son tres palabras donde antes habia dos.
+     Con el tamaño anterior chocaba con el "Market flow / price
+     action" de la derecha en pantallas medias. */
+  max-width:22ch;
+  font-size:clamp(24px, 2.4vw, 32px);
+  line-height:1.14;
 }
 
 body:has(.pro-app) .pro-driver {
@@ -1426,7 +1443,67 @@ body:has(.pro-app) .pro-sidebar .pro-brand small {
   font-size:8px;
 }
 
+/* -----------------------------------------------------------
+   EN MOVIL EL LOGO VIVE EN LA CABECERA
+
+   La barra lateral pasa a ser un cajon que empieza cerrado, asi
+   que el logo se iba con ella: en un telefono no habia marca por
+   ningun lado hasta abrir el menu. Aqui se enseña el logo de la
+   cabecera, que el rediseño escondia, CENTRADO entre el boton de
+   menu y el selector de estilo — que es donde el ojo lo busca y
+   donde ya estaba antes del rediseño.
+   ----------------------------------------------------------- */
+body:has(.pro-app) .wm-brand .logo-img {
+  display:block;
+  height:auto;
+  max-height:34px;
+  /* A 320px el selector de estilo y el logo se quedaban a ocho
+     pixeles de tocarse. El tope descuenta el boton de menu, el
+     selector y el aire de los dos lados, asi que el logo se
+     estrecha antes de que eso pase en vez de despues. */
+  max-width:min(150px, calc(100vw - 244px));
+}
+
+/* Centrado con una REJILLA de tres columnas, no en posicion
+   absoluta.
+
+   Lo intente con `position:absolute` y salia desviado medio ancho:
+   el bloque contenedor no acababa siendo la fila de la cabecera
+   sino otro antepasado, y perseguir cual es tiempo perdido. Con
+   `1fr auto 1fr` el centro es el centro por construccion, mida lo
+   que mida el boton de la izquierda o el selector de la derecha.
+   Es la misma solucion que ya usa la cabecera clasica. */
+body:has(.pro-app) .wm-brand {
+  position:static;
+  /* AQUI ESTABA EL DESVIO.
+
+     globals.css centra la marca en movil con `position:absolute`
+     mas `translate:-50% -50%`. Al devolverla al flujo con
+     `position:static` la posicion se corrige, pero `translate`
+     SIGUE aplicandose: es una propiedad independiente, no parte de
+     `position`. El resultado era un logo desplazado exactamente la
+     mitad de su ancho a la izquierda, en todos los anchos por
+     igual — la pista de que no era un problema de contenedor sino
+     un desplazamiento fijo.
+
+     Se anula tambien el translate y los desplazamientos. */
+  translate:none;
+  top:auto;
+  left:auto;
+  pointer-events:auto;
+  /* Columna EXPLICITA. Dejarlo al autoposicionado dependia de
+     cuantos hermanos estuvieran visibles en ese momento, y el nav
+     de escritorio aparece y desaparece segun el ancho: con un
+     hermano de mas, la marca caia en otra columna y el centrado se
+     iba. Con la columna escrita no hay nada que adivinar. */
+  grid-column:2;
+  justify-self:center;
+  margin:0;
+}
+
 body:has(.pro-app) .wm-menu-toggle {
+  grid-column:1;
+  justify-self:start;
   display:block!important;
   min-width:38px;
   min-height:38px;
@@ -1439,6 +1516,10 @@ body:has(.pro-app) .wm-menu-toggle {
 
 body:has(.pro-app) .wm-header-top {
   height:60px;
+  display:grid;
+  grid-auto-flow:column;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
 }
 
 body:has(.pro-app) .wm-tagline {
@@ -1446,6 +1527,9 @@ body:has(.pro-app) .wm-tagline {
 }
 
 body:has(.pro-app) .wm-header-style {
+  grid-column:3;
+  justify-self:end;
+  margin-left:0;
   gap:6px;
 }
 
@@ -2149,4 +2233,16 @@ body:has(.pro-app) .pro-connection > span:first-child::before {
 
 body:has(.pro-app) .card, body:has(.pro-app) .pro-visual, body:has(.pro-app) .pro-summary {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* -----------------------------------------------------------
+   EL TITULAR, CON SITIO PARA RESPIRAR
+
+   Pasa de "Market overview" a "Crypto Market Mood": tres palabras
+   en vez de dos y ninguna corta. Con el tamaño anterior chocaba
+   con el "Market flow / price action" de la derecha en pantallas
+   medias.
+   ----------------------------------------------------------- */
+@media (max-width: 900px) {
+  body:has(.pro-app) .hero h1 { max-width: none; }
 }
