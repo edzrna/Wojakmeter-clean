@@ -51,7 +51,24 @@ const HERO_MODE_RAW       = "raw";
 const HERO_MODE_COMPOSITE = "composite";
 const HERO_MODE_CUSTOM    = "custom";
 
-const HERO_ALLOWED_TIMEFRAMES  = ["1h", "4h", "24h", "7d", "30d"];
+/* SOLO LAS VENTANAS QUE EXISTEN.
+
+   1h y 4h no tienen datos y no los van a tener: el indice se
+   calcula sobre `emotion_history`, que se llena con el cron cada
+   15 minutos, asi que una hora son 4 lecturas y cuatro horas son
+   16. `/api/index-score` ni siquiera calcula esas ventanas —
+   devuelve 24h, 7d y 30d— y `hero-rig.js` solo conoce esas tres
+   en su tabla TF.
+
+   Con los botones puestos, pulsarlos no hacia NADA: la ventana
+   venia vacia, el rig caia al indice del momento y la pagina se
+   quedaba igual. Un control que no controla nada es peor que no
+   tenerlo, porque el usuario prueba, no pasa nada, y concluye que
+   la pagina esta rota.
+
+   El grafico de monedas SI mantiene 1h y 4h: ese sale de
+   CoinGecko con datos de cinco minutos, no de esta tabla. */
+const HERO_ALLOWED_TIMEFRAMES  = ["24h", "7d", "30d"];
 const CHART_ALLOWED_TIMEFRAMES = ["1h", "4h", "24h", "7d", "30d"];
 const TOKEN_ALLOWED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "24h"];
 
