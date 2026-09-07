@@ -42,23 +42,15 @@ body:has(.pro-app) {
   background-image:none;
 }
 
-body:has(.pro-app)::before,
-body:has(.pro-app)::after {
+body:has(.pro-app)::before, body:has(.pro-app)::after {
   display:none;
 }
 
-body:has(.pro-app) button,
-body:has(.pro-app) input,
-body:has(.pro-app) select,
-body:has(.pro-app) textarea {
+body:has(.pro-app) button, body:has(.pro-app) input, body:has(.pro-app) select, body:has(.pro-app) textarea {
   font:inherit;
 }
 
-body:has(.pro-app) button,
-body:has(.pro-app) a,
-body:has(.pro-app) input,
-body:has(.pro-app) textarea,
-body:has(.pro-app) select {
+body:has(.pro-app) button, body:has(.pro-app) a, body:has(.pro-app) input, body:has(.pro-app) textarea, body:has(.pro-app) select {
   -webkit-tap-highlight-color:transparent;
 }
 
@@ -66,9 +58,7 @@ body:has(.pro-app) button {
   cursor:pointer;
 }
 
-body:has(.pro-app) button:focus-visible,
-body:has(.pro-app) a:focus-visible,
-body:has(.pro-app) [tabindex]:focus-visible {
+body:has(.pro-app) button:focus-visible, body:has(.pro-app) a:focus-visible, body:has(.pro-app) [tabindex]:focus-visible {
   outline:2px solid var(--bone);
   outline-offset:4px;
 }
@@ -82,8 +72,7 @@ body:has(.pro-app) button:disabled {
   opacity:.5;
 }
 
-body:has(.pro-app) .hidden,
-body:has(.pro-app) [hidden] {
+body:has(.pro-app) .hidden, body:has(.pro-app) [hidden] {
   display:none!important;
 }
 
@@ -106,6 +95,8 @@ body:has(.pro-app) .pro-sidebar {
   border-right:1px solid var(--line);
   z-index:100;
   padding:28px 15px 20px;
+  background: var(--ink-000);
+  border-right: 1px solid var(--line);
 }
 
 body:has(.pro-app) .pro-sidebar nav {
@@ -124,6 +115,10 @@ body:has(.pro-app) .pro-brand {
   font-size:22px;
   font-weight:750;
   letter-spacing:-1px;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+  letter-spacing:normal;
 }
 
 /* ===========================================================
@@ -138,12 +133,6 @@ body:has(.pro-app) .pro-brand {
    cuando la barra se encoge a 74px, donde un logotipo apaisado no
    se leeria. Los dos estan en el marcado; aqui se decide cual.
    =========================================================== */
-body:has(.pro-app) .pro-brand {
-  flex-direction:column;
-  align-items:flex-start;
-  gap:6px;
-  letter-spacing:normal;
-}
 
 body:has(.pro-app) .pro-brand img {
   object-fit:contain;
@@ -162,6 +151,8 @@ body:has(.pro-app) .pro-brand-icon {
 
 body:has(.pro-app) .pro-brand span {
   color:var(--bone);
+  color: var(--bone-dim);
+  font-weight: 400;
 }
 
 body:has(.pro-app) .pro-brand small {
@@ -170,6 +161,7 @@ body:has(.pro-app) .pro-brand small {
   font-size:8px;
   letter-spacing:1.25px;
   margin-top:3px;
+  color: var(--bone-faint);
 }
 
 body:has(.pro-app) .pro-nav-label {
@@ -194,6 +186,8 @@ body:has(.pro-app) .pro-nav-link {
   text-decoration:none;
   transition:background .15s,color .15s;
   border:1px solid transparent;
+  position: relative;
+  white-space: nowrap;
 }
 
 body:has(.pro-app) .pro-nav-link>span {
@@ -222,6 +216,16 @@ body:has(.pro-app) .pro-nav-link i {
   border-radius:4px;
   margin-left:auto;
   color:var(--bone-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--ink-200);
+  border: 1px solid var(--line);
+  color: var(--bone-dim);
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
+  font-size: 9px;
+  flex-shrink: 0;
 }
 
 body:has(.pro-app) .pro-nav-bottom {
@@ -257,6 +261,7 @@ body:has(.pro-app) .app-shell {
   max-width:1660px;
   margin:0 0 0 224px;
   padding:0 34px 24px;
+  background: var(--ink-050);
 }
 
 body:has(.pro-app) .pro-header {
@@ -270,6 +275,7 @@ body:has(.pro-app) .pro-header {
   border-radius:0!important;
   box-shadow:none!important;
   transform:none!important;
+  background: color-mix(in srgb, var(--ink-050) 94%, transparent) !important;
 }
 
 body:has(.pro-app) .wm-header-top {
@@ -376,6 +382,7 @@ body:has(.pro-app) .pro-connection {
   font-size:12px;
   letter-spacing:.2px;
   padding-bottom:8px;
+  gap: 12px;
 }
 
 body:has(.pro-app) .pro-connection[data-state=live] {
@@ -411,6 +418,7 @@ body:has(.pro-app) .pro-connection button {
    Se apunta al id, que es el contenedor de verdad. La barrita
    interior vuelve a ser lo que era.
    =========================================================== */
+
 body:has(.pro-app) #tickerBar {
   border:1px solid var(--line);
   background:var(--ink-100);
@@ -466,8 +474,7 @@ body:has(.pro-app) .hero.card {
   overflow:visible;
 }
 
-body:has(.pro-app) .hero::before,
-body:has(.pro-app) .hero::after {
+body:has(.pro-app) .hero::before, body:has(.pro-app) .hero::after {
   display:none!important;
 }
 
@@ -506,13 +513,15 @@ body:has(.pro-app) .hero-main {
   text-align:left;
 }
 
-body:has(.pro-app) .pro-visual,
-body:has(.pro-app) .pro-summary {
+body:has(.pro-app) .pro-visual, body:has(.pro-app) .pro-summary {
   background:var(--ink-100);
   border:1px solid var(--line);
   border-radius:14px;
   min-width:0;
   overflow:hidden;
+  background: color-mix(in srgb, var(--ink-100) 86%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 body:has(.pro-app) .pro-visual {
@@ -520,6 +529,11 @@ body:has(.pro-app) .pro-visual {
   flex-direction:column;
   position:relative;
   background:radial-gradient(ellipse at 50% 68%,var(--ink-200) 0, var(--ink-100) 67%);
+  background-image: radial-gradient(
+    ellipse at 50% 68%,
+    color-mix(in srgb, var(--ink-200) 70%, transparent) 0,
+    transparent 67%
+  );
 }
 
 body:has(.pro-app) .pro-visual-controls {
@@ -532,8 +546,7 @@ body:has(.pro-app) .pro-visual-controls {
   z-index:4;
 }
 
-body:has(.pro-app) .hero-view-toggle,
-body:has(.pro-app) .hero-timeframes {
+body:has(.pro-app) .hero-view-toggle, body:has(.pro-app) .hero-timeframes {
   margin:0!important;
   gap:3px!important;
   display:flex;
@@ -545,11 +558,7 @@ body:has(.pro-app) .hero-timeframes {
   padding:0;
 }
 
-body:has(.pro-app) .hero-view-btn,
-body:has(.pro-app) .timeframes button,
-body:has(.pro-app) .hero-view-modes button,
-body:has(.pro-app) .chart-mode-switch button,
-body:has(.pro-app) .mood-chart-modes button {
+body:has(.pro-app) .hero-view-btn, body:has(.pro-app) .timeframes button, body:has(.pro-app) .hero-view-modes button, body:has(.pro-app) .chart-mode-switch button, body:has(.pro-app) .mood-chart-modes button {
   border-radius:5px;
   border:1px solid transparent!important;
   background:transparent!important;
@@ -560,11 +569,7 @@ body:has(.pro-app) .mood-chart-modes button {
   box-shadow:none!important;
 }
 
-body:has(.pro-app) .hero-view-btn.active,
-body:has(.pro-app) .timeframes button.active,
-body:has(.pro-app) .hero-view-modes button[aria-pressed=true],
-body:has(.pro-app) .chart-mode-switch button.active,
-body:has(.pro-app) .mood-chart-modes button.active {
+body:has(.pro-app) .hero-view-btn.active, body:has(.pro-app) .timeframes button.active, body:has(.pro-app) .hero-view-modes button[aria-pressed=true], body:has(.pro-app) .chart-mode-switch button.active, body:has(.pro-app) .mood-chart-modes button.active {
   background:var(--ink-200)!important;
   color:var(--bone)!important;
   border-color:var(--line-hard)!important;
@@ -703,6 +708,8 @@ body:has(.pro-app) .gauge-score-center #gaugeScore {
   font-size:42px!important;
   color:var(--bone);
   font-weight:500;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 body:has(.pro-app) .gauge-score-center #gaugeMood {
@@ -753,8 +760,7 @@ body:has(.pro-app) .hero-line-item strong {
   font-size:16px;
 }
 
-body:has(.pro-app) .hero-line-item:last-child,
-body:has(.pro-app) .hero-line-sep {
+body:has(.pro-app) .hero-line-item:last-child, body:has(.pro-app) .hero-line-sep {
   display:none;
 }
 
@@ -764,10 +770,7 @@ body:has(.pro-app) .hero-share-row {
   justify-content:stretch;
 }
 
-body:has(.pro-app) .action-btn,
-body:has(.pro-app) .share-x-btn,
-body:has(.pro-app) .bag-add-btn,
-body:has(.pro-app) .rush-btn {
+body:has(.pro-app) .action-btn, body:has(.pro-app) .share-x-btn, body:has(.pro-app) .bag-add-btn, body:has(.pro-app) .rush-btn {
   font-size:14px;
   padding:10px 16px;
   border-radius:7px;
@@ -822,16 +825,14 @@ body:has(.pro-app) .section-head {
   margin-bottom:22px;
 }
 
-body:has(.pro-app) .section-head h3,
-body:has(.pro-app) .section-head h2 {
+body:has(.pro-app) .section-head h3, body:has(.pro-app) .section-head h2 {
   font-size:21px;
   letter-spacing:-.6px;
   font-weight:550;
   margin:0;
 }
 
-body:has(.pro-app) .section-head p,
-body:has(.pro-app) .section-subtitle {
+body:has(.pro-app) .section-head p, body:has(.pro-app) .section-subtitle {
   color:var(--bone-dim);
   font-size:14px;
 }
@@ -871,6 +872,7 @@ body:has(.pro-app) .coin-card {
   border-radius:9px;
   min-width:0;
   transition:border-color .2s,background .2s;
+  box-shadow: none;
 }
 
 body:has(.pro-app) .coin-card:hover {
@@ -977,12 +979,7 @@ body:has(.pro-app) .exchange-card {
   padding:22px;
 }
 
-body:has(.pro-app) .bag-mood-section,
-body:has(.pro-app) .emotion-radar,
-body:has(.pro-app) .mood-token-card,
-body:has(.pro-app) .studio-card,
-body:has(.pro-app) .scale-card,
-body:has(.pro-app) .about-section {
+body:has(.pro-app) .bag-mood-section, body:has(.pro-app) .emotion-radar, body:has(.pro-app) .mood-token-card, body:has(.pro-app) .studio-card, body:has(.pro-app) .scale-card, body:has(.pro-app) .about-section {
   padding:28px;
 }
 
@@ -990,9 +987,7 @@ body:has(.pro-app) .bag-add-form {
   gap:12px;
 }
 
-body:has(.pro-app) .bag-add-form input,
-body:has(.pro-app) .mood-search-row input,
-body:has(.pro-app) .emotion-radar textarea {
+body:has(.pro-app) .bag-add-form input, body:has(.pro-app) .mood-search-row input, body:has(.pro-app) .emotion-radar textarea {
   background:var(--ink-100);
   border:1px solid var(--line-hard);
   border-radius:8px;
@@ -1001,16 +996,12 @@ body:has(.pro-app) .emotion-radar textarea {
   font-size:16px;
 }
 
-body:has(.pro-app) .bag-add-form input:focus,
-body:has(.pro-app) .mood-search-row input:focus,
-body:has(.pro-app) .emotion-radar textarea:focus {
+body:has(.pro-app) .bag-add-form input:focus, body:has(.pro-app) .mood-search-row input:focus, body:has(.pro-app) .emotion-radar textarea:focus {
   outline:2px solid var(--bone-dim);
   outline-offset:2px;
 }
 
-body:has(.pro-app) .bag-empty,
-body:has(.pro-app) .radar-news-empty,
-body:has(.pro-app) .mood-trending-empty {
+body:has(.pro-app) .bag-empty, body:has(.pro-app) .radar-news-empty, body:has(.pro-app) .mood-trending-empty {
   color:var(--bone-dim);
   font-size:14px;
   padding:25px;
@@ -1031,17 +1022,13 @@ body:has(.pro-app) .bag-pnl-hero {
   font-size:32px;
 }
 
-body:has(.pro-app) .bag-mode-tabs button,
-body:has(.pro-app) .emotion-radar-actions button,
-body:has(.pro-app) .mood-search-row button {
+body:has(.pro-app) .bag-mode-tabs button, body:has(.pro-app) .emotion-radar-actions button, body:has(.pro-app) .mood-search-row button {
   min-height:42px;
   font-size:14px;
   border-radius:7px;
 }
 
-body:has(.pro-app) .bag-add-form button,
-body:has(.pro-app) .emotion-radar-actions button:first-child,
-body:has(.pro-app) .mood-search-row button {
+body:has(.pro-app) .bag-add-form button, body:has(.pro-app) .emotion-radar-actions button:first-child, body:has(.pro-app) .mood-search-row button {
   background:var(--ink-200);
   color:var(--bone);
   border:1px solid var(--line-hard);
@@ -1088,12 +1075,17 @@ body:has(.pro-app) .prose-output {
 
 body:has(.pro-app) .scale-grid {
   gap:10px;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
 }
 
 body:has(.pro-app) .scale-item {
   background:var(--ink-100);
   border-radius:10px;
   border:1px solid var(--line);
+  padding: 14px 8px;
+  border-radius: 10px;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
 }
 
 body:has(.pro-app) .rush-shell {
@@ -1193,639 +1185,647 @@ body:has(.pro-app) .anim-float {
   animation-duration:8s!important;
 }
 
-body:has(.pro-app) .pro-app[data-view=overview] [data-workspace]:not([data-workspace~=overview]),
-body:has(.pro-app) .pro-app[data-view=markets] [data-workspace]:not([data-workspace~=markets]),
-body:has(.pro-app) .pro-app[data-view=bag] [data-workspace]:not([data-workspace~=bag]),
-body:has(.pro-app) .pro-app[data-view=radar] [data-workspace]:not([data-workspace~=radar]),
-body:has(.pro-app) .pro-app[data-view=token] [data-workspace]:not([data-workspace~=token]),
-body:has(.pro-app) .pro-app[data-view=studio] [data-workspace]:not([data-workspace~=studio]),
-body:has(.pro-app) .pro-app[data-view=scale] [data-workspace]:not([data-workspace~=scale]),
-body:has(.pro-app) .pro-app[data-view=play] [data-workspace]:not([data-workspace~=play]),
-body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspace~=about]) {
+body:has(.pro-app) .pro-app[data-view=overview] [data-workspace]:not([data-workspace~=overview]), body:has(.pro-app) .pro-app[data-view=markets] [data-workspace]:not([data-workspace~=markets]), body:has(.pro-app) .pro-app[data-view=bag] [data-workspace]:not([data-workspace~=bag]), body:has(.pro-app) .pro-app[data-view=radar] [data-workspace]:not([data-workspace~=radar]), body:has(.pro-app) .pro-app[data-view=token] [data-workspace]:not([data-workspace~=token]), body:has(.pro-app) .pro-app[data-view=studio] [data-workspace]:not([data-workspace~=studio]), body:has(.pro-app) .pro-app[data-view=scale] [data-workspace]:not([data-workspace~=scale]), body:has(.pro-app) .pro-app[data-view=play] [data-workspace]:not([data-workspace~=play]), body:has(.pro-app) .pro-app[data-view=about] [data-workspace]:not([data-workspace~=about]) {
   display:none!important;
 }
 
 @media(min-width:1700px) {
-  body:has(.pro-app) .app-shell {
-    margin-left:224px;
-    margin-right:auto;
-    padding-left:45px;
-    padding-right:45px;
-  }
+body:has(.pro-app) .app-shell {
+  margin-left:224px;
+  margin-right:auto;
+  padding-left:45px;
+  padding-right:45px;
+}
 
-  body:has(.pro-app) .hero-mood-view,
+body:has(.pro-app) .hero-mood-view,
   body:has(.pro-app) .wojak-stage {
-    min-height:400px!important;
-    height:400px!important;
-  }
+  min-height:400px!important;
+  height:400px!important;
+}
 
-  body:has(.pro-app) .hero-face-wrap {
-    width:285px!important;
-  }
+body:has(.pro-app) .hero-face-wrap {
+  width:285px!important;
+}
 
 }
 
 @media(max-width:1250px) {
-  body:has(.pro-app) .pro-sidebar {
-    width:195px;
-    padding-inline:10px;
-  }
+body:has(.pro-app) .pro-sidebar {
+  width:195px;
+  padding-inline:10px;
+}
 
-  body:has(.pro-app) .pro-brand {
-    font-size:19px;
-    gap:4px;
-  }
+body:has(.pro-app) .pro-brand {
+  font-size:19px;
+  gap:4px;
+}
 
-  /* Los 35px eran para la carita del rediseño. Aplicados al
+/* Los 35px eran para la carita del rediseño. Aplicados al
      logotipo lo dejaban en un sello ilegible: aqui solo se
      estrecha, manteniendo su proporcion. */
-  body:has(.pro-app) .pro-brand-mark {
-    max-width:150px;
-  }
 
-  body:has(.pro-app) .pro-brand-icon {
-    width:35px;
-  }
+body:has(.pro-app) .pro-brand-mark {
+  max-width:150px;
+}
 
-  body:has(.pro-app) .pro-brand small {
-    font-size:7px;
-  }
+body:has(.pro-app) .pro-brand-icon {
+  width:35px;
+}
 
-  body:has(.pro-app) .app-shell {
-    margin-left:195px;
-    padding-inline:22px;
-  }
+body:has(.pro-app) .pro-brand small {
+  font-size:7px;
+}
 
-  body:has(.pro-app) .hero-main {
-    grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);
-  }
+body:has(.pro-app) .app-shell {
+  margin-left:195px;
+  padding-inline:22px;
+}
 
-  body:has(.pro-app) .pro-summary {
-    padding:20px;
-  }
+body:has(.pro-app) .hero-main {
+  grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);
+}
 
-  body:has(.pro-app) .coins-grid {
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
+body:has(.pro-app) .pro-summary {
+  padding:20px;
+}
 
-  body:has(.pro-app) .wm-metric {
-    padding-inline:12px!important;
-  }
+body:has(.pro-app) .coins-grid {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
 
-  body:has(.pro-app) .wm-metric strong {
-    font-size:14px!important;
-  }
+body:has(.pro-app) .wm-metric {
+  padding-inline:12px!important;
+}
 
-  body:has(.pro-app) .pro-visual-controls {
-    padding:12px;
-  }
+body:has(.pro-app) .wm-metric strong {
+  font-size:14px!important;
+}
 
-  body:has(.pro-app) .hero-view-btn,
+body:has(.pro-app) .pro-visual-controls {
+  padding:12px;
+}
+
+body:has(.pro-app) .hero-view-btn,
   body:has(.pro-app) .timeframes button {
-    padding:5px 7px;
-  }
+  padding:5px 7px;
+}
 
-  body:has(.pro-app) .pro-driver {
-    font-size:11px;
-  }
+body:has(.pro-app) .pro-driver {
+  font-size:11px;
+}
 
 }
 
 @media(max-width:1000px) {
-  body:has(.pro-app) .pro-sidebar {
-    width:74px;
-    padding:22px 8px;
-  }
+body:has(.pro-app) .pro-sidebar {
+  width:74px;
+  padding:22px 8px;
+}
 
-  body:has(.pro-app) .pro-brand {
-    padding:0 8px 28px;
-    align-items:center;
-  }
+body:has(.pro-app) .pro-brand {
+  padding:0 8px 28px;
+  align-items:center;
+}
 
-  /* Barra de 74px: el logotipo apaisado no cabe ni se leeria, asi
+/* Barra de 74px: el logotipo apaisado no cabe ni se leeria, asi
      que manda la cara. Es la misma marca, en su version corta. */
-  body:has(.pro-app) .pro-brand-mark { display:none; }
-  body:has(.pro-app) .pro-brand-icon { display:block; width:38px; }
-  body:has(.pro-app) .pro-brand small { display:none; }
 
-  body:has(.pro-app) .pro-brand>div,
+body:has(.pro-app) .pro-brand-mark {
+  display:none;
+}
+
+body:has(.pro-app) .pro-brand-icon {
+  display:block;
+  width:38px;
+}
+
+body:has(.pro-app) .pro-brand small {
+  display:none;
+}
+
+body:has(.pro-app) .pro-brand>div,
   body:has(.pro-app) .pro-nav-label,
   body:has(.pro-app) .pro-nav-bottom,
   body:has(.pro-app) .pro-nav-link i {
-    display:none;
-  }
+  display:none;
+}
 
-  body:has(.pro-app) .pro-nav-link {
-    font-size:0;
-    padding:12px;
-    justify-content:center;
-  }
+body:has(.pro-app) .pro-nav-link {
+  font-size:0;
+  padding:12px;
+  justify-content:center;
+}
 
-  body:has(.pro-app) .pro-nav-link>span {
-    font-size:24px;
-  }
+body:has(.pro-app) .pro-nav-link>span {
+  font-size:24px;
+}
 
-  body:has(.pro-app) .pro-nav-link[aria-current=page] {
-    background:var(--ink-200);
-  }
+body:has(.pro-app) .pro-nav-link[aria-current=page] {
+  background:var(--ink-200);
+}
 
-  body:has(.pro-app) .app-shell {
-    margin-left:74px;
-    padding-inline:20px;
-  }
+body:has(.pro-app) .app-shell {
+  margin-left:74px;
+  padding-inline:20px;
+}
 
-  body:has(.pro-app) .hero-main {
-    grid-template-columns:minmax(0,1.25fr) minmax(240px,1fr);
-  }
+body:has(.pro-app) .hero-main {
+  grid-template-columns:minmax(0,1.25fr) minmax(240px,1fr);
+}
 
-  body:has(.pro-app) .wm-tagline {
-    font-size:13px!important;
-  }
+body:has(.pro-app) .wm-tagline {
+  font-size:13px!important;
+}
 
-  body:has(.pro-app) .wm-header-metrics {
-    grid-template-columns:repeat(4,minmax(0,1fr));
-  }
+body:has(.pro-app) .wm-header-metrics {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
 
-  body:has(.pro-app) .wm-metric:nth-child(n+5) {
-    display:none;
-  }
+body:has(.pro-app) .wm-metric:nth-child(n+5) {
+  display:none;
+}
 
-  body:has(.pro-app) .hero-face-wrap {
-    width:210px!important;
-  }
+body:has(.pro-app) .hero-face-wrap {
+  width:210px!important;
+}
 
-  body:has(.pro-app) .hero-mood {
-    font-size:32px!important;
-  }
+body:has(.pro-app) .hero-mood {
+  font-size:32px!important;
+}
 
-  body:has(.pro-app) .pro-driver {
-    display:none;
-  }
+body:has(.pro-app) .pro-driver {
+  display:none;
+}
 
-  body:has(.pro-app) .coins-grid {
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
+body:has(.pro-app) .coins-grid {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
 
-  body:has(.pro-app) .wm-footer-links-wrap {
-    gap:25px;
-  }
+body:has(.pro-app) .wm-footer-links-wrap {
+  gap:25px;
+}
 
 }
 
 @media(max-width:740px) {
-  html:has(.pro-app) {
-    scroll-padding-top:160px;
-  }
+html:has(.pro-app) {
+  scroll-padding-top:160px;
+}
 
-  body:has(.pro-app) .app-shell {
-    margin-left:0;
-    padding:0 16px 20px;
-  }
+body:has(.pro-app) .app-shell {
+  margin-left:0;
+  padding:0 16px 20px;
+}
 
-  body:has(.pro-app) .pro-sidebar {
-    width:240px;
-    transform:translateX(-100%);
-    transition:transform .2s;
-    box-shadow:15px 0 70px rgba(0, 0, 0, 0.55);
-    padding:25px 15px;
-  }
+body:has(.pro-app) .pro-sidebar {
+  width:240px;
+  transform:translateX(-100%);
+  transition:transform .2s;
+  box-shadow:15px 0 70px rgba(0, 0, 0, 0.55);
+  padding:25px 15px;
+}
 
-  body:has(.pro-app) .pro-app[data-menu=open] .pro-sidebar {
-    transform:translateX(0);
-  }
+body:has(.pro-app) .pro-app[data-menu=open] .pro-sidebar {
+  transform:translateX(0);
+}
 
-  body:has(.pro-app) .pro-app[data-menu=open]::after {
-    content:'';
-    position:fixed;
-    inset:0;
-    background:rgba(0, 0, 0, 0.45);
-    z-index:80;
-  }
+body:has(.pro-app) .pro-app[data-menu=open]::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:rgba(0, 0, 0, 0.45);
+  z-index:80;
+}
 
-  body:has(.pro-app) .pro-sidebar .pro-brand>div,
+body:has(.pro-app) .pro-sidebar .pro-brand>div,
   body:has(.pro-app) .pro-sidebar .pro-nav-label,
   body:has(.pro-app) .pro-sidebar .pro-nav-bottom {
-    display:block;
-  }
+  display:block;
+}
 
-  body:has(.pro-app) .pro-sidebar .pro-nav-link {
-    font-size:14px;
-    justify-content:flex-start;
-  }
+body:has(.pro-app) .pro-sidebar .pro-nav-link {
+  font-size:14px;
+  justify-content:flex-start;
+}
 
-  body:has(.pro-app) .pro-sidebar .pro-brand {
-    font-size:22px;
-    align-items:flex-start;
-  }
+body:has(.pro-app) .pro-sidebar .pro-brand {
+  font-size:22px;
+  align-items:flex-start;
+}
 
-  body:has(.pro-app) .pro-sidebar .pro-brand-mark { display:block; }
-  body:has(.pro-app) .pro-sidebar .pro-brand-icon { display:none; }
-  body:has(.pro-app) .pro-sidebar .pro-brand small { display:block; }
+body:has(.pro-app) .pro-sidebar .pro-brand-mark {
+  display:block;
+}
 
-  body:has(.pro-app) .pro-sidebar .pro-brand small {
-    font-size:8px;
-  }
+body:has(.pro-app) .pro-sidebar .pro-brand-icon {
+  display:none;
+}
 
-  body:has(.pro-app) .wm-menu-toggle {
-    display:block!important;
-    min-width:38px;
-    min-height:38px;
-    border:1px solid var(--line-hard);
-    background:var(--ink-100);
-    border-radius:7px;
-    color:var(--bone);
-    font-size:18px;
-  }
+body:has(.pro-app) .pro-sidebar .pro-brand small {
+  display:block;
+  font-size:8px;
+}
 
-  body:has(.pro-app) .wm-header-top {
-    height:60px;
-  }
+body:has(.pro-app) .wm-menu-toggle {
+  display:block!important;
+  min-width:38px;
+  min-height:38px;
+  border:1px solid var(--line-hard);
+  background:var(--ink-100);
+  border-radius:7px;
+  color:var(--bone);
+  font-size:18px;
+}
 
-  body:has(.pro-app) .wm-tagline {
-    font-size:11px!important;
-  }
+body:has(.pro-app) .wm-header-top {
+  height:60px;
+}
 
-  body:has(.pro-app) .wm-header-style {
-    gap:6px;
-  }
+body:has(.pro-app) .wm-tagline {
+  font-size:11px!important;
+}
 
-  body:has(.pro-app) .style-label {
-    display:none;
-  }
+body:has(.pro-app) .wm-header-style {
+  gap:6px;
+}
 
-  body:has(.pro-app) .wm-header-style select {
-    font-size:12px;
-    padding:6px;
-    min-height:34px;
-  }
+body:has(.pro-app) .style-label {
+  display:none;
+}
 
-  body:has(.pro-app) .wm-header-metrics {
-    padding:13px 0!important;
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
+body:has(.pro-app) .wm-header-style select {
+  font-size:12px;
+  padding:6px;
+  min-height:34px;
+}
 
-  body:has(.pro-app) .wm-metric:nth-child(n+4) {
-    display:none;
-  }
+body:has(.pro-app) .wm-header-metrics {
+  padding:13px 0!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
 
-  body:has(.pro-app) .wm-metric svg {
-    display:none;
-  }
+body:has(.pro-app) .wm-metric:nth-child(n+4) {
+  display:none;
+}
 
-  body:has(.pro-app) .wm-metric span {
-    font-size:10px!important;
-  }
+body:has(.pro-app) .wm-metric svg {
+  display:none;
+}
 
-  body:has(.pro-app) .wm-metric strong {
-    font-size:14px!important;
-  }
+body:has(.pro-app) .wm-metric span {
+  font-size:10px!important;
+}
 
-  body:has(.pro-app) .pro-connection {
-    font-size:11px;
-  }
+body:has(.pro-app) .wm-metric strong {
+  font-size:14px!important;
+}
 
-  body:has(.pro-app) #tickerBar {
-    margin-top:6px;
-    margin-bottom:12px;
-  }
+body:has(.pro-app) .pro-connection {
+  font-size:11px;
+}
 
-  body:has(.pro-app) .news-banner {
-    padding-bottom:12px!important;
-  }
+body:has(.pro-app) #tickerBar {
+  margin-top:6px;
+  margin-bottom:12px;
+}
 
-  body:has(.pro-app) .news-banner-label {
-    font-size:10px;
-  }
+body:has(.pro-app) .news-banner {
+  padding-bottom:12px!important;
+}
 
-  body:has(.pro-app) .hero h1 {
-    font-size:26px;
-    margin-bottom:17px;
-  }
+body:has(.pro-app) .news-banner-label {
+  font-size:10px;
+}
 
-  body:has(.pro-app) .hero-main {
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
+body:has(.pro-app) .hero h1 {
+  font-size:26px;
+  margin-bottom:17px;
+}
 
-  body:has(.pro-app) .pro-visual {
-    order:2;
-  }
+body:has(.pro-app) .hero-main {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
 
-  body:has(.pro-app) .pro-summary {
-    order:1;
-    display:grid;
-    grid-template-columns:1fr 125px;
-    gap:0 10px;
-    padding:20px;
-    position:relative;
-  }
+body:has(.pro-app) .pro-visual {
+  order:2;
+}
 
-  body:has(.pro-app) .pro-kicker {
-    font-size:10px;
-    grid-column:1;
-  }
+body:has(.pro-app) .pro-summary {
+  order:1;
+  display:grid;
+  grid-template-columns:1fr 125px;
+  gap:0 10px;
+  padding:20px;
+  position:relative;
+}
 
-  body:has(.pro-app) .hero-mood {
-    font-size:32px!important;
-    grid-column:1;
-    margin-bottom:6px!important;
-  }
+body:has(.pro-app) .pro-kicker {
+  font-size:10px;
+  grid-column:1;
+}
 
-  body:has(.pro-app) .hero-subtitle {
-    font-size:13px!important;
-    grid-column:1;
-    max-width:220px;
-  }
+body:has(.pro-app) .hero-mood {
+  font-size:32px!important;
+  grid-column:1;
+  margin-bottom:6px!important;
+}
 
-  body:has(.pro-app) .wm-gauge-shell {
-    grid-column:2;
-    grid-row:1/4;
-    align-self:center;
-  }
+body:has(.pro-app) .hero-subtitle {
+  font-size:13px!important;
+  grid-column:1;
+  max-width:220px;
+}
 
-  body:has(.pro-app) .wm-gauge-wrap,
+body:has(.pro-app) .wm-gauge-shell {
+  grid-column:2;
+  grid-row:1/4;
+  align-self:center;
+}
+
+body:has(.pro-app) .wm-gauge-wrap,
   body:has(.pro-app) .wm-gauge-svg {
-    width:125px!important;
-    height:90px!important;
-  }
+  width:125px!important;
+  height:90px!important;
+}
 
-  body:has(.pro-app) .gauge-score-center #gaugeScore {
-    font-size:28px!important;
-  }
+body:has(.pro-app) .gauge-score-center #gaugeScore {
+  font-size:28px!important;
+}
 
-  body:has(.pro-app) .gauge-score-center #gaugeMood {
-    font-size:10px;
-  }
+body:has(.pro-app) .gauge-score-center #gaugeMood {
+  font-size:10px;
+}
 
-  body:has(.pro-app) .gauge-needle-wrap {
-    display:none;
-  }
+body:has(.pro-app) .gauge-needle-wrap {
+  display:none;
+}
 
-  body:has(.pro-app) .emotion-bar-inline {
-    grid-column:1/-1;
-    margin:14px 0!important;
-  }
+body:has(.pro-app) .emotion-bar-inline {
+  grid-column:1/-1;
+  margin:14px 0!important;
+}
 
-  body:has(.pro-app) .hero-market-line {
-    grid-column:1/-1;
-    grid-template-columns:1fr 1fr!important;
-    margin:0 0 15px!important;
-    padding-top:12px;
-    gap:8px;
-  }
+body:has(.pro-app) .hero-market-line {
+  grid-column:1/-1;
+  grid-template-columns:1fr 1fr!important;
+  margin:0 0 15px!important;
+  padding-top:12px;
+  gap:8px;
+}
 
-  body:has(.pro-app) .hero-line-item {
-    flex-direction:row;
-    justify-content:space-between;
-    align-items:center;
-  }
+body:has(.pro-app) .hero-line-item {
+  flex-direction:row;
+  justify-content:space-between;
+  align-items:center;
+}
 
-  body:has(.pro-app) .hero-line-item strong {
-    font-size:13px;
-  }
+body:has(.pro-app) .hero-line-item strong {
+  font-size:13px;
+}
 
-  body:has(.pro-app) .hero-line-item span {
-    font-size:11px;
-  }
+body:has(.pro-app) .hero-line-item span {
+  font-size:11px;
+}
 
-  body:has(.pro-app) .hero-share-row {
-    grid-column:1/-1;
-  }
+body:has(.pro-app) .hero-share-row {
+  grid-column:1/-1;
+}
 
-  body:has(.pro-app) .pro-visual-controls {
-    gap:10px;
-  }
+body:has(.pro-app) .pro-visual-controls {
+  gap:10px;
+}
 
-  body:has(.pro-app) .hero-mood-view,
+body:has(.pro-app) .hero-mood-view,
   body:has(.pro-app) .wojak-stage {
-    height:300px!important;
-    min-height:300px!important;
-  }
+  height:300px!important;
+  min-height:300px!important;
+}
 
-  body:has(.pro-app) .hero-face-wrap {
-    width:210px!important;
-  }
+body:has(.pro-app) .hero-face-wrap {
+  width:210px!important;
+}
 
-  body:has(.pro-app) .hero-social-wrapper {
-    top:50px!important;
-  }
+body:has(.pro-app) .hero-social-wrapper {
+  top:50px!important;
+}
 
-  body:has(.pro-app) .pro-visual-controls .hero-view-toggle button,
+body:has(.pro-app) .pro-visual-controls .hero-view-toggle button,
   body:has(.pro-app) .pro-visual-controls .hero-timeframes button {
-    font-size:12px;
-  }
+  font-size:12px;
+}
 
-  body:has(.pro-app) .top-coins,
+body:has(.pro-app) .top-coins,
   body:has(.pro-app) .bag-mood-section,
   body:has(.pro-app) .emotion-radar,
   body:has(.pro-app) .mood-token-card,
   body:has(.pro-app) .studio-card,
   body:has(.pro-app) .scale-card,
   body:has(.pro-app) .about-section {
-    padding:18px;
-  }
+  padding:18px;
+}
 
-  body:has(.pro-app) .section-head {
-    margin-bottom:15px;
-    gap:12px;
-  }
+body:has(.pro-app) .section-head {
+  margin-bottom:15px;
+  gap:12px;
+}
 
-  body:has(.pro-app) .section-head h3,
+body:has(.pro-app) .section-head h3,
   body:has(.pro-app) .section-head h2 {
-    font-size:20px;
-  }
+  font-size:20px;
+}
 
-  body:has(.pro-app) .market-section-tools {
-    width:100%;
-    flex-wrap:wrap;
-  }
+body:has(.pro-app) .market-section-tools {
+  width:100%;
+  flex-wrap:wrap;
+}
 
-  body:has(.pro-app) .market-section-tools select {
-    flex:1;
-    min-width:110px;
-  }
+body:has(.pro-app) .market-section-tools select {
+  flex:1;
+  min-width:110px;
+}
 
-  body:has(.pro-app) .coins-grid {
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
-  }
+body:has(.pro-app) .coins-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
 
-  body:has(.pro-app) .coin-card {
-    padding:11px;
-  }
+body:has(.pro-app) .coin-card {
+  padding:11px;
+}
 
-  body:has(.pro-app) .coin-card .coin-price {
-    font-size:15px;
-  }
+body:has(.pro-app) .coin-card .coin-price {
+  font-size:15px;
+}
 
-  body:has(.pro-app) .coin-card .coin-name {
-    font-size:11px;
-  }
+body:has(.pro-app) .coin-card .coin-name {
+  font-size:11px;
+}
 
-  body:has(.pro-app) .coin-card .coin-icon {
-    width:25px;
-    height:25px;
-  }
+body:has(.pro-app) .coin-card .coin-icon {
+  width:25px;
+  height:25px;
+}
 
-  body:has(.pro-app) .coin-card-bottom {
-    gap:4px;
-    font-size:11px;
-  }
+body:has(.pro-app) .coin-card-bottom {
+  gap:4px;
+  font-size:11px;
+}
 
-  body:has(.pro-app) .tabs-row {
-    gap:2px;
-  }
+body:has(.pro-app) .tabs-row {
+  gap:2px;
+}
 
-  body:has(.pro-app) .tabs-row button {
-    font-size:12px;
-    padding:8px 9px;
-  }
+body:has(.pro-app) .tabs-row button {
+  font-size:12px;
+  padding:8px 9px;
+}
 
-  body:has(.pro-app) .chart-card {
-    padding:12px;
-  }
+body:has(.pro-app) .chart-card {
+  padding:12px;
+}
 
-  body:has(.pro-app) .chart-coin-stats {
-    gap:12px;
-    flex-wrap:wrap;
-  }
+body:has(.pro-app) .chart-coin-stats {
+  gap:12px;
+  flex-wrap:wrap;
+}
 
-  body:has(.pro-app) .chart-plot {
-    min-height:230px;
-  }
+body:has(.pro-app) .chart-plot {
+  min-height:230px;
+}
 
-  body:has(.pro-app) .chart-mood-chip {
-    font-size:11px;
-  }
+body:has(.pro-app) .chart-mood-chip {
+  font-size:11px;
+}
 
-  body:has(.pro-app) .market-intervals {
-    display:flex;
-    overflow-x:auto;
-    gap:6px;
-  }
+body:has(.pro-app) .market-intervals {
+  display:flex;
+  overflow-x:auto;
+  gap:6px;
+}
 
-  body:has(.pro-app) .interval-box {
-    min-width:65px;
-  }
+body:has(.pro-app) .interval-box {
+  min-width:65px;
+}
 
-  body:has(.pro-app) .radar-layout,
+body:has(.pro-app) .radar-layout,
   body:has(.pro-app) .studio-grid,
   body:has(.pro-app) .market-exchange-layout {
-    grid-template-columns:1fr;
-  }
+  grid-template-columns:1fr;
+}
 
-  body:has(.pro-app) .bag-add-form {
-    grid-template-columns:1fr 1fr;
-  }
+body:has(.pro-app) .bag-add-form {
+  grid-template-columns:1fr 1fr;
+}
 
-  body:has(.pro-app) .bag-search-wrap {
-    grid-column:1/-1;
-  }
+body:has(.pro-app) .bag-search-wrap {
+  grid-column:1/-1;
+}
 
-  body:has(.pro-app) .bag-add-form input {
-    min-width:0;
-    width:100%;
-  }
+body:has(.pro-app) .bag-add-form input {
+  min-width:0;
+  width:100%;
+}
 
-  body:has(.pro-app) .bag-header {
-    padding:16px;
-  }
+body:has(.pro-app) .bag-header {
+  padding:16px;
+}
 
-  body:has(.pro-app) .bag-pnl-hero {
-    font-size:26px;
-  }
+body:has(.pro-app) .bag-pnl-hero {
+  font-size:26px;
+}
 
-  body:has(.pro-app) .scale-grid {
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
+body:has(.pro-app) .scale-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
 
-  body:has(.pro-app) .mood-search-row {
-    flex-wrap:wrap;
-  }
+body:has(.pro-app) .mood-search-row {
+  flex-wrap:wrap;
+}
 
-  body:has(.pro-app) .mood-search-row input {
-    min-width:0;
-    flex:1;
-  }
+body:has(.pro-app) .mood-search-row input {
+  min-width:0;
+  flex:1;
+}
 
-  body:has(.pro-app) .mood-metrics {
-    grid-template-columns:1fr 1fr;
-  }
+body:has(.pro-app) .mood-metrics {
+  grid-template-columns:1fr 1fr;
+}
 
-  body:has(.pro-app) .mood-token-timeframes {
-    flex-wrap:wrap;
-  }
+body:has(.pro-app) .mood-token-timeframes {
+  flex-wrap:wrap;
+}
 
-  body:has(.pro-app) .wm-footer-inner {
-    flex-direction:column;
-  }
+body:has(.pro-app) .wm-footer-inner {
+  flex-direction:column;
+}
 
-  body:has(.pro-app) .wm-footer-brand {
-    display:none;
-  }
+body:has(.pro-app) .wm-footer-brand {
+  display:none;
+}
 
-  body:has(.pro-app) .wm-footer-links-wrap {
-    justify-content:space-between;
-    gap:16px;
-  }
+body:has(.pro-app) .wm-footer-links-wrap {
+  justify-content:space-between;
+  gap:16px;
+}
 
-  body:has(.pro-app) .wm-footer-col a {
-    font-size:11px;
-  }
+body:has(.pro-app) .wm-footer-col a {
+  font-size:11px;
+}
 
-  body:has(.pro-app) .emotion-pulse-toggle {
-    right:14px;
-    bottom:14px;
-    font-size:12px;
-    padding:10px 14px;
-  }
+body:has(.pro-app) .emotion-pulse-toggle {
+  right:14px;
+  bottom:14px;
+  font-size:12px;
+  padding:10px 14px;
+}
 
-  body:has(.pro-app) .emotion-pulse-panel {
-    right:12px;
-    bottom:65px;
-    max-width:calc(100vw - 24px);
-  }
+body:has(.pro-app) .emotion-pulse-panel {
+  right:12px;
+  bottom:65px;
+  max-width:calc(100vw - 24px);
+}
 
-  body:has(.pro-app) .dashboard {
-    gap:18px;
-  }
+body:has(.pro-app) .dashboard {
+  gap:18px;
+}
 
-  body:has(.pro-app) .rush-hud {
-    flex-wrap:wrap;
-  }
+body:has(.pro-app) .rush-hud {
+  flex-wrap:wrap;
+}
 
-  body:has(.pro-app) .rush-modal-panel {
-    max-width:calc(100vw - 20px);
-  }
+body:has(.pro-app) .rush-modal-panel {
+  max-width:calc(100vw - 20px);
+}
 
-  body:has(.pro-app) .about-title {
-    font-size:28px;
-  }
+body:has(.pro-app) .about-title {
+  font-size:28px;
+}
 
 }
 
 @media(prefers-reduced-motion:reduce) {
-  body:has(.pro-app) *,
+body:has(.pro-app) *,
   body:has(.pro-app) *::before,
   body:has(.pro-app) *::after {
-    animation:none!important;
-    transition:none!important;
-    scroll-behavior:auto!important;
-  }
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
 
-  body:has(.pro-app) .anim-float {
-    transform:none!important;
-  }
+body:has(.pro-app) .anim-float {
+  transform:none!important;
+}
 
 }
 
 body:has(.pro-app) .gauge-score-center {
   bottom:25px;
+  bottom: 34px;
 }
 
-body:has(.pro-app) .gauge-track,
-body:has(.pro-app) #gaugeFill {
+body:has(.pro-app) .gauge-track, body:has(.pro-app) #gaugeFill {
   stroke-width:9px;
 }
 
@@ -1834,13 +1834,13 @@ body:has(.pro-app) .gauge-needle-wrap {
 }
 
 @media(max-width:740px) {
-  body:has(.pro-app) .gauge-score-center {
-    bottom:8px;
-  }
+body:has(.pro-app) .gauge-score-center {
+  bottom:8px;
+}
 
-  body:has(.pro-app) .wm-gauge-wrap {
-    aspect-ratio:auto;
-  }
+body:has(.pro-app) .wm-gauge-wrap {
+  aspect-ratio:auto;
+}
 
 }
 
@@ -1868,9 +1868,6 @@ body:has(.pro-app) .gauge-needle-wrap {
    monocromo porque no depende del tono, sino de que hay algo donde
    antes no habia nada.
    ----------------------------------------------------------- */
-body:has(.pro-app) .pro-nav-link {
-  position: relative;
-}
 
 body:has(.pro-app) .pro-nav-link::before {
   content: "";
@@ -1897,13 +1894,13 @@ body:has(.pro-app) .pro-nav-link[aria-current="page"] {
 /* El icono acompaña: apagado cuando no esta activo, encendido
    cuando lo esta. Es el segundo aviso, para quien no distinga el
    peso de la letra. */
+
 body:has(.pro-app) .pro-nav-link > span {
   color: var(--bone-faint);
   transition: color 0.15s var(--ease);
 }
 
-body:has(.pro-app) .pro-nav-link:hover > span,
-body:has(.pro-app) .pro-nav-link[aria-current="page"] > span {
+body:has(.pro-app) .pro-nav-link:hover > span, body:has(.pro-app) .pro-nav-link[aria-current="page"] > span {
   color: var(--bone);
 }
 
@@ -1914,14 +1911,6 @@ body:has(.pro-app) .pro-nav-link[aria-current="page"] > span {
    segundo trozo se distinguia por color; aqui se distingue por
    peso. Sigue leyendose como una palabra y no como dos.
    ----------------------------------------------------------- */
-body:has(.pro-app) .pro-brand span {
-  color: var(--bone-dim);
-  font-weight: 400;
-}
-
-body:has(.pro-app) .pro-brand small {
-  color: var(--bone-faint);
-}
 
 /* -----------------------------------------------------------
    EL TITULAR, A LA IZQUIERDA
@@ -1931,9 +1920,8 @@ body:has(.pro-app) .pro-brand small {
    izquierda y todo lo demas se alinea con ella: un titular
    centrado se lee como si perteneciera a otra pagina.
    ----------------------------------------------------------- */
-body:has(.pro-app) .hero h1,
-body:has(.pro-app) .hero h2,
-body:has(.pro-app) #heroTitle {
+
+body:has(.pro-app) .hero h1, body:has(.pro-app) .hero h2, body:has(.pro-app) #heroTitle {
   text-align: left !important;
   margin-left: 0;
   margin-right: auto;
@@ -1946,15 +1934,6 @@ body:has(.pro-app) #heroTitle {
    punto que respira: "en directo" es un ESTADO, no una valoracion,
    y en este proyecto el verde ya significa que el mercado sube.
    ----------------------------------------------------------- */
-body:has(.pro-app) .pro-nav-link i {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--ink-200);
-  border: 1px solid var(--line);
-  color: var(--bone-dim);
-  letter-spacing: 0.12em;
-}
 
 body:has(.pro-app) .pro-nav-link i::before {
   content: "";
@@ -1966,8 +1945,14 @@ body:has(.pro-app) .pro-nav-link i::before {
 }
 
 @keyframes pro-live {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 1; }
+0%, 100% {
+  opacity: 0.35;
+}
+
+50% {
+  opacity: 1;
+}
+
 }
 
 /* -----------------------------------------------------------
@@ -1978,25 +1963,21 @@ body:has(.pro-app) .pro-nav-link i::before {
    un escalon mas oscuro en la barra, la jerarquia se ve sin
    necesidad de mirarla.
    ----------------------------------------------------------- */
-body:has(.pro-app) .pro-sidebar {
-  background: var(--ink-000);
-  border-right: 1px solid var(--line);
-}
-
-body:has(.pro-app) .app-shell {
-  background: var(--ink-050);
-}
 
 /* La cabecera pegajosa se apoya en el mismo fondo del panel, no en
    uno propio: si no, al hacer scroll se ve un escalon de color
    donde no hay ningun cambio de contenido. */
-body:has(.pro-app) .pro-header {
-  background: color-mix(in srgb, var(--ink-050) 94%, transparent) !important;
-}
 
 @media (prefers-reduced-motion: reduce) {
-  body:has(.pro-app) .pro-nav-link i::before { animation: none; opacity: 0.8; }
-  body:has(.pro-app) .pro-nav-link::before { transition: none; }
+body:has(.pro-app) .pro-nav-link i::before {
+  animation: none;
+  opacity: 0.8;
+}
+
+body:has(.pro-app) .pro-nav-link::before {
+  transition: none;
+}
+
 }
 
 /* -----------------------------------------------------------
@@ -2007,20 +1988,165 @@ body:has(.pro-app) .pro-header {
    2. La cifra del medidor caia sobre el arco. Se sube al centro
       del hueco, que es donde el ojo la busca.
    ----------------------------------------------------------- */
-body:has(.pro-app) .pro-nav-link {
-  white-space: nowrap;
-}
 
-body:has(.pro-app) .pro-nav-link i {
-  padding: 2px 6px;
-  font-size: 9px;
-  flex-shrink: 0;
-}
-
+@media (max-width: 740px) {
 body:has(.pro-app) .gauge-score-center {
-  bottom: 34px;
+  bottom: 14px;
+}
+
+}
+
+/* ===========================================================
+   AFINADO — segunda pasada
+   =========================================================== */
+
+/* -----------------------------------------------------------
+   LA ESCALA EMOCIONAL, MAS PEQUEÑA
+
+   Siete caras de 56px en tarjetas de 28px de relleno ocupaban una
+   pantalla entera para decir algo que es una LEYENDA, no una
+   seccion protagonista: aqui se viene a consultar que significa
+   cada tramo, no a mirar los dibujos.
+
+   Las caras bajan a 40px y las tarjetas se aprietan. La rejilla
+   pasa a `auto-fit` con un minimo, asi que en la barra ancha
+   entran las siete en una fila y al estrecharse se reparten solas
+   sin necesitar un corte por breakpoint.
+   ----------------------------------------------------------- */
+
+body:has(.pro-app) .scale-card {
+  padding: 22px 24px;
+}
+
+body:has(.pro-app) .scale-item:hover {
+  border-color: var(--line-hard);
+}
+
+body:has(.pro-app) .scale-face {
+  width: 40px;
+  height: 40px;
+}
+
+body:has(.pro-app) .scale-item strong {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  margin-top: 8px;
+}
+
+/* El rotulo de la seccion iba centrado y solo: alineado con el
+   resto del panel se lee como un titulo y no como un pie. */
+
+body:has(.pro-app) .scale-card .section-head {
+  justify-content: flex-start;
 }
 
 @media (max-width: 740px) {
-  body:has(.pro-app) .gauge-score-center { bottom: 14px; }
+body:has(.pro-app) .scale-grid {
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+}
+
+body:has(.pro-app) .scale-face {
+  width: 34px;
+  height: 34px;
+}
+
+body:has(.pro-app) .scale-item {
+  padding: 11px 4px;
+}
+
+}
+
+/* -----------------------------------------------------------
+   QUE SE VEA EL PANEL LED
+
+   El panel se pinta sobre `section.hero.card`, que en esta
+   disposicion es solo el envoltorio: las dos tarjetas de dentro
+   —el escenario y el resumen— llevaban fondo opaco y lo tapaban
+   entero. Solo asomaba en la franja del titular.
+
+   Con las superficies a un pelo de transparencia el campo se lee
+   POR DEBAJO del contenido, que es donde tiene que estar: es
+   atmosfera, no protagonista. El desenfoque de fondo mantiene el
+   texto legible sobre los puntos encendidos, que es la parte que
+   se suele estropear al hacer esto.
+   ----------------------------------------------------------- */
+
+/* El escenario en si NO se aclara: es el hueco oscuro que el panel
+   recorta a proposito alrededor del personaje. Aclararlo llenaria
+   de puntos la cara. */
+
+/* Navegador sin color-mix: se queda con el fondo solido de antes
+   en vez de con uno transparente que no se pueda leer. */
+
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+body:has(.pro-app) .pro-visual,
+  body:has(.pro-app) .pro-summary {
+  background: var(--ink-100);
+  backdrop-filter: none;
+}
+
+}
+
+/* -----------------------------------------------------------
+   ACABADO GENERAL
+
+   Tres cosas que se notan sin poder señalarlas:
+
+   1. Un ritmo de relleno unico. Las tarjetas venian con 28px, 24px,
+      22px y 20px segun quien las escribiera; el ojo lo lee como
+      descuido aunque no sepa por que.
+   2. Las cifras, en cifras tabulares. Sin esto, un precio que pasa
+      de 79.222 a 79.218 baila de ancho y la fila entera se mueve.
+   3. Titulares mas apretados de letra. A partir de 20px, el
+      espaciado por defecto se ve suelto.
+   ----------------------------------------------------------- */
+
+body:has(.pro-app) .top-coins, body:has(.pro-app) .bag-mood-section, body:has(.pro-app) .emotion-radar, body:has(.pro-app) .mood-token-card, body:has(.pro-app) .studio-card, body:has(.pro-app) .about-section {
+  padding: 24px;
+}
+
+body:has(.pro-app) .ticker-price, body:has(.pro-app) .ticker-symbol, body:has(.pro-app) .wm-metric strong, body:has(.pro-app) .coin-card .coin-price, body:has(.pro-app) .hero-line-item strong, body:has(.pro-app) .interval-box strong, body:has(.pro-app) .chart-mini-stat strong, body:has(.pro-app) .bag-pnl-hero {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+body:has(.pro-app) .section-head h2, body:has(.pro-app) .section-head h3, body:has(.pro-app) .hero-mood {
+  letter-spacing: -0.025em;
+}
+
+/* La cifra del medidor es el numero mas importante de la pagina.
+   Que no comparta espaciado con el resto. */
+
+/* -----------------------------------------------------------
+   EL AVISO DE CONEXION
+
+   "Some feeds are unavailable" salia del mismo tamaño y color que
+   el resto de la fila, asi que o no se veia o parecia un titulo.
+   Se le da el color del estado y un punto delante, como el resto
+   de indicadores de la pagina.
+   ----------------------------------------------------------- */
+
+body:has(.pro-app) .pro-connection > span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+/* -----------------------------------------------------------
+   PROFUNDIDAD, MEDIDA
+
+   Las tarjetas se distinguian del fondo solo por una linea de un
+   pixel. Una sombra muy baja las despega sin que se note que hay
+   una sombra: si se ve, es demasiada.
+   ----------------------------------------------------------- */
+
+body:has(.pro-app) .card, body:has(.pro-app) .pro-visual, body:has(.pro-app) .pro-summary {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
