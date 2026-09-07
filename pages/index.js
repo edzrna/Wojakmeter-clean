@@ -147,7 +147,21 @@ export default function Home({
 
       
 
-      <div className="style-classic pro-app" data-view="overview"><aside className="pro-sidebar" aria-label="Workspace"><nav><a className="pro-brand" href="#market" aria-label="WojakMeter overview"><img src="/assets/icons/classic/neutral.png" alt="" width="42" height="42" decoding="async" loading="lazy" /><div>wojak<span>meter</span><small>THE CRYPTO EMOTION INDEX</small></div></a><p className="pro-nav-label">WORKSPACE</p><a href="#market" data-nav="overview" className="pro-nav-link"><span aria-hidden="true">◫</span>Overview</a><a href="#top-coins" data-nav="markets" className="pro-nav-link"><span aria-hidden="true">↗</span>Markets</a><a href="#bagMoodSection" data-nav="bag" className="pro-nav-link"><span aria-hidden="true">◈</span>My bag</a><a href="#emotionRadarSection" data-nav="radar" className="pro-nav-link"><span aria-hidden="true">◎</span>Emotion radar</a><a href="#moodSection" data-nav="token" className="pro-nav-link"><span aria-hidden="true">ϟ</span>MOOD live<i>LIVE</i></a><a href="#wojak-studio" data-nav="studio" className="pro-nav-link"><span aria-hidden="true">✳</span>Wojak Studio</a><p className="pro-nav-label">EXPLORE</p><a href="#emotionScale" data-nav="scale" className="pro-nav-link"><span aria-hidden="true">◒</span>Emotional scale</a><a href="#emotionRush" data-nav="play" className="pro-nav-link"><span aria-hidden="true">◇</span>Emotion Rush</a><a href="#faq" data-nav="about" className="pro-nav-link"><span aria-hidden="true">ⓘ</span>How it works</a><div className="pro-nav-bottom"><a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer">𝕏 <span>Join the conversation</span> ↗</a><div className="pro-note">A little emotion.<br />A lot of market context.</div><small>© 2026 WojakMeter</small></div></nav></aside>
+      <div className="style-classic pro-app" data-view="overview"><aside className="pro-sidebar" aria-label="Workspace"><nav><a className="pro-brand" href="#market" aria-label="WojakMeter overview">{/* EL LOGO DE VERDAD, no una marca de texto.
+
+                  El rediseño sustituia el logo por la palabra
+                  "wojakmeter" escrita a dos tonos y escondia el
+                  archivo real con `display:none`. Una marca dibujada
+                  no se cambia por una tipografia: es lo unico de la
+                  pagina que no se puede rehacer con CSS.
+
+                  Van los DOS: el logo completo para la barra ancha y
+                  la cara para cuando la barra se encoge a 74px, donde
+                  un logotipo apaisado no se leeria. La CSS decide
+                  cual, no el JavaScript. */}
+                  <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter" className="pro-brand-mark" width="176" height="50" decoding="async" />
+                  <img src="/assets/icons/classic/neutral.png" alt="" className="pro-brand-icon" width="38" height="38" decoding="async" aria-hidden="true" />
+                  <small>THE CRYPTO EMOTION INDEX</small></a><p className="pro-nav-label">WORKSPACE</p><a href="#market" data-nav="overview" className="pro-nav-link"><span aria-hidden="true">◫</span>Overview</a><a href="#top-coins" data-nav="markets" className="pro-nav-link"><span aria-hidden="true">↗</span>Markets</a><a href="#bagMoodSection" data-nav="bag" className="pro-nav-link"><span aria-hidden="true">◈</span>My bag</a><a href="#emotionRadarSection" data-nav="radar" className="pro-nav-link"><span aria-hidden="true">◎</span>Emotion radar</a><a href="#moodSection" data-nav="token" className="pro-nav-link"><span aria-hidden="true">ϟ</span>MOOD live<i>LIVE</i></a><a href="#wojak-studio" data-nav="studio" className="pro-nav-link"><span aria-hidden="true">✳</span>Wojak Studio</a><p className="pro-nav-label">EXPLORE</p><a href="#emotionScale" data-nav="scale" className="pro-nav-link"><span aria-hidden="true">◒</span>Emotional scale</a><a href="#emotionRush" data-nav="play" className="pro-nav-link"><span aria-hidden="true">◇</span>Emotion Rush</a><a href="#faq" data-nav="about" className="pro-nav-link"><span aria-hidden="true">ⓘ</span>How it works</a><div className="pro-nav-bottom"><a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer">𝕏 <span>Join the conversation</span> ↗</a><div className="pro-note">A little emotion.<br />A lot of market context.</div><small>© 2026 WojakMeter</small></div></nav></aside>
         <div className="app-shell">
 
           {/* ===========================================================
