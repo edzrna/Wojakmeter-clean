@@ -161,7 +161,9 @@ export default function Home({
                   cual, no el JavaScript. */}
                   <img src="/assets/logo/wojakmeter_logo.png" alt="WojakMeter" className="pro-brand-mark" width="176" height="50" decoding="async" />
                   <img src="/assets/icons/classic/neutral.png" alt="" className="pro-brand-icon" width="38" height="38" decoding="async" aria-hidden="true" />
-                  <small>THE CRYPTO EMOTION INDEX</small></a><p className="pro-nav-label">WORKSPACE</p><a href="#market" data-nav="overview" className="pro-nav-link"><span aria-hidden="true">◫</span>Overview</a><a href="#top-coins" data-nav="markets" className="pro-nav-link"><span aria-hidden="true">↗</span>Markets</a><a href="#bagMoodSection" data-nav="bag" className="pro-nav-link"><span aria-hidden="true">◈</span>My bag</a><a href="#emotionRadarSection" data-nav="radar" className="pro-nav-link"><span aria-hidden="true">◎</span>Emotion radar</a><a href="#moodSection" data-nav="token" className="pro-nav-link"><span aria-hidden="true">ϟ</span>MOOD live<i>LIVE</i></a><a href="#wojak-studio" data-nav="studio" className="pro-nav-link"><span aria-hidden="true">✳</span>Wojak Studio</a><p className="pro-nav-label">EXPLORE</p><a href="#emotionScale" data-nav="scale" className="pro-nav-link"><span aria-hidden="true">◒</span>Emotional scale</a><a href="#emotionRush" data-nav="play" className="pro-nav-link"><span aria-hidden="true">◇</span>Emotion Rush</a><a href="#faq" data-nav="about" className="pro-nav-link"><span aria-hidden="true">ⓘ</span>How it works</a><div className="pro-nav-bottom"><a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer">𝕏 <span>Join the conversation</span> ↗</a><div className="pro-note">A little emotion.<br />A lot of market context.</div><small>© 2026 WojakMeter</small></div></nav></aside>
+                  {/* Sin `<small>` con el eslogan: ya va DIBUJADO dentro
+                      del propio logo. Repetirlo debajo lo decia dos
+                      veces seguidas en el mismo centimetro. */}</a><p className="pro-nav-label">WORKSPACE</p><a href="#market" data-nav="overview" className="pro-nav-link"><span aria-hidden="true">◫</span>Overview</a><a href="#top-coins" data-nav="markets" className="pro-nav-link"><span aria-hidden="true">↗</span>Markets</a><a href="#bagMoodSection" data-nav="bag" className="pro-nav-link"><span aria-hidden="true">◈</span>My bag</a><a href="#emotionRadarSection" data-nav="radar" className="pro-nav-link"><span aria-hidden="true">◎</span>Emotion radar</a><a href="#moodSection" data-nav="token" className="pro-nav-link"><span aria-hidden="true">ϟ</span>MOOD live<i>LIVE</i></a><a href="#wojak-studio" data-nav="studio" className="pro-nav-link"><span aria-hidden="true">✳</span>Wojak Studio</a><p className="pro-nav-label">EXPLORE</p><a href="#emotionScale" data-nav="scale" className="pro-nav-link"><span aria-hidden="true">◒</span>Emotional scale</a><a href="#emotionRush" data-nav="play" className="pro-nav-link"><span aria-hidden="true">◇</span>Emotion Rush</a><a href="#faq" data-nav="about" className="pro-nav-link"><span aria-hidden="true">ⓘ</span>How it works</a><div className="pro-nav-bottom"><a href="https://x.com/wojakmeterx" target="_blank" rel="noopener noreferrer">𝕏 <span>Join the conversation</span> ↗</a><div className="pro-note">A little emotion.<br />A lot of market context.</div><small>© 2026 WojakMeter</small></div></nav></aside>
         <div className="app-shell">
 
           {/* ===========================================================
@@ -292,7 +294,14 @@ export default function Home({
                 <span id="heroDriverLabel">Market flow / price action</span>
               </div>
 
-              <h1 id="heroTitle">Market overview</h1>
+              {/* "Crypto Market Mood" y no "Market overview".
+
+                  La barra lateral ya dice Overview: repetirlo aqui es
+                  decir dos veces donde estas y ninguna vez QUE es esto.
+                  Ademas es el nombre que la pagina usa en el titulo, en
+                  la etiqueta OG y en lo que la gente comparte — el unico
+                  <h1> del sitio deberia decir lo mismo. */}
+              <h1 id="heroTitle">Crypto Market Mood</h1>
 
               <div className="hero-grid hero-grid-stack">
                 <div className="hero-main">
@@ -559,7 +568,10 @@ export default function Home({
                     <button type="button" data-view-mode="chart" aria-pressed="false">Chart</button>
                     <button type="button" data-view-mode="both" aria-pressed="true">Both</button>
                     <button type="button" data-view-mode="hero" aria-pressed="false">Hero</button>
-                  </div></div><aside className="pro-summary" aria-label="Market emotion summary"><div className="pro-kicker">THE CRYPTO EMOTION INDEX</div><div className="hero-mood mood-neutral" id="heroMood">Neutral</div><div className="hero-subtitle" id="heroSubtitle">
+                  </div></div><aside className="pro-summary" aria-label="Market emotion summary">{/* Este rotulo decia otra vez "THE CRYPTO EMOTION INDEX", que
+                      ya esta en el logo. Un rotulo tiene que decir QUE es lo
+                      que hay debajo, y debajo hay la lectura de ahora mismo. */}
+                  <div className="pro-kicker">CURRENT READING</div><div className="hero-mood mood-neutral" id="heroMood">Neutral</div><div className="hero-subtitle" id="heroSubtitle">
                     Market emotion is balanced for now.
                   </div><section className="wm-gauge-shell" id="wmGaugeShell">
                     <div className="wm-gauge-head">
