@@ -5183,7 +5183,7 @@ function connectMoodStream() {
 
       const delay = Math.min(30000, 2000 * Math.pow(2, _moodReconnectAttempt - 1));
       moodStreamReconnectTimer = setTimeout(() => {
-        if (moodResolvedAddress) connectMoodStream();
+        if (moodResolvedAddress && document.querySelector('.pro-app')?.dataset.view === 'token') connectMoodStream();
       }, delay);
     };
   } catch (err) {
@@ -5346,16 +5346,6 @@ async function loadMoodTokenAddress(newAddress, meta = {}) {
   const resolved = await fetchJson(
     `/api/token-resolve?address=${encodeURIComponent(cleaned)}`, null
   );
-
-  /* Si no se resuelve, se DICE. Antes se seguia adelante en
-     silencio y la tarjeta se quedaba con "Live Token", "$---" y
-     todas las filas en "Reading" indefinidamente, que se lee como
-     que la pagina esta rota en vez de como que el token no esta
-     disponible. */
-  if (!resolved?.ok) {
-    console.warn("WM: /api/token-resolve no resolvió", cleaned, resolved);
-    setText("moodTokenSource", "Unavailable");
-  }
 
   if (resolved?.ok) {
     moodResolvedAddress = resolved?.token?.address || cleaned;
@@ -5657,12 +5647,6 @@ async function loadTrendingTokens() {
 
   if (!trendingTokens.length) {
     console.warn("WM: /api/token-trending sin tokens utilizables", api);
-    /* "Loading…" eterno es la peor de las tres opciones: promete
-       algo que no va a llegar. */
-    const strip = byId("moodTrendingStrip");
-    if (strip && !strip.querySelector("[data-token-address]")) {
-      strip.textContent = "No trending tokens right now";
-    }
   }
 
   renderTrendingTokens();
@@ -7985,6 +7969,22 @@ function initBagMood() {
   renderBagMood();
 }
 
+// Initialize token feeds only when the MOOD workspace is requested.
+let proTokenStarted = false;
+function setupLazyTokenWorkspace() {
+  const start = () => {
+    if (proTokenStarted || document.querySelector('.pro-app')?.dataset.view !== 'token') return;
+    proTokenStarted = true;
+    initMoodToken().catch(console.error);
+  };
+  window.addEventListener('wm:view', () => {
+    if (document.querySelector('.pro-app')?.dataset.view !== 'token') { cleanupMoodStream(); return; }
+    if (proTokenStarted && moodResolvedAddress) connectMoodStream();
+    start();
+  });
+  start();
+}
+
 // ===============================
 // TIMERS
 // ===============================
@@ -7997,7 +7997,13 @@ const _timers = {};
 
 function setTimer(name, fn, ms) {
   clearInterval(_timers[name]);
-  _timers[name] = setInterval(fn, ms);
+  _timers[name] = setInterval(() => {
+    if (document.hidden) return;
+    const view = document.querySelector('.pro-app')?.dataset.view || 'overview';
+    const scope = {moodMarket:['token'],moodOhlcv:['token'],moodChart:['token'],moodFlow:['token'],trendingTokens:['token'],coinDetails:['overview','markets'],trending:['overview','markets'],memes:['overview','markets'],bagMood:['bag']};
+    if (scope[name] && !scope[name].includes(view)) return;
+    fn();
+  }, ms);
 }
 
 function startAutoRefresh() {
@@ -8050,11 +8056,11 @@ function setupVisibilityHandling() {
     }
 
     startAutoRefresh();
-    startMoodPolling();
+    if (proTokenStarted) startMoodPolling();
     startBagMoodLiveRefresh();
 
     await loadGlobalMarket();
-    if (moodResolvedAddress) connectMoodStream();
+    if (moodResolvedAddress && document.querySelector('.pro-app')?.dataset.view === 'token') connectMoodStream();
   });
 }
 
@@ -8130,35 +8136,10 @@ async function boot() {
   setupHistory();
   setupVisibilityHandling();
 
-  /* ===========================================================
-     EL PANEL DEL TOKEN YA NO BLOQUEA EL ARRANQUE.
-
-     Esto era `await initMoodToken()` ANTES de `loadAll()`, y esa
-     linea encadenaba cinco peticiones a DexScreener —tendencias,
-     resolucion, mercado, grafico y velas— con siete segundos de
-     tiempo de espera cada una, antes de pedir el primer dato del
-     MERCADO, que es de lo que va la pagina.
-
-     Si DexScreener iba lento, la portada entera se quedaba en
-     "Reading" esperando a una seccion secundaria. Y si alguna de
-     esas llamadas lanzaba, `boot()` moria ahi: sin `loadAll`, sin
-     Bag Mood, sin historico, sin refresco automatico.
-
-     Ahora el mercado va primero y el token se carga por su cuenta.
-     Que tarde o falle solo afecta a su propia tarjeta. El `catch`
-     esta a proposito: es la frontera entre una seccion y el resto
-     de la pagina. */
-  await loadAll();
-
   initBagMood();
+  setupLazyTokenWorkspace();
+  await loadAll();
   await loadHistory();
-
-  initMoodToken().catch((err) => {
-    console.warn("WM: el panel del token no arrancó", err);
-    setText("moodTokenSource", "Unavailable");
-    const hint = qs(".mood-strip-hint");
-    if (hint) hint.textContent = "Token feed unavailable";
-  });
 
   startAutoRefresh();
   startBagMoodLiveRefresh();

@@ -9,27 +9,31 @@ import Link from "next/link";
  * tres tenían fechas y metadatos distintos.
  */
 
-const LEGAL_PAGES = [
-  { href: "/terms", label: "Terms" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/disclaimer", label: "Disclaimer" },
-];
-
+const LEGAL_PAGES = [{
+  href: "/terms",
+  label: "Terms"
+}, {
+  href: "/privacy",
+  label: "Privacy"
+}, {
+  href: "/disclaimer",
+  label: "Disclaimer"
+}];
 export const LAST_UPDATED = "August 2026";
-
-export function LegalSection({ id, title, children }) {
-  return (
-    <section className="legal-section" id={id}>
+export function LegalSection({
+  id,
+  title,
+  children
+}) {
+  return <section className="legal-section" id={id}>
       <h2>
         <a className="legal-anchor" href={`#${id}`}>
           {title}
         </a>
       </h2>
       {children}
-    </section>
-  );
+    </section>;
 }
-
 export default function LegalLayout({
   label,
   title,
@@ -38,12 +42,10 @@ export default function LegalLayout({
   path,
   pills = [],
   sections = [],
-  children,
+  children
 }) {
   const url = `https://wojakmeter.com${path}`;
-
-  return (
-    <>
+  return <>
       <Head>
         <title>{`${title} | WojakMeter`}</title>
         <meta name="description" content={description} />
@@ -59,21 +61,17 @@ export default function LegalLayout({
       <main className="legal-page">
         <div className="legal-shell">
           <div className="legal-topbar">
-            <Link href="/" className="legal-brand">
-              <img
-                src="/assets/logo/wojakmeter_logo.png"
-                className="legal-logo"
-                alt="WojakMeter"
-              />
+            <a href="/" className="legal-brand">
+              <img src="/assets/logo/wojakmeter_logo.png" className="legal-logo" alt="WojakMeter" />
               <div className="legal-brand-copy">
                 <strong>WojakMeter</strong>
                 <span>The Crypto Emotion Index</span>
               </div>
-            </Link>
+            </a>
 
-            <Link href="/" className="legal-back">
+            <a href="/" className="legal-back">
               ← Back to site
-            </Link>
+            </a>
           </div>
 
           <header className="legal-hero">
@@ -83,44 +81,29 @@ export default function LegalLayout({
 
             <div className="legal-meta">
               <span className="legal-pill">Last updated: {LAST_UPDATED}</span>
-              {pills.map((pill) => (
-                <span className="legal-pill" key={pill}>
+              {pills.map(pill => <span className="legal-pill" key={pill}>
                   {pill}
-                </span>
-              ))}
+                </span>)}
             </div>
 
             {/* Las tres páginas se enlazan entre sí: antes estaban
                 aisladas y sólo se llegaba a ellas desde el pie. */}
             <nav className="legal-tabs" aria-label="Legal documents">
-              {LEGAL_PAGES.map((page) => (
-                <Link
-                  key={page.href}
-                  href={page.href}
-                  className={`legal-tab${
-                    page.href === path ? " is-current" : ""
-                  }`}
-                  aria-current={page.href === path ? "page" : undefined}
-                >
+              {LEGAL_PAGES.map(page => <Link key={page.href} href={page.href} className={`legal-tab${page.href === path ? " is-current" : ""}`} aria-current={page.href === path ? "page" : undefined}>
                   {page.label}
-                </Link>
-              ))}
+                </Link>)}
             </nav>
           </header>
 
           <div className="legal-body">
-            {sections.length > 0 && (
-              <aside className="legal-toc" aria-label="On this page">
+            {sections.length > 0 && <aside className="legal-toc" aria-label="On this page">
                 <span className="legal-toc-title">On this page</span>
                 <ol>
-                  {sections.map((section) => (
-                    <li key={section.id}>
+                  {sections.map(section => <li key={section.id}>
                       <a href={`#${section.id}`}>{section.title}</a>
-                    </li>
-                  ))}
+                    </li>)}
                 </ol>
-              </aside>
-            )}
+              </aside>}
 
             <div className="legal-doc">{children}</div>
           </div>
@@ -140,6 +123,5 @@ export default function LegalLayout({
           </footer>
         </div>
       </main>
-    </>
-  );
+    </>;
 }
