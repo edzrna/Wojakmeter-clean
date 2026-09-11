@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>WojakMeter · Piel 08</title>
+<style>
+:root{
+  --bg:#0a0b0f; --panel:#12141b; --line:#232735;
+  --ink:#e8eaf0; --dim:#8b93a7; --faint:#565e73;
+  --frustration:#E4485C; --concern:#E8848F; --doubt:#CBA5AB;
+  --neutral:#B8C0CB; --optimism:#B8E5D0; --content:#7FD9A0; --euphoria:#3BD97A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);padding:20px;
+  font:14px/1.5 ui-sans-serif,system-ui,-apple-system,sans-serif}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+h1{font-size:19px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
+p.sub{color:var(--dim);font-size:13px;margin:0 0 16px;max-width:76ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;max-width:1280px}
+
+/* El escenario es TRANSPARENTE a proposito: asi se ve como quedara
+   incrustado en la pagina, sobre el fondo que haya detras. El
+   tablero de cuadros lo hace evidente. */
+#stage{position:relative;aspect-ratio:4/5;max-height:80vh;border-radius:16px;
+  border:1px solid var(--line);overflow:hidden;
+  background:
+    linear-gradient(45deg,#171a22 25%,transparent 25%,transparent 75%,#171a22 75%),
+    linear-gradient(45deg,#171a22 25%,#0e1017 25%,#0e1017 75%,#171a22 75%);
+  background-size:22px 22px;background-position:0 0,11px 11px}
+#stage.liso{background:#0d1017}
+#stage canvas{display:block;width:100%;height:100%}
+#cargando{position:absolute;inset:0;display:grid;place-items:center;color:var(--faint);
+  font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+#mood{position:absolute;left:16px;bottom:14px;font-size:28px;font-weight:700;
+  letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+#score{position:absolute;right:16px;bottom:18px;font-size:13px;color:var(--dim)}
+
+aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 15px;position:sticky;top:18px;max-height:90vh;overflow:auto}
+aside h2{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  margin:16px 0 8px;font-weight:600}
+aside h2:first-child{margin-top:0}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-bottom:10px}
+.ctl label{font-size:11.5px;color:var(--dim)}
+.ctl output{font-size:11px}
+.ctl input[type=range]{grid-column:1/-1;width:100%;accent-color:#26d07c;margin:0}
+.ctl .why{grid-column:1/-1;font-size:10.5px;color:var(--faint);line-height:1.45}
+select,button{font:inherit;font-size:12px;color:var(--ink);background:#1a1d27;
+  border:1px solid var(--line);border-radius:6px;padding:6px 9px;width:100%}
+button{cursor:pointer;margin-top:8px}
+button:hover{border-color:#3d4870}
+.morfos{font-size:10.5px;line-height:1.7;color:var(--faint)}
+.morfos b{color:var(--dim);font-weight:500}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none}}
+body{font-size:16px} .ctl label,select,button{font-size:14px} .sub{font-size:14px!important} .views{display:grid;grid-template-columns:1fr 1fr;gap:6px} #stage.liso{background:#050709} </style>
+</head>
+<body>
+
+<h1>WOJAKMETER · Piel 08</h1>
+<p class="sub">Estudio de piel y expresiones · v08</p>
+
+<div class="wrap">
+  <div id="stage" class="liso">
+    <div id="cargando">Cargando modelo…</div>
+    <div id="mood">Neutral</div>
+    <div id="score" class="mono">50 / 100</div>
+  </div>
+
+  <aside>
+    <div class="views"><button id="frontView">Frente</button><button id="quarterView">¾</button><button id="profileView">Perfil</button><button id="downloadModel">Descargar GLB</button></div><h2>Estado del mercado</h2>
+    <select id="preset"></select><p id="subreading" class="sub" style="margin-top:10px">Espera</p>
+
+    <div class="ctl">
+      <label for="valence">valence</label><output id="oV">0.00</output>
+      <input type="range" id="valence" min="-1" max="1" step="0.01" value="0">
+    </div>
+    <div class="ctl">
+      <label for="arousal">arousal</label><output id="oA">0.35</output>
+      <input type="range" id="arousal" min="0" max="1" step="0.01" value="0.35">
+    </div>
+    <div class="ctl">
+      <label for="tension">tension</label><output id="oT">0.15</output>
+      <input type="range" id="tension" min="0" max="1" step="0.01" value="0.15">
+    </div>
+    <div class="ctl">
+      <label for="fatigue">fatigue</label><output id="oF">0.20</output>
+      <input type="range" id="fatigue" min="0" max="1" step="0.01" value="0.2">
+    </div>
+
+    <h2>Intensidad de prueba</h2>
+    <div class="ctl">
+      <label for="exag">exageración</label><output id="oE">1.60</output>
+      <input type="range" id="exag" min="0.4" max="1.0" step="0.05" value="0.55">
+      <span class="why">Pruebas de expresión sobre la misma identidad.</span>
+    </div>
+
+    <label style="display:block;margin-top:12px"><input id="fxEnabled" checked type="checkbox"> Efectos de emoción</label>
+    <button id="ciclo" type="button">Recorrer las 7 emociones</button>
+    <button id="girar" type="button">Girar / parar</button>
+    <button id="fondo" type="button">Fondo liso / transparente</button>
+
+    <h2>Morfos activos</h2>
+    <div class="morfos" id="activos">—</div>
+  </aside>
+</div>
+
+<script>window.__TEX={"Skin": "./Skin.png", "SkinN": "./SkinN.png", "Eye": "./Eye.png", "Eyelash": "./Eyelash.png", "Teeth": "./Teeth.jpg", "Tongue": "./Tongue.jpg", "SkinR": "./SkinR.png", "HoodieN": "./HoodieN.jpg"};</script>
+
+<script type="module" src="./character-app.js"></script>
+</body></html>
