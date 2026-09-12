@@ -1,6 +1,6 @@
 # 🧠 WojakMeter
 
-**The Crypto Emotion Index**
+**The Crypto Emotion Index** 
 
 WojakMeter is a real-time crypto sentiment platform that transforms market data into something traders actually understand:
 
