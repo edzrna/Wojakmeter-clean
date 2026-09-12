@@ -21,7 +21,7 @@
   const button=document.createElement('button');button.type='button';button.className='wm-3d-toggle';button.textContent='Probar personaje 3D';button.setAttribute('aria-pressed','false');stage.before(button);
   button.onclick=()=>{
    active=!active;stage.classList.toggle('wm-3d-active',active);button.setAttribute('aria-pressed',String(active));button.textContent=active?'Volver al personaje original':'Probar personaje 3D';
-   if(active&&!frame){frame=document.createElement('iframe');frame.id='wm3dFrame';frame.title='WojakMeter · personaje 3D';frame.src='/wojak-3d/viewer.html?v=8';frame.setAttribute('sandbox','allow-scripts allow-same-origin');wrap.append(frame);}
+   if(active&&!frame){frame=document.createElement('iframe');frame.id='wm3dFrame';frame.title='WojakMeter · personaje 3D';frame.src='/wojak-3d/viewer.html?v=10';frame.setAttribute('sandbox','allow-scripts allow-same-origin');wrap.append(frame);}
    if(frame)frame.hidden=!active;send();
   };
   addEventListener('message',event=>{if(event.origin===location.origin&&event.source===frame?.contentWindow&&event.data?.type==='wm-ready'){ready=true;send();}});

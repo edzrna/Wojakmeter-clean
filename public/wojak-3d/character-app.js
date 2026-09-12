@@ -7944,6 +7944,53 @@ function installDramaSkin(){
 }
 
 let motionRoot=null,headPivot=null;
+const irisColor={value:new THREE.Color(.45,.40,.34)};
+let eyeMesh=null,eyeBase=null,eyeNormals=null;
+const eyeCenters=[new THREE.Vector3(-.1281933,.0598448,.1530891),new THREE.Vector3(.1284629,.0597128,.1530911)];
+const pointer={x:0,y:0,active:false},eyeAngles=[{x:0,y:0},{x:0,y:0}];
+function setupEyes(mesh){
+ eyeMesh=mesh;eyeBase=mesh.geometry.attributes.position.array.slice();eyeNormals=mesh.geometry.attributes.normal.array.slice();
+ mesh.material.onBeforeCompile=shader=>{
+  shader.uniforms.wmIrisColor=irisColor;
+  shader.fragmentShader='uniform vec3 wmIrisColor;\n'+shader.fragmentShader;
+  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+   float radius=length(vMapUv-vec2(.5));
+   float irisMask=smoothstep(.087,.104,radius)*(1.0-smoothstep(.170,.190,radius));
+   float irisDetail=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+   vec3 colored=wmIrisColor*(.32+irisDetail*2.8);
+   diffuseColor.rgb=mix(diffuseColor.rgb,colored,irisMask*.94);
+  `);
+ };mesh.material.customProgramCacheKey=()=> 'wm-iris-v09';mesh.material.needsUpdate=true;
+}
+function pointerAt(x,y){pointer.x=THREE.MathUtils.clamp(x,-1,1);pointer.y=THREE.MathUtils.clamp(y,-1,1);pointer.active=true;}
+stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();pointerAt((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);});
+stage.addEventListener('pointerleave',()=>{pointer.active=false;});
+const eyeVec=new THREE.Vector3(),eyeN=new THREE.Vector3(),eyeQ=new THREE.Quaternion();
+function updateEyes(dt){
+ if(!eyeMesh)return;
+ const palette={frustration:'#a84437',concern:'#b77970',doubt:'#bca096',neutral:'#b58a58',optimism:'#a4b68f',content:'#719752',euphoria:'#4c8c2f'};
+ irisColor.value.setRGB(0,0,0);for(const [key,w] of Object.entries(liveWeights((suave.valence+1)*50))){const c=new THREE.Color(palette[key]);irisColor.value.add(c.multiplyScalar(w));}
+ const lerp=1-Math.exp(-dt*8);
+ // Screen-space target transformed into the moving head's local space.
+ escena.updateMatrixWorld(true);
+ const target=new THREE.Vector3(pointer.x*.50,pointer.y*.48,.9);eyeMesh.worldToLocal(target);
+ const center=eyeCenters[0].clone().add(eyeCenters[1]).multiplyScalar(.5),d=target.clone().sub(center);
+ const yaw=pointer.active?THREE.MathUtils.clamp(Math.atan2(d.x,d.z),-.24,.24):0;
+ const pitch=pointer.active?THREE.MathUtils.clamp(-Math.atan2(d.y,Math.hypot(d.x,d.z)),-.16,.16):0;
+ eyeAngles[0].x+=(pitch-eyeAngles[0].x)*lerp;eyeAngles[0].y+=(yaw-eyeAngles[0].y)*lerp;
+ eyeAngles[1].x=eyeAngles[0].x;eyeAngles[1].y=eyeAngles[0].y;
+ const p=eyeMesh.geometry.attributes.position,n=eyeMesh.geometry.attributes.normal;
+ for(let i=0;i<p.count;i++){
+  const k=i*3,side=eyeBase[k]>0?1:0,center=eyeCenters[side],a=eyeAngles[side];eyeQ.setFromEuler(new THREE.Euler(a.x,a.y,0,'YXZ'));
+  eyeVec.fromArray(eyeBase,k).sub(center).applyQuaternion(eyeQ).add(center);p.setXYZ(i,eyeVec.x,eyeVec.y,eyeVec.z);
+  eyeN.fromArray(eyeNormals,k).applyQuaternion(eyeQ);n.setXYZ(i,eyeN.x,eyeN.y,eyeN.z);
+ }
+ p.needsUpdate=true;n.needsUpdate=true;
+}
+let viewYaw=0,sweepPhase=0;
+function chooseView(angle){girando=false;viewYaw=angle;}
+function advanceView(dt){if(!grupo)return;if(girando){sweepPhase+=dt*.20;viewYaw=Math.sin(sweepPhase)*.60;}grupo.rotation.y+=(viewYaw-grupo.rotation.y)*(1-Math.exp(-dt*4));}
+
 let malla=null, idx={}, girando=false, matPiel=null, grupo=null;
 const seguidores=[];
 
@@ -8011,7 +8058,7 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
         clearcoat:1.0, clearcoatRoughness:0.04,
         envMapIntensity:0.75,
       });
-      m.name="Eye"; o.material=m;
+      m.name="Eye"; o.material=m;setupEyes(o);
     } else if(n==="Hoodie"){
       const m=new THREE.MeshPhysicalMaterial({
         color:0x171c22, normalMap: textura("HoodieN", false),
@@ -8242,7 +8289,7 @@ function montarEfectos(padre){
      lentas y mas juntas que el sudor. */
   for(const lado of [1,-1]){
     const l=plano(texGota,0.020,0.030,false);
-    l.userData={ x:lado*(OJO.x-0.028), y0:OJO.y-0.022, z:OJO.z-0.012,
+    l.userData={ x:lado*(OJO.x-0.028), y0:OJO.y-0.034, z:OJO.z-0.012,
                  vel:0.055, fase:lado>0?0:0.5 };
     padre.add(l); lagrimas.push(l);
   }
@@ -8251,34 +8298,70 @@ function montarEfectos(padre){
 let modoEfectos="neutral";
 function estadoEfectos(clave){ modoEfectos=clave; }
 
-function attachPath(drop){
- const d=drop.userData,attr=malla.geometry.attributes.position;d.path=[];
- const length=lagrimas.includes(drop)?.26:.42;
- for(let j=0;j<=12;j++){
-  const y=d.y0-j/12*length;let nearest=[];
-  for(let i=0;i<attr.count;i++){if(attr.getZ(i)<0)continue;const dist=(attr.getX(i)-d.x)**2+(attr.getY(i)-y)**2;nearest.push([dist,i]);}
-  nearest.sort((a,b)=>a[0]-b[0]);nearest=nearest.slice(0,3);let total=0;
-  for(const p of nearest){p[0]=1/(p[0]+1e-7);total+=p[0];}d.path.push(nearest.map(p=>[p[1],p[0]/total]));
+const dropA=new THREE.Vector3(),dropB=new THREE.Vector3();
+// Surface-attached water with a soft contact shadow and a specular wet trace.
+const waterTmp=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+const waterNormal=new THREE.Vector3(),waterUp=new THREE.Vector3(),waterRight=new THREE.Vector3();
+const waterBasis=new THREE.Matrix4();
+const shadowTex=lienzo(64,64,(ctx,w,h)=>{
+ const g=ctx.createRadialGradient(w/2,h/2,1,w/2,h/2,w/2);
+ g.addColorStop(0,'rgba(25,12,9,.5)');g.addColorStop(.45,'rgba(25,12,9,.24)');g.addColorStop(1,'rgba(25,12,9,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+});
+function surfaceAnchor(x,y){
+ const g=malla.geometry,pos=g.attributes.position,ix=g.index;
+ let result=null,best=-Infinity;
+ for(let f=0;f<ix.count;f+=3){
+  const ids=[ix.getX(f),ix.getX(f+1),ix.getX(f+2)];
+  const a=ids.map(i=>[pos.getX(i),pos.getY(i),pos.getZ(i)]);
+  const den=(a[1][1]-a[2][1])*(a[0][0]-a[2][0])+(a[2][0]-a[1][0])*(a[0][1]-a[2][1]);if(Math.abs(den)<1e-10)continue;
+  const u=((a[1][1]-a[2][1])*(x-a[2][0])+(a[2][0]-a[1][0])*(y-a[2][1]))/den;
+  const v=((a[2][1]-a[0][1])*(x-a[2][0])+(a[0][0]-a[2][0])*(y-a[2][1]))/den;
+  if(Math.min(u,v,1-u-v)<-1e-5)continue;
+  const z=a[0][2]*u+a[1][2]*v+a[2][2]*(1-u-v);
+  if(z>best){best=z;result={ids,weights:[u,v,1-u-v]};}
  }
+ return result;
 }
-const dropVec=new THREE.Vector3(),dropA=new THREE.Vector3(),dropB=new THREE.Vector3();
-function pathPoint(anchors,out){out.set(0,0,0);for(const [i,w] of anchors){malla.getVertexPosition(i,dropVec);out.addScaledVector(dropVec,w);}return out;}
+function waterPoint(anchor,out){
+ out.set(0,0,0);
+ for(let i=0;i<3;i++){malla.getVertexPosition(anchor.ids[i],waterTmp[i]);out.addScaledVector(waterTmp[i],anchor.weights[i]);}
+ waterNormal.copy(waterTmp[1]).sub(waterTmp[0]).cross(waterRight.copy(waterTmp[2]).sub(waterTmp[0])).normalize();if(waterNormal.z<0)waterNormal.negate();
+ return out;
+}
+function initWater(drop){
+ const d=drop.userData,tear=lagrimas.includes(drop),length=tear?.23:.37;
+ d.samples=[];
+ for(let i=0;i<=64;i++){const a=surfaceAnchor(d.x,d.y0-i/64*length);d.samples.push(a);}
+ const shadow=new THREE.Mesh(new THREE.PlaneGeometry(.018,.026),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,opacity:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));
+ shadow.renderOrder=3;malla.add(shadow);d.shadow=shadow;
+ const trail=new THREE.Mesh(new THREE.PlaneGeometry(tear?.0038:.0022,.018),new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:0,transparent:true,opacity:0,clearcoat:1,depthWrite:false}));
+ trail.renderOrder=4;malla.add(trail);d.trail=trail;
+ drop.material.transmission=.88;drop.material.roughness=.035;drop.material.thickness=.003;drop.material.envMapIntensity=1.4;
+ drop.renderOrder=5;
+ // Keep water transparent; opaque shadow-map casters would make it look like a bead.
+ drop.castShadow=false;drop.receiveShadow=true;
+}
 function animarEfectos(){
- const enabled=document.getElementById("fxEnabled").checked;
+ const enabled=document.getElementById('fxEnabled').checked;
  const weights=liveWeights((suave.valence+1)*50),t=life.time;
  const e=(weights.euphoria||0)*(.4+.6*suave.arousal);
  for(const star of estrellas){star.visible=enabled&&e>.01;star.material.opacity=e;star.scale.setScalar(.9+.1*Math.sin(t*4));star.rotation.z=t*.6;}
  for(const drop of [...gotas,...lagrimas]){
-  const tear=lagrimas.includes(drop),d=drop.userData;
-  const strength=tear?(weights.frustration||0)*(.35+.65*suave.fatigue):((weights.concern||0)+(weights.doubt||0)*Math.max(0,suave.tension-.45))*suave.tension;
-  // Forward phase only; reset hidden by zero opacity at both ends.
-  const p=(t*d.vel+d.fase)%1;
-  drop.visible=enabled&&strength>.01;if(!drop.visible)continue;
-  if(!d.path)attachPath(drop);
-  const f=p*12,k=Math.min(11,Math.floor(f));
-  pathPoint(d.path[k],dropA);pathPoint(d.path[k+1],dropB);
-  drop.position.copy(dropA.lerp(dropB,f-k));drop.position.z+=.0025;
-  drop.material.opacity=strength*Math.min(1,p*8)*Math.min(1,(1-p)*8);
+  const d=drop.userData,tear=lagrimas.includes(drop);
+  const strength=tear?(weights.frustration||0)*(.70+.30*suave.fatigue):Math.min(1,(weights.concern||0)*(.4+.6*suave.tension)+(weights.frustration||0)*suave.tension*.55+(weights.doubt||0)*Math.max(0,suave.tension-.45));
+  drop.visible=enabled&&strength>.01;
+  if(!drop.visible){if(d.shadow)d.shadow.visible=false;if(d.trail)d.trail.visible=false;continue;}
+  if(!d.samples)initWater(drop);
+  const p=(t*d.vel+d.fase)%1,phase=p*64,k=Math.min(63,Math.floor(phase)),a=d.samples[k],b=d.samples[k+1];
+  if(!a||!b){drop.visible=false;d.shadow.visible=false;d.trail.visible=false;continue;}
+  waterPoint(a,dropA);waterPoint(b,dropB);dropA.lerp(dropB,phase-k);
+  waterUp.set(0,1,0).addScaledVector(waterNormal,-waterNormal.y).normalize();waterRight.crossVectors(waterUp,waterNormal).normalize();waterBasis.makeBasis(waterRight,waterUp,waterNormal);
+  drop.quaternion.setFromRotationMatrix(waterBasis);drop.position.copy(dropA).addScaledVector(waterNormal,.0016);
+  const fade=Math.min(1,p*12)*Math.min(1,(1-p)*12);
+  drop.material.opacity=strength*fade;
+  d.shadow.visible=true;d.shadow.quaternion.copy(drop.quaternion);d.shadow.position.copy(dropA).addScaledVector(waterNormal,.00055).addScaledVector(waterRight,.002).addScaledVector(waterUp,-.002);
+  d.shadow.material.opacity=.42*strength*fade;
+  d.trail.visible=true;d.trail.quaternion.copy(drop.quaternion);d.trail.position.copy(dropA).addScaledVector(waterNormal,.0008).addScaledVector(waterUp,.008);d.trail.material.opacity=.14*strength*fade;
  }
 }
 
@@ -8345,7 +8428,7 @@ function aplicar(){
  for(const [n,v] of Object.entries(pose))put(n,v*strength*(1-.25*suave.fatigue*Math.max(0,-suave.valence)));
  // Restrained secondary controls, separate from the identity and base emotion.
  for(const side of ["Left","Right"]){add("eyeWide"+side,suave.arousal*.055);add("browDown"+side,suave.tension*.075);add("mouthPress"+side,suave.tension*.065);add("eyeBlink"+side,suave.fatigue*.12);}
- put("WM_Breath",life.out.breath);
+ put("WM_Breath",Math.min(1,.08+life.out.breath*1.30));
  const emotional=liveWeights((suave.valence+1)*50),acting=.5+.5*Math.sin(life.time*1.2+Math.sin(life.time*.3));
  add("jawOpen",.022*life.out.breath+(emotional.euphoria||0)*(.10+.10*acting)+(emotional.frustration||0)*suave.arousal*.20*acting);
  add("browInnerUp",(emotional.frustration||0)*suave.fatigue*.45+(emotional.concern||0)*.10*acting);
@@ -8353,6 +8436,9 @@ function aplicar(){
  add("mouthFrownRight",(emotional.frustration||0)*suave.fatigue*.20);
  for(const side of ['Left','Right'])add('mouthSmile'+side,(emotional.euphoria||0)*.12*acting);
  const get=n=>idx[n]===undefined?0:w[idx[n]];
+ const doubtWeight=emotional.doubt||0,alternation=.5+.5*Math.sin(life.time*.90);
+ for(const [name,value] of Object.entries({browOuterUpLeft:.12+.66*alternation,browOuterUpRight:.12+.66*(1-alternation),browDownLeft:.26*(1-alternation),browDownRight:.26*alternation}))put(name,get(name)*(1-doubtWeight)+value*doubtWeight*strength);
+
 
 
  add("browOuterUpLeft",.012*life.out.micro);
@@ -8446,7 +8532,7 @@ document.getElementById("ciclo").addEventListener("click",()=>{
   ciclando=setInterval(()=>{ i++; if(i>=ks.length){clearInterval(ciclando);return;}
     sel.value=ks[i]; ponerPreset(ks[i]); },2400);
 });
-document.getElementById("girar").addEventListener("click",()=>{ girando=!girando; });
+document.getElementById("girar").addEventListener("click",()=>{ girando=!girando;if(girando)sweepPhase=Math.asin(THREE.MathUtils.clamp((grupo?.rotation.y||0)/.60,-1,1)); });
 document.getElementById("fondo").addEventListener("click",()=>{ stage.classList.toggle("liso"); });
 
 function medir(){
@@ -8459,8 +8545,8 @@ function medir(){
 addEventListener("resize",medir); medir();
 
 
-for(const [id,angle] of [["frontView",0],["quarterView",0.55],["profileView",Math.PI/2]]) document.getElementById(id).onclick=()=>{girando=false;if(grupo)grupo.rotation.y=angle;};
-document.getElementById("downloadModel").onclick=()=>{const u=URL.createObjectURL(new Blob([__glb()],{type:"model/gltf-binary"}));const a=document.createElement("a");a.href=u;a.download="WM_Drama_v06.glb";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);};
+for(const [id,angle] of [["frontView",0],["quarterView",0.55],["profileView",Math.PI/2]]) document.getElementById(id).onclick=()=>{chooseView(angle);};
+document.getElementById("downloadModel").onclick=()=>{const u=URL.createObjectURL(new Blob([__glb()],{type:"model/gltf-binary"}));const a=document.createElement("a");a.href=u;a.download="WM_v10.glb";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);};
 document.getElementById("oE").textContent=exag.toFixed(2);
 ponerPreset("Neutral");
 let t0=performance.now();
@@ -8469,8 +8555,8 @@ function bucle(t){
  requestAnimationFrame(bucle);const dt=Math.max(0,Math.min((t-t0)/1000,.1));t0=t;
  if(document.hidden||window.wmInactive)return;
  for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*3));
- life.step(dt,suave,reducedMotion.matches);aplicar();updateBody();animarEfectos();
- if(grupo&&girando)grupo.rotation.y=Math.sin(life.time/3.6)*.65;
+ life.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
+ 
  pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();
 }
 document.addEventListener('visibilitychange',()=>{t0=performance.now();});
@@ -8485,7 +8571,9 @@ addEventListener('message',event=>{
  if(event.data?.type==='wm-market')window.WojakMeter.setMarket(event.data.payload||{});
  if(event.data?.type==='wm-active')window.wmInactive=!event.data.active;
 });
-window.parent.postMessage({type:'wm-ready'},location.origin);
+if(parent!==window&&location.protocol!=='file:')window.parent.postMessage({type:'wm-ready'},location.origin);
+document.querySelectorAll('[data-wm-view]').forEach(b=>b.onclick=()=>chooseView(Number(b.dataset.wmView)));
+const sweep=document.getElementById('wmSweep');if(sweep)sweep.onclick=()=>document.getElementById('girar').click();
 requestAnimationFrame(bucle);
 etiqueta();
 
