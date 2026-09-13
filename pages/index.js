@@ -157,10 +157,10 @@ export default function Home({ ogImageUrl }) {
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=clean21" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=clean21" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=clean21" strategy="afterInteractive" />
-      <Script src="/wojak-3d/bridge.js?v=clean21" strategy="afterInteractive" />
+      <Script src="/script.js?v=living22" strategy="afterInteractive" />
+      <Script src="/wojak-game.js?v=living22" strategy="lazyOnload" />
+      <Script src="/hero-rig.js?v=living22" strategy="afterInteractive" />
+      <Script src="/wojak-3d/bridge.js?v=living22" strategy="afterInteractive" />
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
           que entra despues de todo lo demas. Se apaga sin desplegar
