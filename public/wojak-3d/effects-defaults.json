@@ -1,0 +1,85 @@
+{
+  "schema": "wojakmeter-special-effects",
+  "version": 1,
+  "enabled": true,
+  "power": 1,
+  "emotions": {
+    "frustration": {
+      "color": "#ff4357",
+      "electricity": 0.25,
+      "sparks": 1,
+      "halo": 0.1,
+      "aura": 0.6,
+      "speed": 3,
+      "tears": 1,
+      "sweat": 1,
+      "stars": 1
+    },
+    "concern": {
+      "color": "#ee8d99",
+      "electricity": 0.15,
+      "sparks": 0.08,
+      "halo": 0,
+      "aura": 0.12,
+      "speed": 0.8,
+      "tears": 0,
+      "sweat": 1,
+      "stars": 0
+    },
+    "doubt": {
+      "color": "#d5a5bd",
+      "electricity": 0,
+      "sparks": 0.06,
+      "halo": 0.08,
+      "aura": 0.06,
+      "speed": 0.45,
+      "tears": 0,
+      "sweat": 0.5,
+      "stars": 0
+    },
+    "neutral": {
+      "color": "#e4e8ee",
+      "electricity": 0,
+      "sparks": 0,
+      "halo": 0,
+      "aura": 0,
+      "speed": 0.4,
+      "tears": 0,
+      "sweat": 0,
+      "stars": 0
+    },
+    "optimism": {
+      "color": "#b5efce",
+      "electricity": 0,
+      "sparks": 0.18,
+      "halo": 0.22,
+      "aura": 0.16,
+      "speed": 0.6,
+      "tears": 0,
+      "sweat": 0,
+      "stars": 0
+    },
+    "content": {
+      "color": "#74df9c",
+      "electricity": 0.06,
+      "sparks": 0.25,
+      "halo": 0.35,
+      "aura": 0.24,
+      "speed": 0.7,
+      "tears": 0,
+      "sweat": 0,
+      "stars": 0
+    },
+    "euphoria": {
+      "color": "#68ff97",
+      "electricity": 0.95,
+      "sparks": 0.9,
+      "halo": 0.25,
+      "aura": 1,
+      "speed": 3,
+      "tears": 0,
+      "sweat": 0,
+      "stars": 1
+    }
+  }
+}

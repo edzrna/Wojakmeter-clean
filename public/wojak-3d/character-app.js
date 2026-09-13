@@ -7797,7 +7797,7 @@ ren.outputColorSpace = THREE.SRGBColorSpace;
 ren.toneMapping = THREE.ACESFilmicToneMapping;
 ren.toneMappingExposure = 1.1;
 ren.setClearColor(0x000000, 0);
-ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;
+ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.VSMShadowMap;
 stage.appendChild(ren.domElement);
 
 const escena = new THREE.Scene();
@@ -7818,7 +7818,7 @@ pmrem.compileEquirectangularShader();
 const entorno = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 escena.environment = entorno;
 const cam = new THREE.PerspectiveCamera(26, 1, 0.01, 100);
-cam.position.set(0, 0.06, 2.30);
+cam.position.set(0, -0.05, 2.70);
 
 /* Tres luces con nombre, porque cada una hace un trabajo distinto y
    la emocion las mueve por separado. */
@@ -7828,16 +7828,18 @@ const fill = new THREE.DirectionalLight(0x7fa8ff, 0.55);
 const rim  = new THREE.DirectionalLight(0xbcd8ff, 1.7);
 key.position.set(1.5,1.5,2.2); fill.position.set(-2,0.1,1.1); rim.position.set(-0.5,1.1,-2.2);
 escena.add(amb, key, fill, rim);
+const blueSide=new THREE.DirectionalLight(0x98bcff,.36);blueSide.position.set(1.3,.3,-.15);escena.add(blueSide);
+
 const backSpot=new THREE.SpotLight(0xffffff,12,6,Math.PI/5,.7,1.5);
 backSpot.position.set(-.55,.85,-.85);backSpot.target.position.set(0,-.03,.08);
-escena.add(backSpot,backSpot.target);backSpot.castShadow=true;
+escena.add(backSpot,backSpot.target);backSpot.castShadow=false;
 backSpot.shadow.mapSize.set(1024,1024);backSpot.shadow.bias=-.00005;backSpot.shadow.normalBias=.001;
 key.position.set(-1.25,1.45,1.7);fill.position.set(1.5,.2,1.4);
 
 key.castShadow=true;
 key.shadow.mapSize.set(window.innerWidth<700?1024:2048,window.innerWidth<700?1024:2048);
 Object.assign(key.shadow.camera,{left:-.75,right:.75,top:.75,bottom:-.75,near:.1,far:7});
-key.shadow.bias=-0.000025;key.shadow.normalBias=.0008;key.shadow.radius=2;
+key.shadow.bias=-0.000025;key.shadow.normalBias=.0008;key.shadow.radius=4;key.shadow.blurSamples=8;
 
 
 
@@ -7860,11 +7862,11 @@ key.shadow.bias=-0.000025;key.shadow.normalBias=.0008;key.shadow.radius=2;
    =========================================================== */
 const ACABADO = {
   uniforms:{ tDiffine:{value:null}, tDiffuse:{value:null},
-             tiempo:{value:0}, vineta:{value:1.05}, grano:{value:0.003} },
+             tiempo:{value:0}, vineta:{value:1.05}, grano:{value:0.001}, wmFade:{value:.24}, wmBlur:{value:3}, wmResolution:{value:new THREE.Vector2(600,700)} },
   vertexShader:`varying vec2 vUv; void main(){ vUv=uv;
     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
   fragmentShader:`
-    uniform sampler2D tDiffuse; uniform float tiempo, vineta, grano;
+    uniform sampler2D tDiffuse; uniform float tiempo, vineta, grano, wmFade, wmBlur;uniform vec2 wmResolution;
     varying vec2 vUv;
     float ruido(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
     void main(){
@@ -7874,6 +7876,25 @@ const ACABADO = {
       c.rgb *= mix(0.55, 1.0, v);
       float g = ruido(vUv*vec2(1024.0,1024.0) + tiempo) - 0.5;
       c.rgb += g*grano;
+      if(wmFade>.001){
+        // Fully dissolve the cut edge, then progressively recover the bust.
+        float cutoff=min(.13,wmFade*.38);
+        float fade=pow(smoothstep(cutoff,max(cutoff+.01,wmFade),vUv.y),1.45);
+        if(fade<.999){
+         // Weighted 7x7 Gaussian instead of the old nine-point blur.
+         float radius=wmBlur*(.45+.55*(1.0-fade));
+         vec2 pixel=radius/max(wmResolution,vec2(1.0));
+         vec4 blurColor=vec4(0.0);float sum=0.0;
+         for(int x=-3;x<=3;x++)for(int y=-3;y<=3;y++){
+          vec2 p=vec2(float(x),float(y));float weight=exp(-dot(p,p)/4.0);
+          blurColor+=texture2D(tDiffuse,clamp(vUv+p*pixel/3.0,vec2(0.0),vec2(1.0)))*weight;sum+=weight;
+         }
+         blurColor/=sum;
+         blurColor.rgb*=mix(.55,1.0,v);
+         c=mix(c,blurColor,smoothstep(0.0,.6,1.0-fade));
+         c.rgb*=fade;c.a*=fade;
+        }
+      }
       gl_FragColor = c;
     }`
 };
@@ -7935,7 +7956,8 @@ function installDramaSkin(){
    // Multiply the original albedo per channel, preserving local tonal variation.
    vec3 referenceAlbedo=vec3(.56,.40,.31);
    vec3 pigmentationRatio=wmSkinColor/referenceAlbedo;
-   vec3 pigment=diffuseColor.rgb*mix(vec3(1.0),pigmentationRatio,.90);
+   vec3 cleanAlbedo=mix(diffuseColor.rgb,referenceAlbedo,.16);
+   vec3 pigment=cleanAlbedo*mix(vec3(1.0),pigmentationRatio,.90);
    diffuseColor.rgb=mix(diffuseColor.rgb,pigment,skinMask);
   `);
   shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor,.64,.94);');
@@ -7944,6 +7966,8 @@ function installDramaSkin(){
 }
 
 let motionRoot=null,headPivot=null;
+const eyeContactClose={value:new THREE.Vector2(0,0)};
+const irisTintAmount={value:0};
 const irisColor={value:new THREE.Color(.45,.40,.34)};
 let eyeMesh=null,eyeBase=null,eyeNormals=null;
 const eyeCenters=[new THREE.Vector3(-.1281933,.0598448,.1530891),new THREE.Vector3(.1284629,.0597128,.1530911)];
@@ -7951,25 +7975,84 @@ const pointer={x:0,y:0,active:false},eyeAngles=[{x:0,y:0},{x:0,y:0}];
 function setupEyes(mesh){
  eyeMesh=mesh;eyeBase=mesh.geometry.attributes.position.array.slice();eyeNormals=mesh.geometry.attributes.normal.array.slice();
  mesh.material.onBeforeCompile=shader=>{
-  shader.uniforms.wmIrisColor=irisColor;
-  shader.fragmentShader='uniform vec3 wmIrisColor;\n'+shader.fragmentShader;
+  shader.uniforms.wmEyeClose=eyeContactClose;
+  shader.vertexShader='varying vec3 wmEyeSurface;\n'+shader.vertexShader;
+  shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','wmEyeSurface=transformed;\n#include <project_vertex>');
+  shader.uniforms.wmIrisColor=irisColor;shader.uniforms.wmIrisTint=irisTintAmount;
+  shader.fragmentShader='varying vec3 wmEyeSurface;uniform vec2 wmEyeClose;uniform vec3 wmIrisColor;uniform float wmIrisTint;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
    float radius=length(vMapUv-vec2(.5));
    float irisMask=smoothstep(.087,.104,radius)*(1.0-smoothstep(.170,.190,radius));
    float irisDetail=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
    vec3 colored=wmIrisColor*(.32+irisDetail*2.8);
-   diffuseColor.rgb=mix(diffuseColor.rgb,colored,irisMask*.94);
+   diffuseColor.rgb=mix(diffuseColor.rgb,colored,irisMask*.94*wmIrisTint);
   `);
- };mesh.material.customProgramCacheKey=()=> 'wm-iris-v09';mesh.material.needsUpdate=true;
+  shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',` 
+   float closure=wmEyeSurface.x<0.0?wmEyeClose.x:wmEyeClose.y;
+   float lateral=clamp(abs(abs(wmEyeSurface.x)-.1283)/.084,0.0,1.0);
+   float arc=sqrt(max(0.0,1.0-lateral*lateral));
+   float upper=.0598+.043*arc-.058*closure;
+   float lower=.0598-.034*arc;
+   float topShade=exp(-pow((wmEyeSurface.y-upper)/.013,2.0));
+   float lowShade=exp(-pow((wmEyeSurface.y-lower)/.009,2.0));
+   float front=smoothstep(.15,.21,wmEyeSurface.z);
+   outgoingLight*=1.0-front*(.30*topShade+.12*lowShade);
+   #include <opaque_fragment>
+  `);
+ };mesh.material.customProgramCacheKey=()=> 'wm-eye-contact-v16';mesh.material.needsUpdate=true;
 }
 function pointerAt(x,y){pointer.x=THREE.MathUtils.clamp(x,-1,1);pointer.y=THREE.MathUtils.clamp(y,-1,1);pointer.active=true;}
-stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();pointerAt((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);});
-stage.addEventListener('pointerleave',()=>{pointer.active=false;});
+let pressReactionStart=-100,trackedPointer=null,pressOrigin=null;
+const touchRay=new THREE.Raycaster(),touchNdc=new THREE.Vector2();
+function onCharacter(e){
+ if(!malla)return false;
+ const r=stage.getBoundingClientRect();touchNdc.set((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);
+ escena.updateMatrixWorld(true);touchRay.setFromCamera(touchNdc,cam);
+ return touchRay.intersectObjects([malla,...(eyeMesh?[eyeMesh]:[]),...seguidores],false).length>0;
+}
+function updatePointerFromEvent(e){const r=stage.getBoundingClientRect();pointerAt((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);}
+function pressReaction(t){
+ const age=t-pressReactionStart;
+ if(age<0||age>1.05)return 0;
+ if(age<.14){const x=age/.14;return x*x*(3-2*x);}
+ if(age<.35)return 1;
+ const x=(age-.35)/.70;return 1-x*x*(3-2*x);
+}
+stage.style.touchAction='none';
+stage.addEventListener('pointerdown',e=>{
+ if((e.pointerType==='mouse'&&e.button!==0)||trackedPointer!==null)return;
+ if(!onCharacter(e))return;
+ trackedPointer=e.pointerId;pressOrigin={x:e.clientX,y:e.clientY,moved:false};
+ stage.setPointerCapture(e.pointerId);updatePointerFromEvent(e);
+ // Immediate response to a finger touching the face; dragging keeps gaze active.
+ if(e.pointerType!=='mouse')pressReactionStart=life.time;
+});
+stage.addEventListener('pointermove',e=>{
+ if(e.pointerType==='mouse'||trackedPointer===e.pointerId){
+  updatePointerFromEvent(e);
+  if(pressOrigin&&Math.hypot(e.clientX-pressOrigin.x,e.clientY-pressOrigin.y)>8)pressOrigin.moved=true;
+ }
+});
+function finishPointer(e,cancelled=false){
+ if(trackedPointer!==e.pointerId)return;
+ if(!cancelled&&e.pointerType==='mouse'&&pressOrigin&&!pressOrigin.moved&&onCharacter(e))pressReactionStart=life.time;
+ if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);
+ trackedPointer=null;pressOrigin=null;
+ if(e.pointerType!=='mouse')pointer.active=false;
+}
+stage.addEventListener('pointerup',e=>finishPointer(e));
+stage.addEventListener('pointercancel',e=>finishPointer(e,true));
+stage.addEventListener('lostpointercapture',e=>{if(trackedPointer===e.pointerId){trackedPointer=null;pressOrigin=null;pointer.active=false;}});
+stage.addEventListener('pointerleave',()=>{if(trackedPointer===null)pointer.active=false;});
+
 const eyeVec=new THREE.Vector3(),eyeN=new THREE.Vector3(),eyeQ=new THREE.Quaternion();
 function updateEyes(dt){
  if(!eyeMesh)return;
  const palette={frustration:'#a84437',concern:'#b77970',doubt:'#bca096',neutral:'#b58a58',optimism:'#a4b68f',content:'#719752',euphoria:'#4c8c2f'};
  irisColor.value.setRGB(0,0,0);for(const [key,w] of Object.entries(liveWeights((suave.valence+1)*50))){const c=new THREE.Color(palette[key]);irisColor.value.add(c.multiplyScalar(w));}
+ const close=n=>idx[n]===undefined?0:malla.morphTargetInfluences[idx[n]];
+ eyeContactClose.value.set(close('eyeBlinkRight'),close('eyeBlinkLeft'));
+ irisTintAmount.value=1-(liveWeights((suave.valence+1)*50).neutral||0);
  const lerp=1-Math.exp(-dt*8);
  // Screen-space target transformed into the moving head's local space.
  escena.updateMatrixWorld(true);
@@ -7987,9 +8070,18 @@ function updateEyes(dt){
  }
  p.needsUpdate=true;n.needsUpdate=true;
 }
-let viewYaw=0,sweepPhase=0;
-function chooseView(angle){girando=false;viewYaw=angle;}
-function advanceView(dt){if(!grupo)return;if(girando){sweepPhase+=dt*.20;viewYaw=Math.sin(sweepPhase)*.60;}grupo.rotation.y+=(viewYaw-grupo.rotation.y)*(1-Math.exp(-dt*4));}
+let viewYaw=0,sweepPhase=0,followHead=true,pointerHeadYaw=0;
+function chooseView(angle){girando=false;followHead=false;viewYaw=angle;refreshHeadControl();}
+function advanceView(dt){
+ if(!grupo)return;
+ if(girando){sweepPhase+=dt*.20;viewYaw=Math.sin(sweepPhase)*.60;}
+ grupo.rotation.y+=(viewYaw-grupo.rotation.y)*(1-Math.exp(-dt*4));
+ const desired=followHead&&pointer.active&&!girando?pointer.x*Math.PI/4:0;
+ pointerHeadYaw+=(desired-pointerHeadYaw)*(1-Math.exp(-dt*3.5));
+ if(motionRoot)motionRoot.rotation.y=pointerHeadYaw;
+}
+function refreshHeadControl(){const b=document.getElementById('wmHeadFollow');if(b){b.textContent=followHead?'Ratón: activo':'Seguir ratón';b.setAttribute('aria-pressed',String(followHead));}}
+
 
 let malla=null, idx={}, girando=false, matPiel=null, grupo=null;
 const seguidores=[];
@@ -8045,7 +8137,7 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
         sheenColor:new THREE.Color(0xff9a86),
         envMapIntensity:0.16,
       });
-      m.normalScale=new THREE.Vector2(0.48,0.48);
+      m.normalScale=new THREE.Vector2(0.32,0.32);
       m.aoMap.channel=0;
       m.name="Skin";
       o.material=m; matPiel=m;
@@ -8061,17 +8153,35 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
       m.name="Eye"; o.material=m;setupEyes(o);
     } else if(n==="Hoodie"){
       const m=new THREE.MeshPhysicalMaterial({
-        color:0x171c22, normalMap: textura("HoodieN", false),
-        roughness:0.92, metalness:0.0, sheen:0.5, sheenRoughness:0.9,
+        color:0x26334a, normalMap: textura("HoodieN", false), normalScale:new THREE.Vector2(.95,.95),
+        roughness:0.94, metalness:0.0, sheen:0.30, sheenRoughness:0.95,
         envMapIntensity:0.35, side:THREE.DoubleSide,
       });
       m.name="Hoodie"; o.material=m;
+      m.onBeforeCompile=shader=>{
+       shader.vertexShader='varying vec2 wmFabricUV;\n'+shader.vertexShader;
+       shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\n wmFabricUV=uv;');
+       shader.fragmentShader='varying vec2 wmFabricUV;\n'+shader.fragmentShader;
+       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        vec2 cells=wmFabricUV*190.0;float fade=1.0-smoothstep(.25,1.0,max(fwidth(cells.x),fwidth(cells.y)));
+        float weave=sin(cells.x*6.283+sin(cells.y*6.283)*.6)*sin(cells.y*6.283);
+        diffuseColor.rgb*=1.0+.065*weave*fade;
+       `);
+      };m.customProgramCacheKey=()=> 'wm-fabric-v11';
+
     } else if(n==="Eyelash"){
       o.material=new THREE.MeshStandardMaterial({color:0x24190f,roughness:0.83,metalness:0});
       o.material.name="Eyelash";o.castShadow=false;
     } else if(n==="Teeth" || n==="Tongue"){
       o.material.roughness = n==="Teeth" ? 0.28 : 0.34;
-      o.material.envMapIntensity = 0.12;
+      o.material.envMapIntensity = 0.045;
+      o.material.onBeforeCompile=shader=>{
+       shader.vertexShader='varying float wmOralZ;\n'+shader.vertexShader;
+       shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','wmOralZ=transformed.z;\n#include <project_vertex>');
+       shader.fragmentShader='varying float wmOralZ;\n'+shader.fragmentShader;
+       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight*=mix(.16,1.0,smoothstep(.10,.255,wmOralZ));\n#include <opaque_fragment>');
+      };o.material.customProgramCacheKey=()=> 'wm-oral-shadow-v15';
+
       o.material.vertexColors = true;
     }
     if(o.material.isMeshStandardMaterial || o.material.isMeshPhysicalMaterial){
@@ -8091,10 +8201,10 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
   grupo = g.scene;
   setupLivingRig();
   montarEfectos(malla);
-  document.getElementById("cargando").remove();
+  document.getElementById("cargando").remove();requestAnimationFrame(()=>{if(parent!==window&&location.protocol!=='file:')window.parent.postMessage({type:'wm-ready'},location.origin);});
   aplicar();
 }, e=>{
-  document.getElementById("cargando").textContent="No se pudo cargar el modelo";
+  document.getElementById("cargando").textContent="No se pudo cargar el modelo";if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);
   console.error(e);
 });
 
@@ -8342,13 +8452,14 @@ function initWater(drop){
  drop.castShadow=false;drop.receiveShadow=true;
 }
 function animarEfectos(){
- const enabled=document.getElementById('fxEnabled').checked;
+ const enabled=fxSettings.enabled&&document.getElementById('fxEnabled').checked;
  const weights=liveWeights((suave.valence+1)*50),t=life.time;
- const e=(weights.euphoria||0)*(.4+.6*suave.arousal);
+ const e=(weights.euphoria||0)*(.4+.6*suave.arousal)*fxSettings.emotions.euphoria.stars*Math.min(1,fxSettings.power);
  for(const star of estrellas){star.visible=enabled&&e>.01;star.material.opacity=e;star.scale.setScalar(.9+.1*Math.sin(t*4));star.rotation.z=t*.6;}
  for(const drop of [...gotas,...lagrimas]){
   const d=drop.userData,tear=lagrimas.includes(drop);
-  const strength=tear?(weights.frustration||0)*(.70+.30*suave.fatigue):Math.min(1,(weights.concern||0)*(.4+.6*suave.tension)+(weights.frustration||0)*suave.tension*.55+(weights.doubt||0)*Math.max(0,suave.tension-.45));
+  const baseStrength=tear?(weights.frustration||0)*(.70+.30*suave.fatigue):Math.min(1,(weights.concern||0)*(.4+.6*suave.tension)+(weights.frustration||0)*suave.tension*.55+(weights.doubt||0)*Math.max(0,suave.tension-.45));
+  const strength=baseStrength*fxChannel(tear?'tears':'sweat')*Math.min(1,fxSettings.power);
   drop.visible=enabled&&strength>.01;
   if(!drop.visible){if(d.shadow)d.shadow.visible=false;if(d.trail)d.trail.visible=false;continue;}
   if(!d.samples)initWater(drop);
@@ -8406,7 +8517,7 @@ function moodDe(s){ return MOODS.find(([a,b])=>s>=a&&s<=b)||MOODS[3]; }
 const EMOTION_POSES={
  frustration:{browDownLeft:.85,browDownRight:.78,eyeSquintLeft:.24,eyeSquintRight:.20,noseSneerLeft:.10,noseSneerRight:.07,mouthPressLeft:.02,mouthPressRight:.02,mouthFrownLeft:.26,mouthFrownRight:.28,jawOpen:.68,mouthUpperUpLeft:.22,mouthUpperUpRight:.22,mouthLowerDownLeft:.18,mouthLowerDownRight:.18},
  concern:{browInnerUp:.68,browDownLeft:.09,browDownRight:.12,eyeWideLeft:.20,eyeWideRight:.18,mouthFrownLeft:.32,mouthFrownRight:.34,jawOpen:.10,mouthPressLeft:.02,mouthPressRight:.02},
- doubt:{browOuterUpLeft:.78,browDownRight:.27,eyeSquintRight:.18,eyeSquintLeft:.035,mouthLeft:.07,mouthPressRight:.21,mouthPressLeft:.06},
+ doubt:{browInnerUp:.38,browOuterUpLeft:.42,browOuterUpRight:.12,browDownRight:.22,browDownLeft:.03,eyeSquintRight:.12,eyeSquintLeft:.02,mouthLeft:.035,mouthFrownLeft:.18,mouthFrownRight:.10,mouthPressRight:.11,mouthPressLeft:.05,jawOpen:.015},
  neutral:{mouthSmileLeft:.045,mouthSmileRight:.04},
  optimism:{mouthSmileLeft:.19,mouthSmileRight:.17,cheekSquintLeft:.07,cheekSquintRight:.06},
  content:{mouthSmileLeft:.36,mouthSmileRight:.34,cheekSquintLeft:.20,cheekSquintRight:.18,eyeSquintLeft:.16,eyeSquintRight:.14,eyeBlinkLeft:.82,eyeBlinkRight:.82},
@@ -8436,12 +8547,21 @@ function aplicar(){
  add("mouthFrownRight",(emotional.frustration||0)*suave.fatigue*.20);
  for(const side of ['Left','Right'])add('mouthSmile'+side,(emotional.euphoria||0)*.12*acting);
  const get=n=>idx[n]===undefined?0:w[idx[n]];
- const doubtWeight=emotional.doubt||0,alternation=.5+.5*Math.sin(life.time*.90);
- for(const [name,value] of Object.entries({browOuterUpLeft:.12+.66*alternation,browOuterUpRight:.12+.66*(1-alternation),browDownLeft:.26*(1-alternation),browDownRight:.26*alternation}))put(name,get(name)*(1-doubtWeight)+value*doubtWeight*strength);
+ const doubtWeight=emotional.doubt||0,alternation=.5+.5*Math.tanh(1.6*Math.sin(life.time*.65))/Math.tanh(1.6);
+ for(const [name,value] of Object.entries({browOuterUpLeft:.65+.23*alternation,browOuterUpRight:.06+.06*(1-alternation),browDownLeft:.02,browDownRight:.30+.12*alternation,eyeSquintRight:.12+.12*alternation,mouthPressRight:.20,mouthFrownLeft:.17}))put(name,get(name)*(1-doubtWeight)+value*doubtWeight*strength);
 
 
 
  add("browOuterUpLeft",.012*life.out.micro);
+ const reaction=pressReaction(life.time);
+ const mixReaction=(name,target)=>put(name,get(name)*(1-reaction)+target*reaction);
+ for(const side of ['Left','Right']){
+  mixReaction('browDown'+side,.72);mixReaction('eyeBlink'+side,1);
+  mixReaction('eyeWide'+side,0);mixReaction('browOuterUp'+side,0);
+  mixReaction('noseSneer'+side,.16);mixReaction('mouthPress'+side,.24);
+  mixReaction('mouthFrown'+side,.16);mixReaction('mouthSmile'+side,0);
+ }
+ mixReaction('browInnerUp',0);mixReaction('jawOpen',.015);
  const pb=life.out.blink;
  for(const side of ["Left","Right"]){const i=idx["eyeBlink"+side];if(i!==undefined)w[i]=Math.max(w[i],pb);}
  // Eye geometry is static in this reduced asset: avoid unsynchronised gaze deformations.
@@ -8465,21 +8585,19 @@ function liveWeights(score){
 }
 function updateBody(){
  const o=life.out;if(headPivot){headPivot.rotation.set(o.x,o.y,o.z);motionRoot.position.y=o.lift;}
- const weights=liveWeights((suave.valence+1)*50);let r=0,g=0,b=0,exposure=0;
+ const weights=liveWeights((suave.valence+1)*50);if(headPivot&&!reducedMotion.matches){headPivot.rotation.z+=(weights.doubt||0)*(.045+.035*Math.sin(life.time*.65));headPivot.rotation.y+=(weights.doubt||0)*.045*Math.sin(life.time*.9);}let r=0,g=0,b=0,exposure=0;
  skinSaturation.value=1-(weights.concern||0)*.55;
  const n=moodDe(Math.round((suave.valence+1)*50))[3],A=suave.arousal,T=suave.tension,F=suave.fatigue;
  const readings={frustration:F>.75?'Agotamiento':A>.65?'Pánico':'Capitulación',concern:A>.7?'Pico de miedo':F>.55?'Quiebre de confianza':'Presión defensiva',doubt:T>.55?'Confusión':A>.45?'Falso rebote':'Vacilación',neutral:T>.5?'Presión acumulándose':A<.2?'Compresión':'Espera',optimism:F>.4?'Retroceso':T<.2&&A>.55?'Confiado':'Construyéndose',content:T>.4?'Sobreextendido':A>.55?'Fuerza':'Confianza',euphoria:F>.4?'Debilitamiento':T>.5?'Sobrecalentamiento':'Ruptura'};
  document.getElementById('subreading').textContent=readings[n];
  if(motionRoot&&!reducedMotion.matches)motionRoot.position.y+=(weights.euphoria||0)*.0015*Math.exp(5*(Math.cos(life.time*6)-1));
 
- const palette={frustration:'#b94336',concern:'#c28f84',doubt:'#d2b3a5',neutral:'#ded5ca',optimism:'#aec098',content:'#90b474',euphoria:'#73a53f'};
+ const palette={frustration:'#b94336',concern:'#c28f84',doubt:'#d2b3a5',neutral:'#ded5ca',optimism:'#b5c9a9',content:'#90b474',euphoria:'#73a53f'};
  wmSkinColor.value.setRGB(0,0,0);
  for(const [n,w] of Object.entries(weights)){const c=new THREE.Color(palette[n]);wmSkinColor.value.r+=c.r*w;wmSkinColor.value.g+=c.g*w;wmSkinColor.value.b+=c.b*w;}
  if(matPiel)matPiel.color.setRGB(1,1,1);
 
- key.color.setHex(0xfff7f0);fill.color.setHex(0xc8d6ed);rim.color.setHex(0xffffff);amb.color.setHex(0xdce2ec);
- key.intensity=1.8+.25*suave.arousal;fill.intensity=.12;rim.intensity=.55;amb.intensity=.10;ren.toneMappingExposure=.94;
- backSpot.intensity=6+1.5*suave.arousal+suave.arousal*.3*Math.sin(life.time*.8);
+ applyLightSettings();
 
 }
 
@@ -8488,6 +8606,7 @@ function etiqueta(){
   const [,,nombre,clave]=moodDe(s);
   const el=document.getElementById("mood");
   el.textContent=nombre;
+  const presetField=document.getElementById("preset");if(presetField)presetField.value=nombre;
   el.style.color=getComputedStyle(document.documentElement).getPropertyValue("--"+clave);
   document.getElementById("score").textContent=`${s} / 100`;
   luzDe(clave);
@@ -8539,6 +8658,7 @@ function medir(){
   const r=stage.getBoundingClientRect();
   ren.setSize(r.width,r.height,false);
   compositor.setSize(r.width,r.height);
+  pasoAcabado.uniforms.wmResolution.value.set(r.width,r.height);
   bloom.resolution.set(r.width,r.height);
   cam.aspect=r.width/r.height; cam.updateProjectionMatrix();
 }
@@ -8546,7 +8666,7 @@ addEventListener("resize",medir); medir();
 
 
 for(const [id,angle] of [["frontView",0],["quarterView",0.55],["profileView",Math.PI/2]]) document.getElementById(id).onclick=()=>{chooseView(angle);};
-document.getElementById("downloadModel").onclick=()=>{const u=URL.createObjectURL(new Blob([__glb()],{type:"model/gltf-binary"}));const a=document.createElement("a");a.href=u;a.download="WM_v10.glb";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);};
+document.getElementById("downloadModel").onclick=()=>{const u=URL.createObjectURL(new Blob([__glb()],{type:"model/gltf-binary"}));const a=document.createElement("a");a.href=u;a.download="WM_v16.glb";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);};
 document.getElementById("oE").textContent=exag.toFixed(2);
 ponerPreset("Neutral");
 let t0=performance.now();
@@ -8557,7 +8677,7 @@ function bucle(t){
  for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*3));
  life.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
  
- pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();
+ updateSpecialFX(dt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();
 }
 document.addEventListener('visibilitychange',()=>{t0=performance.now();});
 window.WojakMeter={setMarket(data){
@@ -8566,14 +8686,163 @@ window.WojakMeter={setMarket(data){
  if(Number.isFinite(data.intensity)){exag=THREE.MathUtils.clamp(data.intensity,.4,1);ex.value=exag;document.getElementById('oE').textContent=exag.toFixed(2);}
  for(const k of Object.keys(sal)){document.getElementById(k).value=ejes[k];document.getElementById(sal[k]).textContent=ejes[k].toFixed(2);}etiqueta();
  },getState(){return {axes:{...suave},phase:life.phase,motion:{...life.out}};}};
+let previewMode='market',latestMarket=null,previewTimer=0;
+function setPreviewMode(mode){
+ clearInterval(previewTimer);previewTimer=0;previewMode=mode;
+ const status=document.getElementById('wmPreviewStatus');
+ if(mode==='market'){if(latestMarket)window.WojakMeter.setMarket(latestMarket);if(status)status.textContent='Mercado';return;}
+ if(mode==='cycle'){
+  const names=Object.keys(PRESETS);let i=0;
+  const next=()=>{ponerPreset(names[i]);if(status)status.textContent='Vista previa: '+names[i];i=(i+1)%names.length;};next();
+  previewTimer=setInterval(()=>{if(!document.hidden&&!window.wmInactive)next();},6500);return;
+ }
+ if(PRESETS[mode]){ponerPreset(mode);if(status)status.textContent='Vista previa: '+mode;}
+}
+const previewSelect=document.getElementById('wmEmotionPreview');
+if(previewSelect)previewSelect.addEventListener('change',()=>setPreviewMode(previewSelect.value));
 addEventListener('message',event=>{
  if(event.source!==parent||event.origin!==location.origin)return;
- if(event.data?.type==='wm-market')window.WojakMeter.setMarket(event.data.payload||{});
+ if(event.data?.type==='wm-market'){latestMarket=event.data.payload||{};if(previewMode==='market')window.WojakMeter.setMarket(latestMarket);}
  if(event.data?.type==='wm-active')window.wmInactive=!event.data.active;
 });
-if(parent!==window&&location.protocol!=='file:')window.parent.postMessage({type:'wm-ready'},location.origin);
+
+const lightDefaults={"exposure": 1.57, "environment": 0.4, "ao": 2, "softness": 6, "shadow": true, "fade": 0.22, "blur": 23.5, "lights": {"key": {"label": "Principal", "intensity": 0.46, "color": "#fff4ea", "x": -0.95, "y": 3, "z": 3}, "fill": {"label": "Relleno", "intensity": 3, "color": "#edf2ff", "x": -1.35, "y": 2.6, "z": -1.85}, "ambient": {"label": "Ambiente difuso", "intensity": 1.28, "color": "#c9c9c9"}, "blue": {"label": "Lateral derecha", "intensity": 3, "color": "#aacaff", "x": -0.15, "y": 0.3, "z": -0.5}, "rim": {"label": "Borde blanco", "intensity": 2.06, "color": "#000000", "x": 2.95, "y": 1.55, "z": -1.05}, "spot": {"label": "Foco posterior", "intensity": 0, "color": "#b3b3b3", "x": 0.9, "y": 0.95, "z": -1.2, "angle": 62, "penumbra": 1}}};
+let lightSettings=JSON.parse(JSON.stringify(lightDefaults));
+const lightObjects={key,fill,ambient:amb,blue:blueSide,rim,spot:backSpot};
+function applyLightSettings(){
+ for(const [id,obj] of Object.entries(lightObjects)){
+  const s=lightSettings.lights[id];obj.color.set(s.color);obj.intensity=s.intensity;
+  if(s.x!==undefined)obj.position.set(s.x,s.y,s.z);
+ }
+ backSpot.angle=lightSettings.lights.spot.angle*Math.PI/180;backSpot.penumbra=lightSettings.lights.spot.penumbra;
+ ren.toneMappingExposure=lightSettings.exposure;
+ key.castShadow=lightSettings.shadow;key.shadow.radius=lightSettings.softness;
+ key.shadow.blurSamples=8;
+ if(matPiel){matPiel.aoMapIntensity=lightSettings.ao;matPiel.envMapIntensity=lightSettings.environment;}
+ pasoAcabado.uniforms.wmFade.value=lightSettings.fade;pasoAcabado.uniforms.wmBlur.value=lightSettings.blur;
+}
+function persistLightSettings(){try{localStorage.setItem('wm-light-rig-v17',JSON.stringify(lightSettings));}catch(_){}}
+function useLightPreset(name){
+ lightSettings=JSON.parse(JSON.stringify(lightDefaults));
+ if(name==='dramatic'){lightSettings.lights.key.intensity=1.7;lightSettings.lights.fill.intensity=.26;lightSettings.lights.ambient.intensity=.13;lightSettings.lights.spot.intensity=3;lightSettings.softness=3;}
+ if(name==='neutral'){lightSettings.lights.key.intensity=.95;lightSettings.lights.fill.intensity=.8;lightSettings.lights.blue.intensity=0;lightSettings.lights.spot.intensity=.8;lightSettings.ao=.6;}
+ applyLightSettings();persistLightSettings();buildLightPanel();
+}
+function buildLightPanel(){
+ const host=document.getElementById('wmLightPanel');host.innerHTML='';
+ const title=document.createElement('h3');title.textContent='Estudio de iluminación';host.append(title);
+ const close=document.createElement('button');close.textContent='Cerrar controles';close.onclick=()=>host.hidden=true;host.append(close);
+ const presets=document.createElement('div');presets.className='lightPresets';
+ for(const [id,label] of [['soft','Tus ajustes'],['neutral','Neutra'],['dramatic','Contraste']]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>useLightPreset(id);presets.append(b);}host.append(presets);
+ function range(parent,label,value,min,max,step,change){
+  const row=document.createElement('label');row.className='lightRange';const caption=document.createElement('span');caption.textContent=label;const out=document.createElement('output');out.textContent=Number(value).toFixed(2);
+  const input=document.createElement('input');input.type='range';Object.assign(input,{min,max,step,value});input.oninput=()=>{out.textContent=Number(input.value).toFixed(2);change(Number(input.value));applyLightSettings();persistLightSettings();};row.append(caption,out,input);parent.append(row);
+ }
+ for(const [key,label,min,max,step] of [['exposure','Exposición',.5,1.7,.01],['environment','Reflejo de entorno (piel)',0,.8,.01],['ao','Oclusión ambiental de piel',0,2,.05],['softness','Difusión de sombra',0,8,.25],['fade','Desvanecido inferior',0,.55,.01],['blur','Suavizado inferior',0,32,.5]])range(host,label,lightSettings[key],min,max,step,v=>lightSettings[key]=v);
+ const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=lightSettings.shadow;check.onchange=()=>{lightSettings.shadow=check.checked;applyLightSettings();persistLightSettings();};label.append(check,' Sombras proyectadas');host.append(label);
+ for(const [id,s] of Object.entries(lightSettings.lights)){
+  const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=s.label;details.append(summary);host.append(details);
+  range(details,'Intensidad',s.intensity,0,id==='spot'?8:3,.02,v=>s.intensity=v);
+  const color=document.createElement('input');color.type='color';color.value=s.color;color.setAttribute('aria-label','Color de '+s.label);color.oninput=()=>{s.color=color.value;applyLightSettings();persistLightSettings();};details.append(color);
+  if(s.x!==undefined)for(const [axis,name] of [['x','Izquierda / derecha'],['y','Altura'],['z','Delante / detrás']])range(details,name,s[axis],axis==='y'?-.5:-3,3,.05,v=>s[axis]=v);
+  if(id==='spot'){range(details,'Apertura del foco',s.angle,10,80,1,v=>s.angle=v);range(details,'Borde suave del foco',s.penumbra,0,1,.02,v=>s.penumbra=v);}
+ }
+ const save=document.createElement('button');save.textContent='Descargar mis ajustes';save.onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(lightSettings,null,2)],{type:'application/json'}));a.href=url;a.download='WojakMeter_Iluminacion.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};host.append(save);
+ const note=document.createElement('p');note.textContent='La oclusión usa el mapa de piel existente. Los controles no cambian la emoción. Tus ajustes se conservan en este navegador cuando el almacenamiento está disponible.';host.append(note);
+}
+try{
+ const saved=JSON.parse(document.body.dataset.public==='true'?'null':localStorage.getItem('wm-light-rig-v17'));
+ // Accept only a complete state written by this version.
+ if(saved&&Object.keys(lightDefaults).every(k=>k in saved)&&Object.keys(lightObjects).every(k=>saved.lights?.[k]))lightSettings=saved;
+}catch(_){}
+buildLightPanel();applyLightSettings();
+document.getElementById('wmLightToggle').onclick=()=>{const p=document.getElementById('wmLightPanel');p.hidden=!p.hidden;};
+
+const FX_NAMES=['frustration','concern','doubt','neutral','optimism','content','euphoria'];
+const FX_LABELS=['Frustration','Concern','Doubt','Neutral','Optimism','Content','Euphoria'];
+const FX_DEFAULTS={"schema": "wojakmeter-special-effects", "version": 1, "enabled": true, "power": 1, "emotions": {"frustration": {"color": "#ff4357", "electricity": 0.25, "sparks": 1, "halo": 0.1, "aura": 0.6, "speed": 3, "tears": 1, "sweat": 1, "stars": 1}, "concern": {"color": "#ee8d99", "electricity": 0.15, "sparks": 0.08, "halo": 0, "aura": 0.12, "speed": 0.8, "tears": 0, "sweat": 1, "stars": 0}, "doubt": {"color": "#d5a5bd", "electricity": 0, "sparks": 0.06, "halo": 0.08, "aura": 0.06, "speed": 0.45, "tears": 0, "sweat": 0.5, "stars": 0}, "neutral": {"color": "#e4e8ee", "electricity": 0, "sparks": 0, "halo": 0, "aura": 0, "speed": 0.4, "tears": 0, "sweat": 0, "stars": 0}, "optimism": {"color": "#b5efce", "electricity": 0, "sparks": 0.18, "halo": 0.22, "aura": 0.16, "speed": 0.6, "tears": 0, "sweat": 0, "stars": 0}, "content": {"color": "#74df9c", "electricity": 0.06, "sparks": 0.25, "halo": 0.35, "aura": 0.24, "speed": 0.7, "tears": 0, "sweat": 0, "stars": 0}, "euphoria": {"color": "#68ff97", "electricity": 0.95, "sparks": 0.9, "halo": 0.25, "aura": 1, "speed": 3, "tears": 0, "sweat": 0, "stars": 1}}};
+let fxSettings=JSON.parse(JSON.stringify(FX_DEFAULTS));
+function validateFX(input){
+ if(input?.schema!=='wojakmeter-special-effects'||input.version!==1)throw Error('Formato de efectos no compatible.');
+ const out=JSON.parse(JSON.stringify(FX_DEFAULTS));out.enabled=input.enabled!==false;
+ const bounded=(v,min,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(min,Math.min(max,v)):null;
+ const power=bounded(input.power,0,2);if(power!==null)out.power=power;
+ for(const n of FX_NAMES){const source=input.emotions?.[n];if(!source)continue;
+  if(/^#[0-9a-f]{6}$/i.test(source.color||''))out.emotions[n].color=source.color;
+  for(const k of ['electricity','sparks','halo','aura','speed','tears','sweat','stars']){const v=bounded(source[k],k==='speed'?.1:0,k==='speed'?3:1);if(v!==null)out.emotions[n][k]=v;}
+ }
+ return out;
+}
+try{const saved=(document.body.dataset.public==='true'?null:localStorage.getItem('wm-special-effects-v17'));if(saved)fxSettings=validateFX(JSON.parse(saved));}catch(_){}
+function saveFX(){try{localStorage.setItem('wm-special-effects-v17',JSON.stringify(fxSettings));}catch(_){}}
+function fxChannel(name){let value=0;for(const [n,w] of Object.entries(liveWeights((suave.valence+1)*50)))value+=w*fxSettings.emotions[n][name];return value;}
+const specialFX=new THREE.Group();escena.add(specialFX);
+const glowTexture=lienzo(128,128,(ctx,w,h)=>{const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.15,'rgba(255,255,255,.65)');g.addColorStop(.5,'rgba(255,255,255,.08)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);});
+const additive={transparent:true,depthWrite:false,depthTest:true,blending:THREE.AdditiveBlending,toneMapped:false};
+const auraMesh=new THREE.Sprite(new THREE.SpriteMaterial({...additive,map:glowTexture,color:0x66ffaa,opacity:0}));auraMesh.position.set(0,.01,-.43);auraMesh.scale.set(1.32,1.52,1);specialFX.add(auraMesh);
+const fxRings=[];
+for(let i=0;i<3;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(.40+i*.055,.0025,6,80),new THREE.MeshBasicMaterial({...additive,color:0x66ffaa,opacity:0}));ring.position.set(0,.035,-.32-i*.035);specialFX.add(ring);fxRings.push(ring);}
+const fxSparks=[];
+for(let i=0;i<36;i++){const p=new THREE.Sprite(new THREE.SpriteMaterial({...additive,map:glowTexture,color:0xffffff,opacity:0}));specialFX.add(p);fxSparks.push(p);}
+const boltPositions=new Float32Array(8*12*2*3),boltGeometry=new THREE.BufferGeometry();boltGeometry.setAttribute('position',new THREE.BufferAttribute(boltPositions,3));
+const boltMaterial=new THREE.LineBasicMaterial({...additive,color:0xff6666,opacity:0});const bolts=new THREE.LineSegments(boltGeometry,boltMaterial);bolts.frustumCulled=false;specialFX.add(bolts);
+let fxClock=0,lastBoltTick=-1;
+const fxColor=new THREE.Color();
+function fxNoise(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+function updateSpecialFX(dt){
+ const master=fxSettings.enabled&&document.getElementById('fxEnabled').checked;
+ specialFX.visible=master;if(!master)return;
+ const w=liveWeights((suave.valence+1)*50);fxColor.setRGB(0,0,0);let speed=0;
+ for(const [n,v] of Object.entries(w)){fxColor.add(new THREE.Color(fxSettings.emotions[n].color).multiplyScalar(v));speed+=v*fxSettings.emotions[n].speed;}
+ const reduced=reducedMotion.matches?.25:1,energy=fxSettings.power*(.6+.4*suave.arousal);
+ fxClock+=dt*speed;const t=fxClock;
+ auraMesh.material.color.copy(fxColor);auraMesh.material.opacity=fxChannel('aura')*energy*.38;
+ for(let i=0;i<fxRings.length;i++){const ring=fxRings[i];ring.material.color.copy(fxColor);ring.material.opacity=fxChannel('halo')*energy*(.16+.06*Math.sin(t*1.1-i));ring.scale.setScalar(1+.045*reduced*Math.sin(t*.8-i));ring.rotation.z=t*.05;}
+ for(let i=0;i<fxSparks.length;i++){
+  const p=fxSparks[i],phase=(t*.08*reduced+i*.6180339)%1,angle=i*2.39996+.06*reduced*Math.sin(t*.6+i),radius=.33+.23*phase;
+  p.position.set(Math.cos(angle)*radius,Math.sin(angle)*radius*.93+.03,-.08+.06*Math.sin(i));
+  const twinkle=Math.pow(.5+.5*Math.sin(t*(1+i%3*.3)+i),6),fade=Math.sin(Math.PI*phase);
+  p.material.color.copy(fxColor);p.material.opacity=fxChannel('sparks')*energy*fade*(.2+.8*twinkle);p.scale.setScalar(.012+.026*twinkle);
+ }
+ const tick=Math.floor(t*(reducedMotion.matches?2:10));
+ if(tick!==lastBoltTick){lastBoltTick=tick;let offset=0;
+  for(let arc=0;arc<8;arc++){
+   const side=arc%2?1:-1,startY=-.29+(arc>>1)*.19;
+   let px=side*(.33+.035*fxNoise(arc+tick*7)),py=startY,pz=-.025;
+   for(let k=1;k<=12;k++){
+    const x=side*(.33+.11*fxNoise(arc*113+k*9+tick*23)),y=startY+k*.016,z=-.025;
+    boltPositions.set([px,py,pz,x,y,z],offset);offset+=6;px=x;py=y;pz=z;
+   }
+  }boltGeometry.attributes.position.needsUpdate=true;
+ }
+ boltMaterial.color.copy(fxColor);boltMaterial.opacity=fxChannel('electricity')*energy*reduced*(.25+.4*fxNoise(lastBoltTick+7));
+}
+let fxEditing='euphoria';
+function buildFXPanel(){
+ const panel=document.getElementById('wmFXPanel');panel.innerHTML='';
+ const title=document.createElement('h3');title.textContent='Efectos por emoción';panel.append(title);
+ const close=document.createElement('button');close.textContent='Cerrar';close.onclick=()=>panel.hidden=true;panel.append(close);
+ const label=document.createElement('label'),enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=fxSettings.enabled;enabled.onchange=()=>{fxSettings.enabled=enabled.checked;saveFX();};label.append(enabled,' Efectos activados');panel.append(label);
+ function slider(text,value,min,max,step,callback){const row=document.createElement('label');row.className='lightRange';const t=document.createElement('span');t.textContent=text;const out=document.createElement('output');out.textContent=value.toFixed(2);const input=document.createElement('input');Object.assign(input,{type:'range',min,max,step,value});input.oninput=()=>{const v=Number(input.value);out.textContent=v.toFixed(2);callback(v);saveFX();};row.append(t,out,input);panel.append(row);}
+ slider('Intensidad global',fxSettings.power,0,2,.05,v=>fxSettings.power=v);
+ const select=document.createElement('select');select.setAttribute('aria-label','Emoción a configurar');FX_NAMES.forEach((n,i)=>{const option=document.createElement('option');option.value=n;option.textContent=FX_LABELS[i];select.append(option);});select.value=fxEditing;select.onchange=()=>{fxEditing=select.value;buildFXPanel();};panel.append(select);
+ const preview=document.createElement('button');preview.textContent='Previsualizar esta emoción';preview.onclick=()=>{const label=FX_LABELS[FX_NAMES.indexOf(fxEditing)];setPreviewMode(label);const el=document.getElementById('wmEmotionPreview');if(el)el.value=label;};panel.append(preview);
+ const live=document.createElement('button');live.textContent='Volver al mercado';live.onclick=()=>{setPreviewMode('market');const el=document.getElementById('wmEmotionPreview');if(el)el.value='market';};panel.append(live);
+ const cfg=fxSettings.emotions[fxEditing];const color=document.createElement('input');color.type='color';color.value=cfg.color;color.setAttribute('aria-label','Color de los efectos');color.oninput=()=>{cfg.color=color.value;saveFX();};panel.append(color);
+ for(const [k,label] of [['electricity','Rayos / electricidad'],['sparks','Destellos'],['halo','Halos'],['aura','Resplandor ambiental'],['speed','Velocidad'],['tears','Lágrimas'],['sweat','Sudor'],['stars','Estrellas en ojos']])slider(label,cfg[k],k==='speed'?.1:0,k==='speed'?3:1,.05,v=>cfg[k]=v);
+ const download=document.createElement('button');download.textContent='Descargar valores de las 7 emociones';download.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(fxSettings,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='WojakMeter_Efectos.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};panel.append(download);
+ const importLabel=document.createElement('label');importLabel.textContent='Importar ajustes JSON';const file=document.createElement('input');file.type='file';file.accept='.json,application/json';const status=document.createElement('p');file.onchange=async()=>{try{fxSettings=validateFX(JSON.parse(await file.files[0].text()));saveFX();buildFXPanel();}catch(e){status.textContent=e.message;}};importLabel.append(file);panel.append(importLabel,status);
+ const restore=document.createElement('button');restore.textContent='Restablecer efectos';restore.onclick=()=>{fxSettings=JSON.parse(JSON.stringify(FX_DEFAULTS));saveFX();buildFXPanel();};panel.append(restore);
+ const note=document.createElement('p');note.textContent='Los ajustes se mezclan con la emoción activa. El agua aparece en estados de tensión; las estrellas, en Euphoria. Desactivar “Efectos de emoción” también apaga este sistema.';panel.append(note);
+}
+buildFXPanel();document.getElementById('wmFXToggle').onclick=()=>{const panel=document.getElementById('wmFXPanel');panel.hidden=!panel.hidden;document.getElementById('wmLightPanel').hidden=true;};
+
+const headControl=document.createElement('button');headControl.id='wmHeadFollow';headControl.type='button';headControl.onclick=()=>{followHead=!followHead;if(followHead){girando=false;viewYaw=0;}refreshHeadControl();};
+(document.querySelector('.wmViewRow')||document.querySelector('.views')||document.querySelector('aside')).append(headControl);refreshHeadControl();
 document.querySelectorAll('[data-wm-view]').forEach(b=>b.onclick=()=>chooseView(Number(b.dataset.wmView)));
 const sweep=document.getElementById('wmSweep');if(sweep)sweep.onclick=()=>document.getElementById('girar').click();
 requestAnimationFrame(bucle);
 etiqueta();
 
+
+if(document.body.dataset.public==="true"){addEventListener("error",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});ren.domElement.addEventListener("webglcontextlost",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>WojakMeter · Actuación 10</title>
+<title>WojakMeter · Touch Studio 16</title>
 <style>
 :root{
   --bg:#0a0b0f; --panel:#12141b; --line:#232735;
@@ -55,11 +55,11 @@ button:hover{border-color:#3d4870}
 .morfos b{color:var(--dim);font-weight:500}
 @media (max-width:900px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none}}
 body{font-size:16px} .ctl label,select,button{font-size:14px} .sub{font-size:14px!important} .views{display:grid;grid-template-columns:1fr 1fr;gap:6px} #stage.liso{background:#050709} </style>
-</head>
+<style>#wmLightToggle{position:fixed;right:14px;top:12px;width:auto;z-index:80;padding:9px 13px;background:#172331;border:1px solid #8babc566}#wmLightPanel{position:fixed;right:10px;top:62px;bottom:14px;width:min(335px,calc(100vw - 40px));box-sizing:border-box;z-index:90;background:#111923f5;border:1px solid #668098;padding:16px;border-radius:12px;overflow:auto;box-shadow:0 12px 50px #0008;font-size:12px}#wmLightPanel[hidden]{display:none}#wmLightPanel h3{margin:0 0 8px}#wmLightPanel p{color:#96a4b4;font-size:11px}#wmLightPanel details{margin:12px 0;padding:10px 0;border-top:1px solid #ffffff20}#wmLightPanel summary{cursor:pointer;font-weight:600;color:#d7e6f5}.lightRange{display:grid;grid-template-columns:1fr auto;gap:4px;margin:13px 0}.lightRange input{grid-column:1/-1;width:100%;accent-color:#8cd5b2}.lightPresets{display:flex;gap:5px}#wmLightPanel input[type=color]{height:30px;width:100%;background:none;border:0}</style><style>#wmFXToggle{position:fixed;right:14px;top:55px;width:auto;z-index:81;padding:9px 13px;background:#192334;border:1px solid #a0c9b866}#wmFXPanel{position:fixed;right:10px;top:100px;bottom:12px;width:min(335px,calc(100vw - 40px));box-sizing:border-box;z-index:95;background:#111923fa;border:1px solid #77a995;padding:16px;border-radius:12px;overflow:auto;font-size:12px}#wmFXPanel[hidden]{display:none}#wmFXPanel p{font-size:11px;color:#a7b9ba}#wmFXPanel h3{margin:0 0 8px}#wmFXPanel select{margin-top:14px}#wmFXPanel input[type=color]{width:100%;height:32px;margin-top:12px}#wmFXPanel input[type=file]{max-width:100%;font-size:11px;margin:8px 0}</style></head>
 <body>
 
-<h1>WOJAKMETER · Actuación 10</h1>
-<p class="sub">Iris por emoción · cuello más grueso · mirada interactiva · v10</p>
+<h1>WOJAKMETER · Touch Studio 16</h1>
+<p class="sub">Iris por emoción · cuello más grueso · mirada interactiva · v16</p>
 
 <div class="wrap">
   <div id="stage" class="liso">
@@ -109,4 +109,4 @@ body{font-size:16px} .ctl label,select,button{font-size:14px} .sub{font-size:14p
 <script>window.__TEX={"Skin": "./Skin.png", "SkinN": "./SkinN.png", "Eye": "./Eye.png", "Eyelash": "./Eyelash.png", "Teeth": "./Teeth.jpg", "Tongue": "./Tongue.jpg", "SkinR": "./SkinR.png", "HoodieN": "./HoodieN.jpg"};</script>
 
 <script type="module" src="./character-app.js"></script>
-</body></html>
+<button id="wmLightToggle">Luces y acabado</button><section id="wmLightPanel" hidden aria-label="Controles de iluminación"></section><button id="wmFXToggle">Efectos especiales</button><section id="wmFXPanel" hidden aria-label="Efectos especiales por emoción"></section></body></html>

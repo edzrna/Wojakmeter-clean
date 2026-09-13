@@ -616,6 +616,7 @@
      --------------------------------------------------------- */
   function applyWindow() {
     const w = state.windows?.[state.range];
+    window.WM_CHARACTER_WINDOW = w || null;
 
     state.windowScore = w ? w.score : null;
     state.windowDelta = w ? w.delta : 0;
@@ -941,6 +942,7 @@
          elementos uno por uno: ahora el numero correcto sale del
          origen y no hay nada que corregir despues. */
       window.WM_CANONICAL_INDEX = data.score;
+      window.WM_MARKET_SNAPSHOT = data;
 
       state.score = data.score;
       state.streakSeconds = Number(data.streakSeconds || 0);
