@@ -48,7 +48,7 @@ function parseRssItems(xml, sourceName) {
       headline,
       url,
       source: sourceName,
-      ts: Number.isFinite(ts) ? ts : Date.now()
+      ts: Number.isFinite(ts) ? ts : null
     });
   });
 
@@ -100,6 +100,7 @@ export default async function handler(req, res) {
       const { score, moodKey } = classifyHeadline(item.headline);
       return {
         headline: item.headline,
+        ts: item.ts,
         url: item.url,
         source: item.source,
         score,
