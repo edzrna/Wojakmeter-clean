@@ -68,7 +68,7 @@
                  hacen de red de seguridad: si una ilustracion
                  falta, la casilla cae al icono en vez de quedarse
                  vacia. */
-  const ART_PATH  = (key) => `/assets/wojak-renders/${key}.png`;
+  const ART_PATH  = (key) => `/assets/hero/classic/${key}.png`;
 
   /* ---------------------------------------------------------
      SPRITES DE REACCION
@@ -93,32 +93,8 @@
 
      La deteccion es una sola vez, por canvas: si el navegador
      sabe EXPORTAR webp, sabe leerlo. */
-  let spriteExt = "png";
-  try {
-    const c = document.createElement("canvas");
-    c.width = c.height = 1;
-    if (c.toDataURL("image/webp").startsWith("data:image/webp")) spriteExt = "webp";
-  } catch {}
-
-  const SPRITE_PATH = (key) => `/assets/game/sprites/${key}_sprite.${spriteExt}`;
-  const SPRITE_FRAMES = 8;
-
-  /* Duracion de un sentido, en ms. Tiene que coincidir con la
-     variable --fx-dur del CSS: el JS la usa para saber cuando
-     limpiar la clase y cuando encadenar la entrada. */
-  const SPRITE_MS = 260;
-
-  /* Cada reproduccion se pone POR ENCIMA de la anterior: al
-     encadenar toques rapidos, la ultima reaccion es la que manda.
-     Un z-index fijo haria que la casilla de arriba a la izquierda
-     tapara siempre a las demas por orden del DOM. */
-  let spriteLayer = 0;
-
-  /* Emociones cuyo sprite no ha cargado. Se llena en la precarga
-     y evita reintentos por cada toque. */
-  const spriteMissing = new Set();
   const RANK_PATH = (key) => `/assets/game/er_icons_rank_${key}.png`;
-  const ICON_PATH = (key) => `/assets/wojak-renders/${key}.png`;
+  const ICON_PATH = (key) => `/assets/icons/classic/${key}.png`;
 
   /* Un fallo de carga no puede dejar un hueco en la cuadricula: el
      jugador no sabria que hay ahi y perderia la ronda. */
@@ -164,42 +140,6 @@
      medio segundo, y sin reinicio la segunda no se veria.
      --------------------------------------------------------- */
   /* dir: "out" rompe (0->7) · "in" recompone (7->0) */
-  function playSprite(cell, key, dir) {
-    return; // Keep game logic; use static character art.
-
-    const fx = cell.querySelector(`.rush-cell-fx.${dir}`);
-    if (!fx) return;
-
-    /* Si el sprite no existe todavia —no se han subido los siete—
-       la casilla se marca igual y no se pinta un hueco. La imagen
-       se comprueba una vez por emocion y se recuerda. */
-    if (spriteMissing.has(key)) return;
-
-    fx.style.backgroundImage = `url("${SPRITE_PATH(key)}")`;
-
-    /* La reproduccion anterior se corta y se reinicia. Sin quitar
-       la clase y forzar reflow, el navegador considera que la
-       animacion ya esta puesta y no la relanza. */
-    fx.classList.remove("playing");
-    void fx.offsetWidth;
-
-    /* Cada toque sube una capa: la reaccion mas reciente queda
-       siempre encima de las que sigan corriendo. */
-    /* El contador se recicla en vez de crecer sin fin: en una
-       partida larga llegaria a cientos y superaria el z-index del
-       chip, que es lo que tapaba el nombre de la casilla. 90 es
-       techo de sobra — nunca hay mas de nueve reacciones vivas a
-       la vez. */
-    spriteLayer = (spriteLayer % 90) + 1;
-    cell.style.setProperty("--fx-layer", String(spriteLayer));
-    fx.classList.add("playing");
-
-    /* Se limpia al terminar. Si la capa se quedara con la clase,
-       el reinicio del proximo toque dependeria del reflow y en
-       moviles lentos se saltaria la primera reproduccion. */
-    clearTimeout(fx.__t);
-    fx.__t = setTimeout(() => fx.classList.remove("playing"), SPRITE_MS + 60);
-  }
 
   function moodByScore(score) {
     for (let i = MOODS.length - 1; i >= 0; i--) {
@@ -712,7 +652,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
       cell.classList.add(correct ? "rush-cell-right" : "rush-cell-wrong");
       /* Se limpia al empezar la ronda siguiente, no con un timer:
          un timer mas por toque es justo lo que sobra aqui. */
-      playSprite(cell, key, "out");
+
     }
 
     if (correct) {
@@ -859,7 +799,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
         const prevKey = cell.dataset.key;
         cell.dataset.key = mood.key;
         if (prevKey && prevKey !== mood.key) {
-          playSprite(cell, mood.key, "in");
+
         }
         cell.style.setProperty("--cell", mood.color);
         cell.setAttribute("aria-label", `${mood.name} ${mood.min} to ${mood.max}`);

@@ -508,11 +508,11 @@ function getCurrentStyle() {
 }
 
 function getHeroImagePath(style, moodKey) {
-  return `/assets/wojak-renders/${moodKey}.png`;
+  return `/assets/hero/classic/${moodKey}.png`;
 }
 
 function getIconImagePath(style, moodKey) {
-  return `/assets/wojak-renders/${moodKey}.png`;
+  return `/assets/icons/${SHARED_ICON_STYLE}/${moodKey}.png`;
 }
 
 // El ícono usa el mismo mapa de mood que ya tienes

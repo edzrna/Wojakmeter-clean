@@ -157,11 +157,10 @@ export default function Home({ ogImageUrl }) {
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=fallback20" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=fallback20" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=fallback20" strategy="afterInteractive" />
-      <Script src="/wojak-3d/bridge.js?v=fallback20" strategy="afterInteractive" />
-      <Script src="/bag-mood-rig.js?v=fallback20" strategy="afterInteractive" />
+      <Script src="/script.js?v=clean21" strategy="afterInteractive" />
+      <Script src="/wojak-game.js?v=clean21" strategy="lazyOnload" />
+      <Script src="/hero-rig.js?v=clean21" strategy="afterInteractive" />
+      <Script src="/wojak-3d/bridge.js?v=clean21" strategy="afterInteractive" />
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
           que entra despues de todo lo demas. Se apaga sin desplegar
@@ -390,7 +389,7 @@ export default function Home({ ogImageUrl }) {
                             <img
                               id="socialIconImg"
                               className="mood-icon-img anim-float"
-                              src="/assets/wojak-renders/neutral.png"
+                              src="/assets/icons/classic/neutral.png"
                               alt="Social mood"
                             />
                           </div>
@@ -502,7 +501,7 @@ export default function Home({ ogImageUrl }) {
                         <img
                           id="heroFaceImg"
                           className="hero-face-img"
-                          src="/assets/wojak-renders/neutral.png"
+                          src="/assets/hero/classic/neutral.png"
                           alt="Global market mood"
                         />
                       </div>
@@ -682,7 +681,7 @@ export default function Home({ ogImageUrl }) {
                           <div className="emotion-pointer-face">
                             <img
                               id="emotionPointerImg"
-                              src="/assets/wojak-renders/neutral.png"
+                              src="/assets/icons/classic/neutral.png"
                               alt="Current emotional state"
                             />
                           </div>
@@ -802,7 +801,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="coinMoodIconImg"
                         className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/wojak-renders/neutral.png"
+                        src="/assets/icons/classic/neutral.png"
                         alt=""
                       />
                       <div><span>Technical</span><strong id="coinMoodLabel">Neutral</strong></div>
@@ -811,7 +810,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="detailSocialIconImg"
                         className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/wojak-renders/neutral.png"
+                        src="/assets/icons/classic/neutral.png"
                         alt=""
                       />
                       <div><span>Social</span><strong id="detailSocialLabel">Neutral</strong></div>
@@ -921,7 +920,7 @@ export default function Home({ ogImageUrl }) {
                   <img
                     id="bagMoodHeroImg"
                     className="bag-mood-hero-img anim-float"
-                    src="/assets/wojak-renders/neutral.png"
+                    src="/assets/hero/classic/neutral.png"
                     alt="Your bag mood"
                   />
                 </div>
@@ -1058,7 +1057,7 @@ export default function Home({ ogImageUrl }) {
                 <div className="radar-result" id="emotionRadarResult">
                   <div className="radar-result-top">
                     <div className="radar-face-wrap">
-                      <img id="radarMoodImg" src="/assets/wojak-renders/neutral.png" alt="Narrative emotion" />
+                      <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" />
                     </div>
                     <div className="radar-result-id">
                       <span className="radar-label">Detected emotion</span>
@@ -1265,7 +1264,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="moodHeroImg"
                         className="mood-hero-img anim-float"
-                        src="/assets/wojak-renders/neutral.png"
+                        src="/assets/hero/classic/neutral.png"
                         alt="Token sentiment"
                       />
 
@@ -1795,25 +1794,25 @@ export default function Home({ ogImageUrl }) {
 
               <div className="pulse-grid">
                 <button data-vote="frustration" type="button" aria-label="Vote frustration">
-                  <img src="/assets/wojak-renders/frustration.png" alt="" />
+                  <img src="/assets/icons/classic/frustration.png" alt="" />
                 </button>
                 <button data-vote="concern" type="button" aria-label="Vote concern">
-                  <img src="/assets/wojak-renders/concern.png" alt="" />
+                  <img src="/assets/icons/classic/concern.png" alt="" />
                 </button>
                 <button data-vote="doubt" type="button" aria-label="Vote doubt">
-                  <img src="/assets/wojak-renders/doubt.png" alt="" />
+                  <img src="/assets/icons/classic/doubt.png" alt="" />
                 </button>
                 <button data-vote="neutral" type="button" aria-label="Vote neutral">
-                  <img src="/assets/wojak-renders/neutral.png" alt="" />
+                  <img src="/assets/icons/classic/neutral.png" alt="" />
                 </button>
                 <button data-vote="optimism" type="button" aria-label="Vote optimism">
-                  <img src="/assets/wojak-renders/optimism.png" alt="" />
+                  <img src="/assets/icons/classic/optimism.png" alt="" />
                 </button>
                 <button data-vote="content" type="button" aria-label="Vote content">
-                  <img src="/assets/wojak-renders/content.png" alt="" />
+                  <img src="/assets/icons/classic/content.png" alt="" />
                 </button>
                 <button data-vote="euphoria" type="button" aria-label="Vote euphoria">
-                  <img src="/assets/wojak-renders/euphoria.png" alt="" />
+                  <img src="/assets/icons/classic/euphoria.png" alt="" />
                 </button>
               </div>
 

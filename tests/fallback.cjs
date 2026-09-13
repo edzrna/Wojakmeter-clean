@@ -4,7 +4,7 @@ function run(){
  const events={},timers=new Map();let id=0,iframe;
  const stage={dataset:{},classList:{toggle(){}},setAttribute(){},getBoundingClientRect:()=>({height:500})};
  const wrap={append(f){iframe=f;}};
- const context={location:{origin:'https://example.test'},getComputedStyle:()=>({getPropertyValue:()=>'.2'}),setTimeout:(f)=>{timers.set(++id,f);return id;},clearTimeout:i=>timers.delete(i),setInterval:()=>1,clearInterval(){},addEventListener:(n,f)=>events[n]=f,document:{hidden:false,head:{append(){}},addEventListener(){},getElementById:id=>id==='heroStage'?stage:wrap,createElement:()=>({contentWindow:{postMessage(){}},setAttribute(){},addEventListener(){}})}};
+ const context={location:{origin:'https://example.test'},getComputedStyle:()=>({getPropertyValue:()=>'.2'}),setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:i=>timers.delete(i),setInterval:()=>1,clearInterval(){},addEventListener:(n,f)=>events[n]=f,document:{hidden:false,head:{append(){}},addEventListener(){},getElementById:id=>id==='heroStage'?stage:wrap,createElement:()=>({contentWindow:{postMessage(){}},setAttribute(){},addEventListener(){}})}};
  context.window=context;vm.runInNewContext(code,context);
  return {stage,timers,msg(type,origin='https://example.test'){events.message({origin,source:iframe.contentWindow,data:{type}});}};
 }

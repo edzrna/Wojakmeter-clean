@@ -1,1 +1,1 @@
-/* Bag Mood now uses the static PNG selected by script.js. */
+/* Retired: Bag Mood uses hero/classic PNGs selected by script.js. */

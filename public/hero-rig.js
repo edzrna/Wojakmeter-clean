@@ -76,165 +76,11 @@
   function heroStyle() {
     const v = String(document.getElementById("styleSelector")?.value || "")
       .toLowerCase();
-    return (v === "synth" || v === "classic") ? v : "classic";
+    return "classic";
   }
 
-  const HERO_IMG = (mood) => `/assets/wojak-renders/${mood}.png`;
+  const HERO_IMG = (mood) => `/assets/hero/classic/${mood}.png`;
 
-  /* Bucle animado: 24 fotogramas de 640px en rejilla 6x4.
-     Un archivo por estilo y emocion. */
-  const IDLE_SPRITE = (mood) =>
-    `/assets/hero/idle/${heroStyle()}/${mood}_idle.webp`;
-
-  /* Rejilla de la hoja de reposo: 24 fotogramas en 6 columnas por
-     4 filas. */
-  const IDLE_COLS = 6;
-  const IDLE_ROWS = 4;
-  const IDLE_FRAMES = IDLE_COLS * IDLE_ROWS;
-
-  /* Pasos de un ciclo de IDA Y VUELTA sin repetir los extremos:
-     0,1,…,23,22,…,1 y otra vez 0. Son 46, no 48: contar 48
-     mostraria el fotograma 23 y el 0 dos veces seguidas, y esa
-     doble exposicion se ve como un tiron justo en el giro. */
-  const IDLE_STEPS = IDLE_FRAMES * 2 - 2;
-
-  /* ---------------------------------------------------------
-     QUIEN SE REPRODUCE DE IDA Y VUELTA
-
-     Ahora TODAS menos tres, y la lista va por ESTILO Y EMOCION,
-     no solo por emocion. Las hojas nuevas estan dibujadas como
-     `content`: van de reposo a extremo, asi que el salto del
-     ultimo fotograma al primero seria un brinco. Yendo y
-     viniendo, el bucle cierra solo y no hay corte que disimular.
-
-     `concern` queda fuera en los DOS estilos porque su sudor
-     RESBALA. Medido sobre la hoja classic, el centroide del cambio
-     baja en 15 de los 24 pasos y sube en 7: es la unica con una
-     direccion vertical marcada. Del derecho el sudor cae; del
-     reves subiria por la cara.
-
-     `frustration` queda fuera SOLO EN CLASSIC, por decision del
-     autor. La medicion no la señalaba —su movimiento sale casi
-     mitad y mitad, y las lagrimas estan pintadas, no viajan—, pero
-     el grito de la cara clasica tiene un sentido que la cifra no
-     captura: se abre y se descarga. Del reves la boca se cierra
-     sola y el grito se traga, que es lo contrario de lo que cuenta
-     esa emocion.
-
-     En SYNTH esa objecion no aplica y el autor pidio el vaiven. La
-     cara synth no es una boca que se abre: es una rejilla de LEDs
-     que se enciende y se apaga, y encenderse hacia atras es tan
-     legible como hacia delante. Que la misma emocion se comporte
-     distinto en cada estilo no es una incoherencia: son dos
-     dibujos distintos con reglas distintas.
-
-     Por eso la clave es "estilo/emocion". Con la lista antigua,
-     por emocion sola, era imposible expresar esto sin duplicar el
-     motor.
-
-     La lista es de EXCEPCIONES, no de incluidos: una emocion nueva
-     entra por defecto en ida y vuelta, que es lo que quieren casi
-     todas. Se añade aqui lo que tenga direccion, medida o
-     dramatica.
-     --------------------------------------------------------- */
-  const IDLE_NO_PINGPONG = new Set([
-    "classic/concern",
-    "classic/frustration",
-    "synth/concern"
-    /* `synth/frustration` NO esta aqui a proposito: va de ida y
-       vuelta. Ver el comentario de arriba. */
-  ]);
-
-  /* La excepcion se busca primero por "estilo/emocion" y despues
-     por la emocion sola, para que una entrada como "concern" siga
-     valiendo para los dos estilos si alguna vez se escribe asi. */
-  const isPingPong = (mood, style) => {
-    const m = String(mood || "");
-    const st = String(style || heroStyle());
-    return !IDLE_NO_PINGPONG.has(`${st}/${m}`) && !IDLE_NO_PINGPONG.has(m);
-  };
-
-  /* ---------------------------------------------------------
-     LAS 21 SUBEMOCIONES, SIN 21 ARCHIVOS
-
-     Hay SIETE sprites. La subemocion no cambia el dibujo: cambia
-     como se REPRODUCE. Cada entrada modula el mismo bucle.
-
-       rate    multiplica la duracion del ciclo (mayor = mas lento)
-       shake   temblor, 0 a 1
-       tilt    ladeo en grados
-       dim     desaturacion, 0 a 1
-
-     Un `neutral_compression` es el bucle de neutral lento y
-     apagado; un `neutral_pressure_building` es el mismo bucle
-     acelerando con temblor. Misma imagen, dos estados que se leen
-     distinto — y sumando los ejes en vivo, un continuo entre
-     ellos, no tres casillas.
-     --------------------------------------------------------- */
-  const SUB_FX = {
-    /* Frustration: todo rapido y sacudido. La capitulacion es la
-       excepcion — es el agotamiento DESPUES del grito. */
-    frustration:              { rate: 0.55, shake: 0.75, tilt: 0,    dim: 0 },
-    frustration_panic:        { rate: 0.42, shake: 1.00, tilt: 0,    dim: 0 },
-    frustration_capitulation: { rate: 1.30, shake: 0.20, tilt: 3.5,  dim: 0.35 },
-    frustration_exhaustion:   { rate: 1.55, shake: 0.10, tilt: 4.5,  dim: 0.45 },
-
-    concern:                  { rate: 0.85, shake: 0.35, tilt: 0,    dim: 0 },
-    concern_pressure:         { rate: 1.00, shake: 0.25, tilt: 1.0,  dim: 0.05 },
-    concern_fear_spike:       { rate: 0.55, shake: 0.85, tilt: 0,    dim: 0 },
-    concern_breakdown:        { rate: 0.75, shake: 0.60, tilt: 3.0,  dim: 0.30 },
-
-    /* Doubt: la duda es quietud con la mirada inquieta, asi que el
-       cuerpo va lento aunque los ojos no. */
-    doubt:                    { rate: 1.15, shake: 0.20, tilt: 1.5,  dim: 0.05 },
-    doubt_confusion:          { rate: 1.00, shake: 0.45, tilt: 2.5,  dim: 0.10 },
-    doubt_hesitation:         { rate: 1.35, shake: 0.12, tilt: 1.0,  dim: 0.12 },
-    doubt_fake_recovery:      { rate: 0.90, shake: 0.40, tilt: 2.0,  dim: 0.08 },
-
-    neutral:                  { rate: 1.20, shake: 0.08, tilt: 0,    dim: 0 },
-    neutral_waiting:          { rate: 1.30, shake: 0.05, tilt: 0,    dim: 0.05 },
-    neutral_compression:      { rate: 1.60, shake: 0.03, tilt: 2.0,  dim: 0.25 },
-    neutral_pressure_building:{ rate: 0.80, shake: 0.45, tilt: 0,    dim: 0 },
-
-    optimism:                 { rate: 0.95, shake: 0.05, tilt: 0,    dim: 0 },
-    optimism_building:        { rate: 0.75, shake: 0.10, tilt: 0,    dim: 0 },
-    optimism_confident:       { rate: 1.00, shake: 0.00, tilt: 0,    dim: 0 },
-    optimism_pullback:        { rate: 1.25, shake: 0.15, tilt: 1.5,  dim: 0.15 },
-
-    content:                  { rate: 1.15, shake: 0.00, tilt: 0,    dim: 0 },
-    content_strength:         { rate: 1.00, shake: 0.00, tilt: 0,    dim: 0 },
-    content_confidence:       { rate: 1.20, shake: 0.00, tilt: 0,    dim: 0 },
-    content_overextended:     { rate: 0.70, shake: 0.25, tilt: 0,    dim: 0 },
-
-    euphoria:                 { rate: 0.55, shake: 0.20, tilt: 0,    dim: 0 },
-    euphoria_breakout:        { rate: 0.45, shake: 0.30, tilt: 0,    dim: 0 },
-    euphoria_overheat:        { rate: 0.38, shake: 0.55, tilt: 0,    dim: 0 },
-    euphoria_weakening:       { rate: 0.85, shake: 0.35, tilt: 2.0,  dim: 0.20 }
-  };
-
-  /* Sprites que ya se sabe que no existen o no cargan. Se
-     comprueba UNA vez por emocion: sin esto, cada frame del rig
-     dispararia otra peticion fallida. */
-  /* Las claves llevan el estilo: el mismo mood en classic y en
-     synth son dos archivos distintos, y sin el estilo en la clave
-     el segundo heredaria el estado de carga del primero. */
-  const idleReady = new Set();
-  const idleFailed = new Set();
-  let idleKey = null;
-
-  /* ---------------------------------------------------------
-     LAS 21 SUBEMOCIONES
-
-     El catalogo de siempre (script.js las elegia con su formula
-     vieja). Ahora las elige el rig con los CUATRO EJES, que es lo
-     que garantiza que base, overlay y texto salgan siempre del
-     mismo estado — la mezcla de craneo verde con cara neutra venia
-     de dos sistemas eligiendo cada uno por su lado.
-
-     tension alta -> la variante de presion o miedo
-     fatiga alta  -> la de agotamiento o compresion
-     arousal alta -> la intensa
-     --------------------------------------------------------- */
   function subemotionFor(moodKey, score, axes, windowDelta) {
     const { arousal: a, tension: x, fatigue: f } = axes;
 
@@ -482,7 +328,7 @@
     }
 
     if (moved) writeAxes();
-    advanceIdle(now);
+
     enforceCanonical();
     state.rafId = requestAnimationFrame(tick);
   }
@@ -1013,63 +859,6 @@
      dejaria un hueco justo donde esta lo mas visible de la
      pagina.
      --------------------------------------------------------- */
-  function ensureIdle(mood) {
-    stage()?.classList.remove("wm-has-sprite");
-    return; // Static PNGs replace sprite sheets.
-
-    const el = $("heroSprite");
-    const st = stage();
-    if (!el || !st) return;
-
-    const key = `${heroStyle()}/${mood}`;
-
-    if (idleFailed.has(key)) {
-      st.classList.remove("wm-has-sprite");
-      return;
-    }
-
-    if (idleKey === key) return;
-    idleKey = key;
-    state.idleKeyMood = mood;
-
-    /* Se corta el bucle anterior en el acto. Sin esto, entre que
-       cambia la emoción y termina de descargar la nueva, la capa
-       animada sigue reproduciendo la ANTERIOR encima de la imagen
-       plana ya actualizada: el título dice una emoción y el
-       personaje enseña otra. */
-    st.classList.remove("wm-has-sprite");
-
-    const src = IDLE_SPRITE(mood);
-
-    if (idleReady.has(key)) {
-      el.style.backgroundImage = `url("${src}")`;
-      st.classList.add("wm-has-sprite");
-      return;
-    }
-
-    /* Mientras carga, la imagen plana sigue mandando. */
-    st.classList.remove("wm-has-sprite");
-
-    try {
-      const probe = new Image();
-      probe.onload = () => {
-        idleReady.add(key);
-        /* Puede haber cambiado de emocion O DE ESTILO mientras
-           descargaba: si ya no es el actual, se guarda en cache y
-           no se pinta. */
-        if (idleKey !== key) return;
-        el.style.backgroundImage = `url("${src}")`;
-        st.classList.add("wm-has-sprite");
-      };
-      probe.onerror = () => {
-        idleFailed.add(key);
-        st.classList.remove("wm-has-sprite");
-      };
-      probe.src = src;
-    } catch {
-      idleFailed.add(key);
-    }
-  }
 
   /* ---------------------------------------------------------
      MARKET VITALS — EL RITMO SALE DEL MERCADO
@@ -1115,102 +904,8 @@
      a 24 fotogramas por ciclo son unas decenas de escrituras por
      segundo, no una por frame.
      --------------------------------------------------------- */
-  function advanceIdle(now) {
-    const el = $("heroSprite");
-    if (!el || !stage()?.classList.contains("wm-has-sprite")) return;
-
-    /* Se apagan las animaciones de rejilla del CSS, UNA sola vez.
-
-       Una animación CSS gana siempre sobre un estilo inline
-       mientras corre, así que si la hoja de estilos sigue
-       animando background-position, todo lo que escriba este
-       bucle se ignora. Sobrescribiendo la propiedad `animation`
-       aquí, el avance de fotograma pasa a ser cosa del JS y el
-       CSS conserva solo el temblor.
-
-       Va inline y no en globals.css para que el cambio quepa en
-       un único archivo. */
-    if (!el.__animOff) {
-      el.__animOff = true;
-      el.style.animation =
-        "hero-idle-shake calc(.10s + (1 - var(--idle-shake, 0)) * .26s) " +
-        "linear infinite";
-    }
-
-    /* El mood actual sale de la clave de carga —"estilo/mood"—,
-       que es la unica fuente que garantiza estar sincronizada con
-       la hoja que se esta mostrando ahora mismo. */
-    const moodKey = String(state.idleKeyMood || "");
-
-    /* El estilo sale de `idleKey` —la clave "estilo/emocion" con la
-       que se cargo la hoja— y no de leer el selector otra vez: si
-       el usuario acaba de cambiarlo, el selector ya dice el estilo
-       nuevo mientras en pantalla sigue la hoja vieja, y el bucle se
-       reproduciria con la regla que no toca durante esa fraccion de
-       segundo. */
-    const styleKey = String(idleKey || "").split("/")[0];
-    const pingpong = isPingPong(moodKey, styleKey);
-
-    const dur = state.idleDur || 3000;
-
-    /* En ida y vuelta el ciclo dura el DOBLE, porque recorre la
-       hoja dos veces. Sin esta correccion, una hoja de vaiven
-       pasaria sus 24 fotogramas en la mitad de tiempo que las de
-       bucle simple y se veria acelerada frente a ellas. */
-    const cycle = pingpong ? dur : dur / 2;
-    const steps = pingpong ? IDLE_STEPS : IDLE_FRAMES;
-
-    const t = (now % cycle) / cycle;             // 0 … 1
-    const step = Math.floor(t * steps);
-
-    /* Ida y vuelta para casi todas; bucle simple para las tres de
-       la lista de excepciones. */
-    const frame = (!pingpong || step < IDLE_FRAMES)
-      ? step
-      : IDLE_STEPS - step;
-
-    if (el.__frame === frame) return;
-    el.__frame = frame;
-
-    const col = frame % IDLE_COLS;
-    const row = Math.floor(frame / IDLE_COLS);
-
-    el.style.backgroundPosition =
-      `${(col / (IDLE_COLS - 1)) * 100}% ${(row / (IDLE_ROWS - 1)) * 100}%`;
-  }
 
   /* Traduce la subemocion a como se reproduce el bucle. */
-  function applyIdleFx(sub, moodKey) {
-    const el = stage();
-    if (!el) return;
-
-    const fx = SUB_FX[sub] || SUB_FX[moodKey] ||
-               { rate: 1, shake: 0, tilt: 0, dim: 0 };
-
-    /* Duracion base 3,0s modulada por la subemocion Y por los ejes
-       en vivo, asi que dos mercados en la misma subemocion no se
-       mueven exactamente igual.
-
-       Suelo de 0,9s y techo de 4,2s: por debajo el bucle parpadea
-       y por encima baja de 6 fps y se ve a saltos — con 24
-       fotogramas, 4,2s son 5,7 fps, que es el limite. */
-    const base = 3.0 * fx.rate * (1.35 - state.axes.arousal * 0.7);
-    const dur = clamp(base, 0.9, 4.2);
-
-    el.style.setProperty("--idle-dur", dur.toFixed(2) + "s");
-
-    /* En ms para el avance de fotograma, que no lee CSS. El ciclo
-       completo es la ida MAS la vuelta, asi que se duplica: la
-       duracion configurada sigue significando "lo que tarda en
-       llegar al extremo". */
-    state.idleDur = dur * 2000;
-    el.style.setProperty("--idle-shake",
-      clamp(fx.shake + state.axes.tension * 0.35, 0, 1).toFixed(2));
-    el.style.setProperty("--idle-tilt",
-      (fx.tilt + state.axes.fatigue * 3.5).toFixed(2) + "deg");
-    el.style.setProperty("--idle-dim",
-      clamp(fx.dim + state.axes.fatigue * 0.35, 0, 0.6).toFixed(2));
-  }
 
   function enforceCanonical() {
     if (state.score === null || state.scrubbing) return;
@@ -1288,8 +983,8 @@
        se sigue actualizando SIEMPRE, aunque haya sprite: es el
        respaldo, y tiene que estar en la emocion correcta el dia
        que el sprite falle. */
-    ensureIdle(mood[0]);
-    applyIdleFx(sub, mood[0]);
+
+
 
     /* ── EL GAUGE, TAMBIEN EL CANONICO ──
 
@@ -1317,18 +1012,6 @@
        cada uno por su lado. Aqui base y overlay salen del mismo
        mood en la misma pasada, asi que no pueden divergir. Solo
        hay overlay cuando la subemocion refina al mood base. */
-    const overlay = $("heroFaceOverlayImg");
-    if (overlay) {
-      if (sub !== mood[0]) {
-        const osrc = `/assets/overlays/classic/${sub}.png`;
-        if (!String(overlay.src).endsWith(osrc)) overlay.src = osrc;
-        if (overlay.style.display !== "") overlay.style.display = "";
-        overlay.classList.remove("hidden");
-      } else if (overlay.style.display !== "none") {
-        overlay.style.display = "none";
-        overlay.classList.add("hidden");
-      }
-    }
   }
 
   /* ---------------------------------------------------------
@@ -1383,8 +1066,7 @@
     /* Cambiar de estilo obliga a recargar el bucle: sin esto se
        quedaria el sprite del estilo anterior hasta que cambiara la
        emocion, que puede tardar horas. */
-    document.getElementById("styleSelector")
-      ?.addEventListener("change", () => { idleKey = null; });
+
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
