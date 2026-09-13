@@ -575,6 +575,7 @@ async function loadNews() {
     const items = Array.isArray(res?.items) ? res.items : [];
     if (items.length) {
       newsData = items.slice(0, 12);
+      window.WM_CHARACTER_NEWS = newsData.map(n=>({url:n.url,score:n.score,ts:n.ts}));
       renderNewsBanner();
       renderRadarFeed();
     } else if (!newsData.length) {
