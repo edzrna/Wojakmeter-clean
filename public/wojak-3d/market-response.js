@@ -15,6 +15,7 @@
   const parts=historical?{}:snapshot.parts||{};
   const headlines=finite(parts.headlines)?clamp(parts.headlines,-1,1):0;
   const volume=finite(parts.volumeAnom)?Math.abs(clamp(parts.volumeAnom,-1,1)):0;
+  out.behaviorSignals={momentum:motion,volumePressure:volume,headlineTone:headlines};
   const adverse=score<45?Math.max(0,-motion):score>59?Math.max(0,-motion)*.6:Math.abs(motion)*.35;
   const newsPressure=Math.max(0,-headlines);
   out.arousal=clamp((finite(base.arousal)?base.arousal:.15)+.10*volume+.08*Math.abs(headlines));

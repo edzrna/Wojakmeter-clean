@@ -8001,15 +8001,25 @@ function setupEyes(mesh){
   `);
  };mesh.material.customProgramCacheKey=()=> 'wm-eye-contact-v16';mesh.material.needsUpdate=true;
 }
-function pointerAt(x,y){pointer.x=THREE.MathUtils.clamp(x,-1,1);pointer.y=THREE.MathUtils.clamp(y,-1,1);pointer.active=true;}
+function pointerAt(x,y){pointer.x=THREE.MathUtils.clamp(x,-1,1);pointer.y=THREE.MathUtils.clamp(y,-1,1);pointer.active=true;pointer.lastActivity=performance.now();}
+const director=new window.WMCharacterDirector();
 let pressReactionStart=-100,trackedPointer=null,pressOrigin=null;
 const touchRay=new THREE.Raycaster(),touchNdc=new THREE.Vector2();
-function onCharacter(e){
- if(!malla)return false;
+function hitCharacter(e){
+ if(!malla)return null;
  const r=stage.getBoundingClientRect();touchNdc.set((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);
  escena.updateMatrixWorld(true);touchRay.setFromCamera(touchNdc,cam);
- return touchRay.intersectObjects([malla,...(eyeMesh?[eyeMesh]:[]),...seguidores],false).length>0;
+ const hit=touchRay.intersectObjects([malla,...(eyeMesh?[eyeMesh]:[]),...seguidores],false)[0];
+ if(!hit)return null;
+ const local=eyeMesh?eyeMesh.worldToLocal(hit.point.clone()):hit.point;
+ if(eyeMesh&&local.z>.15){
+  for(let i=0;i<2;i++){const c=eyeCenters[i];
+   if(((local.x-c.x)/.085)**2+((local.y-c.y)/.065)**2<1)return i===0?'Right':'Left';
+  }
+ }
+ return 'face';
 }
+function onCharacter(e){return !!hitCharacter(e);}
 function updatePointerFromEvent(e){const r=stage.getBoundingClientRect();pointerAt((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2);}
 function pressReaction(t){
  const age=t-pressReactionStart;
@@ -8021,11 +8031,11 @@ function pressReaction(t){
 stage.style.touchAction='none';
 stage.addEventListener('pointerdown',e=>{
  if((e.pointerType==='mouse'&&e.button!==0)||trackedPointer!==null)return;
- if(!onCharacter(e))return;
- trackedPointer=e.pointerId;pressOrigin={x:e.clientX,y:e.clientY,moved:false};
+ const zone=hitCharacter(e);if(!zone)return;
+ trackedPointer=e.pointerId;pressOrigin={x:e.clientX,y:e.clientY,moved:false,zone,at:performance.now()};
  stage.setPointerCapture(e.pointerId);updatePointerFromEvent(e);
  // Immediate response to a finger touching the face; dragging keeps gaze active.
- if(e.pointerType!=='mouse')pressReactionStart=life.time;
+ // Count a completed tap, never the start of a drag.
 });
 stage.addEventListener('pointermove',e=>{
  if(e.pointerType==='mouse'||trackedPointer===e.pointerId){
@@ -8035,7 +8045,7 @@ stage.addEventListener('pointermove',e=>{
 });
 function finishPointer(e,cancelled=false){
  if(trackedPointer!==e.pointerId)return;
- if(!cancelled&&e.pointerType==='mouse'&&pressOrigin&&!pressOrigin.moved&&onCharacter(e))pressReactionStart=life.time;
+ if(!cancelled&&pressOrigin&&!pressOrigin.moved&&performance.now()-pressOrigin.at<700&&onCharacter(e))director.tap(pressOrigin.zone);
  if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);
  trackedPointer=null;pressOrigin=null;
  if(e.pointerType!=='mouse')pointer.active=false;
@@ -8058,8 +8068,8 @@ function updateEyes(dt){
  escena.updateMatrixWorld(true);
  const target=new THREE.Vector3(pointer.x*.50,pointer.y*.48,.9);eyeMesh.worldToLocal(target);
  const center=eyeCenters[0].clone().add(eyeCenters[1]).multiplyScalar(.5),d=target.clone().sub(center);
- const yaw=pointer.active?THREE.MathUtils.clamp(Math.atan2(d.x,d.z),-.24,.24):0;
- const pitch=pointer.active?THREE.MathUtils.clamp(-Math.atan2(d.y,Math.hypot(d.x,d.z)),-.16,.16):0;
+ const yaw=pointer.active?THREE.MathUtils.clamp(Math.atan2(d.x,d.z),-.24,.24):(director.out.gazeX||0);
+ const pitch=pointer.active?THREE.MathUtils.clamp(-Math.atan2(d.y,Math.hypot(d.x,d.z)),-.16,.16):(director.out.gazeY||0);
  eyeAngles[0].x+=(pitch-eyeAngles[0].x)*lerp;eyeAngles[0].y+=(yaw-eyeAngles[0].y)*lerp;
  eyeAngles[1].x=eyeAngles[0].x;eyeAngles[1].y=eyeAngles[0].y;
  const p=eyeMesh.geometry.attributes.position,n=eyeMesh.geometry.attributes.normal;
@@ -8070,7 +8080,7 @@ function updateEyes(dt){
  }
  p.needsUpdate=true;n.needsUpdate=true;
 }
-let viewYaw=0,sweepPhase=0,followHead=true,pointerHeadYaw=0;
+let viewYaw=0,sweepPhase=0,followHead=true,pointerHeadYaw=0,autonomousYaw=0;
 function chooseView(angle){girando=false;followHead=false;viewYaw=angle;refreshHeadControl();}
 function advanceView(dt){
  if(!grupo)return;
@@ -8078,7 +8088,9 @@ function advanceView(dt){
  grupo.rotation.y+=(viewYaw-grupo.rotation.y)*(1-Math.exp(-dt*4));
  const desired=followHead&&pointer.active&&!girando?pointer.x*Math.PI/4:0;
  pointerHeadYaw+=(desired-pointerHeadYaw)*(1-Math.exp(-dt*3.5));
- if(motionRoot)motionRoot.rotation.y=pointerHeadYaw;
+ const autoTarget=!pointer.active&&!girando&&followHead?(director.out.yaw||0):0;
+ autonomousYaw+=(autoTarget-autonomousYaw)*(1-Math.exp(-dt*4));
+ if(motionRoot)motionRoot.rotation.y=pointerHeadYaw+autonomousYaw;
 }
 function refreshHeadControl(){const b=document.getElementById('wmHeadFollow');if(b){b.textContent=followHead?'Ratón: activo':'Seguir ratón';b.setAttribute('aria-pressed',String(followHead));}}
 
@@ -8553,15 +8565,27 @@ function aplicar(){
 
 
  add("browOuterUpLeft",.012*life.out.micro);
- const reaction=pressReaction(life.time);
+ const action=director.out;
+ const reaction=action.tap||0;
  const mixReaction=(name,target)=>put(name,get(name)*(1-reaction)+target*reaction);
  for(const side of ['Left','Right']){
+  if(action.zone!=='face'&&action.zone!==side)continue;
   mixReaction('browDown'+side,.72);mixReaction('eyeBlink'+side,1);
   mixReaction('eyeWide'+side,0);mixReaction('browOuterUp'+side,0);
   mixReaction('noseSneer'+side,.16);mixReaction('mouthPress'+side,.24);
   mixReaction('mouthFrown'+side,.16);mixReaction('mouthSmile'+side,0);
  }
  mixReaction('browInnerUp',0);mixReaction('jawOpen',.015);
+ for(const side of ['Left','Right']){
+  add('browDown'+side,action.brow||0);add('eyeSquint'+side,action.squint||0);add('mouthSmile'+side,action.smile||0);
+  if(action.newsSign<0)add('browInnerUp',(action.news||0)*.10);
+  const rage=action.anger||0;
+  for(const [name,target] of Object.entries({['browDown'+side]:.90,['eyeSquint'+side]:.32,['noseSneer'+side]:.28,['mouthFrown'+side]:.38,['mouthSmile'+side]:0,['mouthPress'+side]:.45})){
+   put(name,get(name)*(1-rage)+target*rage);
+  }
+ }
+ add('jawOpen',action.jaw||0);
+
  const pb=life.out.blink;
  for(const side of ["Left","Right"]){const i=idx["eyeBlink"+side];if(i!==undefined)w[i]=Math.max(w[i],pb);}
  // Eye geometry is static in this reduced asset: avoid unsynchronised gaze deformations.
@@ -8584,7 +8608,7 @@ function liveWeights(score){
  const w={};w[n]=(w[n]||0)+1-f;w[m]=(w[m]||0)+f;return w;
 }
 function updateBody(){
- const o=life.out;if(headPivot){headPivot.rotation.set(o.x,o.y,o.z);motionRoot.position.y=o.lift;}
+ const o=life.out;if(headPivot){headPivot.rotation.set(o.x+(director.out.pitch||0),o.y,o.z+(director.out.tilt||0));motionRoot.position.y=o.lift;}
  const weights=liveWeights((suave.valence+1)*50);if(headPivot&&!reducedMotion.matches){headPivot.rotation.z+=(weights.doubt||0)*(.045+.035*Math.sin(life.time*.65));headPivot.rotation.y+=(weights.doubt||0)*.045*Math.sin(life.time*.9);}let r=0,g=0,b=0,exposure=0;
  skinSaturation.value=1-(weights.concern||0)*.55;
  const n=moodDe(Math.round((suave.valence+1)*50))[3],A=suave.arousal,T=suave.tension,F=suave.fatigue;
@@ -8595,6 +8619,7 @@ function updateBody(){
  const palette={frustration:'#b94336',concern:'#c28f84',doubt:'#d2b3a5',neutral:'#ded5ca',optimism:'#b5c9a9',content:'#90b474',euphoria:'#73a53f'};
  wmSkinColor.value.setRGB(0,0,0);
  for(const [n,w] of Object.entries(weights)){const c=new THREE.Color(palette[n]);wmSkinColor.value.r+=c.r*w;wmSkinColor.value.g+=c.g*w;wmSkinColor.value.b+=c.b*w;}
+ wmSkinColor.value.lerp(new THREE.Color('#b94336'),(director.out.anger||0)*.92);
  if(matPiel)matPiel.color.setRGB(1,1,1);
 
  applyLightSettings();
@@ -8675,17 +8700,19 @@ function bucle(t){
  requestAnimationFrame(bucle);const dt=Math.max(0,Math.min((t-t0)/1000,.1));t0=t;
  if(document.hidden||window.wmInactive)return;
  for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*3));
- life.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
+ if(pointer.active&&trackedPointer===null&&performance.now()-(pointer.lastActivity||0)>3000)pointer.active=false;
+ life.step(dt,suave,reducedMotion.matches);director.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
  
  updateSpecialFX(dt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();if(malla&&!window.__wmSentReady){window.__wmSentReady=true;if(parent!==window)parent.postMessage({type:"wm-ready"},location.origin);}
 }
 document.addEventListener('visibilitychange',()=>{t0=performance.now();});
 window.WojakMeter={setMarket(data){
+ director.signals=data.behaviorSignals||{};
  if(Number.isFinite(data.marketScore))ejes.valence=THREE.MathUtils.clamp(data.marketScore,0,100)/50-1;
  for(const k of Object.keys(ejes))if(Number.isFinite(data[k]))ejes[k]=THREE.MathUtils.clamp(data[k],k==='valence'?-1:0,1);
  if(Number.isFinite(data.intensity)){exag=THREE.MathUtils.clamp(data.intensity,.4,1);ex.value=exag;document.getElementById('oE').textContent=exag.toFixed(2);}
  for(const k of Object.keys(sal)){document.getElementById(k).value=ejes[k];document.getElementById(sal[k]).textContent=ejes[k].toFixed(2);}etiqueta();
- },getState(){return {axes:{...suave},phase:life.phase,motion:{...life.out}};}};
+ },getState(){return {axes:{...suave},phase:life.phase,motion:{...life.out},behavior:{...director.out}};}};
 let previewMode='market',latestMarket=null,previewTimer=0;
 function setPreviewMode(mode){
  clearInterval(previewTimer);previewTimer=0;previewMode=mode;
@@ -8703,6 +8730,7 @@ if(previewSelect)previewSelect.addEventListener('change',()=>setPreviewMode(prev
 addEventListener('message',event=>{
  if(event.source!==parent||event.origin!==location.origin)return;
  if(event.data?.type==='wm-market'){latestMarket=event.data.payload||{};if(previewMode==='market')window.WojakMeter.setMarket(latestMarket);}
+ if(event.data?.type==='wm-news')director.news(event.data.items);
  if(event.data?.type==='wm-active')window.wmInactive=!event.data.active;
 });
 
