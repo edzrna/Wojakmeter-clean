@@ -68,7 +68,7 @@
                  hacen de red de seguridad: si una ilustracion
                  falta, la casilla cae al icono en vez de quedarse
                  vacia. */
-  const ART_PATH  = (key) => `/assets/game/er_icons_button_${key}.png`;
+  const ART_PATH  = (key) => `/assets/wojak-renders/${key}.png`;
 
   /* ---------------------------------------------------------
      SPRITES DE REACCION
@@ -118,7 +118,7 @@
      y evita reintentos por cada toque. */
   const spriteMissing = new Set();
   const RANK_PATH = (key) => `/assets/game/er_icons_rank_${key}.png`;
-  const ICON_PATH = (key) => `/assets/icons/classic/${key}.png`;
+  const ICON_PATH = (key) => `/assets/wojak-renders/${key}.png`;
 
   /* Un fallo de carga no puede dejar un hueco en la cuadricula: el
      jugador no sabria que hay ahi y perderia la ronda. */
@@ -152,13 +152,7 @@
          eso va en su propio try y usa onerror en vez de
          addEventListener, que no todos los objetos Image
          implementan. */
-      try {
-        const sp = new Image();
-        /* Se anota la que falta y no se vuelve a intentar: sin
-           esto, cada toque dispararia otra peticion fallida. */
-        sp.onerror = () => spriteMissing.add(m.key);
-        sp.src = SPRITE_PATH(m.key);
-      } catch {}
+
     });
   }
 
@@ -171,6 +165,8 @@
      --------------------------------------------------------- */
   /* dir: "out" rompe (0->7) · "in" recompone (7->0) */
   function playSprite(cell, key, dir) {
+    return; // Keep game logic; use static character art.
+
     const fx = cell.querySelector(`.rush-cell-fx.${dir}`);
     if (!fx) return;
 

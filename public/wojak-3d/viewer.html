@@ -67,7 +67,7 @@ body>header,aside,#wmToolbar,#wmLightToggle,#wmLightPanel,#wmFXToggle,#wmFXPanel
 
 <div class="wrap">
   <div id="stage" class="liso">
-    <div id="cargando">Cargando modelo…</div>
+    <div id="cargando">Loading character…</div>
     <div id="mood">Neutral</div>
     <div id="score" class="mono">50 / 100</div>
   </div>
@@ -112,5 +112,5 @@ body>header,aside,#wmToolbar,#wmLightToggle,#wmLightPanel,#wmFXToggle,#wmFXPanel
 
 <script>window.__TEX={"Skin": "./Skin.png", "SkinN": "./SkinN.png", "Eye": "./Eye.png", "Eyelash": "./Eyelash.png", "Teeth": "./Teeth.jpg", "Tongue": "./Tongue.jpg", "SkinR": "./SkinR.png", "HoodieN": "./HoodieN.jpg"};</script>
 
-<script type="module" src="./character-app.js"></script>
+<script type="module" src="./character-app.js?v=fallback20"></script>
 <section id="wmToolbar"><div class="wmViewRow"><button data-wm-view="0">Frente</button><button data-wm-view="0.55">¾</button><button id="wmSweep">Giro lento</button></div><select id="wmEmotionPreview" aria-label="Previsualizar emoción"><option value="market">Estado del mercado</option value="cycle">Recorrer las 7 emociones</option><option value="Frustration">Frustration</option><option value="Concern">Concern</option><option value="Doubt">Doubt</option><option value="Neutral">Neutral</option><option value="Optimism">Optimism</option><option value="Content">Content</option><option value="Euphoria">Euphoria</option></select><small id="wmPreviewStatus">Mercado</small></section><button id="wmLightToggle">Luces y acabado</button><section id="wmLightPanel" hidden aria-label="Controles de iluminación"></section><button id="wmFXToggle">Efectos especiales</button><section id="wmFXPanel" hidden aria-label="Efectos especiales por emoción"></section></body></html>

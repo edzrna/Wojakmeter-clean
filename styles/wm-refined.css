@@ -13,7 +13,7 @@
 #heroStage.wm-3d-active #heroFaceWrap{
  animation:none!important;transform:none!important;translate:none!important;rotate:0deg!important;scale:1!important;filter:none!important;background:none!important;
 }
-#heroStage.wm-3d-active #heroFaceWrap>:not(#wm3dFrame){visibility:hidden!important}
+
 #wm3dFrame{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:4;background:transparent}
 #heroHistorySvg{opacity:.42}
 #heroMood{letter-spacing:-.025em}
@@ -21,3 +21,17 @@
 #heroScoreWrap{font-variant-numeric:tabular-nums}
 #heroViewToggle button{box-shadow:none;transition:background .2s,color .2s}
 #heroViewToggle button:focus-visible{outline:2px solid #a5c8be;outline-offset:3px}
+
+/* Permanent 3D hero with a PNG that also works when JavaScript fails. */
+#heroStage #heroFaceWrap{
+ animation:none!important;transform:none!important;translate:none!important;rotate:0deg!important;scale:1!important;filter:none!important;
+}
+#heroStage #heroFaceImg{display:block!important;visibility:visible!important;opacity:1!important;filter:none;transition:filter .35s ease,opacity .4s ease}
+#heroStage #wm3dFrame{opacity:0;pointer-events:none;transition:opacity .4s ease}
+#heroStage[data-render-state="loading"] #heroFaceImg{animation:wm-png-loading 15s step-end forwards}
+@keyframes wm-png-loading{from{filter:blur(9px)}to{filter:blur(0)}}
+#heroStage[data-render-state="ready"] #heroFaceImg{opacity:0!important;animation:none;filter:none}
+#heroStage[data-render-state="ready"] #wm3dFrame{opacity:1;pointer-events:auto}
+#heroStage[data-render-state="fallback"] #heroFaceImg{opacity:1!important;animation:none;filter:none}
+#heroSprite,#heroFaceOverlayImg,.wm-bag-sprite,.rush-cell-fx{display:none!important}
+@media(prefers-reduced-motion:reduce){#heroStage #heroFaceImg,#heroStage #wm3dFrame{transition:none}}

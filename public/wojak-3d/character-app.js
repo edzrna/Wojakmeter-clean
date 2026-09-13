@@ -8201,10 +8201,10 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
   grupo = g.scene;
   setupLivingRig();
   montarEfectos(malla);
-  document.getElementById("cargando").remove();requestAnimationFrame(()=>{if(parent!==window&&location.protocol!=='file:')window.parent.postMessage({type:'wm-ready'},location.origin);});
+  document.getElementById("cargando").remove();
   aplicar();
 }, e=>{
-  document.getElementById("cargando").textContent="No se pudo cargar el modelo";if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);
+  document.getElementById("cargando").textContent="Unable to load character";if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);
   console.error(e);
 });
 
@@ -8677,7 +8677,7 @@ function bucle(t){
  for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*3));
  life.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
  
- updateSpecialFX(dt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();
+ updateSpecialFX(dt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();if(malla&&!window.__wmSentReady){window.__wmSentReady=true;if(parent!==window)parent.postMessage({type:"wm-ready"},location.origin);}
 }
 document.addEventListener('visibilitychange',()=>{t0=performance.now();});
 window.WojakMeter={setMarket(data){
@@ -8846,3 +8846,5 @@ etiqueta();
 
 
 if(document.body.dataset.public==="true"){addEventListener("error",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});ren.domElement.addEventListener("webglcontextlost",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});}
+
+addEventListener("unhandledrejection",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});

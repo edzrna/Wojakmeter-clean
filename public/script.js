@@ -27,7 +27,7 @@ const SHARED_ICON_STYLE  = "classic";
    la lista tiene que reflejarlo o un valor guardado en
    localStorage de una sesion anterior seguiria siendo valido y
    pediria carpetas de assets que ya no se mantienen. */
-const ALLOWED_STYLES     = ["classic", "synth"];
+const ALLOWED_STYLES     = ["classic"];
 
 const PULSE_VOTE_STORAGE_KEY = "wmPulseLastVoteTime";
 const PULSE_VOTER_ID_KEY     = "wmPulseVoterId";
@@ -508,11 +508,11 @@ function getCurrentStyle() {
 }
 
 function getHeroImagePath(style, moodKey) {
-  return `/assets/hero/${style}/${moodKey}.png`;
+  return `/assets/wojak-renders/${moodKey}.png`;
 }
 
 function getIconImagePath(style, moodKey) {
-  return `/assets/icons/${SHARED_ICON_STYLE}/${moodKey}.png`;
+  return `/assets/wojak-renders/${moodKey}.png`;
 }
 
 // El ícono usa el mismo mapa de mood que ya tienes
@@ -617,7 +617,7 @@ function loadSavedStyle() {
 
 function applyStyleClass(style) {
   if (!document.body) return;
-  ALLOWED_STYLES.forEach((s) => document.body.classList.remove(`style-${s}`));
+  ["classic","synth"].forEach((s) => document.body.classList.remove(`style-${s}`));
   document.body.classList.add(`style-${style}`);
 }
 
@@ -1171,8 +1171,7 @@ function getWojakCoreState(score, mood, style = getCurrentStyle()) {
     heartbeat: WM_HEARTBEAT_CORE[moodKey] || WM_HEARTBEAT_CORE.neutral,
     visual: {
       base:     getHeroImagePath(style, moodKey),
-      overlay:  style === "classic" && subemotion !== moodKey
-        ? `/assets/overlays/classic/${subemotion}.png` : "",
+      overlay: "",
       fallback: getHeroImagePath(DEFAULT_STYLE, moodKey)
     }
   };

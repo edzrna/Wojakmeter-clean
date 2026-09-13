@@ -84,7 +84,7 @@ export default function SharePage({
   const styleKey = String(style || "classic").toLowerCase();
 
   const heroImageUrl = `/assets/hero/${styleKey}/${moodKey}.png`;
-  const fallbackHeroImageUrl = `/assets/hero/classic/neutral.png`;
+  const fallbackHeroImageUrl = `/assets/wojak-renders/neutral.png`;
   const logoUrl = "/assets/logo/wojakmeter_logo.png";
 
   const headline =

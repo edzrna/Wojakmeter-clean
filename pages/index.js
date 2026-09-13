@@ -157,11 +157,11 @@ export default function Home({ ogImageUrl }) {
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=13" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=1" strategy="lazyOnload" />
-      <Script src="/hero-rig.js?v=4" strategy="afterInteractive" />
-      <Script src="/wojak-3d/bridge.js?v=17" strategy="afterInteractive" />
-      <Script src="/bag-mood-rig.js?v=1" strategy="afterInteractive" />
+      <Script src="/script.js?v=fallback20" strategy="afterInteractive" />
+      <Script src="/wojak-game.js?v=fallback20" strategy="lazyOnload" />
+      <Script src="/hero-rig.js?v=fallback20" strategy="afterInteractive" />
+      <Script src="/wojak-3d/bridge.js?v=fallback20" strategy="afterInteractive" />
+      <Script src="/bag-mood-rig.js?v=fallback20" strategy="afterInteractive" />
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
           que entra despues de todo lo demas. Se apaga sin desplegar
@@ -240,7 +240,7 @@ export default function Home({ ogImageUrl }) {
                     misma cara con otro nombre. */}
                 <select id="styleSelector" defaultValue="classic">
                   <option value="classic">Classic</option>
-                  <option value="synth">Synth</option>
+                  <option value="synth" disabled>Synth — Coming soon</option>
                 </select>
               </div>
             </div>
@@ -368,7 +368,7 @@ export default function Home({ ogImageUrl }) {
                         solo después por clase. Con el id puesto, la
                         cadena de reserva deja de depender de que
                         nadie renombre la clase. */}
-                    <div className="wojak-stage" id="heroStage">
+                    <div className="wojak-stage" id="heroStage" data-render-state="loading">
 
                       <div className="hero-social-wrapper" id="socialWrapper">
                         <div
@@ -390,7 +390,7 @@ export default function Home({ ogImageUrl }) {
                             <img
                               id="socialIconImg"
                               className="mood-icon-img anim-float"
-                              src="/assets/icons/classic/neutral.png"
+                              src="/assets/wojak-renders/neutral.png"
                               alt="Social mood"
                             />
                           </div>
@@ -498,42 +498,13 @@ export default function Home({ ogImageUrl }) {
                       />
                       <div className="hero-scrub-readout" id="heroScrubReadout"></div>
 
-                      <div id="heroFaceWrap" className="hero-face-wrap anim-float">
+                      <div id="heroFaceWrap" className="hero-face-wrap">
                         <img
                           id="heroFaceImg"
                           className="hero-face-img"
-                          src="/assets/hero/classic/neutral.png"
+                          src="/assets/wojak-renders/neutral.png"
                           alt="Global market mood"
                         />
-                        <img
-                          id="heroFaceOverlayImg"
-                          className="hero-face-overlay hidden"
-                          src=""
-                          alt=""
-                          aria-hidden="true"
-                        />
-
-                        {/* ── BUCLE ANIMADO ──
-
-                            Va ENCIMA de la imagen plana, no en su
-                            lugar. La imagen plana sigue ahí abajo
-                            como respaldo: si el sprite no ha
-                            cargado todavía —o falla, o el usuario
-                            pidió menos movimiento— se ve el render
-                            fijo de siempre y no un hueco.
-
-                            El cambio a sprite solo ocurre cuando
-                            la imagen ha terminado de descargarse,
-                            así que nunca hay un fotograma en
-                            blanco. Lo gobierna public/hero-rig.js.
-
-                            Los archivos: /assets/hero/idle/<mood>_idle.webp
-                            24 fotogramas de 640px en rejilla 6x4. */}
-                        <div
-                          id="heroSprite"
-                          className="hero-sprite"
-                          aria-hidden="true"
-                        ></div>
                       </div>
                     </div>
                   </div>
@@ -711,7 +682,7 @@ export default function Home({ ogImageUrl }) {
                           <div className="emotion-pointer-face">
                             <img
                               id="emotionPointerImg"
-                              src="/assets/icons/classic/neutral.png"
+                              src="/assets/wojak-renders/neutral.png"
                               alt="Current emotional state"
                             />
                           </div>
@@ -831,7 +802,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="coinMoodIconImg"
                         className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/icons/classic/neutral.png"
+                        src="/assets/wojak-renders/neutral.png"
                         alt=""
                       />
                       <div><span>Technical</span><strong id="coinMoodLabel">Neutral</strong></div>
@@ -840,7 +811,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="detailSocialIconImg"
                         className="chart-mood-chip-icon mood-icon-img anim-float"
-                        src="/assets/icons/classic/neutral.png"
+                        src="/assets/wojak-renders/neutral.png"
                         alt=""
                       />
                       <div><span>Social</span><strong id="detailSocialLabel">Neutral</strong></div>
@@ -936,7 +907,7 @@ export default function Home({ ogImageUrl }) {
                       ALLOWED_STYLES ya rechaza. */}
                   <select id="bagStyleSelector" defaultValue="classic">
                     <option value="classic">Classic</option>
-                    <option value="synth">Synth</option>
+                    <option value="synth" disabled>Synth — Coming soon</option>
                   </select>
                 </div>
               </div>
@@ -950,7 +921,7 @@ export default function Home({ ogImageUrl }) {
                   <img
                     id="bagMoodHeroImg"
                     className="bag-mood-hero-img anim-float"
-                    src="/assets/hero/classic/neutral.png"
+                    src="/assets/wojak-renders/neutral.png"
                     alt="Your bag mood"
                   />
                 </div>
@@ -1087,7 +1058,7 @@ export default function Home({ ogImageUrl }) {
                 <div className="radar-result" id="emotionRadarResult">
                   <div className="radar-result-top">
                     <div className="radar-face-wrap">
-                      <img id="radarMoodImg" src="/assets/hero/classic/neutral.png" alt="Narrative emotion" />
+                      <img id="radarMoodImg" src="/assets/wojak-renders/neutral.png" alt="Narrative emotion" />
                     </div>
                     <div className="radar-result-id">
                       <span className="radar-label">Detected emotion</span>
@@ -1294,7 +1265,7 @@ export default function Home({ ogImageUrl }) {
                       <img
                         id="moodHeroImg"
                         className="mood-hero-img anim-float"
-                        src="/assets/hero/classic/neutral.png"
+                        src="/assets/wojak-renders/neutral.png"
                         alt="Token sentiment"
                       />
 
@@ -1824,25 +1795,25 @@ export default function Home({ ogImageUrl }) {
 
               <div className="pulse-grid">
                 <button data-vote="frustration" type="button" aria-label="Vote frustration">
-                  <img src="/assets/icons/classic/frustration.png" alt="" />
+                  <img src="/assets/wojak-renders/frustration.png" alt="" />
                 </button>
                 <button data-vote="concern" type="button" aria-label="Vote concern">
-                  <img src="/assets/icons/classic/concern.png" alt="" />
+                  <img src="/assets/wojak-renders/concern.png" alt="" />
                 </button>
                 <button data-vote="doubt" type="button" aria-label="Vote doubt">
-                  <img src="/assets/icons/classic/doubt.png" alt="" />
+                  <img src="/assets/wojak-renders/doubt.png" alt="" />
                 </button>
                 <button data-vote="neutral" type="button" aria-label="Vote neutral">
-                  <img src="/assets/icons/classic/neutral.png" alt="" />
+                  <img src="/assets/wojak-renders/neutral.png" alt="" />
                 </button>
                 <button data-vote="optimism" type="button" aria-label="Vote optimism">
-                  <img src="/assets/icons/classic/optimism.png" alt="" />
+                  <img src="/assets/wojak-renders/optimism.png" alt="" />
                 </button>
                 <button data-vote="content" type="button" aria-label="Vote content">
-                  <img src="/assets/icons/classic/content.png" alt="" />
+                  <img src="/assets/wojak-renders/content.png" alt="" />
                 </button>
                 <button data-vote="euphoria" type="button" aria-label="Vote euphoria">
-                  <img src="/assets/icons/classic/euphoria.png" alt="" />
+                  <img src="/assets/wojak-renders/euphoria.png" alt="" />
                 </button>
               </div>
 

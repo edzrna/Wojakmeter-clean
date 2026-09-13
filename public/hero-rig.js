@@ -79,7 +79,7 @@
     return (v === "synth" || v === "classic") ? v : "classic";
   }
 
-  const HERO_IMG = (mood) => `/assets/hero/${heroStyle()}/${mood}.png`;
+  const HERO_IMG = (mood) => `/assets/wojak-renders/${mood}.png`;
 
   /* Bucle animado: 24 fotogramas de 640px en rejilla 6x4.
      Un archivo por estilo y emocion. */
@@ -1014,6 +1014,9 @@
      pagina.
      --------------------------------------------------------- */
   function ensureIdle(mood) {
+    stage()?.classList.remove("wm-has-sprite");
+    return; // Static PNGs replace sprite sheets.
+
     const el = $("heroSprite");
     const st = stage();
     if (!el || !st) return;

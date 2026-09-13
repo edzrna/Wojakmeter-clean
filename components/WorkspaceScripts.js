@@ -4,12 +4,13 @@ import { useEffect } from "react";
 // deterministic order; the shell must observe the first market requests.
 const SCRIPTS = [
   "pro-shell.js?v=pro1",
-  "script.js?v=pro1",
-  "hero-rig.js?v=4",
-  "bag-mood-rig.js?v=1",
+  "script.js?v=fallback20",
+  "hero-rig.js?v=fallback20",
+  "wojak-3d/bridge.js?v=fallback20",
+  "bag-mood-rig.js?v=fallback20",
   "mood-led.js?v=1",
   "wm-organism.js?v=2",
-  "wojak-game.js?v=1",
+  "wojak-game.js?v=fallback20",
 ];
 
 export default function WorkspaceScripts() {

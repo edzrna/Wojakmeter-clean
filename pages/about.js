@@ -133,7 +133,7 @@ export default function AboutPage() {
               {FACES.map((f) => (
                 <figure className="about-face" key={f.mood}>
                   <img
-                    src={`/assets/hero/classic/${f.mood}.png`}
+                    src={`/assets/wojak-renders/${f.mood}.png`}
                     alt={`Wojak expressing ${f.label.toLowerCase()}`}
                     loading="lazy"
                     width="160"
