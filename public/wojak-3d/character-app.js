@@ -8599,8 +8599,10 @@ function setupLivingRig(){
  installDramaSkin();
  motionRoot=new THREE.Group();headPivot=new THREE.Group();
  const children=[...grupo.children];grupo.add(motionRoot);motionRoot.add(headPivot);headPivot.position.y=-.33;
- // Preserve world placement while pivoting the head at the neck.
- for(const obj of children){if(obj.material?.name==='Hoodie')motionRoot.add(obj);else{headPivot.add(obj);obj.position.y+=.33;}}
+ // The exported bust has no neck/cloth skinning: keep skin and hoodie on
+ // the same pivot for ALL emotional rotations, not only pointer yaw.
+ // The offset cancels the pivot translation, preserving the rest placement.
+ for(const obj of children){headPivot.add(obj);obj.position.y-=headPivot.position.y;}
 }
 function liveWeights(score){
  let k=0;while(k<ANCHORS.length-2&&score>ANCHORS[k+1][0])k++;

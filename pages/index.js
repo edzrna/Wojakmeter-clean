@@ -160,7 +160,7 @@ export default function Home({ ogImageUrl }) {
       <Script src="/script.js?v=living22" strategy="afterInteractive" />
       <Script src="/wojak-game.js?v=living22" strategy="lazyOnload" />
       <Script src="/hero-rig.js?v=living22" strategy="afterInteractive" />
-      <Script src="/wojak-3d/bridge.js?v=living22" strategy="afterInteractive" />
+      <Script src="/wojak-3d/bridge.js?v=neck23" strategy="afterInteractive" />
 
       {/* El panel LED es fondo: no hay nada que esperar de el, asi
           que entra despues de todo lo demas. Se apaga sin desplegar
