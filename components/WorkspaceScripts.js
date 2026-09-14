@@ -9,7 +9,7 @@ const SCRIPTS = [
   "wojak-3d/bridge.js?v=awaken24",
   "mood-led.js?v=1",
   "wm-organism.js?v=2",
-  "wojak-game.js?v=living22",
+  "wojak-game.js?v=rush-art25",
 ];
 
 export default function WorkspaceScripts() {

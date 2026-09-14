@@ -68,7 +68,7 @@
                  hacen de red de seguridad: si una ilustracion
                  falta, la casilla cae al icono en vez de quedarse
                  vacia. */
-  const ART_PATH  = (key) => `/assets/hero/classic/${key}.png`;
+  const ART_PATH  = (key) => `/assets/game/er_icons_button_${key}.png`;
 
   /* ---------------------------------------------------------
      SPRITES DE REACCION
@@ -84,15 +84,30 @@
      <img> o un canvas, y este juego ya tuvo problemas de
      rendimiento en movil.
      --------------------------------------------------------- */
-  /* WebP con respaldo a PNG.
-
-     Los siete sprites en PNG suman ~16 MB; en WebP de la misma
-     resolucion, ~3,7 MB. En un movil con datos moviles esa
-     diferencia decide si el juego arranca o no, asi que se pide
-     WebP primero y solo se cae a PNG si no existe.
-
-     La deteccion es una sola vez, por canvas: si el navegador
-     sabe EXPORTAR webp, sabe leerlo. */
+  // Emotion Rush has its own art and eight-frame reaction sheets.
+  const SPRITE_PATH = key => `/assets/game/sprites/${key}_sprite.webp`;
+  const spriteReady = new Set();
+  let spriteLayer = 0;
+  function preloadSprite(key) {
+    const img = new Image();
+    img.onload = () => spriteReady.add(key);
+    img.onerror = () => spriteReady.delete(key);
+    img.src = SPRITE_PATH(key);
+  }
+  function playSprite(cell, key, dir) {
+    if (!spriteReady.has(key) || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const fx = cell.querySelector(`.rush-cell-fx.${dir}`);
+    if (!fx) return;
+    fx.style.backgroundImage = `url("${SPRITE_PATH(key)}")`;
+    fx.classList.remove('playing');
+    void fx.offsetWidth;
+    spriteLayer = (spriteLayer % 90) + 1;
+    cell.style.setProperty('--fx-layer', String(spriteLayer));
+    fx.classList.add('playing');
+    clearTimeout(fx.__t);
+    const duration = parseFloat(getComputedStyle(fx).animationDuration) || .26;
+    fx.__t = setTimeout(() => fx.classList.remove('playing'), duration * 1000 + 40);
+  }
   const RANK_PATH = (key) => `/assets/game/er_icons_rank_${key}.png`;
   const ICON_PATH = (key) => `/assets/icons/classic/${key}.png`;
 
@@ -119,6 +134,7 @@
     if (typeof Image !== "function") return;
     MOODS.forEach((m) => {
       new Image().src = ART_PATH(m.key);
+      try { preloadSprite(m.key); } catch {}
       /* Los sprites pesan mas que las caras planas: si se cargaran
          al primer toque, la primera reaccion de cada emocion se
          perderia. Se piden al abrir el dialogo, durante la cuenta
@@ -650,6 +666,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
     const cell = el.grid?.querySelector(`.rush-cell[data-key="${key}"]`);
     if (cell) {
       cell.classList.add(correct ? "rush-cell-right" : "rush-cell-wrong");
+      playSprite(cell, key, "out");
       /* Se limpia al empezar la ronda siguiente, no con un timer:
          un timer mas por toque es justo lo que sobra aqui. */
 
@@ -799,7 +816,7 @@ const ROUNDS_WITH_RANGE_HINT = 3;
         const prevKey = cell.dataset.key;
         cell.dataset.key = mood.key;
         if (prevKey && prevKey !== mood.key) {
-
+          playSprite(cell, mood.key, "in");
         }
         cell.style.setProperty("--cell", mood.color);
         cell.setAttribute("aria-label", `${mood.name} ${mood.min} to ${mood.max}`);

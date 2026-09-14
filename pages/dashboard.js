@@ -158,7 +158,7 @@ export default function Dashboard({ ogImageUrl }) {
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
       <Script src="/script.js?v=bubble20-1" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=living22" strategy="lazyOnload" />
+      <Script src="/wojak-game.js?v=rush-art25" strategy="lazyOnload" />
       <Script src="/hero-rig.js?v=living22" strategy="afterInteractive" />
       <Script src="/wojak-3d/bridge.js?v=awaken24" strategy="afterInteractive" />
 
