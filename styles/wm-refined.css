@@ -39,3 +39,15 @@
 .bubble-loading { padding:32px; color:#a4afbc; }
 body.bubble-map-expanded #bubbleMapStage.bubble-map-3d { height:calc(100dvh - 170px); }
 @media(max-width:720px) { #bubbleMapStage.bubble-map-3d {height:550px;} .bubble-map-head {gap:12px;} .bubble-map-head p {font-size:13px;} }
+
+/* One-time PNG to live character entrance. */
+#heroStage #heroFaceImg {transform-origin:50% 54%;transition:opacity 1.1s cubic-bezier(.2,.65,.3,1),filter 1.1s ease,scale 1.1s cubic-bezier(.2,.65,.3,1);scale:1;}
+#heroStage #wm3dFrame {transition:opacity 1.1s cubic-bezier(.2,.65,.3,1);}
+#heroStage[data-render-state="loading"] #heroFaceImg {animation:none;filter:blur(3px);}
+#heroStage[data-render-state="awakening"] #heroFaceImg {opacity:0!important;filter:blur(12px);scale:.975;animation:none;}
+#heroStage[data-render-state="awakening"] #wm3dFrame {opacity:1;pointer-events:none;}
+#heroStage[data-render-state="ready"] #heroFaceImg {filter:blur(12px);scale:.975;}
+#heroStage[data-render-state="fallback"] #heroFaceImg {scale:1;filter:none;opacity:1!important;}
+@media(prefers-reduced-motion:reduce){
+ #heroStage #heroFaceImg,#heroStage #wm3dFrame {transition:opacity .15s linear;scale:1!important;filter:none!important;}
+}
