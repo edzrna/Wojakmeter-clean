@@ -37,9 +37,9 @@ export default async function handler(req, res) {
       current_price: coin.current_price,
       market_cap: coin.market_cap,
       total_volume: coin.total_volume,
-      price_change_percentage_1h_in_currency: coin.price_change_percentage_1h_in_currency ?? 0,
-      price_change_percentage_24h_in_currency: coin.price_change_percentage_24h_in_currency ?? 0,
-      price_change_percentage_7d_in_currency: coin.price_change_percentage_7d_in_currency ?? 0
+      price_change_percentage_1h_in_currency: coin.price_change_percentage_1h_in_currency ?? null,
+      price_change_percentage_24h_in_currency: coin.price_change_percentage_24h_in_currency ?? null,
+      price_change_percentage_7d_in_currency: coin.price_change_percentage_7d_in_currency ?? null
     }));
 
     res.status(200).json(coins);

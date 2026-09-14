@@ -158,8 +158,7 @@ let pulsePreviewTimeout = null;
 let activeHeroView = "mood";
 let isBubbleMapExpanded = false;
 let isHoveringBubble = false;
-let bubbleCoins = [];
-let activeBubbleSymbol = null;
+let bubbleRawData = [], bubbleUpdatedAt = 0, bubbleFetchFailed = false, bubbleFrameReady = false;
 
 /* Antes esto arrancaba con 38 votos inventados (2,4,6,10,8,5,3): el
    panel se veia vivo, pero nadie habia votado nunca y ese numero
@@ -2202,6 +2201,11 @@ async function loadTopCoins() {
   isLoadingTopCoins = true;
   try {
     const res = await fetchJson("/api/top-coins", []);
+    if (Array.isArray(res) && res.length) {
+      bubbleRawData = res.filter(c => c && c.id).sort((a,b) => Number(b.market_cap || 0)-Number(a.market_cap || 0)).filter((c,i,a)=>a.findIndex(v=>v.id===c.id)===i).slice(0,20);
+      bubbleUpdatedAt = Date.now(); bubbleFetchFailed = false;
+    } else { bubbleFetchFailed = true; }
+    if (activeHeroView === "bubble") scheduleBubbleRender();
     const coins = (Array.isArray(res) ? res : []).map(normalizeCoinMarketItem).filter(Boolean);
 
     if (coins.length) {
@@ -6166,338 +6170,33 @@ function refreshBagMoodPricesFromMarket() {
 // ===============================
 // BUBBLE MAPS
 // ===============================
-function isMobileBubbleMap() {
-  return window.matchMedia("(max-width: 720px)").matches;
-}
-
-function getBubbleCoinScore(coin) {
-  return roundScore(normalizeChangeToScore(getCoinChangeForTimeframe(coin, globalTimeframe), 6));
-}
-
-function getBubbleSize(marketCap) {
-  const mobile = isMobileBubbleMap();
-  const minSize = mobile ? 32 : 42;
-  const maxSize = mobile ? 82 : 126;
-
-  const cap = Number(marketCap || 0);
-  if (!Number.isFinite(cap) || cap <= 0) return minSize;
-
-  const minCap = 5e8, maxCap = 1.5e12;
-  const norm = (Math.log10(Math.max(cap, minCap)) - Math.log10(minCap)) /
-               (Math.log10(maxCap) - Math.log10(minCap));
-
-  return Math.round(minSize + clamp(norm, 0, 1) * (maxSize - minSize));
-}
-
-function getBubbleY(score, height, size) {
-  const pad = size / 2 + 24;
-  return (height - pad) - (clamp(score, 0, 100) / 100) * ((height - pad) - pad);
-}
-
-/* Antes usaba Date.now() dentro de un sin(), así que cada render movía
-   todas las burbujas aunque los datos fueran idénticos. Ahora la
-   posición depende solo del índice y de la semilla estable. */
-function getBubbleX(index, width, size, seed = 0.5) {
-  const cols = width < 480 ? 5 : width < 700 ? 7 : 10;
-  const col = index % cols;
-  const cellWidth = width / cols;
-  const baseX = col * cellWidth + cellWidth / 2;
-  const jitter = (seed - 0.5) * cellWidth * 0.55;
-  return clamp(baseX + jitter, size / 2 + 14, width - size / 2 - 14);
-}
-
-function getBubbleGlowFromVolume(volume) {
-  const norm = clamp((Number(volume || 0) - 3e7) / (3e9 - 3e7), 0, 1);
-  return Math.round(10 + norm * 22);
-}
-
-/* Antes: 95 iteraciones × 1225 pares = ~116.000 comparaciones por
-   render, y se llamaba en cada carga de datos. Bajado a 26 iteraciones
-   y con salida temprana cuando ya no hay solapes. */
-function resolveBubbleCollisions(items, width, height) {
-  const padding = 8;
-  const MAX_ITERATIONS = 26;
-
-  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-    let moved = false;
-
-    for (let a = 0; a < items.length; a++) {
-      for (let b = a + 1; b < items.length; b++) {
-        const A = items[a], B = items[b];
-        const dx = B.x - A.x;
-        const dy = B.y - A.y;
-        const distSq = dx * dx + dy * dy;
-        const minDist = A.size / 2 + B.size / 2 + padding;
-
-        if (distSq >= minDist * minDist) continue;
-
-        const dist = Math.sqrt(distSq) || 0.001;
-        const overlap = (minDist - dist) / 2;
-        const nx = dx / dist, ny = dy / dist;
-
-        A.x -= nx * overlap; A.y -= ny * overlap;
-        B.x += nx * overlap; B.y += ny * overlap;
-        moved = true;
-      }
-    }
-
-    items.forEach((item) => {
-      const r = item.size / 2 + 12;
-      item.x = clamp(item.x, r, width - r);
-      item.y = clamp(item.y, r, height - r);
-      item.y += (item.targetY - item.y) * 0.09;
-      item.x += (item.targetX - item.x) * 0.04;
-    });
-
-    if (!moved) break;
-  }
-
-  return items;
-}
-
-function getBubbleSourceCoins() {
-  const seen = new Set();
-  return [...topCoinsData, ...trendingCoinsData, ...topMemesData]
-    .filter((coin) => {
-      const s = String(coin.symbol || "").toUpperCase();
-      if (!s || seen.has(s)) return false;
-      seen.add(s);
-      return true;
-    })
-    .sort((a, b) => Number(b.market_cap || 0) - Number(a.market_cap || 0))
-    .slice(0, 50);
-}
-
-function closeActiveBubbleTooltip() {
-  activeBubbleSymbol = null;
-  qsa(".bubble-coin").forEach((b) => b.classList.remove("bubble-active"));
-}
-
-function setActiveBubbleTooltip(symbol) {
-  activeBubbleSymbol = symbol;
-  qsa(".bubble-coin").forEach((b) => {
-    b.classList.toggle("bubble-active", b.dataset.symbol === symbol);
+// The parent owns market data; the isolated viewer never polls another API.
+function bubbleSnapshot() {
+  const timeframe = ["1h", "24h", "7d"].includes(globalTimeframe) ? globalTimeframe : "24h";
+  const field = `price_change_percentage_${timeframe}_in_currency`;
+  const coins = bubbleRawData.map(c => {
+    const change = c[field];
+    const score = typeof change === "number" && Number.isFinite(change)
+      ? roundScore(normalizeChangeToScore(change, 6)) : null;
+    return { ...c, score };
   });
+  return { type: "wm-bubble-data", coins, timeframe, updatedAt: bubbleUpdatedAt,
+    stale: bubbleFetchFailed, active: activeHeroView === "bubble" };
 }
-
-function createBubbleElement(coin) {
-  const symbol = coin.symbol?.toUpperCase?.() || "---";
-
-  const bubble = document.createElement("button");
-  bubble.type = "button";
-  bubble.className = "bubble-coin";
-  bubble.dataset.symbol = symbol;
-  bubble.setAttribute("aria-label", `${symbol} — open chart`);
-
-  bubble.innerHTML = `
-    <div class="bubble-motion">
-      <div class="bubble-inner">
-        <img src="${escapeHtml(coin.image || "")}" alt="" loading="lazy" onerror="this.style.display='none'">
-      </div>
-    </div>
-    <div class="bubble-tooltip tooltip-top">
-      <div class="tooltip-head">
-        <img src="${escapeHtml(coin.image || "")}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div>
-          <b>${escapeHtml(symbol)}</b>
-          <span class="tooltip-name">${escapeHtml(coin.name || symbol)}</span>
-        </div>
-      </div>
-      <div class="tooltip-row"><span>Mood</span><strong class="tooltip-mood">--</strong></div>
-      <div class="tooltip-row"><span>Score</span><strong class="tooltip-score">--</strong></div>
-      <div class="tooltip-row"><span class="tooltip-tf-label">${escapeHtml(globalTimeframe)}</span><strong class="tooltip-change">--</strong></div>
-      <div class="tooltip-row"><span>Volume</span><strong class="tooltip-volume">--</strong></div>
-      <div class="tooltip-row"><span>Market Cap</span><strong class="tooltip-cap">--</strong></div>
-    </div>`;
-
-  bubble.addEventListener("mouseenter", () => { isHoveringBubble = true; });
-  bubble.addEventListener("mouseleave", () => { isHoveringBubble = false; });
-
-  bubble.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!symbol) return;
-
-    // Móvil: primer toque muestra info, segundo abre el chart.
-    if (isMobileBubbleMap() && activeBubbleSymbol !== symbol) {
-      setActiveBubbleTooltip(symbol);
-      return;
-    }
-
-    if (isBubbleMapExpanded) toggleBubbleMapExpanded(false);
-    await selectCoin(symbol);
-  });
-
-  return bubble;
-}
-
-function ensureBubbleElements() {
-  const stage = byId("bubbleMapStage");
-  if (!stage) return;
-
-  const source = getBubbleSourceCoins();
-  const nextSymbols = new Set(source.map((c) => c.symbol?.toUpperCase?.()));
-
-  bubbleCoins = bubbleCoins.filter((item) => {
-    if (nextSymbols.has(item.symbol)) return true;
-    item.el?.remove();
-    return false;
-  });
-
-  const existing = new Map(bubbleCoins.map((i) => [i.symbol, i]));
-
-  source.forEach((coin) => {
-    const symbol = coin.symbol?.toUpperCase?.() || "";
-    if (!symbol) return;
-
-    const found = existing.get(symbol);
-    if (found) { found.coin = coin; return; }
-
-    const item = {
-      symbol, coin,
-      el: createBubbleElement(coin),
-      xSeed: Math.random(),
-      x: 0, y: 0, size: 0
-    };
-    bubbleCoins.push(item);
-    stage.appendChild(item.el);
-  });
-}
-
-function calculateBubbleMapPositions() {
-  const stage = byId("bubbleMapStage");
-  if (!stage || !bubbleCoins.length) return;
-
-  const rect = stage.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-
-  const layout = bubbleCoins.map((item, index) => {
-    const size = getBubbleSize(item.coin.market_cap);
-    const targetX = getBubbleX(index, rect.width, size, item.xSeed);
-    const targetY = getBubbleY(getBubbleCoinScore(item.coin), rect.height, size);
-    return {
-      item, size,
-      x: item.x || targetX,
-      y: item.y || targetY,
-      targetX, targetY
-    };
-  });
-
-  resolveBubbleCollisions(layout, rect.width, rect.height).forEach((l) => {
-    l.item.x = l.x;
-    l.item.y = l.y;
-    l.item.size = l.size;
-  });
-}
-
 function renderBubbleMaps() {
   const stage = byId("bubbleMapStage");
   if (!stage) return;
-
-  ensureBubbleElements();
-  calculateBubbleMapPositions();
-
-  const stageHeight = stage.getBoundingClientRect().height;
-
-  bubbleCoins.forEach((item) => {
-    const el = item.el;
-    if (!el) return;
-
-    const coin = item.coin;
-    const score = getBubbleCoinScore(coin);
-    const mood = getMoodByScore(score);
-    const change = getCoinChangeForTimeframe(coin, globalTimeframe);
-    const polarity = change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
-    const tooltipPos = item.y < 150 ? "tooltip-bottom" : "tooltip-top";
-
-    el.className = `bubble-coin mood-${mood.key}${
-      activeBubbleSymbol === item.symbol ? " bubble-active" : ""
-    }`;
-    el.style.width  = `${item.size}px`;
-    el.style.height = `${item.size}px`;
-    el.style.left   = `${item.x}px`;
-    el.style.top    = `${item.y}px`;
-    el.style.setProperty("--bubble-color", getMoodColor(mood.key));
-    el.style.setProperty("--bubble-glow", getBubbleGlowFromVolume(coin.total_volume));
-
-    /* INTENSIDAD REAL, no solo clase de mood.
-
-       Antes todas las burbujas neutrales se movían idénticas: la
-       animación dependía únicamente de la categoría. Un activo
-       que cae 0.3% y otro que cae 4% flotaban igual, así que el
-       mapa parecía una cuadrícula estática.
-
-       Ahora la amplitud y la velocidad salen de la MAGNITUD del
-       movimiento. Lo que se agita, se agita porque se está
-       moviendo de verdad. */
-    /* El divisor define cuánto movimiento hace falta para llegar
-       a la agitación máxima. Con 8 casi nada llegaba: en un día
-       normal la mayoría de monedas se mueve 1-3%, así que el mapa
-       quedaba dormido.
-
-       Con 5.5 se conserva resolución arriba (un 5% y un 10% aún
-       se distinguen) y el resto del aumento se hace subiendo la
-       AMPLITUD en CSS, que es lo que de verdad se percibe como
-       agitación.
-
-       El suelo sube de 0.12 a 0.28: hasta lo neutro respira. Un
-       mapa de mercado en vivo nunca debería verse congelado. */
-    const intensity = clamp(Math.abs(change) / 5.5, 0.28, 1);
-    el.style.setProperty("--bubble-intensity", intensity.toFixed(3));
-
-    /* Rango de velocidad más ancho y más rápido: de 2.4s (calma)
-       a 0.5s (frenesí). Antes el mínimo era 0.7s y el máximo
-       2.8s, un rango demasiado estrecho para leerse como
-       diferencia. */
-    el.style.setProperty("--bubble-speed", `${(2.4 - intensity * 1.9).toFixed(2)}s`);
-
-    /* Desfase estable por burbuja: sin él todas laten al unísono
-       y parece una animación, no un enjambre. */
-    el.style.setProperty("--bubble-delay", `${(item.xSeed * -3).toFixed(2)}s`);
-
-    /* Cuánto se aleja del centro emocional: alimenta la saturación
-       del color, para que los extremos destaquen sobre el ruido. */
-    el.style.setProperty("--bubble-extremity", (Math.abs(score - 50) / 50).toFixed(3));
-
-    const q = (sel) => el.querySelector(sel);
-
-    const tooltip = q(".bubble-tooltip");
-    if (tooltip) tooltip.className = `bubble-tooltip mood-${mood.key} ${tooltipPos}`;
-
-    const moodEl = q(".tooltip-mood");
-    if (moodEl) { moodEl.textContent = mood.name; moodEl.className = `tooltip-mood mood-${mood.key}`; }
-
-    const scoreEl = q(".tooltip-score");
-    if (scoreEl) { scoreEl.textContent = `${score}/100`; scoreEl.className = `tooltip-score mood-${mood.key}`; }
-
-    const changeEl = q(".tooltip-change");
-    if (changeEl) { changeEl.textContent = formatPercent(change); changeEl.className = `tooltip-change ${polarity}`; }
-
-    const tfLabel = q(".tooltip-tf-label");
-    if (tfLabel) tfLabel.textContent = globalTimeframe;
-
-    const vol = q(".tooltip-volume");
-    if (vol) vol.textContent = formatCurrencyCompact(coin.total_volume);
-
-    const cap = q(".tooltip-cap");
-    if (cap) cap.textContent = formatCurrencyCompact(coin.market_cap);
-  });
-
-  const moodEl = byId("bubbleGlobalMood");
-  if (moodEl) {
-    moodEl.textContent = currentGlobalMood?.name || "Neutral";
-    moodEl.className = `mood-${currentGlobalMood?.key || "neutral"}`;
+  let frame = byId("bubble3DFrame");
+  if (!frame) {
+    frame = document.createElement("iframe");
+    frame.id = "bubble3DFrame";
+    frame.title = "Top 20 cryptocurrency emotion map";
+    frame.src = "/bubble-3d/viewer.html?v=top20-1";
+    stage.replaceChildren(frame);
   }
-
-  setText("bubbleGlobalScore", String(roundScore(currentGlobalScore)));
-  setText("bubbleAssetCount", `Top ${bubbleCoins.length || 0}`);
+  if (bubbleFrameReady) frame.contentWindow.postMessage(bubbleSnapshot(), location.origin);
 }
-
-/* El render de burbujas es lo más caro del sitio. Antes se disparaba
-   directamente desde renderCoinSections y desde el resize sin
-   debounce. Ahora pasa por rAF y como mucho corre una vez por frame. */
 let _bubbleRenderQueued = false;
-
 function scheduleBubbleRender() {
   if (_bubbleRenderQueued) return;
   _bubbleRenderQueued = true;
@@ -6518,7 +6217,10 @@ function setHeroView(view) {
   });
 
   if (activeHeroView === "bubble") setTimeout(scheduleBubbleRender, 80);
-  else toggleBubbleMapExpanded(false);
+  else {
+    toggleBubbleMapExpanded(false);
+    byId("bubble3DFrame")?.contentWindow?.postMessage({type:"wm-bubble-active", active:false}, location.origin);
+  }
 }
 
 function toggleBubbleMapExpanded(force) {
@@ -7861,31 +7563,22 @@ function setupEmotionRadar() {
 }
 
 function setupBubbleMaps() {
-  const toggle = byId("heroViewToggle");
-  bindOnce(toggle, "boundHeroView", "click", (e) => {
+  bindOnce(byId("heroViewToggle"), "boundHeroView", "click", e => {
     const btn = e.target.closest(".hero-view-btn");
     if (btn) setHeroView(btn.dataset.heroView || "mood");
   });
-
   bindOnce(byId("bubbleExpandBtn"), "boundExpand", "click", () => toggleBubbleMapExpanded());
-
-  /* Antes el resize llamaba a renderBubbleMaps sin debounce: durante
-     un arrastre de ventana eso son decenas de layouts completos por
-     segundo. Ahora pasa por rAF. */
-  window.addEventListener("resize", () => {
-    if (activeHeroView !== "bubble") return;
-    closeActiveBubbleTooltip();
-    scheduleBubbleRender();
-  }, { passive: true });
-
-  document.addEventListener("click", (e) => {
-    if (!isMobileBubbleMap() || !activeBubbleSymbol) return;
-    if (!e.target.closest(".bubble-coin") && !e.target.closest(".bubble-tooltip")) {
-      closeActiveBubbleTooltip();
+  window.addEventListener("message", e => {
+    const frame = byId("bubble3DFrame");
+    if (!frame || e.origin !== location.origin || e.source !== frame.contentWindow) return;
+    if (e.data?.type === "wm-bubble-ready") { bubbleFrameReady = true; renderBubbleMaps(); }
+    if (e.data?.type === "wm-bubble-chart") {
+      const coin = bubbleRawData.find(c => c.id === e.data.id);
+      if (coin) { toggleBubbleMapExpanded(false); selectCoin(coin.symbol); }
     }
+    if (e.data?.type === "wm-bubble-escape") toggleBubbleMapExpanded(false);
   });
-
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", e => {
     if (e.key === "Escape" && isBubbleMapExpanded) toggleBubbleMapExpanded(false);
   });
 }

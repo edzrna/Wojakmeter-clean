@@ -1,0 +1,16 @@
+{
+  "base": "Wojakmeter-clean-wojakmeter3d.zip",
+  "base_sha256": "1c810a40a514e1ef31ecbbfd054db0bb37c5d5001b2fee4c4b64bf5a5e52edfd",
+  "files": {
+    "components/WorkspaceScripts.js": "560ba520a071d0715ec772fb45a812fb5853110afa77782d48e4c8354e927de3",
+    "pages/api/top-coins.js": "bb67d8a766398bdde3dd46bbed309ff01997069d9a0fb33e1b737b435a91bac7",
+    "pages/dashboard.js": "351b1716dd7e1e7fad42aff11c9ac337d72f2172ebca6b0a99186c9e52f41df9",
+    "public/script.js": "790305417e2da0f9ab95f0c692e59bc2d75f388ad9ccc7a1dd0968f0e4bc7b53",
+    "styles/wm-refined.css": "1800899fe5c2a928d0b0b11c39f6f6a599795d9fdde18e0e9faadc8aadbfbce8",
+    "public/bubble-3d/LICENSE.txt": "a316e98f17f9c26fa2e5705e1569086b767dffcf13e670427be62bb1345b8353",
+    "public/bubble-3d/app.js": "46253b12f42dcd7368a576b30b654aba3de08602bfcd0d8713fc4942762ec98f",
+    "public/bubble-3d/three.min.js": "6c9e4391b9ea72c79d20ab37a907b2cb1d2dadacefcee17b2339cb25adc3c958",
+    "public/bubble-3d/viewer.css": "764e097c37a2884ce9dbd36da6b8b20ca235fa82acb03cbc66737eb045b865ab",
+    "public/bubble-3d/viewer.html": "51a1734f6860ddec525964dab7038b9f70d6edbba45b849216200a69d7e412de"
+  }
+}

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 // deterministic order; the shell must observe the first market requests.
 const SCRIPTS = [
   "pro-shell.js?v=pro1",
-  "script.js?v=living22",
+  "script.js?v=bubble20-1",
   "hero-rig.js?v=living22",
   "wojak-3d/bridge.js?v=neck23",
   "mood-led.js?v=1",

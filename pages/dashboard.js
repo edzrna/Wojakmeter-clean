@@ -157,8 +157,8 @@ export default function Dashboard({ ogImageUrl }) {
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=living22" strategy="afterInteractive" />
-      <Script src="/wojak-game.js?v=rush2" strategy="lazyOnload" />
+      <Script src="/script.js?v=bubble20-1" strategy="afterInteractive" />
+      <Script src="/wojak-game.js?v=living22" strategy="lazyOnload" />
       <Script src="/hero-rig.js?v=living22" strategy="afterInteractive" />
       <Script src="/wojak-3d/bridge.js?v=neck23" strategy="afterInteractive" />
 
@@ -514,45 +514,17 @@ export default function Dashboard({ ogImageUrl }) {
                       <div>
                         <span className="bubble-map-eyebrow">Emotional gravity</span>
                         <strong>Bubble Maps</strong>
-                        <p>Every asset placed by what it feels, sized by what it weighs.</p>
+                        <p>Top 20 by market cap. Sentiment sets the height; market cap sets the size.</p>
                       </div>
                       <button id="bubbleExpandBtn" type="button" className="action-btn">
                         Expand map
                       </button>
                     </div>
 
-                    <div className="bubble-map-legend">
-                      <span className="legend-item frustration">Frustration</span>
-                      <span className="legend-item concern">Concern</span>
-                      <span className="legend-item doubt">Doubt</span>
-                      <span className="legend-item neutral">Neutral</span>
-                      <span className="legend-item optimism">Optimism</span>
-                      <span className="legend-item content">Content</span>
-                      <span className="legend-item euphoria">Euphoria</span>
-                    </div>
-
-                    <div className="bubble-map-info-row">
-                      <div>
-                        <strong id="bubbleGlobalMood">Neutral</strong>
-                        <span>Global Mood</span>
-                      </div>
-                      <div>
-                        <strong id="bubbleGlobalScore">50</strong>
-                        <span>Emotion Score</span>
-                      </div>
-                      <div>
-                        <strong id="bubbleAssetCount">Top 0</strong>
-                        <span>Live Assets</span>
-                      </div>
-                    </div>
-
-                    <div id="bubbleMapStage" className="bubble-map-stage">
-                      <div className="bubble-zone bubble-zone-top">Euphoria / Optimism</div>
-                      <div className="bubble-zone bubble-zone-mid">Neutral / Doubt</div>
-                      <div className="bubble-zone bubble-zone-bottom">Concern / Frustration</div>
-                    </div>
+                    <div id="bubbleMapStage" className="bubble-map-stage bubble-map-3d" aria-label="Interactive market map">
+                    <p className="bubble-loading">Loading market map…</p>
                   </div>
-
+                </div>
                   {/* ── LA LECTURA ── */}
                   <div className="hero-mood mood-neutral" id="heroMood">Neutral</div>
 
