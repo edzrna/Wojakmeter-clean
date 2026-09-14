@@ -109,3 +109,15 @@
 #wm-introduction .lp-social a:hover{border-color:var(--bone-dim)}
 @media(max-width:760px){#wm-introduction .lp-story{grid-template-columns:1fr;gap:15px;padding:40px 0}}
 @media(prefers-reduced-motion:reduce){#wm-introduction h1 span,#wm-introduction .lp-hero .lp-primary{transition:none}}
+
+/* Intro26: transparent portrait and compact mobile emotion navigation. */
+#wm-introduction .lp-art{background:transparent;box-shadow:none;border:0}
+#wm-introduction .lp-art #character{background:transparent;filter:none;box-shadow:none}
+@media(max-width:760px){
+ #wm-introduction .lp-moods{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%}
+ #wm-introduction .lp-mood{min-width:0;min-height:44px;padding:6px 0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:transparent}
+ #wm-introduction .lp-mood:before,#wm-introduction .lp-mood small,#wm-introduction .lp-mood .lp-mood-label{display:none}
+ #wm-introduction .lp-mood b{gap:0;justify-content:center}
+ #wm-introduction .lp-mood .lp-emotion-icon{width:28px;height:28px;flex:0 0 28px}
+ #wm-introduction .lp-mood[aria-pressed=true]{background:var(--ink-200);border-color:var(--tone);box-shadow:inset 0 -2px var(--tone)}
+}

@@ -445,7 +445,8 @@ export function mountIntroductionLed(hostElement, stateElement, portraitElement)
         const dx = Math.max(hx0 - cx, 0, cx - hx1);
         const dy = Math.max(hy0 - cy, 0, cy - hy1);
         const d = Math.sqrt(dx * dx + dy * dy);
-        let m = clamp(d / CFG.holeFade, 0, 1);
+        // Keep a continuous LED field: no dark rectangular cutout around the portrait.
+        let m = 0.35 + 0.65 * clamp(d / CFG.holeFade, 0, 1);
 
         /* Y ademas sube hacia los bordes de la tarjeta, para que el
            panel se lea como marco y no como fondo plano. */
