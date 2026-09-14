@@ -123,7 +123,7 @@ export default function Desk() {
 
   useEffect(() => {
     refresh();
-    timerRef.current = setInterval(refresh, 5000);
+    timerRef.current = setInterval(refresh, 30000);
     return () => clearInterval(timerRef.current);
   }, [refresh]);
 
