@@ -68,6 +68,7 @@ function pnlToScore(pnl, riskUsd) {
 }
 
 function money(value) {
+  if (value === null || value === undefined) return "$--";
   const n = Number(value);
   if (!Number.isFinite(n)) return "$--";
   const sign = n < 0 ? "-" : "";
@@ -75,6 +76,7 @@ function money(value) {
 }
 
 function signedMoney(value) {
+  if (value === null || value === undefined) return "$--";
   const n = Number(value);
   if (!Number.isFinite(n)) return "$--";
   return `${n >= 0 ? "+" : "-"}$${Math.abs(n).toFixed(2)}`;
@@ -87,6 +89,7 @@ export default function Desk() {
   const [busy, setBusy] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const timerRef = useRef(null);
+  const fetching = useRef(false);
 
   const call = useCallback(async (action, method = "GET", body) => {
     const res = await fetch(`/api/desk/bot?action=${action}`, {
@@ -100,10 +103,14 @@ export default function Desk() {
       return null;
     }
 
-    return res.json();
+    const data = await res.json();
+    if (!res.ok || data.ok === false) throw new Error(data.error || "Request failed");
+    return data;
   }, []);
 
   const refresh = useCallback(async () => {
+    if (fetching.current) return;
+    fetching.current = true;
     try {
       const [s, sig] = await Promise.all([call("status"), call("signals")]);
 
@@ -119,6 +126,7 @@ export default function Desk() {
     } catch (err) {
       setError(err.message);
     }
+    finally { fetching.current = false; }
   }, [call]);
 
   useEffect(() => {
@@ -134,6 +142,7 @@ export default function Desk() {
     try {
       await call(action, "POST");
       await refresh();
+    } catch (err) { setError(err.message);
     } finally {
       setBusy(false);
     }
@@ -145,7 +154,7 @@ export default function Desk() {
 
   const livePnl = position?.livePnl;
   const score = position
-    ? pnlToScore(livePnl, day?.maxDailyLoss ? day.maxDailyLoss / 2 : 1.5)
+    ? pnlToScore(livePnl, position?.riskUsd || 1.5)
     : 50;
 
   const mood = position ? scoreToMood(score) : "neutral";
@@ -171,11 +180,21 @@ export default function Desk() {
 
         {error && (
           <div className="alert">
-            <strong>Bot offline</strong>
+            <strong>Desk connection / action error</strong>
             <span>{error}</span>
           </div>
         )}
 
+        <section className="intelligence">
+          <div className="intelligence-head"><div><div className="kicker">MARKET INTELLIGENCE · LIVE ENGINE</div><h1>Clarity before action.</h1></div><span className="engine-mode">{status?.engine?.mode || "Connecting"}</span></div>
+          <div className="readings">
+            <article><small>WOJAKMETER INDEX</small><strong style={{color:MOOD_COLOR[status?.market?.mood] || "#B8C0CB"}}>{status?.market ? `${MOOD_LABEL[status.market.mood]} · ${status.market.score}/100` : "Unavailable"}</strong><span>{status?.market ? `Source updated ${new Date(status.market.ts).toLocaleTimeString()}` : status?.marketError || "Waiting for market data"}</span></article>
+            <article><small>STRATEGY ALIGNMENT</small><strong>{signals?.aligned ?? "—"} / 3</strong><span>{signals?.error || (signals?.conflict ? "Signals disagree — no entry" : signals?.direction ? `${signals.direction} · ${signals.confidence}` : "Waiting for aligned signals")}</span></article>
+            <article><small>EVALUATION ENGINE</small><strong>{status?.engine?.evaluating ? "Evaluating" : status?.engine?.ready ? "Monitoring" : "Not ready"}</strong><span>{status?.engine?.lastEvaluation ? `Last cycle ${new Date(status.engine.lastEvaluation).toLocaleTimeString()}` : "Waiting for first cycle"}</span></article>
+          </div>
+          <div className="engine-explanation"><b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
+          <details><summary>Market context & emotion strategy</summary><p>The public index includes the site's composite inputs. Smart AutoTrade keeps its existing global-price, BTC momentum and scanner strategy. These scores can differ; the public index is context, not an extra order trigger.</p><p>Emotion Trader: confirmation required{status?.emotionEngine?.position ? ` · Open: ${status.emotionEngine.position.symbol}` : ""}{status?.emotionEngine?.pending ? ` · Pending: ${status.emotionEngine.pending.symbol}` : ""}. Both engines share entry limits and a single execution lock.</p><p>Automatic evaluation runs every minute. Resume removes a pause; it does not switch AutoTrade ON. After restart, the legacy daily trade counter is an estimate based on realized-income records.</p></details>
+        </section>
         <main className="grid">
           {/* ── LIVE WOJAK ── */}
           <section className="card stage">
@@ -363,6 +382,20 @@ export default function Desk() {
       </div>
 
       <style jsx>{`
+        .intelligence {max-width:1200px;margin:24px auto;padding:28px;border:1px solid #27323c;border-radius:22px;background:linear-gradient(125deg,#111c24,#10141c);}
+        .intelligence-head {display:flex;justify-content:space-between;gap:20px;align-items:center;}
+        .intelligence h1 {font-size:clamp(24px,4vw,38px);margin:12px 0 24px;letter-spacing:-1px;}
+        .engine-mode {border:1px solid #42584e;border-radius:20px;padding:9px 14px;color:#A8E6BF;font-size:12px;}
+        .readings {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;}
+        .readings article {display:flex;flex-direction:column;gap:12px;padding:18px;background:#0c131acc;border-radius:12px;}
+        .readings small {font-size:10px;letter-spacing:1.5px;color:#9aa8b6;}
+        .readings strong {font-size:24px;}
+        .readings span,.intelligence p {color:#aab7c4;font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
+        .engine-explanation {margin-top:20px;border-left:2px solid #A8E6BF;padding:4px 16px;}
+        .intelligence details {border-top:1px solid #27323c;margin-top:24px;padding-top:18px;}
+        .intelligence summary {cursor:pointer;color:#d2dce4;font-size:13px;}
+        @media(max-width:650px) {.readings {grid-template-columns:1fr;}.intelligence {padding:18px;margin:16px 0;}.intelligence-head{align-items:flex-start;flex-direction:column;}.engine-mode{margin-bottom:18px;}}
+
         .desk {
           min-height: 100vh;
           padding: 20px;
