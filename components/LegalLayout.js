@@ -71,9 +71,9 @@ export default function LegalLayout({
               </div>
             </Link>
 
-            <Link href="/" className="legal-back">
-              ← Back to site
-            </Link>
+            <a href="/dashboard" className="legal-back">
+              ← Back to dashboard
+            </a>
           </div>
 
           <header className="legal-hero">

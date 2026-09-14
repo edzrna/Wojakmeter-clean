@@ -28,7 +28,7 @@ export default function Play() {
     /* replace y no assign: el rebote no debe quedarse en el
        historial, o el boton "atras" devuelve aqui y vuelve a
        rebotar. */
-    window.location.replace(`${SITE}/?play=1#emotionRush`);
+    window.location.replace(`${SITE}/dashboard?play=1#emotionRush`);
   }, []);
 
   return (
@@ -48,7 +48,7 @@ export default function Play() {
             dentro de apps lo bloquean— la redireccion tambien va
             declarada aqui. Dos segundos: los rastreadores leen los
             metadatos antes y una persona no llega a notarlo. */}
-        <meta httpEquiv="refresh" content={`2; url=${SITE}/?play=1#emotionRush`} />
+        <meta httpEquiv="refresh" content={`2; url=${SITE}/dashboard?play=1#emotionRush`} />
 
         <meta property="og:title" content="Emotion Rush — can you read the market faster than it moves?" />
         <meta
@@ -87,7 +87,7 @@ export default function Play() {
           textTransform: "uppercase"
         }}
       >
-        <a href={`${SITE}/?play=1#emotionRush`} style={{ color: "inherit" }}>
+        <a href={`${SITE}/dashboard?play=1#emotionRush`} style={{ color: "inherit" }}>
           Loading Emotion Rush…
         </a>
       </main>

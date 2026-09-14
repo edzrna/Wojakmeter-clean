@@ -78,9 +78,9 @@ export default function AboutPage() {
               </div>
             </Link>
 
-            <Link href="/" className="about-back">
-              ← Back to site
-            </Link>
+            <a href="/dashboard" className="about-back">
+              ← Back to dashboard
+            </a>
           </div>
 
           <header className="about-hero">
@@ -133,7 +133,7 @@ export default function AboutPage() {
               {FACES.map((f) => (
                 <figure className="about-face" key={f.mood}>
                   <img
-                    src={`/assets/wojak-renders/${f.mood}.png`}
+                    src={`/assets/hero/classic/${f.mood}.png`}
                     alt={`Wojak expressing ${f.label.toLowerCase()}`}
                     loading="lazy"
                     width="160"

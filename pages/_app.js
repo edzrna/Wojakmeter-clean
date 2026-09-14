@@ -4,6 +4,7 @@ import "../styles/wm-organism.css";
 import "../styles/legal.css";
 import "../styles/about.css";
 import "../styles/wm-refined.css";
+import "../styles/introduction.css";
 
 
 export default function App({ Component, pageProps }) {
