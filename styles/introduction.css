@@ -93,3 +93,19 @@
 #wm-introduction .lp-closing{background:var(--ink-100);border-color:var(--line)}
 #wm-introduction .lp-eyebrow,#wm-introduction h1 span{color:var(--bone)}
 #wm-introduction header{position:static;background:transparent;box-shadow:none}
+
+/* Intro25: emotional accents and shared mood LED patterns. */
+#wm-introduction h1 span{color:var(--accent);transition:color .4s ease}
+#wm-introduction .lp-hero .lp-primary{background:var(--accent);color:var(--ink-050);transition:background .4s ease}
+#wm-introduction .lp-hero{position:relative;isolation:isolate}
+#wm-introduction .lp-hero>.lp-led{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;mask-image:linear-gradient(transparent,#000 12%,#000 85%,transparent)}
+#wm-introduction .lp-hero>div:not(.lp-led){position:relative;z-index:1}
+#wm-introduction .lp-story{padding:60px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:60px}
+#wm-introduction .lp-story h2{margin-top:20px}
+#wm-introduction .lp-story p{color:var(--muted);font-size:15px;line-height:1.85;margin:0 0 18px}
+#wm-introduction .lp-story-link{display:inline-block;border-bottom:1px solid var(--line-hard);padding-bottom:5px}
+#wm-introduction .lp-social{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+#wm-introduction .lp-social a{padding:10px 14px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--ink-100)}
+#wm-introduction .lp-social a:hover{border-color:var(--bone-dim)}
+@media(max-width:760px){#wm-introduction .lp-story{grid-template-columns:1fr;gap:15px;padding:40px 0}}
+@media(prefers-reduced-motion:reduce){#wm-introduction h1 span,#wm-introduction .lp-hero .lp-primary{transition:none}}
