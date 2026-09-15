@@ -7,6 +7,7 @@
 // ===============================
 
 import Head from "next/head";
+import MarketMetrics from "../../components/desk/MarketMetrics";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 // Same scale as the public site
@@ -164,6 +165,7 @@ export default function Desk() {
     <>
       <Head>
         <title>Desk — WojakMeter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" key="viewport" />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
@@ -190,7 +192,7 @@ export default function Desk() {
           <div className="readings">
             <article><small>WOJAKMETER INDEX</small><strong style={{color:MOOD_COLOR[status?.market?.mood] || "#B8C0CB"}}>{status?.market ? `${MOOD_LABEL[status.market.mood]} · ${status.market.score}/100` : "Unavailable"}</strong><span>{status?.market ? `Source updated ${new Date(status.market.ts).toLocaleTimeString()}` : status?.marketError || "Waiting for market data"}</span></article>
             <article><small>BINANCE HYBRID ALIGNMENT</small><strong>{signals?.error ? "—" : signals?.aligned ?? "—"} / 3</strong><span>{signals?.error || (signals?.conflict ? "Signals disagree — no entry" : signals?.direction ? `${signals.direction} · ${signals.confidence}` : "Waiting for aligned signals")}</span></article>
-            <article><small>EVALUATION ENGINE</small><strong>{status?.engine?.evaluating ? "Evaluating" : status?.engine?.ready ? "Monitoring" : "Not ready"}</strong><span>{status?.engine?.lastEvaluation ? `Last cycle ${new Date(status.engine.lastEvaluation).toLocaleTimeString()}` : "Waiting for first cycle"}</span></article>
+            <article><small>ACCOUNT RECOVERY</small><strong>{status?.engine?.recovering ? "Recovering" : status?.engine?.ready ? "Recovered" : "Not ready"}</strong><span>{status?.engine?.lastEvaluation ? `Last cycle ${new Date(status.engine.lastEvaluation).toLocaleTimeString()}` : "Waiting for first cycle"}</span></article>
           </div>
           <div className="engine-explanation">
             {signals?.source && <p>{signals.source} · Coverage: {signals.coverage ?? "—"} contracts · Participation: {signals.strategyScore ?? "—"}/100</p>}
@@ -201,6 +203,7 @@ export default function Desk() {
             <b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
           <details><summary>Market context & emotion strategy</summary><p>The global index comes from the website when fresh. Hybrid signals use Binance USDT perpetual contracts: 24h participation, BTC momentum and momentum confirmed by relative volume. Participation is not the global index; agreement is not a probability of profit. New hybrid automatic execution requires HYBRID_AUTO_EXECUTION=true; otherwise signals require confirmation.</p><p>Emotion Trader: confirmation required{status?.emotionEngine?.position ? ` · Open: ${status.emotionEngine.position.symbol}` : ""}{status?.emotionEngine?.pending ? ` · Pending: ${status.emotionEngine.pending.symbol}` : ""}. Both engines share entry limits and a single execution lock.</p><p>Automatic evaluation runs every minute. Resume removes a pause; it does not switch AutoTrade ON. After restart, the legacy daily trade counter is an estimate based on realized-income records.</p></details>
         </section>
+        <MarketMetrics signals={signals} status={status} connectionError={error} />
         <main className="grid">
           {/* ── LIVE WOJAK ── */}
           <section className="card stage">
