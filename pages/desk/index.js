@@ -192,7 +192,12 @@ export default function Desk() {
             <article><small>STRATEGY ALIGNMENT</small><strong>{signals?.aligned ?? "—"} / 3</strong><span>{signals?.error || (signals?.conflict ? "Signals disagree — no entry" : signals?.direction ? `${signals.direction} · ${signals.confidence}` : "Waiting for aligned signals")}</span></article>
             <article><small>EVALUATION ENGINE</small><strong>{status?.engine?.evaluating ? "Evaluating" : status?.engine?.ready ? "Monitoring" : "Not ready"}</strong><span>{status?.engine?.lastEvaluation ? `Last cycle ${new Date(status.engine.lastEvaluation).toLocaleTimeString()}` : "Waiting for first cycle"}</span></article>
           </div>
-          <div className="engine-explanation"><b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
+          <div className="engine-explanation">
+            <button disabled={busy || status?.engine?.recovering} onClick={() => act("recover", "Pause new entries and retry account recovery? This will not place orders or resume trading.")}>{status?.engine?.recovering ? "Checking account…" : "Retry account recovery"}</button>
+            {status?.engine?.recoveryError && <p role="alert">Recovery failed: {status.engine.recoveryError}</p>}
+            {status?.engine?.recoveredAt && <p>Last successful recovery: {new Date(status.engine.recoveredAt).toLocaleTimeString()}. Review the pause status before resuming.</p>}
+            {status?.account && <p>{status.account.ok ? `Binance wallet: ${money(status.account.walletBalance)} · Available: ${money(status.account.availableBalance)} · Updated ${new Date(status.account.ts).toLocaleTimeString()}` : `Account read failed: ${status.account.error}`}</p>}
+            <b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
           <details><summary>Market context & emotion strategy</summary><p>The public index includes the site's composite inputs. Smart AutoTrade keeps its existing global-price, BTC momentum and scanner strategy. These scores can differ; the public index is context, not an extra order trigger.</p><p>Emotion Trader: confirmation required{status?.emotionEngine?.position ? ` · Open: ${status.emotionEngine.position.symbol}` : ""}{status?.emotionEngine?.pending ? ` · Pending: ${status.emotionEngine.pending.symbol}` : ""}. Both engines share entry limits and a single execution lock.</p><p>Automatic evaluation runs every minute. Resume removes a pause; it does not switch AutoTrade ON. After restart, the legacy daily trade counter is an estimate based on realized-income records.</p></details>
         </section>
         <main className="grid">
@@ -391,6 +396,8 @@ export default function Desk() {
         .readings small {font-size:10px;letter-spacing:1.5px;color:#9aa8b6;}
         .readings strong {font-size:24px;}
         .readings span,.intelligence p {color:#aab7c4;font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
+        .engine-explanation button {padding:10px 16px;margin-bottom:12px;border:1px solid #4b7462;border-radius:9px;background:#152a23;color:#b6efd1;cursor:pointer;}
+        .engine-explanation button:disabled{opacity:.5;cursor:wait;}
         .engine-explanation {margin-top:20px;border-left:2px solid #A8E6BF;padding:4px 16px;}
         .intelligence details {border-top:1px solid #27323c;margin-top:24px;padding-top:18px;}
         .intelligence summary {cursor:pointer;color:#d2dce4;font-size:13px;}

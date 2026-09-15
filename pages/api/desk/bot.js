@@ -18,6 +18,7 @@ const COOKIE_NAME = "wm_desk";
 // An allowlist means a bug in the UI cannot reach something
 // dangerous that was never meant to be exposed.
 const ALLOWED = {
+  recover:   { method: "POST", path: "/desk/recover" },
   status:    { method: "GET",  path: "/desk/status" },
   positions: { method: "GET",  path: "/desk/positions" },
   history:   { method: "GET",  path: "/desk/history" },
