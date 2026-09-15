@@ -1,3 +1,4 @@
+import {defaults as studioDefaults, validate as validateStudio} from '/hero-studio/schema.js?v=studio1';
 
 /**
  * @license
@@ -7790,6 +7791,12 @@ let modelBytes;function __glb(){return modelBytes;}
 
 
 
+let studioConfig=JSON.parse(JSON.stringify(studioDefaults));
+const studioEditor=new URLSearchParams(location.search).get('studio')==='1';
+let studioOptions={paused:false,poseOnly:false,intensity:.5,emotion:'neutral'},studioRevision=-1;
+const studioRough={value:new THREE.Vector2(.64,.94)},studioEyeShadow={value:1},studioMouthShadow={value:1};
+function studioValue(key){let v=0;for(const [n,w] of Object.entries(liveWeights((suave.valence+1)*50)))v+=w*studioConfig.emotions[n][key];return v;}
+function studioIntensity(){const a=studioEditor?studioOptions.intensity:suave.arousal;return a<.5?studioValue('low')*(1-a*2)+studioValue('medium')*a*2:studioValue('medium')*(2-a*2)+studioValue('high')*(a*2-1);}
 const stage = document.getElementById("stage");
 const ren = new THREE.WebGLRenderer({ antialias:true, alpha:true });
 ren.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -7923,15 +7930,15 @@ class WMLife {
   const rate=nodes[k][1]*(1-f)+nodes[k+1][1]*f;
   const irregular=T*(.10*Math.sin(t*1.73)+.065*Math.sin(t*.61+2));
   const hz=.20*rate*(.82+.45*A)*(1-.27*F)*(1+irregular);
-  this.phase+=dt*hz;
+  this.phase+=dt*hz*studioValue("breathRate");
   const p=this.phase%1, q=p<.4?p/.4:(1-p)/.6;
   const breath=(.5-.5*Math.cos(Math.PI*q))*(.43+.42*A+.15*Math.max(0,V))*(1-.5*F);
-  const tremor=T*(.2+.8*A)*(1-.72*F)*(reduced?.08:1);
+  const tremor=studioValue("tremor")*T*(.2+.8*A)*(1-.72*F)*(reduced?.08:1);
   const shake=(Math.sin(t*47)+.43*Math.sin(t*73+1)+.21*Math.sin(t*59+3))*(.65+.35*Math.sin(t*1.27)**2);
-  if(t>=this.nextBlink){this.blinkStart=t;this.nextBlink=t+(this.random()<.12?.34:2.4+this.random()*4)*(1-.25*T);}
-  const age=t-this.blinkStart,blink=age<.20?Math.sin(Math.PI*age/.20)**2:0;
+  if(t>=this.nextBlink){this.blinkStart=t;this.nextBlink=t+(this.random()<.12?.34:2.4+this.random()*4)*(1-.25*T)/studioValue("blinkRate");}
+  const age=t-this.blinkStart,duration=.20*studioValue("blinkDuration"),blink=age<duration?Math.sin(Math.PI*age/duration)**2:0;
   const drift=(reduced?.12:1),doubt=Math.exp(-(((V+.2)/.13)**2));
-  this.out={breath:breath*(reduced?.3:1),blink,hz,tremor,
+  this.out={breath:breath*studioValue("breathDepth")*(reduced?.3:1),blink,hz,tremor,
    x:.075*F+.025*breath+.020*tremor*shake+.018*drift*Math.sin(t*.91),
    y:.045*drift*Math.sin(t*.39)+.012*tremor*Math.sin(t*67),
    z:drift*(.095*doubt*Math.sin(t*.65)+.025*Math.sin(t*.51+1))+.028*tremor*shake,
@@ -7947,8 +7954,8 @@ const wmWrinkles={value:new THREE.Vector3(0,0,0)};
 const wmSkinColor={value:new THREE.Color(1,1,1)};
 function installDramaSkin(){
  matPiel.onBeforeCompile=shader=>{
-  shader.uniforms.wmSkinColor=wmSkinColor;
-  shader.fragmentShader='uniform vec3 wmSkinColor;\n'+shader.fragmentShader;
+  shader.uniforms.wmSkinColor=wmSkinColor;shader.uniforms.wmRough=studioRough;
+  shader.fragmentShader='uniform vec2 wmRough;uniform vec3 wmSkinColor;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
    float lum=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
    float skinMask=smoothstep(.045,.22,lum);
@@ -7960,7 +7967,7 @@ function installDramaSkin(){
    vec3 pigment=cleanAlbedo*mix(vec3(1.0),pigmentationRatio,.90);
    diffuseColor.rgb=mix(diffuseColor.rgb,pigment,skinMask);
   `);
-  shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor,.64,.94);');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor,wmRough.x,wmRough.y);');
  };
  matPiel.customProgramCacheKey=()=> 'wm-natural-pigment-v08';matPiel.needsUpdate=true;
 }
@@ -7975,11 +7982,11 @@ const pointer={x:0,y:0,active:false},eyeAngles=[{x:0,y:0},{x:0,y:0}];
 function setupEyes(mesh){
  eyeMesh=mesh;eyeBase=mesh.geometry.attributes.position.array.slice();eyeNormals=mesh.geometry.attributes.normal.array.slice();
  mesh.material.onBeforeCompile=shader=>{
-  shader.uniforms.wmEyeClose=eyeContactClose;
+  shader.uniforms.wmEyeClose=eyeContactClose;shader.uniforms.wmEyeShadow=studioEyeShadow;
   shader.vertexShader='varying vec3 wmEyeSurface;\n'+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','wmEyeSurface=transformed;\n#include <project_vertex>');
   shader.uniforms.wmIrisColor=irisColor;shader.uniforms.wmIrisTint=irisTintAmount;
-  shader.fragmentShader='varying vec3 wmEyeSurface;uniform vec2 wmEyeClose;uniform vec3 wmIrisColor;uniform float wmIrisTint;\n'+shader.fragmentShader;
+  shader.fragmentShader='uniform float wmEyeShadow;varying vec3 wmEyeSurface;uniform vec2 wmEyeClose;uniform vec3 wmIrisColor;uniform float wmIrisTint;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
    float radius=length(vMapUv-vec2(.5));
    float irisMask=smoothstep(.087,.104,radius)*(1.0-smoothstep(.170,.190,radius));
@@ -7996,7 +8003,7 @@ function setupEyes(mesh){
    float topShade=exp(-pow((wmEyeSurface.y-upper)/.013,2.0));
    float lowShade=exp(-pow((wmEyeSurface.y-lower)/.009,2.0));
    float front=smoothstep(.15,.21,wmEyeSurface.z);
-   outgoingLight*=1.0-front*(.30*topShade+.12*lowShade);
+   outgoingLight*=1.0-clamp(wmEyeShadow*front*(.30*topShade+.12*lowShade),0.0,.85);
    #include <opaque_fragment>
   `);
  };mesh.material.customProgramCacheKey=()=> 'wm-eye-contact-v16';mesh.material.needsUpdate=true;
@@ -8059,18 +8066,18 @@ const eyeVec=new THREE.Vector3(),eyeN=new THREE.Vector3(),eyeQ=new THREE.Quatern
 function updateEyes(dt){
  if(!eyeMesh)return;
  const palette={frustration:'#a84437',concern:'#b77970',doubt:'#bca096',neutral:'#b58a58',optimism:'#a4b68f',content:'#719752',euphoria:'#4c8c2f'};
- irisColor.value.setRGB(0,0,0);for(const [key,w] of Object.entries(liveWeights((suave.valence+1)*50))){const c=new THREE.Color(palette[key]);irisColor.value.add(c.multiplyScalar(w));}
+ irisColor.value.setRGB(0,0,0);for(const [key,w] of Object.entries(liveWeights((suave.valence+1)*50))){const c=new THREE.Color(studioConfig.emotions[key].irisColor);irisColor.value.add(c.multiplyScalar(w));}
  const close=n=>idx[n]===undefined?0:malla.morphTargetInfluences[idx[n]];
  eyeContactClose.value.set(close('eyeBlinkRight'),close('eyeBlinkLeft'));
- irisTintAmount.value=1-(liveWeights((suave.valence+1)*50).neutral||0);
+ irisTintAmount.value=studioValue('irisTint');
  const lerp=1-Math.exp(-dt*8);
  // Screen-space target transformed into the moving head's local space.
  escena.updateMatrixWorld(true);
  const target=new THREE.Vector3(pointer.x*.50,pointer.y*.48,.9);eyeMesh.worldToLocal(target);
  const center=eyeCenters[0].clone().add(eyeCenters[1]).multiplyScalar(.5),d=target.clone().sub(center);
- const yaw=pointer.active?THREE.MathUtils.clamp(Math.atan2(d.x,d.z),-.24,.24):(director.out.gazeX||0);
- const pitch=pointer.active?THREE.MathUtils.clamp(-Math.atan2(d.y,Math.hypot(d.x,d.z)),-.16,.16):(director.out.gazeY||0);
- eyeAngles[0].x+=(pitch-eyeAngles[0].x)*lerp;eyeAngles[0].y+=(yaw-eyeAngles[0].y)*lerp;
+ const yaw=pointer.active&&studioConfig.interaction.followEyes?THREE.MathUtils.clamp(Math.atan2(d.x,d.z),-.24,.24):(director.out.gazeX||0);
+ const pitch=pointer.active&&studioConfig.interaction.followEyes?THREE.MathUtils.clamp(-Math.atan2(d.y,Math.hypot(d.x,d.z)),-.16,.16):(director.out.gazeY||0);
+ eyeAngles[0].x+=(THREE.MathUtils.clamp(pitch*studioConfig.interaction.gazeStrength,-.22,.22)-eyeAngles[0].x)*lerp;eyeAngles[0].y+=(THREE.MathUtils.clamp(yaw*studioConfig.interaction.gazeStrength,-.35,.35)-eyeAngles[0].y)*lerp;
  eyeAngles[1].x=eyeAngles[0].x;eyeAngles[1].y=eyeAngles[0].y;
  const p=eyeMesh.geometry.attributes.position,n=eyeMesh.geometry.attributes.normal;
  for(let i=0;i<p.count;i++){
@@ -8086,7 +8093,7 @@ function advanceView(dt){
  if(!grupo)return;
  if(girando){sweepPhase+=dt*.20;viewYaw=Math.sin(sweepPhase)*.60;}
  grupo.rotation.y+=(viewYaw-grupo.rotation.y)*(1-Math.exp(-dt*4));
- const desired=followHead&&pointer.active&&!girando?pointer.x*Math.PI/4:0;
+ const desired=followHead&&studioConfig.interaction.followHead&&pointer.active&&!girando?pointer.x*Math.PI/180*studioConfig.interaction.headRange:0;
  pointerHeadYaw+=(desired-pointerHeadYaw)*(1-Math.exp(-dt*3.5));
  const autoTarget=!pointer.active&&!girando&&followHead?(director.out.yaw||0):0;
  autonomousYaw+=(autoTarget-autonomousYaw)*(1-Math.exp(-dt*4));
@@ -8190,8 +8197,8 @@ new GLTFLoader().parse(modelBytes, '', (g)=>{
       o.material.onBeforeCompile=shader=>{
        shader.vertexShader='varying float wmOralZ;\n'+shader.vertexShader;
        shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','wmOralZ=transformed.z;\n#include <project_vertex>');
-       shader.fragmentShader='varying float wmOralZ;\n'+shader.fragmentShader;
-       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight*=mix(.16,1.0,smoothstep(.10,.255,wmOralZ));\n#include <opaque_fragment>');
+       shader.uniforms.wmMouthShadow=studioMouthShadow;shader.fragmentShader='uniform float wmMouthShadow;varying float wmOralZ;\n'+shader.fragmentShader;
+       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight*=mix(1.0,mix(.16,1.0,smoothstep(.10,.255,wmOralZ)),clamp(wmMouthShadow,0.0,1.0));\n#include <opaque_fragment>');
       };o.material.customProgramCacheKey=()=> 'wm-oral-shadow-v15';
 
       o.material.vertexColors = true;
@@ -8537,16 +8544,17 @@ const EMOTION_POSES={
 };
 const ANCHORS=[[0,"frustration"],[10,"frustration"],[27,"concern"],[40,"doubt"],[45,"neutral"],[59,"neutral"],[65,"optimism"],[77,"content"],[93,"euphoria"],[100,"euphoria"]];
 function emotionWeights(score){
+ if(studioEditor)return studioConfig.emotions[studioOptions.emotion].morphs;
  score=Math.max(0,Math.min(100,score));let k=0;while(k<ANCHORS.length-2&&score>ANCHORS[k+1][0])k++;
  const [a,an]=ANCHORS[k],[b,bn]=ANCHORS[k+1];let t=Math.max(0,Math.min(1,(score-a)/(b-a)));t=t*t*(3-2*t);const result={};
- for(const n of new Set([...Object.keys(EMOTION_POSES[an]),...Object.keys(EMOTION_POSES[bn])]))result[n]=(EMOTION_POSES[an][n]||0)*(1-t)+(EMOTION_POSES[bn][n]||0)*t;
+ for(const n of new Set([...Object.keys(studioConfig.emotions[an].morphs),...Object.keys(studioConfig.emotions[bn].morphs)]))result[n]=(studioConfig.emotions[an].morphs[n]||0)*(1-t)+(studioConfig.emotions[bn].morphs[n]||0)*t;
  return result;
 }
 function aplicar(){
  if(!malla)return;const w=malla.morphTargetInfluences;w.fill(0);
  const put=(n,v)=>{const i=idx[n];if(i!==undefined)w[i]=Math.max(0,Math.min(1,v));};
  const add=(n,v)=>{const i=idx[n];if(i!==undefined)put(n,w[i]+v);};
- const pose=emotionWeights((suave.valence+1)*50),strength=exag/.55;
+ const pose=emotionWeights((suave.valence+1)*50),strength=exag/.55*studioValue("intensity")*studioIntensity();
  
  for(const [n,v] of Object.entries(pose))put(n,v*strength*(1-.25*suave.fatigue*Math.max(0,-suave.valence)));
  // Restrained secondary controls, separate from the identity and base emotion.
@@ -8559,14 +8567,14 @@ function aplicar(){
  add("mouthFrownRight",(emotional.frustration||0)*suave.fatigue*.20);
  for(const side of ['Left','Right'])add('mouthSmile'+side,(emotional.euphoria||0)*.12*acting);
  const get=n=>idx[n]===undefined?0:w[idx[n]];
- const doubtWeight=emotional.doubt||0,alternation=.5+.5*Math.tanh(1.6*Math.sin(life.time*.65))/Math.tanh(1.6);
+ const doubtWeight=Math.min(1,(emotional.doubt||0)*studioValue("doubt")),alternation=.5+.5*Math.tanh(1.6*Math.sin(life.time*.65))/Math.tanh(1.6);
  for(const [name,value] of Object.entries({browOuterUpLeft:.65+.23*alternation,browOuterUpRight:.06+.06*(1-alternation),browDownLeft:.02,browDownRight:.30+.12*alternation,eyeSquintRight:.12+.12*alternation,mouthPressRight:.20,mouthFrownLeft:.17}))put(name,get(name)*(1-doubtWeight)+value*doubtWeight*strength);
 
 
 
- add("browOuterUpLeft",.012*life.out.micro);
+ add("browOuterUpLeft",.012*life.out.micro*studioValue("micro"));
  const action=director.out;
- const reaction=action.tap||0;
+ const reaction=Math.min(1,(action.tap||0)*studioConfig.interaction.touchReaction);
  const mixReaction=(name,target)=>put(name,get(name)*(1-reaction)+target*reaction);
  for(const side of ['Left','Right']){
   if(action.zone!=='face'&&action.zone!==side)continue;
@@ -8588,6 +8596,8 @@ function aplicar(){
 
  const pb=life.out.blink;
  for(const side of ["Left","Right"]){const i=idx["eyeBlink"+side];if(i!==undefined)w[i]=Math.max(w[i],pb);}
+ if(studioEditor&&studioOptions.poseOnly){w.fill(0);for(const [n,v] of Object.entries(pose))put(n,v*strength);}
+ if(studioGesture){const age=performance.now()-studioGesture.at;if(age<600){const v=Math.sin(age/600*Math.PI);for(const side of studioGesture.sides)put('eyeBlink'+side,Math.max(get('eyeBlink'+side),v));}else studioGesture=null;}
  // Eye geometry is static in this reduced asset: avoid unsynchronised gaze deformations.
  for(const mesh of seguidores){const map=mesh.morphTargetDictionary||{};for(const [n,i] of Object.entries(map)){const src=idx[n];mesh.morphTargetInfluences[i]=src===undefined?0:w[src];}}
  const act=Object.entries(idx).filter(([n,i])=>w[i]>.01).map(([n,i])=>`${n}: ${w[i].toFixed(2)}`);
@@ -8605,13 +8615,14 @@ function setupLivingRig(){
  for(const obj of children){headPivot.add(obj);obj.position.y-=headPivot.position.y;}
 }
 function liveWeights(score){
+ if(studioEditor)return {[studioOptions.emotion]:1};
  let k=0;while(k<ANCHORS.length-2&&score>ANCHORS[k+1][0])k++;
  const [a,n]=ANCHORS[k],[b,m]=ANCHORS[k+1];let f=THREE.MathUtils.clamp((score-a)/(b-a),0,1);f=f*f*(3-2*f);
  const w={};w[n]=(w[n]||0)+1-f;w[m]=(w[m]||0)+f;return w;
 }
 function updateBody(){
- const o=life.out;if(headPivot){headPivot.rotation.set(o.x+(director.out.pitch||0),o.y,o.z+(director.out.tilt||0));motionRoot.position.y=o.lift;}
- const weights=liveWeights((suave.valence+1)*50);if(headPivot&&!reducedMotion.matches){headPivot.rotation.z+=(weights.doubt||0)*(.045+.035*Math.sin(life.time*.65));headPivot.rotation.y+=(weights.doubt||0)*.045*Math.sin(life.time*.9);}let r=0,g=0,b=0,exposure=0;
+ const o=life.out;if(headPivot){headPivot.rotation.set((o.x+(director.out.pitch||0))*studioValue("headMotion"),o.y*studioValue("headMotion"),(o.z+(director.out.tilt||0))*studioValue("headMotion"));motionRoot.position.y=o.lift;}
+ const weights=liveWeights((suave.valence+1)*50);if(headPivot&&!reducedMotion.matches){headPivot.rotation.z+=(weights.doubt||0)*studioValue("headMotion")*(.045+.035*Math.sin(life.time*.65));headPivot.rotation.y+=(weights.doubt||0)*studioValue("headMotion")*.045*Math.sin(life.time*.9);}let r=0,g=0,b=0,exposure=0;
  skinSaturation.value=1-(weights.concern||0)*.55;
  const n=moodDe(Math.round((suave.valence+1)*50))[3],A=suave.arousal,T=suave.tension,F=suave.fatigue;
  const readings={frustration:F>.75?'Agotamiento':A>.65?'Pánico':'Capitulación',concern:A>.7?'Pico de miedo':F>.55?'Quiebre de confianza':'Presión defensiva',doubt:T>.55?'Confusión':A>.45?'Falso rebote':'Vacilación',neutral:T>.5?'Presión acumulándose':A<.2?'Compresión':'Espera',optimism:F>.4?'Retroceso':T<.2&&A>.55?'Confiado':'Construyéndose',content:T>.4?'Sobreextendido':A>.55?'Fuerza':'Confianza',euphoria:F>.4?'Debilitamiento':T>.5?'Sobrecalentamiento':'Ruptura'};
@@ -8620,7 +8631,7 @@ function updateBody(){
 
  const palette={frustration:'#b94336',concern:'#c28f84',doubt:'#d2b3a5',neutral:'#ded5ca',optimism:'#b5c9a9',content:'#90b474',euphoria:'#73a53f'};
  wmSkinColor.value.setRGB(0,0,0);
- for(const [n,w] of Object.entries(weights)){const c=new THREE.Color(palette[n]);wmSkinColor.value.r+=c.r*w;wmSkinColor.value.g+=c.g*w;wmSkinColor.value.b+=c.b*w;}
+ for(const [n,w] of Object.entries(weights)){const c=new THREE.Color(studioConfig.emotions[n].skinColor);wmSkinColor.value.r+=c.r*w;wmSkinColor.value.g+=c.g*w;wmSkinColor.value.b+=c.b*w;}
  wmSkinColor.value.lerp(new THREE.Color('#b94336'),(director.out.anger||0)*.92);
  if(matPiel)matPiel.color.setRGB(1,1,1);
 
@@ -8698,23 +8709,14 @@ document.getElementById("oE").textContent=exag.toFixed(2);
 ponerPreset("Neutral");
 let t0=performance.now();
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
-let entranceToken=null,entrancePending=false,awakeningAt=-Infinity;
 function bucle(t){
  requestAnimationFrame(bucle);const dt=Math.max(0,Math.min((t-t0)/1000,.1));t0=t;
  if(document.hidden||window.wmInactive)return;
- for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*3));
+ for(const k of Object.keys(ejes))suave[k]+=(ejes[k]-suave[k])*(1-Math.exp(-dt*studioConfig.render.transition));
  if(pointer.active&&trackedPointer===null&&performance.now()-(pointer.lastActivity||0)>3000)pointer.active=false;
- life.step(dt,suave,reducedMotion.matches);
- const wakeAge=(t-awakeningAt)/1000;
- if(!reducedMotion.matches&&wakeAge>=0&&wakeAge<1.8){
-  const inhale=Math.sin(Math.PI*wakeAge/1.8)**2;
-  life.out.breath+=.18*inhale;life.out.lift+=.003*inhale;life.out.x-=.012*inhale;
- }
- director.step(dt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
+ const motionDt=studioEditor&&studioOptions.paused?0:dt;life.step(motionDt,suave,reducedMotion.matches);director.step(motionDt,suave,reducedMotion.matches);aplicar();updateBody();advanceView(dt);updateEyes(dt);animarEfectos();
  
- updateSpecialFX(dt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();
- if(malla&&entrancePending){entrancePending=false;parent.postMessage({type:'wm-pose-ready',token:entranceToken},location.origin);}
- if(malla&&!window.__wmSentReady){window.__wmSentReady=true;if(parent!==window)parent.postMessage({type:"wm-ready"},location.origin);}
+ updateSpecialFX(motionDt);pasoAcabado.uniforms.tiempo.value=life.time;compositor.render();if(malla&&!window.__wmSentReady){window.__wmSentReady=true;if(parent!==window)parent.postMessage({type:"wm-ready"},location.origin);}
 }
 document.addEventListener('visibilitychange',()=>{t0=performance.now();});
 window.WojakMeter={setMarket(data){
@@ -8740,19 +8742,7 @@ const previewSelect=document.getElementById('wmEmotionPreview');
 if(previewSelect)previewSelect.addEventListener('change',()=>setPreviewMode(previewSelect.value));
 addEventListener('message',event=>{
  if(event.source!==parent||event.origin!==location.origin)return;
- if(event.data?.type==='wm-market'){
-  latestMarket=event.data.payload||{};
-  if(previewMode==='market'){
-   window.WojakMeter.setMarket(latestMarket);
-   if(Number.isFinite(event.data.entranceToken)){
-    entranceToken=event.data.entranceToken;
-    // Prepare the matching expression while the iframe is still invisible.
-    for(const k of Object.keys(ejes))suave[k]=ejes[k];
-    entrancePending=true;
-   }
-  }
- }
- if(event.data?.type==='wm-awaken'&&awakeningAt===-Infinity)awakeningAt=performance.now();
+ if(event.data?.type==='wm-market'){latestMarket=event.data.payload||{};if(previewMode==='market')window.WojakMeter.setMarket(latestMarket);}
  if(event.data?.type==='wm-news')director.news(event.data.items);
  if(event.data?.type==='wm-active')window.wmInactive=!event.data.active;
 });
@@ -8767,6 +8757,7 @@ function applyLightSettings(){
  }
  backSpot.angle=lightSettings.lights.spot.angle*Math.PI/180;backSpot.penumbra=lightSettings.lights.spot.penumbra;
  ren.toneMappingExposure=lightSettings.exposure;
+ ren.toneMappingExposure*=studioValue('exposure');key.intensity*=studioValue('key');fill.intensity*=studioValue('fill');rim.intensity*=studioValue('rim');
  key.castShadow=lightSettings.shadow;key.shadow.radius=lightSettings.softness;
  key.shadow.blurSamples=8;
  if(matPiel){matPiel.aoMapIntensity=lightSettings.ao;matPiel.envMapIntensity=lightSettings.environment;}
@@ -8899,3 +8890,37 @@ etiqueta();
 if(document.body.dataset.public==="true"){addEventListener("error",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});ren.domElement.addEventListener("webglcontextlost",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});}
 
 addEventListener("unhandledrejection",()=>{if(parent!==window)parent.postMessage({type:"wm-error"},location.origin);});
+
+let studioGesture=null;
+function studioApply(config){
+ studioConfig=validateStudio(config);
+ lightSettings=JSON.parse(JSON.stringify(studioConfig.lighting));fxSettings=JSON.parse(JSON.stringify(studioConfig.effects));
+ const m=studioConfig.materials;studioRough.value.set(m.skinRoughMin,m.skinRoughMax);studioEyeShadow.value=m.eyeShadow;studioMouthShadow.value=m.mouthShadow;
+ if(matPiel){matPiel.normalScale.setScalar(m.skinNormal);matPiel.reflectivity=m.skinReflectivity;}
+ if(eyeMesh)eyeMesh.material.roughness=m.eyeRoughness;
+ if(grupo)grupo.traverse(o=>{if(o.material?.name==='Hoodie'){o.material.color.set(m.hoodieColor);o.material.roughness=m.hoodieRoughness;o.material.normalScale?.setScalar(m.hoodieNormal);o.material.sheen=m.hoodieSheen;}});
+ bloom.strength=studioConfig.render.bloom;bloom.radius=studioConfig.render.bloomRadius;bloom.threshold=studioConfig.render.bloomThreshold;
+ applyLightSettings();
+}
+function studioReply(extra={}){if(parent!==window)parent.postMessage({type:'wm-studio-status',ready:!!malla,morphs:Object.keys(idx),revision:studioRevision,...extra},location.origin);}
+addEventListener('message',e=>{
+ if(!studioEditor||e.origin!==location.origin||e.source!==parent)return;
+ const d=e.data;if(d?.type!=='wm-studio')return;
+ try{
+  if(d.config)studioApply(d.config);
+  if(d.emotion&&FX_NAMES.includes(d.emotion)){studioOptions.emotion=d.emotion;setPreviewMode(FX_LABELS[FX_NAMES.indexOf(d.emotion)]);}
+  if(typeof d.paused==='boolean')studioOptions.paused=d.paused;
+  if(typeof d.poseOnly==='boolean')studioOptions.poseOnly=d.poseOnly;
+  if(Number.isFinite(d.intensity))studioOptions.intensity=Math.max(0,Math.min(1,d.intensity));
+  if(d.view==='sweep'){girando=true;followHead=false;}else if(['front','left','right','profile'].includes(d.view)){chooseView({front:0,left:-.55,right:.55,profile:1.2}[d.view]);}else if(d.view==='pointer'){girando=false;viewYaw=0;followHead=true;}
+  if(['Left','Right','Both'].includes(d.gesture))studioGesture={at:performance.now(),sides:d.gesture==='Both'?['Left','Right']:[d.gesture]};
+  studioReply();
+ }catch(err){studioReply({error:err.message});}
+});
+let studioFetching=false;
+async function studioFetch(){
+ if(studioEditor||document.hidden||studioFetching)return;studioFetching=true;
+ try{const r=await fetch('/api/hero-config');if(!r.ok)return;const d=await r.json();if(Number.isInteger(d.revision)&&d.revision!==studioRevision){studioApply(d.config);studioRevision=d.revision;}}catch(_){}finally{studioFetching=false;}
+}
+let studioReadyAttempts=0;const studioReady=setInterval(()=>{if(++studioReadyAttempts>300){clearInterval(studioReady);studioReply({error:'Model loading timed out. Check the GLB and texture paths.'});}if(malla){clearInterval(studioReady);studioApply(studioConfig);studioReply();}},200);
+if(!studioEditor){studioFetch();setInterval(studioFetch,30000);document.addEventListener('visibilitychange',studioFetch);}
