@@ -136,3 +136,12 @@
 #wm-introduction footer{font-family:var(--font-data)}
 #wm-introduction .lp-actions,
 #wm-introduction .lp-closing .lp-primary{font-family:var(--font-data);font-size:12px}
+
+/* Welcome 3D: the existing viewer sits over its PNG fallback. */
+#wm-introduction .lp-character-stage{position:relative;width:100%;aspect-ratio:1;isolation:isolate}
+#wm-introduction .lp-character-stage .lp-character-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity .85s ease,transform 1.1s ease}
+#wm-introduction .lp-character-frame{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:transparent;opacity:0;pointer-events:none;transition:opacity 1.1s ease}
+#wm-introduction .lp-character-stage[data-render-state=ready] .lp-character-frame{opacity:1;pointer-events:auto}
+#wm-introduction .lp-character-stage[data-render-state=ready] .lp-character-fallback{opacity:0;transform:scale(.98);pointer-events:none}
+#wm-introduction .lp-3d-retry{font-family:var(--font-data);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:6px;padding:7px 10px;margin-bottom:16px;cursor:pointer}
+@media(prefers-reduced-motion:reduce){#wm-introduction .lp-character-frame,#wm-introduction .lp-character-fallback{transition:none!important;transform:none!important}}
