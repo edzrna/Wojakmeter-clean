@@ -1,7 +1,7 @@
 #wm-introduction{--bg:#090e12;--panel:#11191f;--text:#f0f2ee;--muted:#9ba7ae;--accent:#b0efd1}
 #wm-introduction *{box-sizing:border-box}
 #wm-introduction{scroll-behavior:smooth}
-#wm-introduction{margin:0;background:var(--bg);color:var(--text);font-family:'General Sans',Arial,sans-serif}
+#wm-introduction{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body)}
 #wm-introduction a{color:inherit;text-decoration:none}
 #wm-introduction button{font:inherit}
 #wm-introduction a:focus-visible,#wm-introduction button:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
@@ -121,3 +121,18 @@
  #wm-introduction .lp-mood .lp-emotion-icon{width:28px;height:28px;flex:0 0 28px}
  #wm-introduction .lp-mood[aria-pressed=true]{background:var(--ink-200);border-color:var(--tone);box-shadow:inset 0 -2px var(--tone)}
 }
+
+/* Shared dashboard typography — scoped to the welcome page only. */
+#wm-introduction h1,
+#wm-introduction h2,
+#wm-introduction h3{font-family:var(--font-display);font-weight:700}
+#wm-introduction h1{font-weight:650}
+#wm-introduction nav,
+#wm-introduction .lp-eyebrow,
+#wm-introduction .lp-caption,
+#wm-introduction .lp-mood,
+#wm-introduction .lp-num,
+#wm-introduction .lp-social,
+#wm-introduction footer{font-family:var(--font-data)}
+#wm-introduction .lp-actions,
+#wm-introduction .lp-closing .lp-primary{font-family:var(--font-data);font-size:12px}

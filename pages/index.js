@@ -18,7 +18,7 @@ export default function Introduction(){
  <meta name="description" content="Understand crypto market sentiment at a glance. Explore WojakMeter, the Crypto Emotion Index, through a living 3D character." />
  <link rel="canonical" href="https://wojakmeter.com/" />
  <link rel="icon" href="/favicon.png?v=2" />
- <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" />
+ <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
  <meta property="og:title" content="WojakMeter — The market has a face." />
  <meta property="og:description" content="See how the crypto market feels. The Crypto Emotion Index." />
  <meta property="og:url" content="https://wojakmeter.com/" />
