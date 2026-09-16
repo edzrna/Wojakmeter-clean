@@ -5977,7 +5977,9 @@ function renderBagSuggestions() {
     const group=document.createElement('div'),caption=document.createElement('span');caption.textContent=label;group.append(caption);
     const seen=new Set();let count=0;
     for(const item of coins){const coin=normalizeBagCoin(item);if(!coin)continue;const key=coin.contract||coin.id||coin.symbol;if(seen.has(key))continue;seen.add(key);if(count++>=6)break;
-      const btn=document.createElement('button');btn.type='button';btn.textContent=coin.symbol;btn.title=coin.name;btn.onclick=()=>openBagEditor(coin);group.append(btn);
+      const btn=document.createElement('button');btn.type='button';btn.title=coin.name;
+      const icon=document.createElement('img');icon.src=coin.image;icon.alt='';icon.width=20;icon.height=20;icon.loading='lazy';icon.decoding='async';icon.onerror=()=>icon.remove();
+      const label=document.createElement('span');label.textContent=coin.symbol;btn.append(icon,label);btn.onclick=()=>openBagEditor(coin);group.append(btn);
     }
     if(count)box.append(group);
   }

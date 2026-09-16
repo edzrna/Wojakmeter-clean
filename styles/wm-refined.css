@@ -73,3 +73,10 @@ body.bubble-map-expanded #bubbleMapStage.bubble-map-3d { height:calc(100dvh - 17
 .bag-3d-ready .bag-3d-frame{opacity:1;pointer-events:auto}
 .bag-3d-ready #bagMoodHeroImg{opacity:0;pointer-events:none}
 @media(prefers-reduced-motion:reduce){.bag-3d-frame,.bag-3d-stage #bagMoodHeroImg{transition:none}}
+
+/* Bag03: isolate the PNG fallback from its animated 3D replacement. */
+#bagMoodSection .bag-3d-stage .bag-3d-frame{z-index:2}
+#bagMoodSection .bag-3d-stage.bag-3d-ready #bagMoodHeroImg{visibility:hidden!important;opacity:0!important;animation:none!important;pointer-events:none!important}
+#bagMoodSection .bag-suggestions button{display:inline-flex;align-items:center;gap:7px}
+#bagMoodSection .bag-suggestions button img{display:block;width:20px;height:20px;object-fit:contain;flex:0 0 20px;border-radius:50%}
+#bagMoodSection .bag-suggestions button span{margin:0;color:inherit;font:inherit}

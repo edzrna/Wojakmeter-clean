@@ -4,6 +4,9 @@
     if(data.mood!==key){key=data.mood;token++;}
     const enabled=data.style==='classic';
     stage.classList.toggle('bag-3d-ready',shown&&enabled);
+    stage.dataset.bagRenderState=shown&&enabled?'ready':'fallback';
+    const image=stage.querySelector('#bagMoodHeroImg');
+    if(image){image.style.setProperty('visibility',shown&&enabled?'hidden':'visible','important');image.setAttribute('aria-hidden',String(shown&&enabled));}
     frame.tabIndex=shown&&enabled?0:-1;frame.setAttribute("aria-hidden",String(!(shown&&enabled)));
     const axes={frustration:[.8,.9,.65,-.9],concern:[.65,.72,.35,-.45],doubt:[.4,.5,.25,-.2],neutral:[.2,.12,.15,0],optimism:[.45,.2,.12,.3],content:[.5,.16,.1,.55],euphoria:[.9,.48,.08,.9]}[data.mood]||[.2,.12,.15,0];
     frame.contentWindow?.postMessage({type:'wm-market',payload:{arousal:axes[0],tension:axes[1],fatigue:axes[2],valence:axes[3]},entranceToken:ready&&!shown?token:null},location.origin);
@@ -21,7 +24,7 @@
   addEventListener('message',event=>{if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin)return;
     if(event.data?.type==='wm-ready'){ready=true;send();}
     if(event.data?.type==='wm-pose-ready'&&event.data.token===token){shown=true;frame.tabIndex=0;send();}
-    if(event.data?.type==='wm-error'){shown=false;stage.classList.remove('bag-3d-ready');}
+    if(event.data?.type==='wm-error'){shown=false;send();}
   });
   addEventListener('wm-bag-update',()=>{mount();start();send();});document.addEventListener('visibilitychange',send);
   setInterval(()=>{if(stage&&!stage.isConnected){observer?.disconnect();frame?.remove();stage=frame=null;ready=shown=false;}mount();send();},1500);mount();
