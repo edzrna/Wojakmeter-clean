@@ -8,6 +8,7 @@
 
 import Head from "next/head";
 import MarketMetrics from "../../components/desk/MarketMetrics";
+import EdgeLab from "../../components/desk/EdgeLab";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 // Same scale as the public site
@@ -85,7 +86,6 @@ function signedMoney(value) {
 
 export default function Desk() {
   const [status, setStatus] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
   const [signals, setSignals] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -96,7 +96,6 @@ export default function Desk() {
   const call = useCallback(async (action, method = "GET", body) => {
     const res = await fetch(`/api/desk/bot?action=${action}`, {
       method,
-      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: method === "POST" ? JSON.stringify(body || {}) : undefined
     });
@@ -115,15 +114,17 @@ export default function Desk() {
     if (fetching.current) return;
     fetching.current = true;
     try {
-      const [stateResult, signalResult] = await Promise.allSettled([call("status"), call("signals")]);
-      if (stateResult.status === "fulfilled" && stateResult.value?.ok) {
-        setStatus(stateResult.value); setLastUpdate(new Date()); setError(null);
-      } else {
-        setStatus(null);
-        setError(stateResult.reason?.message || "Account state unavailable");
+      const [s, sig] = await Promise.all([call("status"), call("signals")]);
+
+      if (s?.ok) {
+        setStatus(s);
+        setError(null);
+        setLastUpdate(new Date());
+      } else if (s) {
+        setError(s.error || "Bot unreachable");
       }
-      if (signalResult.status === "fulfilled" && signalResult.value?.ok) setSignals(signalResult.value);
-      else setSignals({error:signalResult.reason?.message || "Signals unavailable"});
+
+      if (sig?.ok) setSignals(sig);
     } catch (err) {
       setError(err.message);
     }
@@ -132,16 +133,16 @@ export default function Desk() {
 
   useEffect(() => {
     refresh();
-    timerRef.current = setInterval(refresh, 15000);
+    timerRef.current = setInterval(refresh, 30000);
     return () => clearInterval(timerRef.current);
   }, [refresh]);
 
-  const act = async (action, confirmText, body) => {
+  const act = async (action, confirmText) => {
     if (confirmText && !window.confirm(confirmText)) return;
 
     setBusy(true);
     try {
-      await call(action, "POST", body);
+      await call(action, "POST");
       await refresh();
     } catch (err) { setError(err.message);
     } finally {
@@ -149,8 +150,7 @@ export default function Desk() {
     }
   };
 
-  const positions = Array.isArray(status?.positions) ? status.positions : [];
-  const position = positions.find(p => p.id === selectedId) || positions[0] || null;
+  const position = status?.position;
   const day = status?.day;
   const auto = status?.autoTrade;
 
@@ -201,9 +201,7 @@ export default function Desk() {
             {status?.engine?.recoveryError && <p role="alert">Recovery failed: {status.engine.recoveryError}</p>}
             {status?.engine?.recoveredAt && <p>Last successful recovery: {new Date(status.engine.recoveredAt).toLocaleTimeString()}. Review the pause status before resuming.</p>}
             {status?.account && <p>{status.account.ok ? `Binance wallet: ${money(status.account.walletBalance)} · Available: ${money(status.account.availableBalance)} · Updated ${new Date(status.account.ts).toLocaleTimeString()}` : `Account read failed: ${status.account.error}`}</p>}
-            <p>Entry rule: {status?.engine?.automaticRequirement ? `Automatic from ${status.engine.automaticRequirement}/3 aligned` : `Confirmation required from ${status?.engine?.entryRequirement || 2}/3 aligned`}. Opposing signals and account/risk limits still block entries.</p>
-            <p>{signals?.error || (signals?.conflict ? "Opposing signals — no entry." : signals?.direction ? `${signals.direction}: ${signals.aligned}/3 aligned.` : "Waiting for sufficient aligned signals.")}</p>
-            <b>Account and risk checks</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
+            <b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
           <details><summary>Market context & emotion strategy</summary><p>The global index comes from the website when fresh. Hybrid signals use Binance USDT perpetual contracts: 24h participation, BTC momentum and momentum confirmed by relative volume. Participation is not the global index; agreement is not a probability of profit. New hybrid automatic execution requires HYBRID_AUTO_EXECUTION=true; otherwise signals require confirmation.</p><p>Emotion Trader: confirmation required{status?.emotionEngine?.position ? ` · Open: ${status.emotionEngine.position.symbol}` : ""}{status?.emotionEngine?.pending ? ` · Pending: ${status.emotionEngine.pending.symbol}` : ""}. Both engines share entry limits and a single execution lock.</p><p>Automatic evaluation runs every minute. Resume removes a pause; it does not switch AutoTrade ON. After restart, the legacy daily trade counter is an estimate based on realized-income records.</p></details>
         </section>
         <MarketMetrics signals={signals} status={status} connectionError={error} />
@@ -232,8 +230,6 @@ export default function Desk() {
               {MOOD_LABEL[mood]}
             </div>
 
-            {positions.length > 1 && <select aria-label="Open position" value={position?.id || ""} onChange={e => setSelectedId(e.target.value)}>{positions.map(p => <option key={p.id} value={p.id}>{p.symbol} · {p.side === "BUY" ? "LONG" : "SHORT"}</option>)}</select>}
-            {status?.positionsUpdatedAt && <div className="sub">Binance · {positions.length} open · {new Date(status.positionsUpdatedAt).toLocaleTimeString()}</div>}
             {position ? (
               <>
                 <div className="pnl" style={{ color: livePnl >= 0 ? "#4dff88" : "#ff3b4d" }}>
@@ -241,9 +237,8 @@ export default function Desk() {
                 </div>
                 <div className="sub">
                   {position.side === "BUY" ? "LONG" : "SHORT"} {position.symbol} ·{" "}
-                  {position.leverage ? `${position.leverage}x` : ""}
+                  {position.leverage}x
                 </div>
-                <div className="sub">Unrealized PnL · {position.managed ? "AutoTrade managed" : "External position — manage in Binance or Telegram"}</div>
                 <div className="prices">
                   <div>
                     <span>Entry</span>
@@ -261,7 +256,7 @@ export default function Desk() {
               </>
             ) : (
               <div className="sub idle">
-                {status?.positionsError || (status?.positions === null ? "Positions unavailable" : status ? "No open position on Binance" : "Connecting…")}
+                {status ? "No open position — waiting for a signal" : "Connecting…"}
               </div>
             )}
           </section>
@@ -384,15 +379,18 @@ export default function Desk() {
 
               <button
                 className="danger"
-                disabled={busy || !position?.canClose}
+                disabled={busy || !position}
                 onClick={() =>
-                  act("close", `Close ${position?.symbol} at market price?`, {positionId: position?.id})
+                  act("close", "Close the open position at market price?")
                 }
               >
                 Close position
               </button>
             </div>
           </section>
+
+          {/* Research: measured edge, not predictions */}
+          <EdgeLab call={call} />
         </main>
       </div>
 

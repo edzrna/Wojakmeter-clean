@@ -25,7 +25,12 @@ const ALLOWED = {
   signals:   { method: "GET",  path: "/desk/signals" },
   pause:     { method: "POST", path: "/desk/pause" },
   resume:    { method: "POST", path: "/desk/resume" },
-  close:     { method: "POST", path: "/desk/close" }
+  close:     { method: "POST", path: "/desk/close" },
+
+  // Research endpoints. Read-only, but they still pass through
+  // the same signature check as everything else.
+  edge:       { method: "GET", path: "/desk/edge" },
+  divergence: { method: "GET", path: "/desk/divergence" }
 };
 
 function sign(message, secret) {
@@ -56,7 +61,6 @@ function hasValidSession(req) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Cache-Control", "private, no-store");
   if (!hasValidSession(req)) {
     return res.status(401).json({ ok: false, error: "Not authenticated" });
   }
@@ -94,7 +98,12 @@ export default async function handler(req, res) {
     const ts = Date.now().toString();
     const payload = `${ts}.${route.path}.${body || ""}`;
 
-    const upstream = await fetch(`${botUrl.replace(/\/$/, "")}${route.path}`, {
+    // Research endpoints take a horizon. The signature covers the
+    // path only, so the query string stays outside the signed payload.
+    const horizon = String(req.query.horizon || "").trim();
+    const query = /^h\d+$/.test(horizon) ? `?horizon=${horizon}` : "";
+
+    const upstream = await fetch(`${botUrl.replace(/\/$/, "")}${route.path}${query}`, {
       method: route.method,
       headers: {
         "Content-Type": "application/json",
