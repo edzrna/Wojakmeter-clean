@@ -157,7 +157,8 @@ export default function Dashboard({ ogImageUrl }) {
           los navegadores que ya visitaron el sitio siguen con la
           copia vieja en cache y el cambio no se ve.
           =========================================================== */}
-      <Script src="/script.js?v=bubble20-1" strategy="afterInteractive" />
+      <Script src="/script.js?v=bag02" strategy="afterInteractive" />
+      <Script src="/bag-mood-rig.js?v=bag02" strategy="lazyOnload" />
       <Script src="/wojak-game.js?v=rush-art25" strategy="lazyOnload" />
       <Script src="/hero-rig.js?v=living22" strategy="afterInteractive" />
       <Script src="/wojak-3d/bridge.js?v=awaken24" strategy="afterInteractive" />
@@ -942,11 +943,12 @@ export default function Dashboard({ ogImageUrl }) {
                   {/* Capa flotante: no empuja el contenido. */}
                   <div id="bagSearchResults" className="bag-search-results"></div>
                 </div>
-                <input id="bagValueInput" type="number" min="0" step="any" placeholder="USD invested" />
-                <input id="bagEntryPriceInput" type="number" min="0" step="any" placeholder="Entry price" />
-                <button id="bagSearchBtn" type="button" className="action-btn bag-add-btn">Add</button>
+
+
+                <button id="bagSearchBtn" type="button" className="action-btn bag-add-btn">Search</button>
               </div>
 
+              <div id="bagSuggestions" className="bag-suggestions" aria-label="Suggested coins"></div>
               <p className="bag-privacy-note">
                 Calculated from your entry price against the live market price. Nothing leaves your browser.
               </p>

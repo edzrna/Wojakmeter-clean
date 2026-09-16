@@ -5931,6 +5931,58 @@ function calculateBagMood() {
   };
 }
 
+function sameBagAsset(a,b) {
+  if(a.contract || b.contract) return Boolean(a.contract && b.contract && a.contract===b.contract && (a.network||'')===(b.network||''));
+  if(a.id && b.id) return a.id===b.id;
+  return a.symbol===b.symbol;
+}
+function mergeBagPurchase(existing, quantity, price) {
+  if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<=0)throw Error('Enter a positive quantity and entry price.');
+  const oldCost=existing?Number(existing.usdValue):0;
+  const oldQty=existing?getHoldingUnits(existing):0;
+  const units=oldQty+quantity,cost=oldCost+quantity*price;
+  if(!Number.isFinite(cost)||cost<=0||!Number.isFinite(units)||units<=0)throw Error('Amount is too large or too small.');
+  return {usdValue:cost,entryPrice:cost/units};
+}
+function openBagEditor(coin, editIndex=null) {
+  document.getElementById('bagEditor')?.remove();
+  const editing=Number.isInteger(editIndex), original=editing?bagMoodHoldings[editIndex]:null;
+  const asset=normalizeBagCoin(original||coin); if(!asset)return;
+  const dialog=document.createElement('dialog');dialog.id='bagEditor';dialog.className='bag-editor';
+  dialog.innerHTML=`<form><h3>${editing?'Edit holding':'Add purchase'} · ${escapeHtml(asset.symbol)}</h3><p>${editing?'Replace the total quantity and average entry price to correct this holding.':'Enter this purchase only. Existing units will be kept and the average entry recalculated.'}</p><label>Token quantity<input name="quantity" type="number" min="0" step="any" required inputmode="decimal"></label><label>${editing?'Average entry price':'Purchase price'} (USD)<input name="price" type="number" min="0" step="any" required inputmode="decimal"></label><p data-preview></p><p role="alert" data-error></p><div><button type="button" data-cancel>Cancel</button><button type="submit">${editing?'Save changes':'Add purchase'}</button></div></form>`;
+  const form=dialog.querySelector('form'),qty=form.elements.quantity,price=form.elements.price;
+  qty.value=editing?getHoldingUnits(original):'';price.value=editing?original.entryPrice:(getBagCurrentPrice(asset)||'');
+  const preview=()=>{const q=Number(qty.value),p=Number(price.value);const existing=editing?null:bagMoodHoldings.find(h=>sameBagAsset(h,asset));try{const result=mergeBagPurchase(existing,q,p);dialog.querySelector('[data-preview]').textContent=`Total cost: ${formatCurrency(result.usdValue)} · Average entry: ${result.entryPrice.toPrecision(8)} USD`;}catch{dialog.querySelector('[data-preview]').textContent='';}};
+  form.addEventListener('input',preview);
+  const prior=document.activeElement;
+  const close=()=>{dialog.close();dialog.remove();if(prior?.isConnected)prior.focus();};
+  dialog.querySelector('[data-cancel]').onclick=close;
+  dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
+  form.onsubmit=e=>{e.preventDefault();try{
+    const quantity=Number(qty.value),entry=Number(price.value);
+    const existing=editing?null:bagMoodHoldings.find(h=>sameBagAsset(h,asset));
+    const values=mergeBagPurchase(existing,quantity,entry);
+    if(editing){if(bagMoodHoldings[editIndex]!==original)throw Error('Holding changed. Close and try again.');Object.assign(original,values);}
+    else if(existing)Object.assign(existing,values);
+    else{bagMoodHoldings.push({...asset,...values});bagSelectedIndex=bagMoodHoldings.length-1;}
+    saveBagMoodHoldings();renderBagMood();close();
+  }catch(err){dialog.querySelector('[data-error]').textContent=err.message;}};
+  document.body.append(dialog);dialog.showModal();qty.focus();preview();
+}
+function renderBagSuggestions() {
+  const box=byId('bagSuggestions');if(!box)return;
+  const input=byId('bagSearchInput'); if(input?.value.trim())return;
+  box.replaceChildren();
+  for(const [label,coins] of [['Popular',topCoinsData],['Trending',trendingCoinsData]]){
+    const group=document.createElement('div'),caption=document.createElement('span');caption.textContent=label;group.append(caption);
+    const seen=new Set();let count=0;
+    for(const item of coins){const coin=normalizeBagCoin(item);if(!coin)continue;const key=coin.contract||coin.id||coin.symbol;if(seen.has(key))continue;seen.add(key);if(count++>=6)break;
+      const btn=document.createElement('button');btn.type='button';btn.textContent=coin.symbol;btn.title=coin.name;btn.onclick=()=>openBagEditor(coin);group.append(btn);
+    }
+    if(count)box.append(group);
+  }
+}
+
 function addBagHolding(coin, usdValue, entryPrice = 0) {
   const normalized = normalizeBagCoin(coin);
   if (!normalized) return;
@@ -5939,14 +5991,9 @@ function addBagHolding(coin, usdValue, entryPrice = 0) {
   const entry = Number(entryPrice || 0) || Number(normalized.current_price || 0);
   if (!(value > 0) || !(entry > 0)) return;
 
-  const existing = bagMoodHoldings.find((h) =>
-    (normalized.contract && h.contract)
-      ? h.contract === normalized.contract
-      : h.symbol === normalized.symbol
-  );
-
+  const existing = bagMoodHoldings.find(h => sameBagAsset(h, normalized));
   if (existing) {
-    Object.assign(existing, normalized, { usdValue: value, entryPrice: entry });
+    Object.assign(existing, normalized, mergeBagPurchase(existing, value / entry, entry));
   } else {
     bagMoodHoldings.push({ ...normalized, usdValue: value, entryPrice: entry });
     bagSelectedIndex = bagMoodHoldings.length - 1;
@@ -6001,6 +6048,9 @@ function renderBagMood() {
   const result = calculateBagMood();
   const mood = result.mood;
   const bagStyle = getBagMoodStyle();
+  window.WM_BAG_PREVIEW = {score:result.score,mood:mood.key,style:bagStyle};
+  window.dispatchEvent(new CustomEvent("wm-bag-update",{detail:window.WM_BAG_PREVIEW}));
+  renderBagSuggestions();
 
   const title = byId("bagMoodTitle");
   if (title) { title.textContent = mood.name; title.className = `mood-${mood.key}`; }
@@ -6030,6 +6080,7 @@ function renderBagMood() {
   if (!list) return;
 
   if (!bagMoodHoldings.length) {
+    renderBagAllocation([],0);
     list.innerHTML = `<div class="bag-empty">Build your bag to see what it feels like.</div>`;
     return;
   }
@@ -6093,6 +6144,7 @@ function renderBagMood() {
                alt="${escapeHtml(coinMood.name)}" title="${escapeHtml(coinMood.name)}" loading="lazy">
         </div>
 
+        <div class="bag-row-edit"><button type="button" data-edit-bag="${index}">Edit</button><button type="button" data-buy-bag="${index}">Add purchase</button></div>
         <button class="bag-remove-btn" type="button" data-remove-bag="${index}"
                 aria-label="Remove ${escapeHtml(holding.symbol)}">×</button>
 
@@ -7373,6 +7425,8 @@ function setupPulsePanel() {
 }
 
 function setupBagMoodControls() {
+  renderBagSuggestions();
+  if(!window.__bagSuggestTimer) window.__bagSuggestTimer=setInterval(renderBagSuggestions,30000);
   const searchBtn   = byId("bagSearchBtn");
   const searchInput = byId("bagSearchInput");
 
@@ -7417,10 +7471,7 @@ function setupBagMoodControls() {
     const coin = bagSearchResults[Number(btn.dataset.bagResultIndex)];
     if (!coin) return;
 
-    const usd   = Number(byId("bagValueInput")?.value || 0);
-    const entry = Number(byId("bagEntryPriceInput")?.value || 0);
-
-    addBagHolding(coin, usd > 0 ? usd : 100, entry);
+    openBagEditor(coin);
 
     bagSearchResults = [];
     renderBagSearchResults();
@@ -7432,6 +7483,8 @@ function setupBagMoodControls() {
 
   const list = byId("bagMoodList");
   bindOnce(list, "boundBagList", "click", (e) => {
+    const edit=e.target.closest('[data-edit-bag]'),buy=e.target.closest('[data-buy-bag]');
+    if(edit||buy){e.stopPropagation();const index=Number(edit?edit.dataset.editBag:buy.dataset.buyBag);openBagEditor(bagMoodHoldings[index],edit?index:null);return;}
     const removeBtn = e.target.closest("[data-remove-bag]");
     if (removeBtn) {
       e.stopPropagation();
@@ -7468,6 +7521,7 @@ function setupBagMoodControls() {
   }
 
   bindOnce(byId("bagResetBtn"), "boundBagReset", "click", () => {
+    if (!bagMoodHoldings.length || !window.confirm("Reset your entire bag? All saved holdings on this device will be removed. This cannot be undone.")) return;
     bagMoodHoldings = [];
     bagSelectedIndex = 0;
     try { localStorage.removeItem(BAG_STORAGE_KEY); } catch {}

@@ -1,0 +1,10 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
+const source=fs.readFileSync(__dirname+'/../public/script.js','utf8');
+const scope={};vm.createContext(scope);
+vm.runInContext(source.slice(source.indexOf('function getHoldingUnits('),source.indexOf('/* Valor actual')),scope);
+vm.runInContext(source.slice(source.indexOf('function sameBagAsset('),source.indexOf('function openBagEditor(')),scope);
+test('additional purchase preserves units and uses weighted average',()=>{const result=scope.mergeBagPurchase({usdValue:200,entryPrice:100},1,160);assert.equal(result.usdValue,360);assert.equal(result.entryPrice,120);assert.equal(scope.getHoldingUnits(result),3);});
+test('correction replaces totals instead of accumulating',()=>{const r=scope.mergeBagPurchase(null,4,50);assert.equal(r.usdValue,200);assert.equal(r.entryPrice,50);});
+test('invalid input rejected',()=>{for(const n of [0,-1,NaN,Infinity])assert.throws(()=>scope.mergeBagPurchase(null,n,5));assert.throws(()=>scope.mergeBagPurchase(null,1,0));assert.throws(()=>scope.mergeBagPurchase(null,1e308,1e308));});
+test('same symbol does not merge distinct IDs or networks',()=>{assert.equal(scope.sameBagAsset({id:'a',symbol:'ABC'},{id:'b',symbol:'ABC'}),false);assert.equal(scope.sameBagAsset({contract:'123',network:'sol'},{contract:'123',network:'eth'}),false);assert.equal(scope.sameBagAsset({id:'bitcoin',symbol:'BTC'},{id:'bitcoin',symbol:'BTC'}),true);});
+test('cancel reset leaves stored holdings intact',()=>{const start=source.indexOf('  bindOnce(byId("bagResetBtn")');const end=source.indexOf('\n\n  bindOnce(byId("bagShareBtn")',start);let handler;let cleared=false;const ctx={byId:()=>({}),bindOnce:(a,b,c,fn)=>handler=fn,window:{confirm:()=>false},bagMoodHoldings:[{usdValue:100}],bagSelectedIndex:0,localStorage:{removeItem:()=>cleared=true},renderBagMood(){},BAG_STORAGE_KEY:'test'};vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);handler();assert.equal(ctx.bagMoodHoldings.length,1);assert.equal(cleared,false);ctx.window.confirm=()=>true;handler();assert.equal(ctx.bagMoodHoldings.length,0);assert.equal(cleared,true);});
