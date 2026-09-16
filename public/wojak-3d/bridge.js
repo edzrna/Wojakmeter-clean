@@ -45,7 +45,7 @@
    if(e.data?.type==='wm-error')fallback(true);
   });
   frame.addEventListener('error',()=>fallback(true));
-  frame.src='/wojak-3d/viewer.html?v=awaken24';wrap.append(frame);
+  frame.src='/wojak-3d/viewer.html?v=studio-awaken25';wrap.append(frame);
   timer=setTimeout(()=>fallback(),15000);
   if('IntersectionObserver' in window)new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;send();}).observe(stage);
   setInterval(send,200);document.addEventListener('visibilitychange',send);addEventListener('pageshow',send);
