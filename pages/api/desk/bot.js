@@ -56,6 +56,7 @@ function hasValidSession(req) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
   if (!hasValidSession(req)) {
     return res.status(401).json({ ok: false, error: "Not authenticated" });
   }
