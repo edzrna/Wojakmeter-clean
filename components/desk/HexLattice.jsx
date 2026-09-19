@@ -268,6 +268,7 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
           display: flex;
           flex-direction: column;
           gap: 12px;
+          padding: 18px;
         }
         .kicker {
           font-size: 0.65rem;

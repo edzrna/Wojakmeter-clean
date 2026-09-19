@@ -506,6 +506,9 @@ export default function EdgeLab({
           flex-direction: column;
           gap: 14px;
         }
+        section.wm-edge {
+          padding: 18px;
+        }
         .wm-edge .wm-head {
           display: flex;
           justify-content: space-between;
