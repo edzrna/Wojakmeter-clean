@@ -174,8 +174,8 @@ function HypothesisExtra({ id, history, live }) {
     const ci = Array.isArray(hd.ci95) ? hd.ci95 : [];
     return (
       <p className="wm-extra">
-        ρ lattice {fmtNum(hd.rhoHex)} vs ρ linear {fmtNum(hd.rhoLinear)} · 95% interval of the difference [{fmtNum(ci[0])},{" "}
-        {fmtNum(ci[1])}]
+        ρ lattice {fmtNum(hd.rhoHex)} vs ρ linear {fmtNum(hd.rhoLinear)} · uncorrected 95% interval of the difference [
+        {fmtNum(ci[0])}, {fmtNum(ci[1])}] — the verdict uses p_holm, which accounts for the other tests
       </p>
     );
   }

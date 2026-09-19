@@ -1,46 +1,34 @@
 // ===============================
-// WOJAKMETER — PRIVATE TRADING DESK
+// WOJAKMETER — PRIVATE DESK (phase 1: the lab)
 // pages/desk/index.js
 //
-// Reuses the same 7-emotion system as the public site, but the
-// emotion is driven by YOUR live PnL instead of market sentiment.
+// Bot v2 phase 1 does not trade, so the desk shows the lab only:
+//
+//   - the Wojak, driven by the market's cell on the lattice. In v1 it
+//     followed the live PnL of an open position; that comes back with
+//     trading in phase 2
+//   - the lattice (HexLattice)
+//   - the Edge Lab: pipeline status, hypotheses, every transition
+//
+// Every request uses a lab action (lab-state, lab-report, lab-status).
+// The v1 panels — market intelligence, signals, today, controls and
+// MarketMetrics — called actions bot v2 answers with 410, so they are
+// gone until phase 2.
+//
+// The page owns the lattice state: it fetches it once a minute and
+// hands it to HexLattice, so the Wojak and the lattice always show the
+// same snapshot and nothing is fetched twice. `initialState` exists
+// for the render tests; Next never passes it.
 // ===============================
 
 import Head from "next/head";
-import MarketMetrics from "../../components/desk/MarketMetrics";
+import { useCallback, useEffect, useState } from "react";
+import HexLattice from "../../components/desk/HexLattice";
 import EdgeLab from "../../components/desk/EdgeLab";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { deskCall } from "../../lib/desk/client";
+import { MOOD_COLOR, fmtWhen, moodName } from "../../lib/desk/format";
 
-// Same scale as the public site
-function scoreToMood(score) {
-  if (score >= 85) return "euphoria";
-  if (score >= 70) return "content";
-  if (score >= 60) return "optimism";
-  if (score >= 45) return "neutral";
-  if (score >= 35) return "doubt";
-  if (score >= 20) return "concern";
-  return "frustration";
-}
-
-const MOOD_LABEL = {
-  euphoria: "Euphoria",
-  content: "Content",
-  optimism: "Optimism",
-  neutral: "Neutral",
-  doubt: "Doubt",
-  concern: "Concern",
-  frustration: "Frustration"
-};
-
-const MOOD_COLOR = {
-  euphoria: "#4dff88",
-  content: "#7cffaa",
-  optimism: "#a6ffc4",
-  neutral: "#cfd7e3",
-  doubt: "#ff9da6",
-  concern: "#ff6c79",
-  frustration: "#ff3b4d"
-};
+const REFRESH_MS = 60_000;
 
 const MOOD_ANIM = {
   euphoria: "wmPulse 1.4s ease-in-out infinite",
@@ -52,115 +40,62 @@ const MOOD_ANIM = {
   frustration: "wmShake 0.5s ease-in-out infinite"
 };
 
-// PnL as a percentage of the risk taken maps onto the 0-100 scale.
-// Hitting full take-profit reads as euphoria; hitting the stop
-// reads as frustration.
-function pnlToScore(pnl, riskUsd) {
-  if (pnl === null || pnl === undefined) return 50;
-
-  const risk = Math.abs(Number(riskUsd)) || 1;
-  const ratio = Number(pnl) / risk;
-
-  // ratio -1 (stopped out) → 5 · ratio 0 → 50 · ratio +2.5 (TP) → 95
-  const score = ratio >= 0
-    ? 50 + Math.min(45, ratio * 18)
-    : 50 + Math.max(-45, ratio * 45);
-
-  return Math.round(Math.max(0, Math.min(100, score)));
-}
-
-function money(value) {
-  if (value === null || value === undefined) return "$--";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "$--";
-  const sign = n < 0 ? "-" : "";
-  return `${sign}$${Math.abs(n).toFixed(2)}`;
-}
-
-function signedMoney(value) {
-  if (value === null || value === undefined) return "$--";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "$--";
-  return `${n >= 0 ? "+" : "-"}$${Math.abs(n).toFixed(2)}`;
-}
-
-export default function Desk() {
-  const [status, setStatus] = useState(null);
-  const [signals, setSignals] = useState(null);
+export default function Desk({ initialState = null }) {
+  const [state, setState] = useState(initialState);
   const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const timerRef = useRef(null);
-  const fetching = useRef(false);
 
-  const call = useCallback(async (action, method = "GET", body) => {
-    const res = await fetch(`/api/desk/bot?action=${action}`, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: method === "POST" ? JSON.stringify(body || {}) : undefined
-    });
-
-    if (res.status === 401) {
-      window.location.href = "/desk/login";
-      return null;
-    }
-
-    const data = await res.json();
-    if (!res.ok || data.ok === false) throw new Error(data.error || "Request failed");
-    return data;
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (fetching.current) return;
-    fetching.current = true;
+  const load = useCallback(async (signal) => {
     try {
-      const [s, sig] = await Promise.all([call("status"), call("signals")]);
+      const r = await deskCall("lab-state", { model: "hex" }, { signal });
 
-      if (s?.ok) {
-        setStatus(s);
-        setError(null);
-        setLastUpdate(new Date());
-      } else if (s) {
-        setError(s.error || "Bot unreachable");
+      if (r.httpStatus === 401) {
+        window.location.href = "/desk/login";
+        return;
       }
 
-      if (sig?.ok) setSignals(sig);
+      if (r.ok) {
+        setState(r);
+        setError(null);
+        setLastUpdate(new Date());
+      } else {
+        setError(r.error || "The lab did not answer.");
+      }
     } catch (err) {
-      setError(err.message);
+      if (err?.name !== "AbortError") setError(String(err?.message || err));
     }
-    finally { fetching.current = false; }
-  }, [call]);
+  }, []);
 
   useEffect(() => {
-    refresh();
-    timerRef.current = setInterval(refresh, 30000);
-    return () => clearInterval(timerRef.current);
-  }, [refresh]);
+    if (initialState) return undefined;
+    const ctrl = new AbortController();
+    load(ctrl.signal);
+    const timer = setInterval(() => load(ctrl.signal), REFRESH_MS);
+    return () => {
+      ctrl.abort();
+      clearInterval(timer);
+    };
+  }, [initialState, load]);
 
-  const act = async (action, confirmText) => {
-    if (confirmText && !window.confirm(confirmText)) return;
-
-    setBusy(true);
+  async function logout() {
     try {
-      await call(action, "POST");
-      await refresh();
-    } catch (err) { setError(err.message);
+      await fetch("/api/desk/auth", { method: "DELETE", credentials: "same-origin" });
     } finally {
-      setBusy(false);
+      window.location.href = "/desk/login";
     }
-  };
+  }
 
-  const position = status?.position;
-  const day = status?.day;
-  const auto = status?.autoTrade;
+  const cell = state?.cell || null;
+  const mood = cell || "neutral";
+  const color = cell ? MOOD_COLOR[cell] : "#9eacbf";
+  const confirmed = state?.confirmed || null;
+  const dot = error ? "#ff3b4d" : state?.stale ? "#ffd166" : color;
 
-  const livePnl = position?.livePnl;
-  const score = position
-    ? pnlToScore(livePnl, position?.riskUsd || 1.5)
-    : 50;
-
-  const mood = position ? scoreToMood(score) : "neutral";
-  const color = MOOD_COLOR[mood];
+  let moodNote;
+  if (!state) moodNote = error ? "The lab is not answering." : "Connecting to the lab…";
+  else if (!cell) moodNote = state.reason || "No reading yet.";
+  else if (confirmed && confirmed.cell === cell) moodNote = `Confirmed since ${fmtWhen(confirmed.since)}`;
+  else moodNote = "Not confirmed yet";
 
   return (
     <>
@@ -173,53 +108,40 @@ export default function Desk() {
       <div className="desk">
         <header className="deskbar">
           <div className="brand">
-            <span className="dot" style={{ background: error ? "#ff3b4d" : color }} />
+            <span className="dot" style={{ background: dot, color: dot }} />
             <strong>WojakMeter Desk</strong>
           </div>
           <div className="meta">
+            <span>Lab only: the bot is not trading</span>
             {lastUpdate && <span>updated {lastUpdate.toLocaleTimeString()}</span>}
+            <button type="button" className="logout" onClick={logout}>
+              Log out
+            </button>
           </div>
         </header>
 
         {error && (
           <div className="alert">
-            <strong>Desk connection / action error</strong>
+            <strong>Lab connection error</strong>
             <span>{error}</span>
           </div>
         )}
 
-        <section className="intelligence">
-          <div className="intelligence-head"><div><div className="kicker">MARKET INTELLIGENCE · LIVE ENGINE</div><h1>Clarity before action.</h1></div><span className="engine-mode">{status?.engine?.mode || "Connecting"}</span></div>
-          <div className="readings">
-            <article><small>WOJAKMETER INDEX</small><strong style={{color:MOOD_COLOR[status?.market?.mood] || "#B8C0CB"}}>{status?.market ? `${MOOD_LABEL[status.market.mood]} · ${status.market.score}/100` : "Unavailable"}</strong><span>{status?.market ? `Source updated ${new Date(status.market.ts).toLocaleTimeString()}` : status?.marketError || "Waiting for market data"}</span></article>
-            <article><small>BINANCE HYBRID ALIGNMENT</small><strong>{signals?.error ? "—" : signals?.aligned ?? "—"} / 3</strong><span>{signals?.error || (signals?.conflict ? "Signals disagree — no entry" : signals?.direction ? `${signals.direction} · ${signals.confidence}` : "Waiting for aligned signals")}</span></article>
-            <article><small>ACCOUNT RECOVERY</small><strong>{status?.engine?.recovering ? "Recovering" : status?.engine?.ready ? "Recovered" : "Not ready"}</strong><span>{status?.engine?.lastEvaluation ? `Last cycle ${new Date(status.engine.lastEvaluation).toLocaleTimeString()}` : "Waiting for first cycle"}</span></article>
-          </div>
-          <div className="engine-explanation">
-            {signals?.source && <p>{signals.source} · Coverage: {signals.coverage ?? "—"} contracts · Participation: {signals.strategyScore ?? "—"}/100</p>}
-            <button disabled={busy || status?.engine?.recovering} onClick={() => act("recover", "Pause new entries and retry account recovery? This will not place orders or resume trading.")}>{status?.engine?.recovering ? "Checking account…" : "Retry account recovery"}</button>
-            {status?.engine?.recoveryError && <p role="alert">Recovery failed: {status.engine.recoveryError}</p>}
-            {status?.engine?.recoveredAt && <p>Last successful recovery: {new Date(status.engine.recoveredAt).toLocaleTimeString()}. Review the pause status before resuming.</p>}
-            {status?.account && <p>{status.account.ok ? `Binance wallet: ${money(status.account.walletBalance)} · Available: ${money(status.account.availableBalance)} · Updated ${new Date(status.account.ts).toLocaleTimeString()}` : `Account read failed: ${status.account.error}`}</p>}
-            <b>Why it waits</b><p>{status?.engine?.bootError || (status?.engine?.blockers?.length ? status.engine.blockers.join(" · ") : "No account gate reported. Entries still require strategy alignment and cooldown checks.")}</p></div>
-          <details><summary>Market context & emotion strategy</summary><p>The global index comes from the website when fresh. Hybrid signals use Binance USDT perpetual contracts: 24h participation, BTC momentum and momentum confirmed by relative volume. Participation is not the global index; agreement is not a probability of profit. New hybrid automatic execution requires HYBRID_AUTO_EXECUTION=true; otherwise signals require confirmation.</p><p>Emotion Trader: confirmation required{status?.emotionEngine?.position ? ` · Open: ${status.emotionEngine.position.symbol}` : ""}{status?.emotionEngine?.pending ? ` · Pending: ${status.emotionEngine.pending.symbol}` : ""}. Both engines share entry limits and a single execution lock.</p><p>Automatic evaluation runs every minute. Resume removes a pause; it does not switch AutoTrade ON. After restart, the legacy daily trade counter is an estimate based on realized-income records.</p></details>
-        </section>
-        <MarketMetrics signals={signals} status={status} connectionError={error} />
         <main className="grid">
-          {/* ── LIVE WOJAK ── */}
+          {/* ── THE WOJAK: the market's cell on the lattice ── */}
           <section className="card stage">
-            <div className="kicker">Live Position</div>
+            <div className="kicker">Market mood</div>
 
             <div
-              className="wojak"
+              className={`wojak${cell ? "" : " waiting"}`}
               style={{
-                animation: MOOD_ANIM[mood],
+                animation: cell ? MOOD_ANIM[mood] : "none",
                 filter: `drop-shadow(0 0 40px ${color}55)`
               }}
             >
               <img
                 src={`/assets/hero/classic/${mood}.png`}
-                alt={MOOD_LABEL[mood]}
+                alt={cell ? moodName(cell) : "Waiting for a reading"}
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}
@@ -227,195 +149,28 @@ export default function Desk() {
             </div>
 
             <div className="moodname" style={{ color }}>
-              {MOOD_LABEL[mood]}
+              {cell ? moodName(cell) : "—"}
             </div>
-
-            {position ? (
-              <>
-                <div className="pnl" style={{ color: livePnl >= 0 ? "#4dff88" : "#ff3b4d" }}>
-                  {signedMoney(livePnl)}
-                </div>
-                <div className="sub">
-                  {position.side === "BUY" ? "LONG" : "SHORT"} {position.symbol} ·{" "}
-                  {position.leverage}x
-                </div>
-                <div className="prices">
-                  <div>
-                    <span>Entry</span>
-                    <strong>{money(position.entryPrice)}</strong>
-                  </div>
-                  <div>
-                    <span>Mark</span>
-                    <strong>{money(position.markPrice)}</strong>
-                  </div>
-                  <div>
-                    <span>Qty</span>
-                    <strong>{position.qty}</strong>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="sub idle">
-                {status ? "No open position — waiting for a signal" : "Connecting…"}
-              </div>
-            )}
+            <div className="sub">{moodNote}</div>
+            <p className="note">Where the market sits on the lattice right now. A reading, not a trade signal.</p>
           </section>
 
-          {/* ── SIGNALS ── */}
-          <section className="card">
-            <div className="kicker">Signal Engine</div>
+          {/* ── THE LATTICE: same snapshot as the Wojak ── */}
+          {state ? <HexLattice data={state} /> : <section className="card placeholder">Loading the lattice…</section>}
 
-            {signals ? (
-              <>
-                <div className="row big">
-                  <span>Direction</span>
-                  <strong style={{
-                    color: signals.direction === "LONG"
-                      ? "#4dff88"
-                      : signals.direction === "SHORT"
-                        ? "#ff3b4d"
-                        : "#cfd7e3"
-                  }}>
-                    {signals.direction || "None"}
-                  </strong>
-                </div>
-
-                <div className="row">
-                  <span>Confidence</span>
-                  <strong>{String(signals.confidence).toUpperCase()}</strong>
-                </div>
-
-                <div className="row">
-                  <span>Aligned</span>
-                  <strong>{signals.aligned}/3</strong>
-                </div>
-
-                {signals.conflict && (
-                  <div className="conflict">Signals conflict — standing down</div>
-                )}
-
-                <ul className="details">
-                  {signals.details?.map((d, i) => (
-                    <li key={i}>{d}</li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <div className="sub idle">Loading signals…</div>
-            )}
-          </section>
-
-          {/* ── DAY ── */}
-          <section className="card">
-            <div className="kicker">Today</div>
-
-            <div className="row big">
-              <span>PnL</span>
-              <strong style={{ color: (day?.pnl || 0) >= 0 ? "#4dff88" : "#ff3b4d" }}>
-                {signedMoney(day?.pnl)}
-              </strong>
-            </div>
-
-            <div className="row">
-              <span>Trades</span>
-              <strong>{day?.trades ?? "–"}/{day?.maxTrades ?? "–"}</strong>
-            </div>
-
-            <div className="row">
-              <span>Balance</span>
-              <strong>{money(day?.balance)}</strong>
-            </div>
-
-            <div className="row">
-              <span>Cooling down</span>
-              <strong style={{ color: day?.coolingDown ? "#ff9da6" : "#cfd7e3" }}>
-                {day?.coolingDown ? "Yes" : "No"}
-              </strong>
-            </div>
-
-            <div className="bar">
-              <div
-                className="fill"
-                style={{
-                  width: `${Math.min(100, ((day?.trades || 0) / (day?.maxTrades || 1)) * 100)}%`,
-                  background: color
-                }}
-              />
-            </div>
-          </section>
-
-          {/* ── CONTROLS ── */}
-          <section className="card">
-            <div className="kicker">Control</div>
-
-            <div className="row">
-              <span>AutoTrade</span>
-              <strong style={{ color: auto?.active ? "#4dff88" : "#ff6c79" }}>
-                {auto?.active ? "ON" : "OFF"}
-              </strong>
-            </div>
-
-            <div className="row">
-              <span>Circuit breaker</span>
-              <strong>
-                {auto?.consecutiveLosses ?? 0}/{auto?.maxConsecutiveLosses ?? 2}
-              </strong>
-            </div>
-
-            {auto?.paused && (
-              <div className="conflict">Paused: {auto.pauseReason}</div>
-            )}
-
-            <div className="buttons">
-              {auto?.paused ? (
-                <button disabled={busy} onClick={() => act("resume")}>
-                  Resume
-                </button>
-              ) : (
-                <button disabled={busy} onClick={() => act("pause")}>
-                  Pause
-                </button>
-              )}
-
-              <button
-                className="danger"
-                disabled={busy || !position}
-                onClick={() =>
-                  act("close", "Close the open position at market price?")
-                }
-              >
-                Close position
-              </button>
-            </div>
-          </section>
-
-          {/* Research: measured edge, not predictions */}
-          <EdgeLab call={call} />
+          {/* ── RESEARCH: measured edge, not predictions ── */}
+          <div className="wide">
+            <EdgeLab />
+          </div>
         </main>
       </div>
 
       <style jsx>{`
-        .intelligence {max-width:1200px;margin:24px auto;padding:28px;border:1px solid #27323c;border-radius:22px;background:linear-gradient(125deg,#111c24,#10141c);}
-        .intelligence-head {display:flex;justify-content:space-between;gap:20px;align-items:center;}
-        .intelligence h1 {font-size:clamp(24px,4vw,38px);margin:12px 0 24px;letter-spacing:-1px;}
-        .engine-mode {border:1px solid #42584e;border-radius:20px;padding:9px 14px;color:#A8E6BF;font-size:12px;}
-        .readings {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;}
-        .readings article {display:flex;flex-direction:column;gap:12px;padding:18px;background:#0c131acc;border-radius:12px;}
-        .readings small {font-size:10px;letter-spacing:1.5px;color:#9aa8b6;}
-        .readings strong {font-size:24px;}
-        .readings span,.intelligence p {color:#aab7c4;font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
-        .engine-explanation button {padding:10px 16px;margin-bottom:12px;border:1px solid #4b7462;border-radius:9px;background:#152a23;color:#b6efd1;cursor:pointer;}
-        .engine-explanation button:disabled{opacity:.5;cursor:wait;}
-        .engine-explanation {margin-top:20px;border-left:2px solid #A8E6BF;padding:4px 16px;}
-        .intelligence details {border-top:1px solid #27323c;margin-top:24px;padding-top:18px;}
-        .intelligence summary {cursor:pointer;color:#d2dce4;font-size:13px;}
-        @media(max-width:650px) {.readings {grid-template-columns:1fr;}.intelligence {padding:18px;margin:16px 0;}.intelligence-head{align-items:flex-start;flex-direction:column;}.engine-mode{margin-bottom:18px;}}
-
         .desk {
           min-height: 100vh;
           padding: 20px;
           background:
-            radial-gradient(circle at 20% 0%, rgba(77,255,136,0.05), transparent 30%),
+            radial-gradient(circle at 20% 0%, rgba(77, 255, 136, 0.05), transparent 30%),
             linear-gradient(180deg, #071018 0%, #0b1622 100%);
           color: #f5f7fb;
           font-family: Inter, system-ui, sans-serif;
@@ -424,136 +179,167 @@ export default function Desk() {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
           max-width: 1200px;
           margin: 0 auto 18px;
         }
-        .brand { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; }
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 1.05rem;
+        }
         .dot {
-          width: 10px; height: 10px; border-radius: 50%;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
           box-shadow: 0 0 12px currentColor;
         }
-        .meta { color: #9eacbf; font-size: 0.8rem; }
+        .meta {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          flex-wrap: wrap;
+          color: #9eacbf;
+          font-size: 0.8rem;
+        }
+        .logout {
+          padding: 6px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.05);
+          color: #f5f7fb;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .logout:hover {
+          filter: brightness(1.2);
+        }
         .alert {
-          max-width: 1200px; margin: 0 auto 16px;
-          padding: 12px 16px; border-radius: 14px;
-          background: rgba(255,59,77,0.1);
-          border: 1px solid rgba(255,59,77,0.3);
-          display: flex; flex-direction: column; gap: 4px;
+          max-width: 1200px;
+          margin: 0 auto 16px;
+          padding: 12px 16px;
+          border-radius: 14px;
+          background: rgba(255, 59, 77, 0.1);
+          border: 1px solid rgba(255, 59, 77, 0.3);
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
-        .alert span { color: #ffd8dd; font-size: 0.85rem; }
+        .alert span {
+          color: #ffd8dd;
+          font-size: 0.85rem;
+        }
         .grid {
-          max-width: 1200px; margin: 0 auto;
-          display: grid; gap: 14px;
-          grid-template-columns: 1.2fr 1fr;
+          max-width: 1200px;
+          margin: 0 auto;
+          display: grid;
+          gap: 14px;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+          align-items: start;
         }
-        .card {
-          padding: 20px; border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.08);
+        .wide {
+          grid-column: 1 / -1;
+        }
+        /* :global so the panels' own sections get the desk card too */
+        .desk :global(.card) {
+          padding: 20px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
           background: linear-gradient(180deg, #132235 0%, #101c2b 100%);
         }
         .stage {
-          grid-row: span 2;
-          display: flex; flex-direction: column;
-          align-items: center; text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
         .kicker {
           align-self: flex-start;
-          font-size: 0.65rem; font-weight: 900;
-          letter-spacing: 0.16em; text-transform: uppercase;
-          color: #9eacbf; margin-bottom: 14px;
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: #9eacbf;
+          margin-bottom: 14px;
         }
-        .wojak { width: min(280px, 70%); margin: 10px 0; }
-        .wojak img { width: 100%; height: auto; }
+        .wojak {
+          width: min(280px, 70%);
+          margin: 10px 0;
+        }
+        .wojak img {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .wojak.waiting {
+          opacity: 0.45;
+        }
         .moodname {
-          font-size: 2rem; font-weight: 800;
-          letter-spacing: -0.02em; margin-top: 6px;
+          font-size: 2rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          margin-top: 6px;
         }
-        .pnl { font-size: 2.6rem; font-weight: 900; margin: 6px 0; }
-        .sub { color: #9eacbf; font-size: 0.9rem; }
-        .idle { padding: 30px 0; }
-        .prices {
-          display: flex; gap: 20px; margin-top: 18px;
-          padding-top: 16px; width: 100%;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          justify-content: center;
+        .sub {
+          color: #9eacbf;
+          font-size: 0.9rem;
+          line-height: 1.5;
         }
-        .prices div { display: flex; flex-direction: column; gap: 3px; }
-        .prices span { font-size: 0.7rem; color: #9eacbf; }
-        .prices strong { font-size: 0.95rem; }
-        .row {
-          display: flex; justify-content: space-between;
-          align-items: center; padding: 9px 0;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
+        .note {
+          margin: 14px 0 0;
+          max-width: 34ch;
+          font-size: 0.76rem;
+          line-height: 1.5;
+          color: #6b7785;
         }
-        .row span { color: #9eacbf; font-size: 0.85rem; }
-        .row strong { font-size: 0.95rem; }
-        .row.big strong { font-size: 1.4rem; }
-        .conflict {
-          margin-top: 12px; padding: 9px 12px;
-          border-radius: 10px; font-size: 0.82rem;
-          background: rgba(255,157,166,0.1);
-          border: 1px solid rgba(255,157,166,0.25);
-          color: #ff9da6;
-        }
-        .details {
-          margin: 14px 0 0; padding: 0; list-style: none;
-          display: flex; flex-direction: column; gap: 7px;
-        }
-        .details li {
-          font-size: 0.8rem; color: #cfd7e3;
-          padding: 8px 10px; border-radius: 9px;
-          background: rgba(255,255,255,0.03);
-        }
-        .bar {
-          height: 7px; margin-top: 16px; border-radius: 999px;
-          background: rgba(255,255,255,0.06); overflow: hidden;
-        }
-        .fill { height: 100%; transition: width 0.4s ease; }
-        .buttons { display: flex; gap: 10px; margin-top: 18px; }
-        button {
-          flex: 1; padding: 11px; border-radius: 12px; cursor: pointer;
-          font-weight: 700; font-size: 0.85rem;
-          border: 1px solid rgba(255,255,255,0.12);
-          background: rgba(255,255,255,0.05); color: #f5f7fb;
-          transition: 0.2s;
-        }
-        button:hover:not(:disabled) { filter: brightness(1.2); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        button.danger {
-          border-color: rgba(255,59,77,0.3);
-          background: rgba(255,59,77,0.1);
-          color: #ff9da6;
+        .placeholder {
+          padding: 40px 20px;
+          text-align: center;
+          color: #8d9aa8;
+          font-size: 0.85rem;
         }
         @media (max-width: 900px) {
-          .grid { grid-template-columns: 1fr; }
-          .stage { grid-row: auto; }
+          .grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .wojak {
+            animation: none !important;
+          }
         }
       `}</style>
 
       <style jsx global>{`
-        body { margin: 0; }
+        body {
+          margin: 0;
+        }
         @keyframes wmFloat {
-          0%,100% { transform: translateY(0); }
+          0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-12px); }
         }
         @keyframes wmPulse {
-          0%,100% { transform: scale(1); }
+          0%, 100% { transform: scale(1); }
           50% { transform: scale(1.05); }
         }
         @keyframes wmBlink {
-          0%,94%,100% { opacity: 1; }
+          0%, 94%, 100% { opacity: 1; }
           97% { opacity: 0.85; }
         }
         @keyframes wmTilt {
-          0%,100% { transform: rotate(0deg); }
+          0%, 100% { transform: rotate(0deg); }
           25% { transform: rotate(-3deg); }
           75% { transform: rotate(3deg); }
         }
         @keyframes wmShake {
-          0%,100% { transform: translate(0,0); }
-          25% { transform: translate(-4px,2px); }
-          50% { transform: translate(4px,-2px); }
-          75% { transform: translate(-3px,-1px); }
+          0%, 100% { transform: translate(0, 0); }
+          25% { transform: translate(-4px, 2px); }
+          50% { transform: translate(4px, -2px); }
+          75% { transform: translate(-3px, -1px); }
         }
       `}</style>
     </>
