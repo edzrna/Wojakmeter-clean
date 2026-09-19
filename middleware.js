@@ -1,98 +1,68 @@
 // ===============================
 // WOJAKMETER — PRIVATE DESK GATE
-// Place this file at the ROOT of the project (next to package.json)
+// middleware.js — at the ROOT of the project (next to package.json)
 //
-// Everything under /desk is unreachable without a valid session
-// cookie. The cookie is an HMAC signature the browser cannot forge,
-// so there is no database lookup and it works on the Edge runtime.
+// Everything under /desk and /api/desk needs a valid session cookie,
+// except the login page and the login endpoint themselves.
+//
+// v1 only matched /desk/:path*, so the API routes were outside the
+// gate and each had to remember to check the cookie itself. They
+// still do (defence in depth), but the gate now covers them too:
+// an API route added later without its own check is not an open door.
+//
+// Pages get a redirect to /desk/login; API calls get a 401 JSON.
+// Every desk response is marked private, not indexable, not framable.
 // ===============================
 
 import { NextResponse } from "next/server";
+import { COOKIE_NAME, verifySession, sessionTtlMs } from "./lib/desk/session";
 
 export const config = {
-  // Only guard the desk. The public site is untouched.
-  matcher: ["/desk/:path*"]
+  matcher: ["/desk/:path*", "/api/desk/:path*"]
 };
 
-const COOKIE_NAME = "wm_desk";
+const PUBLIC = new Set(["/desk/login", "/api/desk/auth"]);
 
-function toHex(buffer) {
-  return Array.from(new Uint8Array(buffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function hmac(message, secret) {
-  const encoder = new TextEncoder();
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(message)
-  );
-
-  return toHex(signature);
-}
-
-// Constant-time compare so timing cannot leak the signature
-function safeEqual(a, b) {
-  if (typeof a !== "string" || typeof b !== "string") return false;
-  if (a.length !== b.length) return false;
-
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-
-  return diff === 0;
+function harden(res) {
+  res.headers.set("Cache-Control", "private, no-store");
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Referrer-Policy", "same-origin");
+  return res;
 }
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
 
-  // The login page itself must stay reachable
-  if (pathname === "/desk/login") {
-    return NextResponse.next();
-  }
+  if (PUBLIC.has(pathname)) return harden(NextResponse.next());
 
   const secret = process.env.DESK_SECRET;
 
-  // Fail closed: no secret configured means no access at all
+  // Fail closed: no secret means no desk at all
   if (!secret) {
-    return new NextResponse(
-      "Desk is not configured. Set DESK_SECRET in the environment.",
-      { status: 503 }
+    return isApi
+      ? NextResponse.json({ ok: false, error: "Desk not configured. Set DESK_SECRET." }, { status: 503 })
+      : new NextResponse("Desk is not configured. Set DESK_SECRET in the environment.", { status: 503 });
+  }
+
+  const session = await verifySession(request.cookies.get(COOKIE_NAME)?.value, {
+    secret,
+    ttlMs: sessionTtlMs()
+  });
+
+  if (session.ok) return harden(NextResponse.next());
+
+  if (isApi) {
+    return harden(
+      NextResponse.json(
+        { ok: false, error: session.reason === "expired" ? "Session expired" : "Not authenticated" },
+        { status: 401 }
+      )
     );
   }
 
-  const cookie = request.cookies.get(COOKIE_NAME)?.value || "";
-  const [expStr, signature] = cookie.split(".");
-  const exp = Number(expStr);
-
   const loginUrl = new URL("/desk/login", request.url);
-
-  if (!expStr || !signature || !Number.isFinite(exp)) {
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (Date.now() > exp) {
-    loginUrl.searchParams.set("expired", "1");
-    return NextResponse.redirect(loginUrl);
-  }
-
-  const expected = await hmac(expStr, secret);
-
-  if (!safeEqual(signature, expected)) {
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next();
+  if (session.reason === "expired") loginUrl.searchParams.set("expired", "1");
+  return NextResponse.redirect(loginUrl);
 }

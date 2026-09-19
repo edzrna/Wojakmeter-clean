@@ -2,138 +2,97 @@
 // WOJAKMETER — BOT PROXY
 // pages/api/desk/bot.js
 //
-// The browser never talks to Railway directly and never sees
-// BOT_API_SECRET. It calls this route, this route re-signs the
-// request server-side and forwards it to the bot.
+//   GET /api/desk/bot?action=lab-report&model=linear
 //
-// It also re-verifies the desk cookie: middleware only guards
-// page routes, so API routes must check for themselves.
+// The browser never talks to Railway and never sees BOT_API_SECRET.
+// This route checks the desk session, checks the request against the
+// allowlist (lib/desk/proxy.js), signs it with signature v2 and
+// forwards it. The bot's answer comes back as is, status included.
+//
+// The middleware already guards /api/desk/*; the session is checked
+// again here so this route stays closed even if the matcher changes.
 // ===============================
 
-import crypto from "crypto";
+import { COOKIE_NAME, verifySession, sessionTtlMs } from "../../../lib/desk/session";
+import { resolveRequest, signedHeaders, upstreamTarget } from "../../../lib/desk/proxy";
 
-const COOKIE_NAME = "wm_desk";
-
-// Only these bot endpoints can be reached from the browser.
-// An allowlist means a bug in the UI cannot reach something
-// dangerous that was never meant to be exposed.
-const ALLOWED = {
-  recover:   { method: "POST", path: "/desk/recover" },
-  status:    { method: "GET",  path: "/desk/status" },
-  positions: { method: "GET",  path: "/desk/positions" },
-  history:   { method: "GET",  path: "/desk/history" },
-  signals:   { method: "GET",  path: "/desk/signals" },
-  pause:     { method: "POST", path: "/desk/pause" },
-  resume:    { method: "POST", path: "/desk/resume" },
-  close:     { method: "POST", path: "/desk/close" },
-
-  // Research endpoints. Read-only, but they still pass through
-  // the same signature check as everything else.
-  edge:       { method: "GET", path: "/desk/edge" },
-  divergence: { method: "GET", path: "/desk/divergence" }
-};
-
-function sign(message, secret) {
-  return crypto.createHmac("sha256", secret).update(message).digest("hex");
-}
-
-function safeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
-
-function hasValidSession(req) {
-  const secret = process.env.DESK_SECRET;
-  if (!secret) return false;
-
-  const raw = req.cookies?.[COOKIE_NAME];
-  if (!raw) return false;
-
-  const [expStr, signature] = String(raw).split(".");
-  const exp = Number(expStr);
-
-  if (!expStr || !signature || !Number.isFinite(exp)) return false;
-  if (Date.now() > exp) return false;
-
-  return safeEqual(signature, sign(expStr, secret));
-}
+const TIMEOUT_MS = 15_000;
 
 export default async function handler(req, res) {
-  if (!hasValidSession(req)) {
-    return res.status(401).json({ ok: false, error: "Not authenticated" });
+  res.setHeader("Cache-Control", "private, no-store");
+
+  const session = await verifySession(req.cookies?.[COOKIE_NAME], {
+    secret: process.env.DESK_SECRET,
+    ttlMs: sessionTtlMs()
+  });
+
+  if (!session.ok) {
+    if (session.reason === "not-configured") {
+      return res.status(503).json({ ok: false, error: "Desk not configured. Set DESK_SECRET." });
+    }
+    return res.status(401).json({ ok: false, error: session.reason === "expired" ? "Session expired" : "Not authenticated" });
   }
 
   const botUrl = process.env.BOT_API_URL;
   const botSecret = process.env.BOT_API_SECRET;
 
   if (!botUrl || !botSecret) {
-    return res.status(503).json({
-      ok: false,
-      error: "Bot link not configured. Set BOT_API_URL and BOT_API_SECRET."
-    });
+    return res.status(503).json({ ok: false, error: "Bot link not configured. Set BOT_API_URL and BOT_API_SECRET." });
   }
 
-  const action = String(req.query.action || "status");
-  const route = ALLOWED[action];
+  const resolved = resolveRequest(req.query, req.method);
 
-  if (!route) {
-    return res.status(400).json({ ok: false, error: `Unknown action: ${action}` });
+  if (!resolved.ok) {
+    if (resolved.allow) res.setHeader("Allow", resolved.allow);
+    return res.status(resolved.status).json({ ok: false, error: resolved.error });
   }
 
-  if (route.method === "POST" && req.method !== "POST") {
-    return res.status(405).json({ ok: false, error: "This action requires POST" });
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-
+  let target;
   try {
-    const body = route.method === "POST"
-      ? JSON.stringify(req.body || {})
-      : undefined;
-
-    // Timestamped signature so a captured request cannot be replayed later
-    const ts = Date.now().toString();
-    const payload = `${ts}.${route.path}.${body || ""}`;
-
-    // Research endpoints take a horizon. The signature covers the
-    // path only, so the query string stays outside the signed payload.
-    const horizon = String(req.query.horizon || "").trim();
-    const query = /^h\d+$/.test(horizon) ? `?horizon=${horizon}` : "";
-
-    const upstream = await fetch(`${botUrl.replace(/\/$/, "")}${route.path}${query}`, {
-      method: route.method,
-      headers: {
-        "Content-Type": "application/json",
-        "X-WM-Timestamp": ts,
-        "X-WM-Signature": sign(payload, botSecret)
-      },
-      body,
-      signal: controller.signal
-    });
-
-    const text = await upstream.text();
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { ok: false, error: "Bot returned invalid JSON", raw: text.slice(0, 400) };
-    }
-
-    return res.status(upstream.status).json(data);
+    target = upstreamTarget(botUrl, resolved.pathWithQuery);
   } catch (err) {
-    const offline = err.name === "AbortError";
+    return res.status(503).json({ ok: false, error: `BOT_API_URL is not usable: ${err.message}` });
+  }
 
+  const { method } = resolved.route;
+
+  // The exact bytes that are hashed are the bytes that are sent
+  const body = method === "GET" ? "" : JSON.stringify(req.body ?? {});
+  const headers = signedHeaders({ secret: botSecret, method, pathWithQuery: target.signedPath, body });
+  headers.Accept = "application/json";
+  if (body) headers["Content-Type"] = "application/json";
+
+  let upstream;
+  try {
+    upstream = await fetch(target.url, {
+      method,
+      headers,
+      body: body || undefined,
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+  } catch (err) {
+    const timedOut = err.name === "TimeoutError" || err.name === "AbortError";
     return res.status(502).json({
       ok: false,
-      error: offline
-        ? "Bot did not respond in time. It may be restarting on Railway."
-        : `Could not reach bot: ${err.message}`
+      error: timedOut
+        ? "The bot did not answer within 15 s. It may be restarting on Railway."
+        : `Could not reach the bot: ${err.message}`
     });
-  } finally {
-    clearTimeout(timer);
+  }
+
+  const text = await upstream.text();
+
+  try {
+    return res.status(upstream.status).json(JSON.parse(text));
+  } catch {
+    // Not JSON: something in front of the bot answered (Railway's edge)
+    const hint = upstream.status === 502
+      ? " Railway could not reach the service: check that the domain's Target Port equals the port the bot prints at startup."
+      : "";
+    return res.status(502).json({
+      ok: false,
+      error: `The bot answered HTTP ${upstream.status} without JSON.${hint}`,
+      raw: text.slice(0, 300)
+    });
   }
 }
