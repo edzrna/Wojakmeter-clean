@@ -162,6 +162,13 @@ function Pipeline({ status, report }) {
   );
 }
 
+// What "the other way" means for each hypothesis, in plain words
+const OPPOSITE = {
+  H2: "after entering an extreme, price kept going instead of reversing.",
+  H3: "the linear distance tracked the size of the next move better than the lattice distance.",
+  H4: "after a divergence, BTC followed breadth less than after an aligned move."
+};
+
 function HypothesisExtra({ id, history, live }) {
   const hd = history?.detail || {};
   const ld = live?.detail || {};
@@ -216,6 +223,11 @@ function Hypothesis({ hy, horizon }) {
 
       <p className="wm-statement">{hy.statement}</p>
       <p className="wm-reason">{cell.reason}</p>
+      {cell.opposite ? (
+        <p className="wm-opposite">
+          Runs against the statement above: {OPPOSITE[hy.id] || "history points the other way."}
+        </p>
+      ) : null}
 
       <dl className="wm-nums">
         <div>
@@ -734,6 +746,16 @@ export default function EdgeLab({
           color: #cfd7e3;
           line-height: 1.5;
           font-variant-numeric: tabular-nums;
+        }
+        .wm-edge .wm-opposite {
+          margin: 8px 0 0;
+          padding: 8px 10px;
+          border-radius: 9px;
+          font-size: 0.72rem;
+          line-height: 1.5;
+          color: #ffd166;
+          background: rgba(255, 209, 102, 0.06);
+          border: 1px dashed rgba(255, 209, 102, 0.3);
         }
         .wm-edge .wm-nums {
           margin: 9px 0 0;
