@@ -116,6 +116,13 @@ function Pipeline({ status, report }) {
           {finite(missing) && missing > 0 ? ` · ${fmtInt(missing)} boundaries missing` : ""}
         </li>
 
+        {finite(report?.computedAt) ? (
+          <li>
+            Report from {fmtWhen(report.computedAt)}, built on {fmtInt(report.health?.snapshots)} snapshots (redone at most every 10
+            minutes, so it can trail the counts above).
+          </li>
+        ) : null}
+
         {finite(report?.freezeTs) ? (
           <li>
             Frozen {fmtWhen(report.freezeTs)}. History before it can only nominate; only data after it can confirm (

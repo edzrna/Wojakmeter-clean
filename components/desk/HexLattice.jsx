@@ -33,7 +33,6 @@ const UNIT = 100;      // px per lattice unit
 const HALF_X = 2.25;   // half the drawing, in lattice units
 const HALF_Y = 1.95;
 const GAP = 0.03;      // space between cells, in lattice units
-const STEP_MS = 15 * 60 * 1000;
 
 // Pointy-top hexagon; SVG y grows downward, which is "more violent"
 function hexPoints(cx, cy, radius) {
@@ -100,26 +99,26 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
   const share = state?.occupancy?.share || null;
   const maxShare = share ? Math.max(0.0001, ...Object.values(share).filter(finite)) : 1;
 
-  // The last 24 h as a line, broken wherever a snapshot is missing
+  // The last 24 h as dots, the older the fainter. Not a line: the
+  // market jumps between snapshots 15 min apart, and a line crossing
+  // neutral would draw a route that was never observed (H1 is about
+  // exactly that).
   const trail = state?.trail;
-  const segments = useMemo(() => {
-    const list = Array.isArray(trail) ? trail : [];
-    const out = [];
-    for (let i = 1; i < list.length; i++) {
-      const a = list[i - 1];
-      const b = list[i];
-      if (b.ts - a.ts !== STEP_MS) continue;
-      out.push({
-        key: b.ts,
-        x1: clamp(a.x, HALF_X) * UNIT,
-        y1: clamp(a.y, HALF_Y) * UNIT,
-        x2: clamp(b.x, HALF_X) * UNIT,
-        y2: clamp(b.y, HALF_Y) * UNIT,
-        opacity: 0.1 + 0.6 * (i / (list.length - 1))
-      });
-    }
-    return out;
-  }, [trail]);
+  const lastTs = state?.ts;
+  const dots = useMemo(() => {
+    const list = (Array.isArray(trail) ? trail : []).filter((p) => p.ts !== lastTs && finite(p.x) && finite(p.y));
+    return list.map((p, i) => ({
+      key: p.ts,
+      cx: clamp(p.x, HALF_X) * UNIT,
+      cy: clamp(p.y, HALF_Y) * UNIT,
+      opacity: 0.08 + 0.5 * ((i + 1) / list.length)
+    }));
+  }, [trail, lastTs]);
+
+  const look = (mood) => {
+    const s = share && finite(share[mood]) ? share[mood] : null;
+    return { active: mood === cell, color: MOOD_COLOR[mood] || "#cfd7e3", s, weight: s === null ? 0 : s / maxShare };
+  };
 
   const cell = state?.cell || null;
   const point = state?.point && finite(state.point.x) && finite(state.point.y) ? state.point : null;
@@ -170,10 +169,7 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
           <text className="axis" x={HALF_X * UNIT - 4} y={4} textAnchor="end">rising ▶</text>
 
           {cells.map(({ mood, x, y }) => {
-            const active = mood === cell;
-            const color = MOOD_COLOR[mood] || "#cfd7e3";
-            const s = share && finite(share[mood]) ? share[mood] : null;
-            const weight = s === null ? 0 : s / maxShare;
+            const { active, color, weight } = look(mood);
 
             return (
               <g
@@ -192,6 +188,19 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
                   strokeOpacity={active ? 0.95 : 0.25}
                   strokeWidth={active ? 2.4 : 1.2}
                 />
+              </g>
+            );
+          })}
+
+          {dots.map((d) => (
+            <circle key={d.key} className="trail" cx={d.cx} cy={d.cy} r="3.2" fill="#cfd7e3" fillOpacity={d.opacity} />
+          ))}
+
+          {/* labels above the trail, so it never covers them */}
+          {cells.map(({ mood, x, y }) => {
+            const { active, color, s } = look(mood);
+            return (
+              <g key={`${mood}-label`}>
                 <text
                   x={x * UNIT}
                   y={y * UNIT - 3}
@@ -210,20 +219,6 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
               </g>
             );
           })}
-
-          {segments.map((s) => (
-            <line
-              key={s.key}
-              x1={s.x1}
-              y1={s.y1}
-              x2={s.x2}
-              y2={s.y2}
-              stroke="#cfd7e3"
-              strokeOpacity={s.opacity}
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          ))}
 
           {point ? (
             <g className="dot">
@@ -253,7 +248,7 @@ export default function HexLattice({ data = null, refreshMs = 60_000, onSelect, 
         how unusual the last hour&apos;s range is for this time of day. Each cell is the region nearest its centre, so the
         dot decides the cell.
         {share && state?.occupancy
-          ? ` Shading is the share of the last ${state.occupancy.windowDays} days spent in each cell (${fmtInt(state.occupancy.samples)} snapshots); the line is the last 24 h.`
+          ? ` Shading is the share of the last ${state.occupancy.windowDays} days spent in each cell (${fmtInt(state.occupancy.samples)} snapshots); the faint dots are the last 24 h, the older the fainter.`
           : ""}
       </p>
 
