@@ -31,7 +31,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { deskCall } from "../../lib/desk/client";
-import { MOOD_COLOR, fmtPct, fmtP, fmtNum, fmtInt, fmtWhen, moodName, finite } from "../../lib/desk/format";
+import { MOOD_COLOR, fmtPct, fmtP, fmtNum, fmtInt, fmtTime, fmtWhen, moodName, finite } from "../../lib/desk/format";
 
 const HORIZONS = [
   { key: "h1", label: "1h" },
@@ -40,8 +40,9 @@ const HORIZONS = [
 ];
 
 const MODELS = [
-  { key: "hex", label: "Lattice" },
-  { key: "linear", label: "Linear" }
+  { key: "hex", label: "Lattice v1", version: "hex-v1" },
+  { key: "hex2", label: "Lattice v2", version: "hex-v2" },
+  { key: "linear", label: "Linear", version: "linear-v1" }
 ];
 
 const VERDICT = {
@@ -66,6 +67,9 @@ function estimateText(side, unit) {
   if (!side || !side.testable) return "not testable yet";
   return unit === "rho" ? `Δρ ${fmtNum(side.estimate)}` : fmtPct(side.estimate);
 }
+
+// An error from a task that runs once an hour should say when it happened
+const withTime = (text, at) => (finite(at) ? `${text} (${fmtTime(at)})` : text);
 
 function backfillText(b) {
   switch (b?.state) {
@@ -116,6 +120,13 @@ function Pipeline({ status, report }) {
           {finite(missing) && missing > 0 ? ` · ${fmtInt(missing)} boundaries missing` : ""}
         </li>
 
+        {finite(report?.computedAt) ? (
+          <li>
+            Report from {fmtWhen(report.computedAt)}, built on {fmtInt(report.health?.snapshots)} snapshots (redone at most every 10
+            minutes, so it can trail the counts above).
+          </li>
+        ) : null}
+
         {finite(report?.freezeTs) ? (
           <li>
             Frozen {fmtWhen(report.freezeTs)}. History before it can only nominate; only data after it can confirm (
@@ -124,7 +135,7 @@ function Pipeline({ status, report }) {
         ) : null}
 
         {status.recorder?.lastError ? (
-          <li className="wm-warn-text">Recorder: {status.recorder.lastError}</li>
+          <li className="wm-warn-text">{withTime(`Recorder: ${status.recorder.lastError}`, status.recorder.lastErrorAt)}</li>
         ) : status.recorder?.lastResult ? (
           <li>Recorder: {status.recorder.lastResult}</li>
         ) : null}
@@ -138,15 +149,15 @@ function Pipeline({ status, report }) {
             {cmp.mismatches ? " — history and live are not measuring the same thing; check before trusting the report" : ""}
           </li>
         ) : null}
-        {status.audit?.lastError ? <li className="wm-warn-text">Audit: {status.audit.lastError}</li> : null}
+        {status.audit?.lastError ? <li className="wm-warn-text">{withTime(`Audit: ${status.audit.lastError}`, status.audit.lastErrorAt)}</li> : null}
 
-        {b.lastError ? <li className="wm-warn-text">History: {b.lastError}</li> : null}
+        {b.lastError ? <li className="wm-warn-text">{withTime(`History: ${b.lastError}`, b.lastErrorAt)}</li> : null}
         {Object.entries(b.skipped || {}).map(([month, why]) => (
           <li key={month} className="wm-warn-text">
             Skipped {month}: {why}
           </li>
         ))}
-        {status.gaps?.lastError ? <li className="wm-warn-text">Gaps: {status.gaps.lastError}</li> : null}
+        {status.gaps?.lastError ? <li className="wm-warn-text">{withTime(`Gaps: ${status.gaps.lastError}`, status.gaps.lastErrorAt)}</li> : null}
         {status.binance?.blockReason ? <li className="wm-bad-text">Binance: {status.binance.blockReason}</li> : null}
         {status.service?.fatal ? <li className="wm-bad-text">{status.service.fatal}</li> : null}
         {status.config?.warning ? <li className="wm-warn-text">{status.config.warning}</li> : null}
@@ -154,6 +165,13 @@ function Pipeline({ status, report }) {
     </div>
   );
 }
+
+// What "the other way" means for each hypothesis, in plain words
+const OPPOSITE = {
+  H2: "after entering an extreme, price kept going instead of reversing.",
+  H3: "the linear distance tracked the size of the next move better than the lattice distance.",
+  H4: "after a divergence, BTC followed breadth less than after an aligned move."
+};
 
 function HypothesisExtra({ id, history, live }) {
   const hd = history?.detail || {};
@@ -174,8 +192,8 @@ function HypothesisExtra({ id, history, live }) {
     const ci = Array.isArray(hd.ci95) ? hd.ci95 : [];
     return (
       <p className="wm-extra">
-        ρ lattice {fmtNum(hd.rhoHex)} vs ρ linear {fmtNum(hd.rhoLinear)} · 95% interval of the difference [{fmtNum(ci[0])},{" "}
-        {fmtNum(ci[1])}]
+        ρ lattice {fmtNum(hd.rhoHex)} vs ρ linear {fmtNum(hd.rhoLinear)} · uncorrected 95% interval of the difference [
+        {fmtNum(ci[0])}, {fmtNum(ci[1])}] — the verdict uses p_holm, which accounts for the other tests
       </p>
     );
   }
@@ -209,6 +227,11 @@ function Hypothesis({ hy, horizon }) {
 
       <p className="wm-statement">{hy.statement}</p>
       <p className="wm-reason">{cell.reason}</p>
+      {cell.opposite ? (
+        <p className="wm-opposite">
+          Runs against the statement above: {OPPOSITE[hy.id] || "history points the other way."}
+        </p>
+      ) : null}
 
       <dl className="wm-nums">
         <div>
@@ -332,6 +355,12 @@ export default function EdgeLab({
   }, [fixed, load, refreshMs]);
 
   const rep = reports[model] || null;
+
+  // Vercel and Railway deploy separately. The status lists a freeze for
+  // every model the running bot knows, so a model missing there means
+  // the bot is older than this page, not that the lab is broken.
+  const wanted = MODELS.find((m) => m.key === model);
+  const botBehind = Boolean(labStatus?.freeze && wanted && !(wanted.version in labStatus.freeze));
   const ready = Boolean(rep && rep.ok && !rep.pending && rep.screen && rep.hypotheses);
   const hLabel = HORIZONS.find((h) => h.key === horizon)?.label || horizon;
   const minN = rep?.screen?.minN ?? 30;
@@ -386,10 +415,16 @@ export default function EdgeLab({
         <p className="wm-model-note">
           <strong>{rep.model.version}</strong> · {rep.model.description}
           {model === "linear" ? " The old scale, kept as the baseline the lattice has to beat." : ""}
+          {model === "hex2" ? " Its own freeze: only data recorded after it can confirm anything." : ""}
         </p>
       ) : null}
 
-      {error ? (
+      {botBehind ? (
+        <div className="wm-err">
+          The bot running on Railway does not know {wanted.label} ({wanted.version}) yet: it is older than this page.
+          Deploy the latest bot-v2 and it will appear, with its own freeze starting then.
+        </div>
+      ) : error ? (
         <div className="wm-err">
           {error}
           {authProblem ? (
@@ -403,7 +438,7 @@ export default function EdgeLab({
 
       <Pipeline status={labStatus} report={ready ? rep : null} />
 
-      {!rep ? <div className="wm-idle">{error ? "No report to show." : "Loading the report…"}</div> : null}
+      {!rep && !botBehind ? <div className="wm-idle">{error ? "No report to show." : "Loading the report…"}</div> : null}
       {rep && rep.pending ? <div className="wm-idle">{rep.reason || "The first report is not ready yet."}</div> : null}
       {rep && rep.ok === false ? <div className="wm-err">{rep.error || rep.reason || "The bot could not produce this report."}</div> : null}
 
@@ -505,6 +540,9 @@ export default function EdgeLab({
           display: flex;
           flex-direction: column;
           gap: 14px;
+        }
+        section.wm-edge {
+          padding: 18px;
         }
         .wm-edge .wm-head {
           display: flex;
@@ -724,6 +762,16 @@ export default function EdgeLab({
           color: #cfd7e3;
           line-height: 1.5;
           font-variant-numeric: tabular-nums;
+        }
+        .wm-edge .wm-opposite {
+          margin: 8px 0 0;
+          padding: 8px 10px;
+          border-radius: 9px;
+          font-size: 0.72rem;
+          line-height: 1.5;
+          color: #ffd166;
+          background: rgba(255, 209, 102, 0.06);
+          border: 1px dashed rgba(255, 209, 102, 0.3);
         }
         .wm-edge .wm-nums {
           margin: 9px 0 0;
