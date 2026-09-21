@@ -31,7 +31,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { deskCall } from "../../lib/desk/client";
-import { MOOD_COLOR, fmtPct, fmtP, fmtNum, fmtInt, fmtWhen, moodName, finite } from "../../lib/desk/format";
+import { MOOD_COLOR, fmtPct, fmtP, fmtNum, fmtInt, fmtTime, fmtWhen, moodName, finite } from "../../lib/desk/format";
 
 const HORIZONS = [
   { key: "h1", label: "1h" },
@@ -40,7 +40,8 @@ const HORIZONS = [
 ];
 
 const MODELS = [
-  { key: "hex", label: "Lattice" },
+  { key: "hex", label: "Lattice v1" },
+  { key: "hex2", label: "Lattice v2" },
   { key: "linear", label: "Linear" }
 ];
 
@@ -66,6 +67,9 @@ function estimateText(side, unit) {
   if (!side || !side.testable) return "not testable yet";
   return unit === "rho" ? `Δρ ${fmtNum(side.estimate)}` : fmtPct(side.estimate);
 }
+
+// An error from a task that runs once an hour should say when it happened
+const withTime = (text, at) => (finite(at) ? `${text} (${fmtTime(at)})` : text);
 
 function backfillText(b) {
   switch (b?.state) {
@@ -131,7 +135,7 @@ function Pipeline({ status, report }) {
         ) : null}
 
         {status.recorder?.lastError ? (
-          <li className="wm-warn-text">Recorder: {status.recorder.lastError}</li>
+          <li className="wm-warn-text">{withTime(`Recorder: ${status.recorder.lastError}`, status.recorder.lastErrorAt)}</li>
         ) : status.recorder?.lastResult ? (
           <li>Recorder: {status.recorder.lastResult}</li>
         ) : null}
@@ -145,15 +149,15 @@ function Pipeline({ status, report }) {
             {cmp.mismatches ? " — history and live are not measuring the same thing; check before trusting the report" : ""}
           </li>
         ) : null}
-        {status.audit?.lastError ? <li className="wm-warn-text">Audit: {status.audit.lastError}</li> : null}
+        {status.audit?.lastError ? <li className="wm-warn-text">{withTime(`Audit: ${status.audit.lastError}`, status.audit.lastErrorAt)}</li> : null}
 
-        {b.lastError ? <li className="wm-warn-text">History: {b.lastError}</li> : null}
+        {b.lastError ? <li className="wm-warn-text">{withTime(`History: ${b.lastError}`, b.lastErrorAt)}</li> : null}
         {Object.entries(b.skipped || {}).map(([month, why]) => (
           <li key={month} className="wm-warn-text">
             Skipped {month}: {why}
           </li>
         ))}
-        {status.gaps?.lastError ? <li className="wm-warn-text">Gaps: {status.gaps.lastError}</li> : null}
+        {status.gaps?.lastError ? <li className="wm-warn-text">{withTime(`Gaps: ${status.gaps.lastError}`, status.gaps.lastErrorAt)}</li> : null}
         {status.binance?.blockReason ? <li className="wm-bad-text">Binance: {status.binance.blockReason}</li> : null}
         {status.service?.fatal ? <li className="wm-bad-text">{status.service.fatal}</li> : null}
         {status.config?.warning ? <li className="wm-warn-text">{status.config.warning}</li> : null}
@@ -405,6 +409,7 @@ export default function EdgeLab({
         <p className="wm-model-note">
           <strong>{rep.model.version}</strong> · {rep.model.description}
           {model === "linear" ? " The old scale, kept as the baseline the lattice has to beat." : ""}
+          {model === "hex2" ? " Its own freeze: only data recorded after it can confirm anything." : ""}
         </p>
       ) : null}
 
