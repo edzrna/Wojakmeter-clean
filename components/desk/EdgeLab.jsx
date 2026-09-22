@@ -304,6 +304,8 @@ function TransitionRow({ row, horizon, minConfirm }) {
 }
 
 export default function EdgeLab({
+  selectedModel = null,
+  onModelChange = null,
   report = null,
   status = null,
   initialModel = "hex",
@@ -312,7 +314,9 @@ export default function EdgeLab({
   client = deskCall
 }) {
   const fixed = Boolean(report);
-  const [model, setModel] = useState(initialModel);
+  const [localModel, setLocalModel] = useState(initialModel);
+  const model = selectedModel || localModel;
+  const setModel = value => {setLocalModel(value);onModelChange?.(value);};
   const [horizon, setHorizon] = useState(initialHorizon);
   const [reports, setReports] = useState(report ? { [initialModel]: report } : {});
   const [labStatus, setLabStatus] = useState(status);
@@ -411,6 +415,7 @@ export default function EdgeLab({
         </div>
       </div>
 
+      {rep?.validation && <p role="status" className="wm-model-note"><strong>Validation: {rep.validation.status}</strong> · {rep.validation.blocked || (rep.validation.endsAt ? `Fixed window ends ${new Date(rep.validation.endsAt).toISOString()}` : 'Waiting for complete history and a clean audit')} · Research only, not trading authorization.</p>}
       {ready && rep.model ? (
         <p className="wm-model-note">
           <strong>{rep.model.version}</strong> · {rep.model.description}

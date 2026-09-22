@@ -25,6 +25,7 @@ import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import HexLattice from "../../components/desk/HexLattice";
 import EdgeLab from "../../components/desk/EdgeLab";
+import DeskCharacter from "../../components/desk/DeskCharacter";
 import { deskCall } from "../../lib/desk/client";
 import { MOOD_COLOR, fmtWhen, moodName } from "../../lib/desk/format";
 
@@ -41,14 +42,17 @@ const MOOD_ANIM = {
 };
 
 export default function Desk({ initialState = null }) {
+  const [model, setModel] = useState("hex2");
+  const latticeModel=model==="linear"?"hex2":model;
   const [state, setState] = useState(initialState);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const load = useCallback(async (signal) => {
     try {
-      const r = await deskCall("lab-state", { model: "hex" }, { signal });
+      const r = await deskCall("lab-state", { model: latticeModel }, { signal });
 
+      if (signal?.aborted) return;
       if (r.httpStatus === 401) {
         window.location.href = "/desk/login";
         return;
@@ -64,7 +68,7 @@ export default function Desk({ initialState = null }) {
     } catch (err) {
       if (err?.name !== "AbortError") setError(String(err?.message || err));
     }
-  }, []);
+  }, [latticeModel]);
 
   useEffect(() => {
     if (initialState) return undefined;
@@ -94,7 +98,7 @@ export default function Desk({ initialState = null }) {
   let moodNote;
   if (!state) moodNote = error ? "The lab is not answering." : "Connecting to the lab…";
   else if (!cell) moodNote = state.reason || "No reading yet.";
-  else if (confirmed && confirmed.cell === cell) moodNote = `Confirmed since ${fmtWhen(confirmed.since)}`;
+  else if (confirmed && confirmed.cell === cell) moodNote = `Stable state since ${fmtWhen(confirmed.since)}`;
   else moodNote = "Not confirmed yet";
 
   return (
@@ -130,22 +134,16 @@ export default function Desk({ initialState = null }) {
         <main className="grid">
           {/* ── THE WOJAK: the market's cell on the lattice ── */}
           <section className="card stage">
-            <div className="kicker">Market mood</div>
+            <div className="kicker">Market mood · {latticeModel==='hex2'?'Lattice v2':'Lattice v1'}</div>{model==='linear'&&<p className="note">Linear report selected; the character and lattice remain on Lattice v2.</p>}
 
             <div
               className={`wojak${cell ? "" : " waiting"}`}
               style={{
-                animation: cell ? MOOD_ANIM[mood] : "none",
+                animation: "none",
                 filter: `drop-shadow(0 0 40px ${color}55)`
               }}
             >
-              <img
-                src={`/assets/hero/classic/${mood}.png`}
-                alt={cell ? moodName(cell) : "Waiting for a reading"}
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
+              <DeskCharacter mood={mood} active={Boolean(cell)&&!state?.stale&&!error} />
             </div>
 
             <div className="moodname" style={{ color }}>
@@ -160,7 +158,7 @@ export default function Desk({ initialState = null }) {
 
           {/* ── RESEARCH: measured edge, not predictions ── */}
           <div className="wide">
-            <EdgeLab />
+            <EdgeLab selectedModel={model} onModelChange={value=>{setState(null);setModel(value);}} />
           </div>
         </main>
       </div>
