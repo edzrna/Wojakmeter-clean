@@ -1,4 +1,5 @@
-import Head from "next/head"; 
+import Head from "next/head";
+import PlatformRuntime from "../components/PlatformRuntime"; 
 import "../styles/globals.css";
 import "../styles/wm-organism.css";
 import "../styles/legal.css";
@@ -14,6 +15,7 @@ export default function App({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Component {...pageProps} />
+      <PlatformRuntime />
     </>
   );
 } 

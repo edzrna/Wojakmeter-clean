@@ -1,3 +1,4 @@
+import {featureWriteAllowed} from '../../lib/platform-store';
 import { neon } from "@neondatabase/serverless";
 import { createHash } from "node:crypto";
 
@@ -124,6 +125,7 @@ async function readRecord(sql) {
 }
 
 export default async function handler(req, res) {
+  if (!await featureWriteAllowed(req, res, 'game')) return;
   if (!process.env.DATABASE_URL) {
     return res.status(200).json({ ok: false, error: "no_database", top: [] });
   }

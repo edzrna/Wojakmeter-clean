@@ -3,6 +3,10 @@
     {
       "path": "/api/history-snapshot",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/platform/cleanup",
+      "schedule": "15 4 * * *"
     }
   ]
 }

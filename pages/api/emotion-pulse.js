@@ -1,3 +1,4 @@
+import {featureWriteAllowed} from '../../lib/platform-store';
 import { neon } from "@neondatabase/serverless";
 import { createHash } from "node:crypto";
 
@@ -177,6 +178,7 @@ async function readWindow(sql, interval, voterHash) {
 }
 
 export default async function handler(req, res) {
+  if (!await featureWriteAllowed(req, res, 'pulse')) return;
   const windowKey = WINDOWS[String(req.query?.window || "24h")] ? String(req.query.window) : "24h";
   const interval = WINDOWS[windowKey];
 

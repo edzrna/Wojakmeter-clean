@@ -3,6 +3,7 @@ import LegalLayout, { LegalSection } from "../components/LegalLayout";
 const SECTIONS = [
   { id: "summary", title: "The short version" },
   { id: "automatic", title: "Collected automatically" },
+  { id: "analytics", title: "Optional analytics" },
   { id: "submitted", title: "What you submit" },
   { id: "local", title: "Stored in your browser" },
   { id: "use", title: "How it is used" },
@@ -30,7 +31,7 @@ export default function PrivacyPage() {
           WojakMeter has no user accounts and no login. You can read the whole
           site without giving us anything. Two features — the Emotion Pulse vote
           and the Emotion Rush leaderboard — store what you submit on a server,
-          because they would not work otherwise. Nothing is sold.
+          because they would not work otherwise. Optional usage analytics are collected only if you allow them. Nothing is sold.
         </p>
       </LegalSection>
 
@@ -49,6 +50,20 @@ export default function PrivacyPage() {
           This is standard server and platform logging. It is used to operate
           the site, diagnose failures, and detect abuse.
         </p>
+      </LegalSection>
+
+      <LegalSection id="analytics" title="Optional usage analytics">
+        <p>If you choose “Allow analytics”, we measure public page views, selected feature clicks,
+        sections viewed, scroll depth, approximate visible active time, and supported page-load metrics.
+        We store a random session identifier, timestamps, page names, referring domain, device category,
+        and browser family. We never record form contents, portfolio values, wallet addresses, or screen recordings.</p>
+        <p>Your analytics choice is saved in your browser. A session identifier is stored per tab and renewed
+        after 30 minutes without recorded activity. It does not identify a person across devices.
+        We respect Do Not Track and Global Privacy Control. Use the Privacy button to change your choice.
+        Disabling analytics stops future collection; it does not erase already recorded anonymous events.</p>
+        <p>Analytics events are scheduled for daily deletion after 90 days. For abuse prevention, the
+        ingestion endpoint temporarily stores a daily keyed hash of the request IP in rate-limit counters;
+        it does not store the raw IP in analytics events. Counters expire through daily cleanup.</p>
       </LegalSection>
 
       <LegalSection id="submitted" title="2. What you submit">
@@ -109,7 +124,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Database</strong> — stores Emotion Pulse votes and Emotion
-            Rush scores
+            Rush scores, optional usage analytics, and administrator configuration
           </li>
           <li>
             <strong>Market and news data providers</strong> — supply the price,
